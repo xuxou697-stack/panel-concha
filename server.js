@@ -339,7 +339,9 @@ function needPerm(me, perm) {
 /** Permiso que necesita un administrador para cada ruta. La primera regla que coincide manda. */
 const PERM_RULES = [
   ['*', /^\/api\/(clients|demos|bulk|import)(\/|$)/, 'clients'],
-  ['GET', /^\/api\/(sessions|lastseen|alerts)$/, 'clients'],
+  ['GET', /^\/api\/(sessions|lastseen|alerts|monitor)$/, 'clients'],
+  ['GET', /^\/api\/poster\//, 'clients'],
+  ['POST', /^\/api\/monitor\/(stop|message)$/, 'clients'],
   ['POST', /^\/api\/(run|alerts\/read|alerts\/clear)$/, 'clients'],
   ['PUT', /^\/api\/alerts\/config$/, 'system'],
   ['POST', /^\/api\/users\/\d+\/credits$/, 'credits'],
@@ -630,8 +632,34 @@ route('PUT', '/api/brand', SUPER, ({ me, body }) => lock(async () => {
   return { ok: true, brand: db.settings.brand };
 }));
 
+/* Pregunta de sumas y restas para entrar: un solo uso y caduca a los 10 minutos */
+const captchas = new Map(); // id -> { answer, exp }
+function newCaptcha() {
+  const now = Date.now();
+  for (const [k, v] of captchas) if (v.exp < now) captchas.delete(k);
+  while (captchas.size > 20000) captchas.delete(captchas.keys().next().value);
+  const r = (a, b) => a + crypto.randomInt(b - a + 1);
+  const kind = crypto.randomInt(3);
+  let q, answer;
+  if (kind === 0) { const a = r(2, 20), b = r(2, 20); q = `${a} + ${b}`; answer = a + b; }
+  else if (kind === 1) { const a = r(6, 25), b = r(1, a - 1); q = `${a} - ${b}`; answer = a - b; }
+  else { const a = r(2, 9), b = r(2, 9); q = `${a} × ${b}`; answer = a * b; }
+  const id = crypto.randomBytes(12).toString('hex');
+  captchas.set(id, { answer, exp: now + 10 * 60000 });
+  return { id, q };
+}
+function checkCaptcha(body) {
+  const id = String(body.captchaId || '');
+  const c = captchas.get(id);
+  captchas.delete(id); // cada pregunta sirve para un solo intento
+  if (!c || c.exp < Date.now()) throw new HttpError(400, 'La pregunta de seguridad ha caducado. Responde la nueva.');
+  if (String(body.captchaAnswer == null ? '' : body.captchaAnswer).trim() !== String(c.answer)) throw new HttpError(400, 'La respuesta de la operación no es correcta. Prueba con la nueva pregunta.');
+}
+route('GET', '/api/captcha', null, () => newCaptcha());
+
 route('POST', '/api/setup', null, ({ req, body, res }) => {
   if (db.users.length) throw new HttpError(400, 'El panel ya está configurado.');
+  checkCaptcha(body);
   const u = { id: newId(), username: readUsername(body.username), name: 'Superadministrador', role: 'super', parentId: null, credits: 0, disabled: false, createdAt: today() };
   setPassword(u, readNewPassword(body.password));
   db.users.push(u);
@@ -644,6 +672,7 @@ route('POST', '/api/login', null, async ({ req, body, res }) => {
   const username = str(body.username, 30).toLowerCase();
   const f = loginFails.get(username) || { count: 0, until: 0 };
   if (f.until > Date.now()) throw new HttpError(429, 'Demasiados intentos. Espera un minuto.');
+  checkCaptcha(body);
   const u = db.users.find((x) => x.username === username);
   const ok = !!u && !u.disabled && checkPassword(u, typeof body.password === 'string' ? body.password : '');
   if (!ok) {
@@ -1568,25 +1597,48 @@ route('POST', '/api/users/:id/credits', ['super', 'admin', 'reseller'], ({ me, p
   return { ok: true, credits: u.credits };
 }));
 
-/* Ultima conexion de cada cuenta, segun Emby (se guarda un minuto para no saturarlo) */
-const seenCache = new Map(); // serverId -> { at, map }
+/* Ultima conexion de cada cuenta, segun Emby (se guarda un minuto para no saturarlo).
+ * Tambien el ultimo aparato usado y el ultimo inicio de sesion. Se apunta en la cuenta,
+ * asi el dato se sigue viendo aunque Emby no responda en ese momento. */
+const seenCache = new Map(); // serverId -> { at, map: embyId -> { seen, login, dev } }
+const validDate = (v) => (v && !String(v).startsWith('0001') ? String(v) : null);
 route('GET', '/api/lastseen', '*', async ({ me }) => {
   const vis = visibleOwners(me);
-  const seen = {};
+  const seen = {}, info = {};
+  let changed = false;
   for (const s of db.servers) {
     let hit = seenCache.get(s.id);
     if (!hit || Date.now() - hit.at > 60000) {
       try {
         const users = await emby(s, 'GET', '/Users');
-        hit = { at: Date.now(), map: new Map((users || []).map((u) => [u.Id, u.LastActivityDate || null])) };
+        const map = new Map((users || []).map((u) => [u.Id, { seen: validDate(u.LastActivityDate), login: validDate(u.LastLoginDate), dev: null }]));
+        try { // ultimo aparato de cada usuario: no todas las versiones de Emby lo dan
+          const d = await emby(s, 'GET', '/Devices');
+          for (const x of (d && d.Items) || (Array.isArray(d) ? d : [])) {
+            const m = map.get(x.LastUserId), at = validDate(x.DateLastActivity);
+            if (m && at && (!m.dev || at > m.dev.at)) m.dev = { name: String(x.Name || '').slice(0, 80), app: String(x.AppName || '').slice(0, 60), at };
+          }
+        } catch { /* sin aparatos */ }
+        hit = { at: Date.now(), map };
         seenCache.set(s.id, hit);
-      } catch { continue; }
+      } catch { hit = null; }
     }
     for (const c of db.clients) {
-      if (c.serverId === s.id && (!vis || vis.has(c.ownerId)) && hit.map.has(c.embyId)) seen[c.id] = hit.map.get(c.embyId);
+      if (c.serverId !== s.id) continue;
+      const m = hit && hit.map.get(c.embyId);
+      if (m) {
+        if (m.seen && m.seen !== c.seenAt) { c.seenAt = m.seen; changed = true; }
+        if (m.login && m.login !== c.loginAt) { c.loginAt = m.login; changed = true; }
+        if (m.dev && (!c.seenDev || c.seenDev.at !== m.dev.at)) { c.seenDev = m.dev; changed = true; }
+      }
+      if (vis && !vis.has(c.ownerId)) continue;
+      if (m) seen[c.id] = m.seen;
+      else if (c.seenAt) seen[c.id] = c.seenAt;
+      if (c.seenAt || c.loginAt || c.seenDev) info[c.id] = { seen: c.seenAt || null, login: c.loginAt || null, dev: c.seenDev || null, live: !!m };
     }
   }
-  return { seen };
+  if (changed) await lock(async () => saveDb());
+  return { seen, info };
 });
 
 /* Historial de creditos de un usuario */
@@ -1774,6 +1826,128 @@ route('GET', '/api/sessions', '*', async ({ me }) => {
   return { sessions: out, errors };
 });
 
+/* ---------- Monitor: reproducciones con carátula, calidad, consumo y acciones ---------- */
+function videoInfo(x) {
+  const it = x.NowPlayingItem || {}, tr = x.TranscodingInfo || null;
+  const v = (it.MediaStreams || []).find((m) => m.Type === 'Video') || {};
+  const w = v.Width || 0, h = v.Height || 0;
+  const res = w >= 3200 || h >= 1800 ? '4K' : w >= 1800 || h >= 1000 ? '1080p' : w >= 1200 || h >= 700 ? '720p' : w || h ? 'SD' : '';
+  let bitrate = 0;
+  if (tr && tr.Bitrate) bitrate = tr.Bitrate;
+  else if (it.Bitrate) bitrate = it.Bitrate;
+  else if (Array.isArray(it.MediaSources) && it.MediaSources[0] && it.MediaSources[0].Bitrate) bitrate = it.MediaSources[0].Bitrate;
+  else bitrate = (it.MediaStreams || []).reduce((n, m) => n + (m.BitRate || 0), 0);
+  return {
+    width: w, height: h, res, codec: String(v.Codec || '').toLowerCase(), bitrate,
+    trCodec: tr ? String(tr.VideoCodec || '').toLowerCase() : '', trWidth: tr ? tr.Width || 0 : 0, trHeight: tr ? tr.Height || 0 : 0,
+    trReasons: tr && Array.isArray(tr.TranscodeReasons) ? tr.TranscodeReasons.slice(0, 4) : [],
+  };
+}
+const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
+route('GET', '/api/monitor', '*', async ({ me }) => {
+  const vis = visibleOwners(me);
+  const out = [], errors = [], servers = [];
+  await Promise.all(db.servers.map(async (s) => {
+    const cl = db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash');
+    const byEmby = new Map(cl.map((c) => [c.embyId, c]));
+    try {
+      const list = await emby(s, 'GET', '/Sessions');
+      let n = 0;
+      for (const x of list || []) {
+        const it = x.NowPlayingItem;
+        if (!it) continue;
+        const c = byEmby.get(x.UserId);
+        if (vis && (!c || !vis.has(c.ownerId))) continue;
+        n++;
+        const ps = x.PlayState || {}, vi = videoInfo(x);
+        const ep = it.Type === 'Episode' && it.ParentIndexNumber != null && it.IndexNumber != null ? `T${it.ParentIndexNumber} · E${pad(it.IndexNumber)}` : '';
+        const posterId = it.SeriesId && it.SeriesPrimaryImageTag ? it.SeriesId : (it.ImageTags && it.ImageTags.Primary ? it.Id : (it.SeriesId || it.Id || ''));
+        out.push({
+          id: String(x.Id || ''), serverId: s.id, server: s.name,
+          user: x.UserName || '', client: c ? c.panelName : '', clientId: c ? c.id : null, demo: !!(c && c.demo),
+          owner: c && isStaff(me) ? (db.users.find((u) => u.id === c.ownerId) || {}).name || '' : '',
+          screens: c ? c.screens || 0 : 0, expires: c ? c.expires || '' : '',
+          device: x.DeviceName || '', app: x.Client || '', version: x.ApplicationVersion || '',
+          kind: it.Type === 'Episode' ? 'serie' : it.Type === 'Movie' ? 'pelicula' : (it.Type === 'TvChannel' ? 'tv' : 'otro'),
+          title: it.Type === 'Episode' ? (it.SeriesName || it.Name || '') : (it.Name || ''),
+          sub: it.Type === 'Episode' ? [ep, it.Name || ''].filter(Boolean).join(' – ') : '',
+          year: it.ProductionYear || '',
+          poster: posterId && ID_RE.test(String(posterId)) ? String(posterId) : '',
+          paused: !!ps.IsPaused, method: ps.PlayMethod || '', transcode: ps.PlayMethod === 'Transcode' || !!(x.TranscodingInfo && !x.TranscodingInfo.IsVideoDirect),
+          position: ps.PositionTicks || 0, duration: it.RunTimeTicks || 0, ...vi,
+        });
+      }
+      servers.push({ id: s.id, name: s.name, ok: true, n });
+    } catch (e) {
+      servers.push({ id: s.id, name: s.name, ok: false, n: 0 });
+      errors.push(isStaff(me) ? e.message : 'No se pudo consultar un servidor.');
+    }
+  }));
+  out.sort((a, b) => a.paused - b.paused || a.server.localeCompare(b.server) || a.user.localeCompare(b.user));
+  servers.sort((a, b) => a.name.localeCompare(b.name));
+  return { sessions: out, servers, errors, at: new Date().toISOString() };
+});
+
+/* Carátulas: el panel las pide a Emby, así la API key nunca llega al navegador */
+const posterCache = new Map(); // "server:item" -> { buf, type, at }
+const posterMiss = new Map(); // "server:item" -> momento en que Emby dijo que no tiene
+route('GET', '/api/poster/:sid/:item', '*', async ({ params }) => {
+  const s = serverById(params.sid);
+  if (!ID_RE.test(params.item)) throw new HttpError(400, 'Imagen no válida.');
+  const key = s.id + ':' + params.item;
+  const miss = posterMiss.get(key);
+  if (miss && Date.now() - miss < 30 * 60000) throw new HttpError(404, 'Sin carátula.');
+  let hit = posterCache.get(key);
+  if (!hit || Date.now() - hit.at > 6 * 3600000) {
+    let r;
+    try {
+      r = await fetch(`${s.url}/emby/Items/${params.item}/Images/Primary?maxHeight=330&quality=80`, { headers: { 'X-Emby-Token': s.apiKey }, signal: AbortSignal.timeout(15000) });
+    } catch { throw new HttpError(502, 'Sin carátula.'); }
+    const type = (r.headers.get('content-type') || '').split(';')[0];
+    if (!r.ok || !/^image\/(jpeg|png|webp|gif)$/.test(type)) {
+      posterMiss.set(key, Date.now());
+      while (posterMiss.size > 2000) posterMiss.delete(posterMiss.keys().next().value);
+      throw new HttpError(404, 'Sin carátula.');
+    }
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > 3e6) throw new HttpError(404, 'Sin carátula.');
+    hit = { buf, type, at: Date.now() };
+    posterCache.set(key, hit);
+    while (posterCache.size > 400) posterCache.delete(posterCache.keys().next().value);
+  }
+  return { __raw: hit.buf, headers: { 'Content-Type': hit.type, 'Cache-Control': 'private, max-age=21600', 'X-Content-Type-Options': 'nosniff' } };
+});
+
+/** Busca la reproducción y comprueba que la cuenta es del usuario (o que es del equipo) */
+async function findSession(me, body) {
+  const s = serverById(body.serverId);
+  const sid = String(body.sessionId || '');
+  if (!ID_RE.test(sid)) throw new HttpError(400, 'Reproducción no válida.');
+  const list = await emby(s, 'GET', '/Sessions');
+  const x = (list || []).find((y) => String(y.Id) === sid);
+  if (!x) throw new HttpError(404, 'Esa reproducción ya ha terminado.');
+  const c = db.clients.find((k) => k.serverId === s.id && k.embyId === x.UserId && k.status !== 'trash') || null;
+  const vis = visibleOwners(me);
+  if (vis && (!c || !vis.has(c.ownerId))) throw new HttpError(403, 'Esa reproducción no es de una cuenta tuya.');
+  return { s, x, c };
+}
+route('POST', '/api/monitor/stop', '*', async ({ me, body }) => {
+  const { s, x, c } = await findSession(me, body);
+  const text = str(body.message, 300) || 'Tu reproducción ha sido detenida.';
+  await stopSession(s, x, text);
+  await lock(async () => { addLog('monitor', c, `Reproducción detenida: ${sessionTitle(x)} (${x.DeviceName || 'dispositivo'}, ${s.name})`, me); saveDb(); });
+  return { ok: true };
+});
+route('POST', '/api/monitor/message', '*', async ({ me, body }) => {
+  const { s, x, c } = await findSession(me, body);
+  const text = str(body.text, 300);
+  if (!text) throw new HttpError(400, 'Escribe el mensaje.');
+  const header = str(body.header, 40) || db.settings.brand.name || 'Aviso';
+  await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: header, Text: text, TimeoutMs: 15000 });
+  await lock(async () => { addLog('monitor', c, `Mensaje en pantalla (${x.DeviceName || 'dispositivo'}): ${text.slice(0, 120)}`, me); saveDb(); });
+  return { ok: true };
+});
+
 /* ---------- Servidor HTTP ---------- */
 function send(res, status, obj) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -1827,7 +2001,9 @@ const server = http.createServer(async (req, res) => {
         if (req.method !== 'DELETE' && !/^application\/json/i.test(req.headers['content-type'] || '')) throw new HttpError(415, 'Formato no admitido.');
         body = await readBody(req);
       }
-      return send(res, 200, await r.handler({ req, res, body, me, params: m.groups || {} }));
+      const result = await r.handler({ req, res, body, me, params: m.groups || {} });
+      if (result && result.__raw) { res.writeHead(200, result.headers); return res.end(result.__raw); }
+      return send(res, 200, result);
     }
     send(res, 404, { error: 'No encontrado.' });
   } catch (e) {
