@@ -803,6 +803,131 @@ kbd{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border
 .rfwho{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line);font-size:14px} .rfwho b{color:#19c37d}
 .rftab{width:100%;font-size:13px;margin-top:6px} .rftab th{font-size:12px;color:var(--muted);text-align:left;padding:4px 6px} .rftab td{padding:6px;border-top:1px solid var(--line);vertical-align:top}
 .kind.devolucion{color:#19c37d}
+
+/* ---------- Buscador de clientes del Resumen ---------- */
+.dsearch{display:flex;align-items:center;gap:12px;padding:6px 8px 6px 16px;margin-bottom:10px;border-radius:16px;border:2px solid color-mix(in srgb,var(--brand) 45%,var(--line));
+  background:linear-gradient(120deg,color-mix(in srgb,#3fa9f5 10%,var(--surface)),color-mix(in srgb,#a46bff 10%,var(--surface)));box-shadow:0 10px 30px -20px color-mix(in srgb,var(--brand) 70%,transparent)}
+.dsearch:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 20%,transparent)}
+.dsearch .ic{width:22px;height:22px;color:var(--brand);flex:none}
+.dsearch input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;font-size:16px;padding:12px 0;outline:none}
+#dqr{margin-bottom:16px} #dqr:empty{display:none}
+.dq-box{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.dq-r{display:flex;gap:10px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);box-shadow:inset 4px 0 0 var(--c,transparent)}
+.dq-r.st-active{--c:#19c37d} .dq-r.st-soon{--c:#f5a524} .dq-r.st-expired{--c:#f0616d} .dq-r.st-trash{--c:#8c9aa6} .dq-r.st-demo{--c:#a46bff}
+.dq-t{flex:1;min-width:0} .dq-t b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .dq-t small{display:block;color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dq-m{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px}
+.dq-a{display:flex;gap:6px;flex:none}
+.dq-all{display:block;width:100%;padding:11px;border:0;background:color-mix(in srgb,var(--brand) 10%,transparent);color:var(--brand);font:inherit;font-weight:700;cursor:pointer}
+.dq-all:hover{background:color-mix(in srgb,var(--brand) 18%,transparent)}
+.dq-none{padding:18px;text-align:center;color:var(--muted)}
+@media (max-width:640px){ .dq-r{flex-wrap:wrap} .dq-a{width:100%;justify-content:flex-end} .dsearch input{font-size:15px} }
+
+/* ---------- Lista de clientes (diseño con brillos) ---------- */
+.clv .head .acts{gap:8px;align-items:center}
+.cl-add{width:52px;height:52px;border-radius:14px;border:0;display:grid;place-items:center;cursor:pointer;color:#fff;background:linear-gradient(135deg,#19c37d,#0e9f6e);box-shadow:0 8px 22px -10px #19c37d}
+.cl-add .ic{width:26px;height:26px;stroke-width:2.4} .cl-add:hover{filter:brightness(1.1)}
+.cl-ib{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);display:grid;place-items:center;cursor:pointer;flex:none;font:inherit;font-size:18px;font-weight:700}
+.cl-ib .ic{width:20px;height:20px} .cl-ib:hover{border-color:var(--brand);color:var(--brand)}
+.ntiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:4px 0 18px}
+.nt{--c:#3fa9f5;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px 8px;border-radius:14px;cursor:pointer;color:var(--text);
+  border:1.5px solid color-mix(in srgb,var(--c) 65%,transparent);box-shadow:0 0 14px -4px color-mix(in srgb,var(--c) 60%,transparent),inset 0 0 18px -10px var(--c);
+  background:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--c) 22%,transparent) 1px,transparent 1.6px) 0 0/9px 9px,linear-gradient(160deg,color-mix(in srgb,var(--c) 14%,var(--surface)),var(--surface))}
+.nt b{font-size:26px;line-height:1.1;color:var(--c);font-variant-numeric:tabular-nums;text-shadow:0 0 12px color-mix(in srgb,var(--c) 55%,transparent)}
+.nt span{font-size:12.5px;letter-spacing:.06em;color:color-mix(in srgb,var(--c) 75%,var(--text))}
+.nt:hover,.nt.on{box-shadow:0 0 22px -2px color-mix(in srgb,var(--c) 75%,transparent),inset 0 0 22px -8px var(--c)}
+.nt.on{border-width:2px}
+.cl-tools{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:stretch}
+.cl-tools>*{min-width:0} .cl-search input{width:100%} .cl-own{overflow:hidden}
+.clv>.head{flex-wrap:nowrap;align-items:center} .clv>.head>div:first-child{min-width:0;flex:1}
+.clv .ccard .foot .badge{display:none}
+.cl-tools select,.cl-search,.cl-own{min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:15px}
+.cl-tools select{padding:0 12px;width:100%;min-width:0}
+.cl-search{display:flex;align-items:center;gap:10px;padding:0 14px;border-width:2px;border-color:color-mix(in srgb,var(--brand) 35%,var(--line))}
+.cl-search:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 20%,transparent)}
+.cl-search .ic{width:20px;height:20px;color:var(--muted);flex:none} .cl-search input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;font-size:16px;outline:none;padding:10px 0}
+.cl-own{display:flex;align-items:center;gap:8px;padding:0 0 0 12px;min-width:0} .cl-own>.ic{width:18px;height:18px;color:var(--muted);flex:none}
+.cl-own .combo{flex:1;min-width:0} .cl-own .combo-btn{border:0;background:none;width:100%;min-height:44px;text-align:left}
+.cl-row{grid-column:1/-1;display:flex;gap:10px;align-items:stretch}
+.cl-row select{flex:1;max-width:260px}
+.cl-pg{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;margin-left:auto}
+.cl-pg button{width:40px;height:44px;border:0;background:none;color:var(--text);font-size:22px;cursor:pointer} .cl-pg button:disabled{opacity:.35;cursor:default}
+.cl-pg span{min-width:56px;text-align:center;font-variant-numeric:tabular-nums}
+.cl-count{color:var(--muted);font-size:15px;margin:6px 2px 10px}
+.clv .ccard{position:relative;border:1.5px solid color-mix(in srgb,var(--sc,var(--line)) 45%,var(--line));border-radius:16px;background:linear-gradient(165deg,color-mix(in srgb,var(--sc,#3fa9f5) 6%,var(--surface)),var(--surface) 60%);box-shadow:0 0 18px -12px var(--sc,transparent)}
+.clv .ccard.active{--sc:#19c37d} .clv .ccard.soon{--sc:#f5c524} .clv .ccard.expired{--sc:#f0616d} .clv .ccard.demo{--sc:#b67cff}
+.clv .ccard header{align-items:center}
+.cav{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--k,#3fa9f5);border:2.5px solid var(--k,#3fa9f5);background:color-mix(in srgb,var(--k,#3fa9f5) 16%,transparent)}
+.cav .ic{width:18px;height:18px} .cav.st-active{--k:#19c37d} .cav.st-soon{--k:#f5c524} .cav.st-expired{--k:#f0616d} .cav.st-demo{--k:#b67cff} .cav.st-trash{--k:#8c9aa6}
+.clv .ccard .who .name{font-size:17px;font-weight:700}
+.clv .ccard .hd .ib{border-radius:12px;width:40px;height:40px}
+.clv .ccard .hd .ib[data-act=edit]{color:#3fa9f5;background:color-mix(in srgb,#3fa9f5 14%,transparent);border-color:color-mix(in srgb,#3fa9f5 30%,transparent)}
+.clv .ccard .hd .ib[data-act=renew]{color:#b67cff;background:color-mix(in srgb,#b67cff 14%,transparent);border-color:color-mix(in srgb,#b67cff 30%,transparent)}
+.clv .ccard .hd .ib[data-act=more]{color:#14b8c4;background:color-mix(in srgb,#14b8c4 12%,transparent);border-color:color-mix(in srgb,#14b8c4 28%,transparent)}
+.cst{display:none}
+.clv .cst{display:inline-block;position:absolute;top:-9px;right:14px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 10px;border-radius:999px;color:var(--k);background:var(--surface);border:1.5px solid var(--k)}
+.cst.st-active{--k:#19c37d} .cst.st-soon{--k:#f5c524} .cst.st-expired{--k:#f0616d} .cst.st-demo{--k:#b67cff} .cst.st-trash{--k:#8c9aa6}
+.ccard .kv em{font-style:normal;color:var(--muted)}
+.clv .ccard .tags .tag{border-radius:8px;font-weight:600}
+.clv .ccard .tags .tag:nth-child(1){color:#19c37d;border-color:color-mix(in srgb,#19c37d 45%,transparent);background:color-mix(in srgb,#19c37d 8%,transparent)}
+.clv .ccard .tags .tag.q{color:#ff8a4c;border-color:color-mix(in srgb,#ff8a4c 45%,transparent);background:color-mix(in srgb,#ff8a4c 8%,transparent)}
+.clv .ccard .tags .tag:nth-child(3){color:#14b8c4;border-color:color-mix(in srgb,#14b8c4 45%,transparent);background:color-mix(in srgb,#14b8c4 8%,transparent)}
+.clv .selall{margin:0 2px 10px}
+@media (max-width:1180px){.ntiles{grid-template-columns:repeat(3,1fr)} .cl-tools{grid-template-columns:1fr 1fr}}
+@media (max-width:640px){
+  .ntiles{gap:9px} .nt{padding:11px 4px} .nt b{font-size:22px} .nt span{font-size:11px;letter-spacing:.03em;text-align:center}
+  .cl-tools{grid-template-columns:1.6fr 1fr;gap:8px} .cl-tools select,.cl-search,.cl-own{font-size:14px;min-height:44px}
+  .cl-row{flex-wrap:nowrap;gap:6px} .cl-row select{max-width:none;min-width:0} .cl-ib{width:42px;height:42px} .cl-pg button{width:30px} .cl-pg span{min-width:44px;font-size:13px}
+  .clv .head{flex-direction:row;align-items:flex-start} .clv .head .acts{flex-wrap:nowrap} .cl-add{width:48px;height:48px}
+  .clv .head .acts .cl-ib{display:none}
+  .clv .ccard{padding:14px 12px 12px} .clv .ccard header{gap:8px} .clv .ccard .pick{width:16px;height:16px;margin:0}
+  .cav{width:36px;height:36px;border-width:2px} .cav .ic{width:15px;height:15px}
+  .clv .ccard .hd{gap:4px} .clv .ccard .hd .ib{width:34px;height:34px;border-radius:10px} .clv .ccard .hd .ib .ic{width:16px;height:16px}
+  .clv .ccard .who .name{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:16px;line-height:1.2}
+}
+
+/* ---------- Lista de clientes: toque moderno (v43) ---------- */
+.clv>.head h1{background:linear-gradient(90deg,var(--text) 30%,color-mix(in srgb,var(--brand) 80%,#a855f7));-webkit-background-clip:text;background-clip:text;color:transparent}
+.cl-add{width:auto;height:48px;padding:0 18px 0 14px;gap:6px;display:inline-flex;align-items:center;border-radius:999px;font:inherit;font-weight:700;font-size:15px;
+  background:linear-gradient(120deg,#2f9bff,#7c5cff 55%,#c04fe0);box-shadow:0 10px 26px -12px #7c5cff}
+.cl-add .ic{width:22px;height:22px}
+.cl-ib{border-radius:999px}
+.nt{align-items:flex-start;text-align:left;padding:14px 14px 12px;border-radius:18px;border:1px solid color-mix(in srgb,var(--c) 22%,var(--line));
+  box-shadow:0 12px 28px -22px var(--c);background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--c) 28%,transparent),transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--c) 9%,var(--surface)),var(--surface))}
+.nt-i{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 55%,#000));box-shadow:0 6px 14px -8px var(--c)}
+.nt-i .ic{width:16px;height:16px}
+.nt b{font-size:28px;color:var(--text);text-shadow:none;margin-top:6px}
+.nt .nt-l{font-size:12.5px;letter-spacing:.01em;color:var(--muted);font-weight:600}
+.nt-bar{display:block;width:100%;height:4px;border-radius:3px;margin-top:8px;background:color-mix(in srgb,var(--c) 15%,transparent);overflow:hidden} .nt-bar i{display:block;height:100%;border-radius:3px;background:var(--c)}
+.nt:hover{transform:translateY(-2px);box-shadow:0 16px 30px -18px var(--c)} .nt{transition:transform .15s,box-shadow .15s}
+.nt.on{border-width:1px;box-shadow:0 0 0 2px var(--c),0 16px 30px -18px var(--c)}
+.cl-tools{padding:12px;border-radius:20px;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);backdrop-filter:blur(6px)}
+.cl-tools select,.cl-search,.cl-own,.cl-pg{border-radius:999px;background:var(--bg)}
+.cl-tools select{padding:0 16px}
+.cl-search{border-width:1px;border-color:var(--line);padding:0 16px}
+.cl-own{padding-left:14px}
+.cl-count{font-size:14px} .cl-count::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#17b26a;margin-right:8px;vertical-align:1px;box-shadow:0 0 0 3px color-mix(in srgb,#17b26a 25%,transparent)}
+.clv .ccard{border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 14px 34px -28px rgba(0,0,0,.6);overflow:hidden;padding-left:18px}
+.clv .ccard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--sc,#3fa9f5),color-mix(in srgb,var(--sc,#3fa9f5) 30%,transparent))}
+.clv .ccard:hover{border-color:color-mix(in srgb,var(--sc,#3fa9f5) 40%,var(--line))}
+.clv .ccard.active{--sc:#17b26a} .clv .ccard.soon{--sc:#f59e0b} .clv .ccard.expired{--sc:#ef4444} .clv .ccard.demo{--sc:#a855f7}
+.cav{border:0;color:#fff;font-weight:800;font-size:18px;background:linear-gradient(135deg,var(--k),color-mix(in srgb,var(--k) 45%,#1e1b4b));box-shadow:0 8px 18px -10px var(--k)}
+.cav.st-active{--k:#17b26a} .cav.st-soon{--k:#f59e0b} .cav.st-expired{--k:#ef4444} .cav.st-demo{--k:#a855f7} .cav.st-trash{--k:#8c9aa6}
+.clv .cst{position:static;display:inline-block;vertical-align:1px;margin-left:4px;font-size:10.5px;padding:1px 8px;border:0;color:var(--k);background:color-mix(in srgb,var(--k) 16%,transparent)}
+.cst.st-active{--k:#17b26a} .cst.st-soon{--k:#f59e0b} .cst.st-expired{--k:#ef4444} .cst.st-demo{--k:#a855f7}
+.clv .ccard .hd{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.clv .ccard .hd .ib{border:0;border-radius:999px;width:36px;height:36px;background:none}
+.clv .ccard .hd .ib[data-act=edit]{color:#2f9bff;background:none} .clv .ccard .hd .ib[data-act=renew]{color:#fff;background:linear-gradient(135deg,#7c5cff,#c04fe0)} .clv .ccard .hd .ib[data-act=more]{color:#14b8c4;background:none}
+.clv .ccard .hd .ib:hover{background:color-mix(in srgb,var(--brand) 15%,transparent)} .clv .ccard .hd .ib[data-act=renew]:hover{filter:brightness(1.12)}
+.clv .ccard>.kv{background:var(--bg);border-radius:12px;padding:7px 12px}
+.clv .ccard .tags .tag{border:0!important;border-radius:999px;padding:4px 10px}
+.clv .ccard .tags .tag:nth-child(1){background:color-mix(in srgb,#17b26a 14%,transparent)} .clv .ccard .tags .tag.q{background:color-mix(in srgb,#ff8a4c 15%,transparent)} .clv .ccard .tags .tag:nth-child(3){background:color-mix(in srgb,#14b8c4 14%,transparent)}
+.clv .ccard .tag.left{border:0;border-radius:999px;background:color-mix(in srgb,var(--sc,#3fa9f5) 14%,transparent);color:var(--sc,#3fa9f5)}
+@media (max-width:640px){
+  .nt{padding:11px 10px 10px;border-radius:16px} .nt-i{width:26px;height:26px;border-radius:9px} .nt-i .ic{width:14px;height:14px} .nt b{font-size:22px;margin-top:4px} .nt .nt-l{font-size:11px;text-align:left}
+  .cl-tools{padding:10px;border-radius:18px} .cl-add{height:44px;padding:0 14px 0 12px;font-size:14px}
+  .clv .ccard .hd .ib{width:32px;height:32px} .cav{width:38px;height:38px;font-size:16px}
+  .cl-row{flex-wrap:wrap} .cl-row select{flex:1 1 100%;max-width:none} .cl-pg{margin-left:0;flex:1;justify-content:space-between}
+}
 </style>
 </head>
 <body>
@@ -1035,6 +1160,7 @@ function stage(c) {
   if (c.status === 'expired' || left < 0) return 'expired';
   return left <= S.d.settings.warnDays ? 'soon' : 'active';
 }
+const STAGE_SHORT = { active: 'Activa', soon: 'Vence pronto', expired: 'Caducada', trash: 'Papelera', demo: 'Demo' };
 const STAGE = { active: 'Activa', soon: 'Vence pronto', expired: 'Caducada, sin bibliotecas', trash: 'En la papelera', demo: 'Demo en curso' };
 function when(c) {
   if (c.demo) {
@@ -1301,11 +1427,12 @@ function clientCard(c) {
   return `<article class="ccard ${st}${picked ? ' picked' : ''}">
     <header>
       ${staff() ? `<input type="checkbox" class="pick" data-sel="${c.id}"${picked ? ' checked' : ''} aria-label="Seleccionar a ${esc(c.panelName)}">` : ''}
-      <div class="who" style="flex:1"><div class="name">${esc(c.panelName)}</div><div class="small muted">@${esc(c.embyName)}</div></div>
+      <span class="cav st-${st}" aria-hidden="true">${esc((c.panelName || c.embyName || '?').trim().charAt(0).toUpperCase())}</span>
+      <div class="who" style="flex:1"><div class="name">${esc(c.panelName)}</div><div class="small muted">@${esc(c.embyName)} <span class="cst st-${st}">${STAGE_SHORT[st] || STAGE[st]}</span></div></div>
       <div class="hd">${ib('edit', 'edit', 'Editar')}${ib('renew', 'clock', renewLabel, 'pri')}${ib('more', 'more', 'Más opciones')}<button type="button" class="ib plain" data-act="toggle" data-id="${c.id}" aria-expanded="${open}" aria-label="${open ? 'Ocultar detalles' : 'Ver detalles'}" title="${open ? 'Ocultar detalles' : 'Ver detalles'}">${ic('chev')}</button></div>
     </header>
-    <div class="kv">${ic('mail')}<span>${c.email ? esc(c.email) : '—'}</span></div>
-    <div class="kv">${ic('lock')}<span>${c.password ? (shown ? esc(c.password) : '••••••••') : 'Contraseña no guardada'}</span>${c.password ? `<button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}" title="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}">${ic('eye')}</button>` : ''}</div>
+    <div class="kv">${ic('mail')}<em>Email:</em><span>${c.email ? esc(c.email) : '—'}</span></div>
+    <div class="kv">${ic('lock')}<em>Pass:</em><span>${c.password ? (shown ? esc(c.password) : '••••••••') : 'Contraseña no guardada'}</span>${c.password ? `<button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}" title="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}">${ic('eye')}</button>` : ''}</div>
     <div class="foot">
       <div class="tags"><span class="tag">${ic('server')}${esc(serverName(c.serverId))}</span><span class="tag q">${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}</span><span class="tag">${ic('user')}${esc(userName(c.ownerId) || '—')}</span></div>
       <span class="tag left ${st}" title="Tiempo restante">${ic('clock')}${leftText(c)}</span>
@@ -1356,7 +1483,8 @@ function vResumen() {
   // Estados de las cuentas, cada uno lleva a su lista
   const sc = (k, n, label, hint, icon) => `<button type="button" class="sc sc-${k}" data-act="goto" data-filter="${k}"><span class="sc-i">${ic(icon)}</span><b>${n}</b><span class="sc-l">${label}</span><small>${hint}</small></button>`;
   const secTip = isSuper() && !d.me.twoFa ? `<div class="sectip">${ic('shield')}<div><b>Protege tu cuenta de superadministrador</b><span>Activa la verificación en dos pasos: aunque te roben la contraseña, nadie podrá entrar sin tu móvil.</span></div><button class="btn primary sm" data-view="seguridad">Activar</button></div>` : '';
-  return `<h1 class="sr-only">Resumen</h1>` + secTip + hero + quick + `
+  const dsearch = `<div class="dsearch" role="search"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><input type="search" id="dq" value="${esc(S.dq || '')}" placeholder="Buscar cliente: nombre, usuario, email o teléfono…" autocomplete="off" spellcheck="false" aria-label="Buscar clientes" aria-controls="dqr"></div><div id="dqr">${dqHtml()}</div>`;
+  return `<h1 class="sr-only">Resumen</h1>` + secTip + dsearch + hero + quick + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
     ${sc('active', cnt.active, 'Activas', 'con su contenido', 'check')}
@@ -1430,6 +1558,16 @@ function showTip(el) {
   tip.style.left = x + 'px'; tip.style.top = Math.max(tip.offsetHeight, r.top - w.top + 14) + 'px';
 }
 function hideTip() { document.querySelectorAll('.tip').forEach((t) => { t.hidden = true; }); }
+/** Recuadros de la lista de clientes, con brillo de color */
+function ntiles() {
+  const cnt = { active: 0, soon: 0, expired: 0, demo: 0 };
+  let mine = 0, total = 0;
+  live().forEach((c) => { cnt[stage(c)]++; if (!c.demo) { total++; if (c.ownerId === me().id) mine++; } });
+  const f = (k) => `data-act="filter" data-filter="${k}"`;
+  const base = Math.max(1, total + cnt.demo);
+  const t = (c, icon, n, label, attrs, on) => `<button type="button" class="nt${on ? ' on' : ''}" style="--c:${c}" ${attrs}><span class="nt-i">${ic(icon)}</span><b>${n}</b><span class="nt-l">${label}</span><i class="nt-bar"><i style="width:${Math.min(100, Math.round((n / base) * 100))}%"></i></i></button>`;
+  return `<div class="ntiles">${S.d.users.length > 1 ? t('#6d7dff', 'user', mine, 'Mis clientes', 'data-act="mine"', S.fOwner === me().id) : ''}${t('#2f9bff', 'users', total, 'Total', f('all'), S.filter === 'all' && !S.fOwner)}${t('#17b26a', 'check', cnt.active, 'Activos', f('active'), S.filter === 'active')}${t('#f59e0b', 'clock', cnt.soon, 'Por vencer', f('soon'), S.filter === 'soon')}${t('#ef4444', 'alert', cnt.expired, 'Vencidos', f('expired'), S.filter === 'expired')}${t('#a855f7', 'timer', cnt.demo, 'Demos', f('demo'), S.filter === 'demo')}</div>`;
+}
 function tiles() {
   const cnt = { active: 0, soon: 0, expired: 0, demo: 0 };
   let mine = 0, total = 0;
@@ -1457,9 +1595,9 @@ function clientSorter() {
 function closeCombo() { document.querySelectorAll('.combo-pop:not([hidden])').forEach((p) => { p.hidden = true; p.previousElementSibling.setAttribute('aria-expanded', 'false'); }); }
 function vCuentas() {
   if (!S.d.servers.length) return head('Cuentas') + noServer();
-  const q = S.q.trim().toLowerCase();
+  const q = S.q.trim().toLowerCase(), loose = q ? new Set(dqMatches(q).map((c) => c.id)) : null; // tambien sin tildes, signos ni espacios
   const rows = live().filter((c) => (S.filter === 'all' || stage(c) === S.filter) && (!S.fOwner || c.ownerId === S.fOwner) && (!S.fServer || c.serverId === S.fServer) &&
-    (!q || [c.panelName, c.embyName, c.note, c.email, c.telegram, c.whatsapp, c.signal, userName(c.ownerId)].join(' ').toLowerCase().includes(q))).sort(clientSorter());
+    (!q || loose.has(c.id) || [c.panelName, c.embyName, c.note, c.email, c.telegram, c.whatsapp, c.signal, userName(c.ownerId)].join(' ').toLowerCase().includes(q))).sort(clientSorter());
   S.rowIds = rows.map((c) => c.id);
   const alive = new Set(S.d.clients.map((c) => c.id));
   [...S.sel].forEach((id) => { if (!alive.has(id)) S.sel.delete(id); });
@@ -1473,6 +1611,7 @@ function vCuentas() {
   if (S.page > pages) S.page = pages;
   const shown = rows.slice((S.page - 1) * per, S.page * per);
   const pager = `<div class="pager"><span class="muted">Mostrando ${shown.length} de ${plural(rows.length, 'cliente', 'clientes')}</span>${pages > 1 ? `<span class="acts"><button class="btn sm" data-act="page" data-step="-1"${S.page === 1 ? ' disabled' : ''}>Anterior</button><span>${S.page} / ${pages}</span><button class="btn sm" data-act="page" data-step="1"${S.page === pages ? ' disabled' : ''}>Siguiente</button></span>` : ''}</div>`;
+  const mini = `<div class="cl-pg" role="group" aria-label="Páginas"><button type="button" data-act="page" data-step="-1"${S.page === 1 ? ' disabled' : ''} aria-label="Página anterior">‹</button><span>${S.page}/${pages}</span><button type="button" data-act="page" data-step="1"${S.page === pages ? ' disabled' : ''} aria-label="Página siguiente">›</button></div>`;
   const emptyMsg = live().length ? 'Ninguna cuenta coincide con la búsqueda o el filtro.' : 'Todavía no hay cuentas. Crea la primera con «Nueva cuenta».';
   const sel = (id, cur, all, list) => `<select id="${id}" aria-label="${all}"><option value="0">${all}</option>${list.map(([v, t]) => `<option value="${v}"${String(v) === String(cur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
   const vendors = [...S.d.users].sort((a, b) => a.name.localeCompare(b.name));
@@ -1490,21 +1629,25 @@ function vCuentas() {
       </div>
     </div>` : '';
   const filters = vendorBox + sel('fServer', S.fServer, 'Todos los servidores', S.d.servers.map((x) => [x.id, x.name]));
-  return head('Clientes Emby', 'Gestiona tus clientes y sus suscripciones.', newBtns()) + tiles() + `
-  <div class="tools">
-    <input type="search" id="q" placeholder="Buscar por nombre, usuario, contacto, nota o reseller" value="${esc(S.q)}" aria-label="Buscar cuentas">
-    <button type="button" class="btn fbtn" data-act="filters" aria-expanded="${!!S.fOpen}">${ic('filter')}Filtros${(S.filter !== 'all') + !!S.fOwner + !!S.fServer ? ` (${(S.filter !== 'all') + !!S.fOwner + !!S.fServer})` : ''}</button>
-    <button type="button" class="btn" data-act="export">${ic('download')}Exportar</button>
-    <button type="button" class="btn" data-act="list-more" aria-label="Acciones en bloque">${ic('more')}Acciones</button>
-    <div class="filters${S.fOpen ? ' open' : ''}">
-    <select id="fState" aria-label="Estado">${options([['all', 'Todos los estados'], ['active', 'Activos'], ['soon', 'Por vencer'], ['expired', 'Vencidos'], ['demo', 'Demos']], S.filter)}</select>
-    ${filters}
-    <select id="fSort" aria-label="Ordenar por">${options(SORTS.map(([k, t]) => [k, 'Orden: ' + t]), S.sort)}</select>
-    <button type="button" class="btn dirbtn" data-act="sortdir" title="Cambiar el sentido del orden" aria-label="${S.dir > 0 ? 'Orden ascendente, cambiar a descendente' : 'Orden descendente, cambiar a ascendente'}">${S.dir > 0 ? 'A→Z' : 'Z→A'}</button>
+  const addBtns = `${staff() ? `<button class="cl-ib" data-act="import" title="Importar de Emby" aria-label="Importar de Emby">${ic('download')}</button>` : ''}<button class="cl-ib" data-act="demo" title="Nueva demo" aria-label="Nueva demo">${ic('timer')}</button><button class="cl-add" data-act="new" title="Nueva cuenta" aria-label="Nueva cuenta">${ic('plus')}<span>Nueva</span></button>`;
+  const sIcon = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg>';
+  return `<div class="clv">` + head('Clientes Emby', 'Gestiona tus clientes y suscripciones Emby', addBtns) + ntiles() + `
+  <div class="cl-tools">
+    <label class="cl-search">${sIcon}<input type="search" id="q" placeholder="Buscar…" value="${esc(S.q)}" aria-label="Buscar cuentas por nombre, usuario, contacto, nota o vendedor"></label>
+    <select id="fState" aria-label="Estado">${options([['all', 'Estado'], ['active', 'Activos'], ['soon', 'Por vencer'], ['expired', 'Vencidos'], ['demo', 'Demos']], S.filter)}</select>
+    <div class="cl-own">${ic('users')}${vendorBox || '<span class="muted small">Mis clientes</span>'}</div>
+    ${sel('fServer', S.fServer, 'Servidor', S.d.servers.map((x) => [x.id, x.name]))}
+    <div class="cl-row">
+      <select id="fSort" aria-label="Ordenar por">${options(SORTS.map(([k, t]) => [k, t.charAt(0).toUpperCase() + t.slice(1)]), S.sort)}</select>
+      <button type="button" class="cl-ib dirbtn" data-act="sortdir" title="Cambiar el sentido del orden" aria-label="${S.dir > 0 ? 'Orden ascendente, cambiar a descendente' : 'Orden descendente, cambiar a ascendente'}">${S.dir > 0 ? '↓' : '↑'}</button>
+      ${mini}
+      <button type="button" class="cl-ib" data-act="export" title="Exportar" aria-label="Exportar">${ic('note')}</button>
+      <button type="button" class="cl-ib" data-act="list-more" title="Acciones en bloque" aria-label="Acciones en bloque">${ic('more')}</button>
     </div>
   </div>
+  <p class="cl-count">Mostrando ${shown.length} de ${plural(rows.length, 'cliente', 'clientes')}</p>
   ${selBar}
-  ${rows.length ? pager + `<div class="ccards">${shown.map(clientCard).join('')}</div>` + (pages > 1 ? pager : '') : `<div class="panel"><div class="empty">${emptyMsg}</div></div>`}`;
+  ${rows.length ? `<div class="ccards">${shown.map(clientCard).join('')}</div>` + (pages > 1 ? pager : '') : `<div class="panel"><div class="empty">${emptyMsg}</div></div>`}</div>`;
 }
 
 function vNuevo(demo) {
@@ -2008,7 +2151,10 @@ function vSeguridad() {
   // 2) Avisos por Telegram
   const tgs = !x.bot ? `<p class="muted small">Para recibir avisos, primero hay que conectar un bot de Telegram en ${isSuper() ? '<button class="lnk" data-view="notifs">Ajustes › Notificaciones</button>' : 'Ajustes › Notificaciones (pídeselo al superadministrador)'}.</p>`
     : !x.tgLinked ? `<p class="muted small">Pulsa el botón, se abrirá Telegram con el bot <b>@${esc(x.bot)}</b>: dale a <b>Iniciar</b> y vuelve aquí.</p>
-      <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><a class="btn primary" href="${esc(x.tgLink)}" target="_blank" rel="noopener noreferrer">${ic('bell')}Enlazar mi Telegram</a><button class="btn" data-act="sec-reload">Ya lo he hecho, comprobar</button></div>`
+      <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><a class="btn primary" href="${esc(x.tgLink)}" target="_blank" rel="noopener noreferrer">${ic('bell')}Enlazar mi Telegram</a><button class="btn" data-act="sec-check">Ya lo he hecho, comprobar</button></div>
+      <details class="rescue"><summary>¿No se enlaza?</summary><p>Abre el chat con <b>@${esc(x.bot)}</b> en Telegram y <b>envíale este código</b> como mensaje (cópialo y pégalo):</p>
+        <div class="cpy"><code>${esc(x.tgLink.split('start=')[1] || '')}</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(x.tgLink.split('start=')[1] || '')}">${ic('copy')}Copiar</button></div>
+        <p class="muted small">El bot te contestará «Listo…». Luego pulsa «Ya lo he hecho, comprobar». Si el bot no contesta nada, puede que ese mismo bot esté puesto en otro programa o panel (por ejemplo, el panel antiguo de tu PC): ciérralo, porque solo uno puede leer sus mensajes.</p></details>`
     : `${sw('login', x.alerts.login, 'Cada vez que alguien entra en mi cuenta', 'Con la hora, la IP y el aparato. Si no has sido tú, lo sabrás al momento.')}
       ${isSuper() ? sw('staffLogins', x.alerts.staffLogins, 'Cuando entra un administrador', 'Te avisa de las entradas de tus administradores.') + sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar, con el tiempo que estuvo caído.') + sw('backup', x.alerts.backup, 'Copia de seguridad diaria', 'Te llega el archivo cifrado (se configura en Copias de seguridad).') + sw('payments', x.alerts.payments, 'Cuando un vendedor compra créditos', 'Con el importe y su saldo nuevo.') : me().role === 'admin' && canDo('viewServers') ? sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar.') : ''}
       <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn" data-act="sec-tgtest">Enviar mensaje de prueba</button><button class="btn ghost" data-act="sec-tgoff">Desenlazar</button></div>`;
@@ -2197,6 +2343,15 @@ function vCopias() {
             <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn ${c.on ? '' : 'primary'}" data-act="bk-cfg">${ic('sliders')}${c.on ? 'Cambiar' : 'Activar'}</button>${c.hasKey ? '<button class="btn" data-act="bk-send">Enviar una ahora</button>' : ''}${c.on ? '<button class="btn ghost" data-act="bk-off">Desactivar</button>' : ''}</div>`}
       </section>
     </div>
+    <div class="secgrid">
+      <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#1fa463">${ic('box')}</span><div><h2>Copia diaria a Google Drive</h2><small>Cada día se guarda en la carpeta «Copias Concha» de tu Drive. Se borran solas las de más de 30 días.</small></div><span class="pillst ${b.gdrive.on ? 'on' : 'off'}">${b.gdrive.on ? 'Activada' : 'Desactivada'}</span></div>
+        ${b.gdrive.on ? `<p class="muted small">Se envía cada día a partir de las <b>${pad(c.hour)}:00</b>. ${b.gdrive.last ? `Última: ${fmtTs(b.gdrive.last, true)}.` : 'Todavía no se ha enviado ninguna.'}</p>` : '<p class="muted small">Necesitas el «buzón» de Apps Script en tu cuenta de Google: la dirección que acaba en <b>/exec</b> y la clave que pusiste en el código.</p>'}
+        ${b.gdrive.lastError ? `<p class="err" style="max-width:none">Último error: ${esc(b.gdrive.lastError)}</p>` : ''}
+        <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn ${b.gdrive.on ? '' : 'primary'}" data-act="gd-cfg">${ic('sliders')}${b.gdrive.on ? 'Cambiar' : 'Conectar Google Drive'}</button>${b.gdrive.on ? '<button class="btn" data-act="gd-send">Enviar una ahora</button><button class="btn ghost" data-act="gd-off">Desactivar</button>' : ''}</div></section>
+      <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#a46bff">${ic('check')}</span><div><h2>Comprobar una copia</h2><small>Abre un archivo .concha con su contraseña y te dice qué lleva. No restaura ni cambia nada.</small></div></div>
+        <p class="muted small">Úsalo de vez en cuando para estar seguro de que tus copias y tu contraseña funcionan.</p>
+        <div class="dfoot" style="justify-content:flex-start"><button class="btn" data-act="bk-verify">${ic('check')}Comprobar una copia…</button></div></section>
+    </div>
     <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#10b981">${ic('history')}</span><div><h2>Copias guardadas en el servidor</h2><small>El panel hace una cada día y guarda las últimas (Ajustes › Retención de datos). Puedes bajarte cualquiera, cifrada.</small></div></div>
       ${b.copies.length ? `<div class="seslist">${b.copies.map((x) => `<div class="ses"><span class="ses-i">${ic('box')}</span><div><b>${fmt(x.date)}</b><small>${kb(x.size)}</small></div><button class="btn sm" data-act="bk-dl" data-name="${esc(x.name)}">Descargar</button></div>`).join('')}</div>` : '<p class="muted">Todavía no hay copias guardadas.</p>'}</section>
     <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#f0616d">${ic('alert')}</span><div><h2>Restaurar una copia</h2><small>Vuelve a poner todo tal y como estaba en esa copia.</small></div></div>
@@ -2222,7 +2377,7 @@ const QS_KEYS = {
   equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
   admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', ajustes: 'precios paquetes tarifas meses pantallas',
   perfil: 'perfil nombre email moneda soporte mi contraseña cambiar clave', seguridad: 'seguridad 2fa verificacion dos pasos google authenticator telegram sesiones contraseña codigo rescate proteger',
-  copias: 'copias seguridad backup restaurar descargar guardar datos', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
+  copias: 'copias seguridad backup restaurar descargar guardar datos google drive comprobar', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
   apariencia: 'apariencia colores logo marca tema nombre panel', notifs: 'notificaciones telegram bot avisos pantalla', importar: 'importar csv excel emby subir lista', logs: 'logs actividad registro accesos entradas',
   guia: 'guia ayuda tutorial como empezar',
 };
@@ -2375,6 +2530,29 @@ async function dDelRefund(c) {
     body: `<p>El usuario <b>${esc(c.embyName)}</b> se borra de Emby para siempre (con su historial y su progreso). No se puede deshacer.</p>
       <div class="rfbox"><div class="rfh">${ic('coins')}<div><b>${r.total ? `Se devuelven ${plural(r.total, 'crédito', 'créditos')}` : 'No hay créditos que devolver'}</b><small>Lo pagado hace menos de 24 h vuelve entero; de lo demás, la parte del tiempo que no se ha usado.</small></div></div>${who}${lines}</div>`,
     onSubmit: async () => { const x = await api('POST', `/api/clients/${c.id}/delete-refund`, {}); return x.refunded ? `Cuenta eliminada. Devueltos ${plural(x.refunded, 'crédito', 'créditos')}` : 'Cuenta eliminada'; } });
+}
+
+/* ---------- Buscador de clientes del Resumen ---------- */
+function dqMatches(q) {
+  // Sin tildes, mayusculas, espacios ni signos: «oneil» encuentra «O'Neil» y «600000002» encuentra «+34 600 00 00 2»
+  const flat = (t) => norm(t).replace(/[^a-z0-9@ñ]/g, '');
+  const words = norm(q).trim().split(/\s+/).map(flat).filter(Boolean);
+  if (!words.length) return [];
+  const one = flat(q);
+  return S.d.clients.filter((c) => { const h = flat(`${c.panelName} ${c.embyName} ${c.email || ''} ${c.whatsapp || ''} ${c.telegram || ''} ${c.signal || ''} ${c.note || ''} ${userName(c.ownerId) || ''}`); return words.every((w) => h.includes(w)) || h.includes(one); })
+    .sort((a, b) => (a.status === 'trash') - (b.status === 'trash') || a.panelName.localeCompare(b.panelName));
+}
+function dqHtml() {
+  const q = (S.dq || '').trim();
+  if (!q) return '';
+  const all = dqMatches(q), rows = all.slice(0, 8);
+  if (!rows.length) return `<div class="dq-box"><div class="dq-none">No hay ningún cliente que coincida con «${esc(q)}».</div></div>`;
+  const ib = (act, icon, label, id) => `<button type="button" class="ib" data-act="${act}" data-id="${id}" title="${label}" aria-label="${label}">${ic(icon)}</button>`;
+  return `<div class="dq-box">${rows.map((c) => { const st = stage(c); return `<div class="dq-r st-${st}">
+    <div class="dq-t"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)}${S.d.servers.length > 1 ? ' · ' + esc(serverName(c.serverId)) : ''}${S.d.users.length > 1 && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small>
+      <div class="dq-m"><span class="badge ${st}">${STAGE[st]}</span>${st !== 'trash' ? `<span class="tag left ${st}">${ic('clock')}${leftText(c)}</span>` : ''}<span class="muted small">Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span></span></div></div>
+    <div class="dq-a">${ib('edit', 'edit', 'Editar', c.id)}${ib('renew', 'clock', c.demo ? 'Convertir en cuenta' : 'Extender', c.id)}${ib('more', 'more', 'Más opciones', c.id)}</div></div>`; }).join('')}
+    ${all.length > rows.length ? `<button type="button" class="dq-all" data-act="dq-all">Ver los ${all.length} resultados en la lista de clientes</button>` : `<button type="button" class="dq-all" data-act="dq-all">Abrir en la lista de clientes</button>`}</div>`;
 }
 
 const eur = (n) => money(n, S.d.settings.currency);
@@ -3988,6 +4166,7 @@ document.addEventListener('click', (e) => {
       onSubmit: async () => bulkResult(await bulkCall('/api/bulk/repair', ids, {}), 'Reparar cuentas', 'cuenta reparada', 'cuentas reparadas'), after: loadAudit });
     return;
   }
+  if (a === 'dq-all') { S.view = 'cuentas'; S.filter = 'all'; S.fOwner = 0; S.fServer = 0; S.page = 1; S.q = S.dq || ''; render(); window.scrollTo(0, 0); return; }
   if (a === 'qs') { qsOpen(); return; }
   if (a === 'qs-close') { $('#qs').close(); return; }
   if (a === 'qs-go') { qsGo(+el.dataset.i); return; }
@@ -3997,10 +4176,15 @@ document.addEventListener('click', (e) => {
   if (a === 'uso-days') { S.usoDays = +el.dataset.k; S.uso = null; render(); return; }
   if (a === 'bk-dl') { const name = el.dataset.name || ''; openDlg({ title: 'Descargar copia cifrada', submit: 'Descargar', body: `<p>Elige la contraseña con la que se cifrará${name ? ' la copia del ' + fmt(name.slice(3, 13)) : ' la copia'}. <b>Apúntala:</b> la necesitarás para restaurarla.</p><label class="f">Contraseña de la copia (mín. 8)<input type="password" name="pw" required minlength="8" autocomplete="new-password"></label><label class="f">Repite la contraseña<input type="password" name="pw2" required minlength="8" autocomplete="new-password"></label>`, onSubmit: async (fd) => { if (fd.get('pw') !== fd.get('pw2')) throw new Error('Las dos contraseñas no coinciden.'); await downloadBackup(name, fd.get('pw')); return 'Copia descargada'; } }); return; }
   if (a === 'bk-cfg') { const c = S.bk.cfg; openDlg({ title: 'Copia diaria por Telegram', submit: 'Guardar', body: `<label class="f">Hora a la que se envía<select name="hour">${options(Array.from({ length: 24 }, (_, h) => [h, pad(h) + ':00']), c.hour)}</select></label><label class="f">${c.hasKey ? 'Nueva contraseña de las copias (vacío = la misma)' : 'Contraseña para cifrar las copias (mín. 10)'}<input type="password" name="pw" ${c.hasKey ? '' : 'required'} minlength="10" autocomplete="new-password"></label><p class="muted small">No se guarda la contraseña, solo una llave sacada de ella. Apúntala en un sitio seguro: es la que pedirá el panel al restaurar.</p>`, onSubmit: async (fd) => { await api('PUT', '/api/backup/config', { on: true, hour: +fd.get('hour'), password: fd.get('pw') || undefined }); return 'Copia diaria activada'; }, after: () => { S.bk = null; loadBk(); } }); return; }
+  if (a === 'gd-cfg') { const c = S.bk.cfg, g = S.bk.gdrive; openDlg({ title: 'Copia diaria a Google Drive', submit: 'Probar y activar', body: `<label class="f">Dirección del buzón (URL de la aplicación web, acaba en /exec)<input name="url" autocomplete="off" spellcheck="false" ${g.hasUrl ? 'placeholder="Vacío = la misma"' : 'required placeholder="https://script.google.com/macros/s/…/exec"'}></label><label class="f">Clave del buzón (la que pusiste en CLAVE)<input name="secret" type="password" autocomplete="off" ${g.hasUrl ? 'placeholder="Vacío = la misma"' : 'required'}></label><label class="f">Hora a la que se envía<select name="hour">${options(Array.from({ length: 24 }, (_, h) => [h, pad(h) + ':00']), c.hour)}</select></label>${c.hasKey ? '<p class="muted small">Se cifra con la misma contraseña de copias que ya tienes.</p>' : '<label class="f">Contraseña para cifrar las copias (mín. 10). ¡Apúntala!<input type="password" name="pw" required minlength="10" autocomplete="new-password"></label>'}`, onSubmit: async (fd) => { await api('PUT', '/api/backup/gdrive', { url: fd.get('url'), secret: fd.get('secret'), hour: +fd.get('hour'), password: fd.get('pw') || undefined }); return 'Google Drive conectado: se ha creado la carpeta «Copias Concha»'; }, after: () => { S.bk = null; loadBk(); } }); return; }
+  if (a === 'gd-send') { el.disabled = true; api('POST', '/api/backup/gdrive/send', {}).then(() => { toast('Copia guardada en tu Google Drive'); loadBk(); }, (x) => { toast(x.message, true); el.disabled = false; }); return; }
+  if (a === 'gd-off') { api('POST', '/api/backup/gdrive/off', {}).then(() => { toast('Copia a Google Drive desactivada'); loadBk(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'bk-verify') { openDlg({ title: 'Comprobar una copia', submit: 'Comprobar', body: '<label class="f">Archivo de la copia (.concha)<input type="file" name="file" required></label><label class="f">Contraseña de la copia<input type="password" name="pw" required autocomplete="off"></label><p class="muted small">No se restaura nada: solo se mira por dentro.</p>', onSubmit: async (fd) => { const f = fd.get('file'); if (!f || !f.size) throw new Error('Elige el archivo.'); const r = await api('POST', '/api/backup/verify', { content: await f.text(), password: fd.get('pw') }); S.bkInfo = r; return ''; }, after: () => { const r = S.bkInfo; showDlg('✅ La copia está bien', `<p>El archivo y la contraseña son correctos. Esta copia se podría restaurar.</p><dl class="facts"><div><dt>Hecha el</dt><dd>${r.at ? fmtTs(r.at, true) : '—'}</dd></div><div><dt>Clientes activos</dt><dd>${r.clients}</dd></div><div><dt>Demos</dt><dd>${r.demos}</dd></div><div><dt>En la papelera</dt><dd>${r.trash}</dd></div><div><dt>Usuarios del panel</dt><dd>${r.users}</dd></div><div><dt>Servidores</dt><dd>${esc(r.servers.join(', ') || '—')}</dd></div></dl>`); } }); return; }
   if (a === 'bk-off') { api('PUT', '/api/backup/config', { on: false }).then(() => { toast('Copia diaria desactivada'); loadBk(); }, (x) => toast(x.message, true)); return; }
   if (a === 'bk-send') { el.disabled = true; api('POST', '/api/backup/send', {}).then(() => { toast('Copia enviada: mira tu Telegram'); loadBk(); }, (x) => { toast(x.message, true); el.disabled = false; }); return; }
   if (a === 'bk-restore') { openDlg({ title: 'Restaurar una copia', submit: 'Restaurar', danger: true, body: `<label class="f">Archivo de la copia (.concha)<input type="file" name="file" accept=".concha,application/octet-stream,application/json" required></label><label class="f">Contraseña de la copia<input type="password" name="pw" required autocomplete="off"></label><label class="f">Tu contraseña del panel (para confirmar)<input type="password" name="mine" required autocomplete="current-password"></label><p class="err" style="max-width:none">Todo volverá a como estaba en la copia. Lo de después se pierde.</p>`, onSubmit: async (fd) => { const f = fd.get('file'); if (!f || !f.size) throw new Error('Elige el archivo.'); const r = await api('POST', '/api/backup/restore', { content: await f.text(), password: fd.get('pw'), mine: fd.get('mine') }); setTimeout(() => location.reload(), 1500); return 'Panel restaurado. Vuelve a entrar.'; } }); return; }
   if (a === 'sec-reload') { loadSec(); return; }
+  if (a === 'sec-check') { el.disabled = true; api('GET', '/api/security').then((r) => { S.sec = r; render(); toast(r.tgLinked ? '✅ Telegram enlazado' : 'Todavía no está enlazado. En el bot pulsa «Iniciar» o envíale el código de «¿No se enlaza?».', !r.tgLinked); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
   if (a === 'sec-2fa-on') { dTotpOn(); return; }
   if (a === 'sec-2fa-off') { openDlg({ title: 'Desactivar la verificación en dos pasos', submit: 'Desactivar', danger: true, body: '<p>Tu cuenta quedará protegida solo con la contraseña.</p><label class="f">Tu contraseña<input type="password" name="password" required autocomplete="current-password"></label><label class="f">Código de la app (o un código de rescate)<input name="code" required autocomplete="one-time-code"></label>', onSubmit: async (fd) => { await api('POST', '/api/security/totp/disable', { password: fd.get('password'), code: fd.get('code') }); return 'Verificación desactivada'; }, after: () => { S.sec = null; loadSec(); } }); return; }
   if (a === 'sec-codes') { openDlg({ title: 'Códigos de rescate nuevos', submit: 'Generar', body: '<p>Los códigos que tenías dejarán de servir.</p><label class="f">Tu contraseña<input type="password" name="password" required autocomplete="current-password"></label>', onSubmit: async (fd) => { S.recCodes = (await api('POST', '/api/security/totp/codes', { password: fd.get('password') })).codes; return ''; }, after: () => { S.sec = null; loadSec(); showCodes(S.recCodes); } }); return; }
@@ -4166,6 +4350,7 @@ document.addEventListener('input', (e) => {
     return;
   }
   if (id === 'buyN' && S.pay) { const p = $('#buyP'); if (p) p.textContent = money((+e.target.value || 0) * S.pay.price, S.pay.currency); return; }
+  if (id === 'dq') { S.dq = e.target.value; const r = $('#dqr'); if (r) r.innerHTML = dqHtml(); if (S.d.servers.length && !S.seen && Date.now() - S.seenAt > 60000) loadSeen(); return; }
   if (id === 'monQ') { S.mon.q = e.target.value; monPaint(); return; }
   if (id === 'admq') S.admQ = e.target.value;
   if (id === 'lgq') { S.lg.q = e.target.value; S.lg.n = 200; }
