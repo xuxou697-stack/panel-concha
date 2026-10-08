@@ -103,6 +103,7 @@ function loadDb() {
   db.payCfg = { stripe: { on: false, key: '', whsec: '' }, nowpay: { on: false, key: '', ipn: '' }, min: 5, ...(db.payCfg || {}) };
   if (!Array.isArray(db.orders)) db.orders = [];
   db.backupCfg = { on: false, hour: 4, salt: '', key: '', last: null, lastError: '', ...(db.backupCfg || {}) };
+  db.backupCfg.gdrive = { on: false, url: '', secret: '', last: null, lastError: '', ...(db.backupCfg.gdrive || {}) };
   // Migracion desde la version anterior (una sola contrasena de panel)
   if (db.auth && !db.users.length) {
     db.users.push({ id: db.nextId++, username: 'admin', name: 'Superadministrador', role: 'super', parentId: null, credits: 0, salt: db.auth.salt, hash: db.auth.hash, disabled: false, createdAt: today() });
@@ -1923,7 +1924,7 @@ async function telegramPoll() {
         if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') continue;
         const chat = msg.chat.id, text = msg.text.trim();
         let reply;
-        const um = /^\/start\s+(u(\d+)_[0-9a-f]{10})$/i.exec(text);
+        const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
         if (/^\/stop\b/i.test(text)) {
           let n = 0;
           for (const c of db.clients) if (c.tgChat === chat) { delete c.tgChat; n++; }
@@ -3385,7 +3386,8 @@ function localCopies() {
 }
 route('GET', '/api/backup', SUPER, ({ me }) => {
   const c = db.backupCfg, cfg = db.settings.notices.telegram;
-  return { copies: localCopies(), cfg: { on: c.on, hour: c.hour, last: c.last, lastError: c.lastError, hasKey: !!c.key }, tgLinked: !!me.tgChat, bot: cfg.token ? cfg.bot : '', size: fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).size : 0 };
+  const g = c.gdrive;
+  return { copies: localCopies(), cfg: { on: c.on, hour: c.hour, last: c.last, lastError: c.lastError, hasKey: !!c.key }, gdrive: { on: g.on, hasUrl: !!g.url, last: g.last, lastError: g.lastError }, tgLinked: !!me.tgChat, bot: cfg.token ? cfg.bot : '', size: fs.existsSync(DB_FILE) ? fs.statSync(DB_FILE).size : 0 };
 });
 route('POST', '/api/backup/download', SUPER, ({ me, body }) => {
   const pw = typeof body.password === 'string' ? body.password : '';
@@ -3443,17 +3445,81 @@ route('POST', '/api/backup/send', SUPER, async ({ me }) => {
   await lock(async () => { db.backupCfg.last = new Date().toISOString(); db.backupCfg.lastError = ''; addLog('seguridad', null, 'Copia de seguridad enviada por Telegram', me); saveDb(); });
   return { ok: true };
 });
+/* Copia diaria a Google Drive: el panel la deja en un "buzón" (Apps Script) de la cuenta de Google del superadministrador */
+const GDRIVE_RE = process.env.GDRIVE_TEST ? /^https?:\/\// : /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec$/;
+async function gdriveCall(url, secret, payload) {
+  let res;
+  try { res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ clave: secret, ...payload }), redirect: 'follow', signal: AbortSignal.timeout(180000) }); }
+  catch { throw new Error('No se pudo conectar con Google. Revisa la dirección del buzón.'); }
+  const txt = await res.text();
+  let j; try { j = JSON.parse(txt); } catch { throw new Error(/<html/i.test(txt) ? 'Google no deja usar el buzón: en «Quién tiene acceso» elige «Cualquier usuario» y vuelve a implementarlo.' : `Google respondió: ${res.status}`); }
+  if (!j.ok) throw new Error(j.error === 'Clave incorrecta' ? 'La clave no coincide con la del código del buzón (línea CLAVE).' : `Google Drive: ${j.error || 'error'}`);
+  return j;
+}
+async function sendBackupDrive() {
+  const c = db.backupCfg, g = c.gdrive;
+  if (!c.key) throw new Error('Falta la contraseña de las copias.');
+  if (!g.url || !g.secret) throw new Error('Falta la dirección o la clave del buzón de Google Drive.');
+  const buf = encryptBackup(JSON.stringify(db), Buffer.from(c.key, 'hex'), c.salt);
+  if (buf.length > 35e6) throw new Error('La copia pesa demasiado para el buzón de Google (más de 35 MB).');
+  await gdriveCall(g.url, g.secret, { nombre: bkName(), datos: buf.toString('base64') });
+}
+route('PUT', '/api/backup/gdrive', SUPER, async ({ me, body }) => {
+  const c = db.backupCfg, g = c.gdrive;
+  if (body.remove) { c.gdrive = { on: false, url: '', secret: '', last: null, lastError: '' }; await lock(async () => saveDb()); return { ok: true }; }
+  const url = str(body.url, 300), secret = str(body.secret, 200);
+  if (url && !GDRIVE_RE.test(url)) throw new HttpError(400, 'La dirección debe ser la «URL de la aplicación web» de Apps Script: empieza por https://script.google.com/macros/s/ y acaba en /exec');
+  if (secret && secret.length < 10) throw new HttpError(400, 'La clave del buzón es demasiado corta: usa al menos 10 caracteres (la misma que pusiste en el código).');
+  const nu = url || g.url, ns = secret || g.secret;
+  if (!nu || !ns) throw new HttpError(400, 'Pega la dirección del buzón y su clave.');
+  let folder;
+  try { folder = (await gdriveCall(nu, ns, { prueba: true })).carpeta; } catch (e) { throw new HttpError(400, e.message); }
+  if (typeof body.password === 'string' && body.password) {
+    if (body.password.length < 10) throw new HttpError(400, 'Para las copias automáticas usa una contraseña de al menos 10 caracteres.');
+    c.salt = crypto.randomBytes(16).toString('hex'); c.key = bkKey(body.password, c.salt).toString('hex');
+  }
+  if (!c.key) throw new HttpError(400, 'Elige la contraseña con la que se cifrarán las copias.');
+  const h = Number(body.hour); if (Number.isInteger(h) && h >= 0 && h <= 23) c.hour = h;
+  c.gdrive = { ...g, url: nu, secret: ns, on: true, lastError: '' };
+  await lock(async () => { addLog('ajustes', null, `Copia diaria a Google Drive activada a las ${pad(c.hour)}:00`, me); saveDb(); });
+  return { ok: true, folder };
+});
+route('POST', '/api/backup/gdrive/off', SUPER, ({ me }) => lock(async () => { db.backupCfg.gdrive.on = false; addLog('ajustes', null, 'Copia diaria a Google Drive desactivada', me); saveDb(); return { ok: true }; }));
+route('POST', '/api/backup/gdrive/send', SUPER, async ({ me }) => {
+  try { await sendBackupDrive(); } catch (e) { throw new HttpError(400, e.message); }
+  await lock(async () => { db.backupCfg.gdrive.last = new Date().toISOString(); db.backupCfg.gdrive.lastError = ''; addLog('seguridad', null, 'Copia de seguridad enviada a Google Drive', me); saveDb(); });
+  return { ok: true };
+});
+/* Comprobar una copia: abre el archivo con su contraseña y dice qué lleva, sin restaurar nada */
+route('POST', '/api/backup/verify', SUPER, ({ body }) => {
+  const { at, json } = decryptBackup(String(body.content || ''), typeof body.password === 'string' ? body.password : '');
+  let d; try { d = JSON.parse(json); } catch { throw new HttpError(400, 'La copia está dañada.'); }
+  const cl = Array.isArray(d.clients) ? d.clients : [];
+  return { ok: true, at, clients: cl.filter((c) => !c.demo && c.status !== 'trash').length, demos: cl.filter((c) => c.demo).length, trash: cl.filter((c) => c.status === 'trash').length,
+    users: Array.isArray(d.users) ? d.users.length : 0, servers: Array.isArray(d.servers) ? d.servers.map((x) => x.name) : [], panel: (d.settings && d.settings.brand && d.settings.brand.name) || '' };
+});
 let bkBusy = false;
 async function backupJob() {
-  const c = db.backupCfg;
-  if (!c.on || bkBusy) return;
+  const c = db.backupCfg, g = c.gdrive;
+  if ((!c.on && !g.on) || !c.key || bkBusy) return;
   const now = new Date(), localH = Number(now.toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
-  if (localH < c.hour || (c.last && localDate(new Date(c.last)) === today())) return;
-  if (c.lastTry && Date.now() - c.lastTry < 30 * 60000) return; // si falla, se reintenta cada media hora
-  bkBusy = true; c.lastTry = Date.now();
-  try { await sendBackupTelegram(); c.last = new Date().toISOString(); c.lastError = ''; addLog('seguridad', null, 'Copia de seguridad diaria enviada por Telegram', null); }
-  catch (e) { c.lastError = e.message; console.error('Copia por Telegram:', e.message); }
-  finally { bkBusy = false; lock(async () => saveDb()).catch(() => {}); }
+  if (localH < c.hour) return;
+  const due = (last, tryAt) => !(last && localDate(new Date(last)) === today()) && !(tryAt && Date.now() - tryAt < 30 * 60000); // si falla, se reintenta cada media hora
+  const doTg = c.on && due(c.last, c.lastTry), doGd = g.on && due(g.last, g.lastTry);
+  if (!doTg && !doGd) return;
+  bkBusy = true;
+  try {
+    if (doTg) {
+      c.lastTry = Date.now();
+      try { await sendBackupTelegram(); c.last = new Date().toISOString(); c.lastError = ''; addLog('seguridad', null, 'Copia de seguridad diaria enviada por Telegram', null); }
+      catch (e) { c.lastError = e.message; console.error('Copia por Telegram:', e.message); }
+    }
+    if (doGd) {
+      g.lastTry = Date.now();
+      try { await sendBackupDrive(); g.last = new Date().toISOString(); g.lastError = ''; addLog('seguridad', null, 'Copia de seguridad diaria enviada a Google Drive', null); }
+      catch (e) { g.lastError = e.message; console.error('Copia a Google Drive:', e.message); notifyStaff('backup', `⚠️ No se pudo guardar la copia diaria en Google Drive: ${e.message}`); }
+    }
+  } finally { bkBusy = false; lock(async () => saveDb()).catch(() => {}); }
 }
 route('POST', '/api/backup/restore', SUPER, ({ me, body, req }) => lock(async () => {
   const pw = typeof body.password === 'string' ? body.password : '';
@@ -3761,7 +3827,7 @@ const server = http.createServer(async (req, res) => {
       let body = {};
       if (req.method !== 'GET') {
         if (req.method !== 'DELETE' && !/^application\/json/i.test(req.headers['content-type'] || '')) throw new HttpError(415, 'Formato no admitido.');
-        body = await readBody(req, pathname === '/api/backup/restore' ? 60e6 : 1e6);
+        body = await readBody(req, pathname === '/api/backup/restore' || pathname === '/api/backup/verify' ? 60e6 : 1e6);
       }
       const result = await r.handler({ req, res, body, me, params: m.groups || {} });
       if (result && result.__raw) { res.writeHead(200, result.headers); return res.end(result.__raw); }
