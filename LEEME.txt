@@ -1,0 +1,108 @@
+PANEL CONCHA - CUENTAS EMBY
+===========================
+
+PONERLO EN MARCHA
+1. Instala Node.js (version LTS) desde https://nodejs.org si no lo tienes.
+2. Copia esta carpeta al PC donde corre Emby (por ejemplo C:\panel-emby).
+3. Doble clic en iniciar.bat. Deja la ventana abierta.
+4. Abre http://localhost:3080 en el navegador.
+5. La primera vez creas el usuario y la clave del SUPERADMINISTRADOR.
+6. En el menu Servidores, conecta tu servidor Emby (direccion + API key).
+   La API key se crea en Emby: Ajustes > Avanzado > Claves de API.
+7. En Servidores, boton "Contenido": elige que bibliotecas incluye el paquete
+   Basico y cuales el 4K. Sin esto no se pueden crear cuentas.
+8. En Usuarios, crea administradores, resellers y subresellers.
+
+Los demas entran desde su equipo en http://IP-DEL-PC:3080
+(Windows puede preguntar si permites el acceso a la red: acepta.)
+Si van a entrar desde fuera de tu red, no abras el puerto tal cual:
+ponle HTTPS delante (por ejemplo con Caddy o un tunel de Cloudflare).
+
+NIVELES
+- Superadministrador: todo. Servidores, contenido, precios, reglas y usuarios.
+- Administrador: ve todas las cuentas, crea resellers y subresellers y les
+  recarga o retira creditos. No toca servidores ni precios.
+- Reseller: sus cuentas y las de sus subresellers. Crea subresellers y les
+  puede pasar creditos de su propio saldo.
+- Subreseller: solo sus cuentas.
+Superadministrador y administradores no gastan creditos.
+
+CREDITOS
+Cada alta y cada renovacion descuenta creditos segun meses y pantallas.
+La tabla de precios se cambia en Ajustes > Precios y reglas.
+Las demos son gratis: 2, 4 o 12 horas, 1 pantalla.
+Solo los administradores pueden cambiar fechas a mano o borrar cuentas.
+
+ALERTAS (menu Alertas, vienen apagadas)
+- Transcode: detecta las reproducciones que obligan al servidor a convertir
+  el video. Puede solo avisar o detenerlas con un mensaje en pantalla.
+- Sesiones excedidas: detecta cuentas con mas reproducciones a la vez que
+  pantallas contratadas. Puede solo avisar o cortar las sobrantes.
+- Las enciende un administrador con el boton Encender de cada pantalla.
+  Se comprueba cada 30 segundos. Solo se vigilan las cuentas del panel.
+
+AVISOS DE VENCIMIENTO (Ajustes > Avisos de vencimiento, vienen apagados)
+- En la pantalla de Emby: una vez al dia, cuando el cliente se conecta,
+  le sale un mensaje con los dias que le quedan (desde 5 dias antes).
+- Telegram: creas un bot con @BotFather y pegas su token. Cada cliente
+  abre una vez su enlace personal (Mas > Avisos por Telegram) y el bot
+  le avisa solo 2 dias antes. Este equipo necesita salida a internet.
+- WhatsApp: no admite envios automaticos. En Clientes > Avisos de
+  vencimiento sale la lista y se envia con un toque.
+
+QUE HACE SOLO (cada minuto)
+- El dia siguiente al vencimiento: quita las bibliotecas a la cuenta.
+- 5 dias despues sin renovar: desactiva la cuenta y la manda a la papelera.
+- 30 dias en la papelera: borra el usuario de Emby.
+- Demos: al cumplirse sus horas se desactivan; al dia siguiente se borran
+  si no se han convertido en cuenta de pago.
+Si el PC estuvo apagado, se pone al dia en cuanto arranca.
+
+QUE ARRANQUE SOLO CON WINDOWS
+Abre "Simbolo del sistema" como administrador y ejecuta (ajusta la ruta):
+  schtasks /create /tn "PanelEmby" /tr "C:\panel-emby\iniciar.bat" /sc onstart /ru SYSTEM
+Para quitarlo:
+  schtasks /delete /tn "PanelEmby" /f
+
+TUS DATOS
+- Todo esta en data\db.json (cuentas, usuarios, creditos, API key).
+- En data\copias se guarda una copia diaria de los ultimos 14 dias.
+- Para llevarte el panel a otro PC, copia la carpeta entera.
+- No compartas db.json: contiene la API key de Emby y las contrasenas
+  de Emby de tus clientes (se guardan para poder verlas y reenviarlas).
+
+SI EL SUPERADMINISTRADOR OLVIDA SU CLAVE
+Cierra el panel, abre "Simbolo del sistema" en esta carpeta y ejecuta:
+  node server.js clave NUEVACLAVE
+Despues vuelve a abrir iniciar.bat.
+
+CAMBIAR EL PUERTO
+Edita iniciar.bat y pon "set PORT=8080" en una linea antes de "node server.js".
+
+ADMINISTRADORES Y PERMISOS
+--------------------------
+En el menú, debajo de Vendedores, está «Administradores» (solo la ve el
+superadministrador y los administradores con el permiso «Gestionar Admins»).
+- Crear Sub-Admin: nombre, correo, usuario, contraseña, precio del crédito y moneda.
+- Escudo: permisos. Lo que no esté marcado, ese administrador ni lo ve ni puede hacerlo.
+- «Habilitar sistema de créditos»: ese administrador paga cada alta y renovación
+  con su saldo, como un vendedor. Los créditos se los das desde «Más».
+- Papelera: lo pasa a «Eliminados» (no puede entrar). Desde ahí se restaura o se borra.
+- Enlace: guarda la dirección de su panel Xtreme. Es solo un enlace, no sincroniza nada.
+Los administradores que ya existían conservan lo que podían hacer antes.
+
+AJUSTES (menú Ajustes)
+----------------------
+- Perfil: tu nombre y correo, moneda del panel, precio por crédito, contraseña
+  y el contacto de soporte que se ve en la pantalla de entrada.
+- Tiempos: control de pantallas (gracia, intervalo, política), límites,
+  plazos de gracia y demos.
+- Retención de datos: cuánto se guardan registros, alertas y copias.
+- Apariencia: estilo de tarjetas, tema y marca.
+- Notificaciones: avisos de vencimiento (pantalla de Emby y Telegram).
+- Importar: desde Excel (.xlsx), CSV, TXT o SQL, o leyendo el servidor Emby.
+  Columnas: username, password, server, expiration, notes, whatsapp, telegram,
+  email, package, start_date, streams, vendedor. Usa primero «Comprobar sin
+  cambiar nada».
+- Logs de actividad: todo lo que se hace en el panel, con los inicios de sesión.
+Los precios y los paquetes de créditos están en Panel, Precios y paquetes.
