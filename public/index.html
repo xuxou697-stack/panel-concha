@@ -973,7 +973,10 @@ $('#gateForm').addEventListener('submit', async (e) => {
     await api('POST', gateMode === 'setup' ? '/api/setup' : '/api/login', { username: fd.get('username'), password: fd.get('password'), captchaId: CAP ? CAP.id : '', captchaAnswer: fd.get('captcha') });
     S.view = 'resumen';
     await start();
-  } catch (err) { $('#gateErr').textContent = err.message; $('#gateErr').hidden = false; newCaptcha(); }
+  } catch (err) {
+    if ($('#gate').hidden) { $('#app').hidden = true; $('#gate').hidden = false; } // si falla al cargar el panel, se vuelve a la entrada con el aviso
+    $('#gateErr').textContent = err.message; $('#gateErr').hidden = false; newCaptcha();
+  }
   btn.disabled = false;
 });
 async function boot() {
@@ -1010,7 +1013,13 @@ function render() {
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
-  $('#main').innerHTML = fn();
+  try { $('#main').innerHTML = fn(); }
+  catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
+    console.error(ex);
+    $('#main').innerHTML = `<div class="panel pad" style="max-width:720px"><h2>Esta pantalla no se ha podido mostrar</h2><p class="err" style="max-width:none;margin:10px 0">${esc(ex && ex.message)}</p>
+      <p class="muted small">Haz una captura de este mensaje y mándasela a quien te mantiene el panel. El resto del panel sigue funcionando.</p>
+      <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" data-view="cuentas" data-filter="all">Ir a Clientes</button>${S.view !== 'resumen' ? '<button class="btn" data-view="resumen">Ir al Resumen</button>' : ''}</div></div>`;
+  }
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
   if (S.view === 'directo') { loadLive(); S.liveTimer = setInterval(loadLive, (S.d.settings.liveSec || 15) * 1000); }
   if ((S.view === 'nuevo' || S.view === 'demonueva') && $('#newClient')) wireCost(+$('#newClient').elements.serverId.value, null, $('#newClient'));
@@ -3574,7 +3583,17 @@ const idle = () => S.d && !$('.combo-pop:not([hidden])') && !dlg.open && !docume
 document.addEventListener('visibilitychange', () => { if (idle()) reload().catch(() => {}); });
 setInterval(() => { if (idle()) reload().catch(() => {}); }, 60000);
 
-boot().catch((e) => { document.body.innerHTML = `<p style="padding:40px">No se pudo cargar el panel: ${esc(e.message)}</p>`; });
+function bootFail(e) {
+  document.body.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#061a2e;color:#eaf6fb;font:16px system-ui,sans-serif">
+    <div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px">No se pudo cargar el panel</h1>
+    <p style="color:#fda4af;margin:0 0 14px">${esc(e && e.message)}</p>
+    <p style="color:#a9c6d4;margin:0 0 18px">Si acabas de actualizar, espera un minuto: el panel se está reiniciando. Se vuelve a intentar solo en <b id="bootLeft">10</b> segundos.</p>
+    <button onclick="location.reload()" style="border:0;border-radius:12px;padding:12px 22px;font-weight:700;color:#fff;background:linear-gradient(135deg,#fb923c,#ec4899,#8b5cf6);cursor:pointer">Reintentar ahora</button></div></div>`;
+  let n = 10; const t = setInterval(() => { n--; const el = document.getElementById('bootLeft'); if (el) el.textContent = n; if (n <= 0) { clearInterval(t); location.reload(); } }, 1000);
+}
+window.addEventListener('error', (e) => { if (S.d && e.message) toast('Error en el panel: ' + e.message, true); });
+window.addEventListener('unhandledrejection', (e) => { if (S.d && e.reason && e.reason.message) toast(e.reason.message, true); });
+boot().catch(bootFail);
 </script>
 </body>
 </html>
