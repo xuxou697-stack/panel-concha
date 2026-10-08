@@ -683,6 +683,126 @@ button.kc{cursor:pointer} button.kc:hover{border-color:var(--ok)}
 .sb-r em{font-style:normal;color:var(--muted);font-size:12px}
 .sb-empty{color:var(--muted);font-size:12.5px}
 @media (prefers-reduced-motion:reduce){.sb-dot.now{animation:none}}
+
+.mc .why{display:flex;flex-direction:column;gap:2px;font-size:11.5px;line-height:1.35;padding:7px 8px;border-radius:9px;color:var(--text);
+  background:linear-gradient(150deg,color-mix(in srgb,#ff7a3d 18%,var(--surface)),color-mix(in srgb,#e2457a 10%,var(--surface)));border:1px solid color-mix(in srgb,#ff7a3d 40%,var(--line))}
+.mc .why b{display:flex;align-items:center;gap:5px;font-size:12px;color:#ff8a4c} .mc .why b .ic{width:13px;height:13px;flex:none}
+.mc .why .wd{font-weight:700;font-variant-numeric:tabular-nums} .mc .why span{color:var(--muted)} .mc .why .wd{color:var(--text)}
+.mc .why em{font-style:normal;color:var(--text)}
+:root[data-theme="light"] .mc .why b{color:#d9480f}
+
+#gate .g2icon{font-size:42px;text-align:center;margin:-4px 0 8px}
+#gate .g2code{font-size:26px!important;letter-spacing:.3em;text-align:center;font-variant-numeric:tabular-nums}
+#gate .g2help{font-size:13px;color:#a9c6d4;text-align:center;margin:0 0 10px}
+:root[data-theme="light"] #gate .g2help{color:#4c6878}
+
+/* ---------- Seguridad ---------- */
+.sechero{display:flex;gap:16px;align-items:center;padding:18px 20px;border-radius:18px;margin-bottom:16px;color:#fff;
+  background:linear-gradient(135deg,#4c1d95,#7c3aed 45%,#db2777);box-shadow:0 18px 40px -24px rgba(124,58,237,.8)}
+.sechero.sh-ok{background:linear-gradient(135deg,#065f46,#10b981 55%,#0ea5e9)} .sechero.sh-mid{background:linear-gradient(135deg,#92400e,#f59e0b 55%,#ef4444)}
+.sh-ic{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.18);flex:none} .sh-ic .ic{width:30px;height:30px}
+.sh-t{flex:1;min-width:0} .sh-t small{opacity:.85} .sh-t b{display:block;font-size:26px;line-height:1.1}
+.sh-bar{height:8px;border-radius:5px;background:rgba(255,255,255,.25);margin:8px 0 6px;overflow:hidden} .sh-bar i{display:block;height:100%;background:#fff;border-radius:5px}
+.sh-t p{margin:0;font-size:13.5px;opacity:.95}
+.secgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.seccard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:14px}
+.secgrid .seccard{margin:0}
+.sc-h{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px} .sc-h h2{margin:0;font-size:17px} .sc-h small{color:var(--muted);font-size:13px} .sc-h>div{flex:1;min-width:0}
+.sc-i{--c:#3fa9f5;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.pillst{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--raised);color:var(--muted);white-space:nowrap}
+.pillst.on{background:color-mix(in srgb,#10b981 20%,transparent);color:#10b981} .pillst.off{background:color-mix(in srgb,#f0616d 18%,transparent);color:#f0616d}
+.steps{margin:0 0 4px;padding-left:20px;font-size:14px} .steps li{margin:5px 0}
+.secrow{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)} .secrow b{display:block;font-size:14px;font-weight:600} .secrow small{color:var(--muted);font-size:12.5px}
+.seslist{display:flex;flex-direction:column;gap:8px}
+.ses{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.ses.cur{border-color:color-mix(in srgb,#10b981 50%,var(--line))} .ses>div{flex:1;min-width:0} .ses small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.ses-i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--raised);flex:none}
+.rescue{margin-top:12px;font-size:14px} .rescue summary{cursor:pointer;font-weight:600;color:var(--brand)} .rescue pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:6px 0;overflow-x:auto}
+.qrbox{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px} .qrbox p{margin:0 0 8px;font-size:14px}
+.qr{width:180px;flex:none;border-radius:12px;overflow:hidden;background:#fff;padding:6px} .qr svg{display:block;width:100%;height:auto}
+.secret{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;letter-spacing:.05em;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;overflow-wrap:anywhere}
+.bigcode{font-size:24px!important;letter-spacing:.3em;text-align:center}
+.codes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0} .codes code{font-size:17px;font-weight:700;text-align:center;padding:9px;border-radius:10px;background:var(--bg);border:1px solid var(--line);letter-spacing:.06em}
+.lnk{background:none;border:0;padding:0;color:var(--brand);cursor:pointer;font:inherit;text-decoration:underline}
+@media (max-width:860px){.secgrid{grid-template-columns:1fr} .qrbox{flex-direction:column;align-items:center;text-align:center} .sechero{padding:16px} .sh-t b{font-size:22px}}
+
+/* ---------- Inactivos, estadísticas, ingresos ---------- */
+.itiles,.ktiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.itile,.ktile{--c:#3fa9f5;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:16px;border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));background:linear-gradient(150deg,color-mix(in srgb,var(--c) 20%,var(--surface)),var(--surface) 75%)}
+.itile b,.ktile b{font-size:26px;color:var(--c);line-height:1.15;font-variant-numeric:tabular-nums} .itile span,.ktile span{color:var(--muted);font-size:13px}
+.ktile .ic{color:var(--c);width:20px;height:20px;margin-bottom:4px} .ktile small.up{color:#19c37d;font-weight:700} .ktile small.down{color:#f0616d;font-weight:700}
+.chip.on{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.ago{font-weight:700;font-size:13px;padding:3px 9px;border-radius:999px} .ago.mid{background:color-mix(in srgb,#f59e0b 20%,transparent);color:#f59e0b} .ago.old,.ago.never{background:color-mix(in srgb,#f0616d 18%,transparent);color:#f0616d}
+.ugrid{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px} .ugrid>div{display:flex;flex-direction:column;gap:14px} .ugrid .panel{margin:0}
+.panel.pad h2{margin:0 0 10px;font-size:17px}
+.rbars{display:flex;flex-direction:column;gap:9px}
+.rb{--c:#3fa9f5;display:flex;gap:10px;align-items:center} .rn{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:var(--c);flex:none}
+.rt{flex:1;min-width:0} .rl{display:flex;gap:8px;align-items:baseline;min-width:0} .rl b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .rl small{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0} .rl em{font-style:normal;font-weight:700;font-size:12.5px;margin-left:auto;white-space:nowrap}
+.rbar{height:7px;border-radius:4px;background:color-mix(in srgb,var(--text) 8%,transparent);margin-top:4px;overflow:hidden} .rbar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--c),color-mix(in srgb,var(--c) 55%,#fff))}
+.cchart{--c:#3fa9f5;display:flex;align-items:flex-end;gap:3px;height:170px;padding-top:6px}
+.cc{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:4px}
+.cc i{display:block;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 45%,transparent));min-height:0}
+.cc span{font-size:10.5px;color:var(--muted);text-align:center;height:13px;white-space:nowrap;overflow:visible}
+.cc:hover i{filter:brightness(1.2)}
+@media (max-width:860px){.ugrid{grid-template-columns:1fr} .cchart{height:140px;gap:2px} .itile b,.ktile b{font-size:22px} .ktiles,.itiles{grid-template-columns:1fr 1fr}}
+.sectip{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;margin-bottom:14px;color:#fff;background:linear-gradient(135deg,#7c3aed,#db2777)}
+.sectip>.ic{width:26px;height:26px;flex:none} .sectip div{flex:1;min-width:0} .sectip b{display:block} .sectip span{font-size:13px;opacity:.92} .sectip .btn{background:#fff;color:#7c3aed;border-color:#fff}
+
+/* ---------- Buscador rápido ---------- */
+.qsbtn{display:flex;align-items:center;gap:8px;margin:0 14px 12px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer;font:inherit;font-size:13.5px;text-align:left;transition:border-color .15s,box-shadow .15s}
+.qsbtn:hover{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.qsbtn .ic{width:17px;height:17px;color:var(--brand)} .qsbtn span{flex:1}
+kbd{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--raised);color:var(--muted)}
+.qsm{display:none}
+#qs{width:min(620px,calc(100vw - 20px));max-height:min(620px,calc(100vh - 40px));margin:8vh auto auto;padding:0;border-radius:18px;border:1px solid color-mix(in srgb,var(--brand) 35%,var(--line));background:var(--surface);color:var(--text);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);overflow:hidden;flex-direction:column}
+#qs[open]{display:flex}
+#qs::backdrop{background:rgba(4,12,20,.6);backdrop-filter:blur(3px)}
+.qs-in{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:linear-gradient(120deg,color-mix(in srgb,#3fa9f5 12%,var(--surface)),color-mix(in srgb,#a46bff 10%,var(--surface)))}
+.qs-in .ic{width:22px;height:22px;color:var(--brand);flex:none}
+.qs-in input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;font-size:17px;outline:none;padding:6px 0}
+.qs-x{border:1px solid var(--line);background:var(--raised);color:var(--muted);border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer}
+#qsr{overflow-y:auto;padding:6px;flex:1}
+.qs-g{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 10px 4px}
+.qs-it{display:flex;align-items:center;gap:11px;width:100%;padding:8px 10px;border:0;border-radius:11px;background:none;color:var(--text);cursor:pointer;text-align:left;font:inherit}
+.qs-it.on,.qs-it:hover{background:color-mix(in srgb,var(--brand) 16%,transparent)}
+.qs-i{--c:#3fa9f5;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.qs-i .ic{width:17px;height:17px} .qs-i.k-accion{--c:#ff7a3d} .qs-i.k-cliente{--c:#19c37d} .qs-i.k-vendedor{--c:#a46bff}
+.qs-t{flex:1;min-width:0} .qs-t b{display:block;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .qs-t small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qs-k{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.qs-none{padding:26px 16px;text-align:center;color:var(--muted)}
+.qs-foot{display:flex;gap:14px;justify-content:flex-end;padding:8px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)} .qs-foot kbd{margin-right:3px}
+@media (max-width:860px){
+  .qsm{display:grid;place-items:center;position:fixed;top:9px;right:112px;z-index:26;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,#3fa9f5 22%,var(--surface)),color-mix(in srgb,#a46bff 22%,var(--surface)));color:var(--text);cursor:pointer}
+  .qsm .ic{width:20px;height:20px}
+  #qs{margin:10px auto auto;max-height:calc(100vh - 20px)} .qs-foot{display:none} .qs-k{display:none}
+}
+
+/* ---------- Auditoría ---------- */
+.au-srv{display:flex;flex-direction:column;gap:8px;margin-bottom:14px} .au-srv>div{display:flex;gap:10px;align-items:center;flex-wrap:wrap} .au-srv span{color:var(--muted);font-size:13px;flex:1} .au-srv em{font-style:normal}
+.au-sec{margin-bottom:18px;padding-left:12px;border-left:4px solid var(--c,#f0616d)} .au-red{--c:#f0616d} .au-amber{--c:#f59e0b} .au-violet{--c:#a46bff}
+.au-sec .sec-h h2{color:var(--c)}
+.au-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 10px} .au-bar .sp{flex:1} .au-all{padding:0}
+.au-cb{width:18px;height:18px;cursor:pointer}
+.au-pr{margin:0;padding-left:18px;font-size:13px} .au-pr li{margin:2px 0}
+.ktile small.muted{font-size:11.5px}
+
+/* ---------- Comprar créditos ---------- */
+.packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.pack{--c:#3fa9f5;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:16px;border:1px solid color-mix(in srgb,var(--c) 40%,var(--line));background:linear-gradient(155deg,color-mix(in srgb,var(--c) 22%,var(--surface)),var(--surface) 72%)}
+.pack::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--c)}
+.pk-n{font-size:12.5px;font-weight:700;color:var(--c);text-transform:uppercase;letter-spacing:.05em}
+.pack b{font-size:30px;line-height:1.1} .pack b small{font-size:13px;color:var(--muted);font-weight:600}
+.pk-p{font-size:18px;font-weight:700;margin-bottom:8px}
+.pk-b{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.pk-free input{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:20px;font-weight:700;color:var(--text);width:100%}
+.cpy{display:flex;gap:8px;align-items:center;margin:4px 0 10px} .cpy code{flex:1;min-width:0;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px}
+.pillst.mid{background:color-mix(in srgb,#f5a524 20%,transparent);color:#f5a524}
+
+.rfbox{border:1px solid color-mix(in srgb,#19c37d 40%,var(--line));background:linear-gradient(150deg,color-mix(in srgb,#19c37d 14%,var(--surface)),var(--surface) 70%);border-radius:14px;padding:12px 14px;margin:10px 0}
+.rfh{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px} .rfh .ic{color:#19c37d;width:22px;height:22px;flex:none} .rfh b{display:block;font-size:16px} .rfh small{color:var(--muted);font-size:12.5px}
+.rfwho{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line);font-size:14px} .rfwho b{color:#19c37d}
+.rftab{width:100%;font-size:13px;margin-top:6px} .rftab th{font-size:12px;color:var(--muted);text-align:left;padding:4px 6px} .rftab td{padding:6px;border-top:1px solid var(--line);vertical-align:top}
+.kind.devolucion{color:#19c37d}
 </style>
 </head>
 <body>
@@ -700,10 +820,18 @@ button.kc{cursor:pointer} button.kc:hover{border-color:var(--ok)}
     <form id="gateForm" class="gcard">
       <h1 id="gateTitle">Iniciar sesión</h1>
       <p id="gateText"></p>
+      <div id="gStep1">
       <label class="f">Usuario<input name="username" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tu usuario"></label>
       <label class="f"><span id="gateLabel">Contraseña</span><span class="pwrow"><input type="password" name="password" required autocomplete="current-password" placeholder="••••••••"><button type="button" class="eye" data-act="gate-eye" aria-label="Mostrar la contraseña"></button></span></label>
       <label class="f"><span class="capq" id="capQ">… = ?</span><input name="captcha" required inputmode="numeric" autocomplete="off" placeholder="Tu respuesta"></label>
       <button type="button" class="gnew" data-act="gate-cap">↻ Nueva pregunta</button>
+      </div>
+      <div id="gStep2" hidden>
+        <div class="g2icon" aria-hidden="true">🔐</div>
+        <label class="f">Código de tu app de verificación<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="000 000" class="g2code"></label>
+        <p class="g2help">Abre Google Authenticator (o la app que uses) y escribe los 6 números de este panel. Si has perdido el móvil, escribe uno de tus <b>códigos de rescate</b>.</p>
+        <button type="button" class="gnew" data-act="gate-back">← Volver a empezar</button>
+      </div>
       <p class="derr" id="gateErr" hidden></p>
       <button class="gbtn" type="submit" id="gateBtn">Acceder</button>
       <div class="gatehelp" id="gateHelp" hidden></div>
@@ -716,6 +844,7 @@ button.kc{cursor:pointer} button.kc:hover{border-color:var(--ok)}
   <aside class="side">
     <button type="button" class="brand" data-view="resumen" title="Ir al resumen" aria-label="Ir al resumen"><span class="logo"></span><span><b class="brand-name">Concha</b><span class="sub">Cuentas Emby</span></span></button>
     <div class="clock" aria-label="Fecha y hora"><div class="ctime"><b data-clock="hm">--:--</b><i data-clock="s">00</i></div><div class="cday" data-clock="day"></div><div class="cdate" data-clock="date"></div></div>
+    <button type="button" class="qsbtn" data-act="qs" aria-label="Buscar opciones, clientes o vendedores (Ctrl+K)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><span>Buscar…</span><kbd>Ctrl K</kbd></button>
     <nav class="nav" id="nav" aria-label="Secciones"></nav>
     <div class="sidefoot">
       <div id="who"></div>
@@ -724,12 +853,14 @@ button.kc{cursor:pointer} button.kc:hover{border-color:var(--ok)}
     </div>
   </aside>
   <button type="button" class="brand topbar" data-view="resumen" title="Ir al resumen" aria-label="Ir al resumen"><span class="logo"></span><b class="brand-name">Concha</b><span class="topclock"><b data-clock="hm">--:--</b><span data-clock="short"></span></span></button>
+  <button type="button" class="qsm" data-act="qs" aria-label="Buscar opciones, clientes o vendedores"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg></button>
   <main id="main"></main>
   <div id="shade" data-act="menu"></div>
   <nav class="tabbar" id="tabbar" aria-label="Accesos rápidos"></nav>
 </div>
 
 <dialog id="dlg"><form id="dlgForm"></form></dialog>
+<dialog id="qs" aria-label="Buscador del panel"><div class="qs-in"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><input id="qsq" type="search" placeholder="Buscar: renovar, Telegram, Juan…" autocomplete="off" spellcheck="false" aria-label="Buscar" role="combobox" aria-expanded="true" aria-controls="qsr"><button type="button" class="qs-x" data-act="qs-close" aria-label="Cerrar">Cerrar</button></div><div id="qsr" role="listbox"></div><div class="qs-foot"><span><kbd>↑</kbd><kbd>↓</kbd> moverse</span><span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> cerrar</span></div></dialog>
 <div id="toast" hidden role="status"></div>
 
 <script>
@@ -795,7 +926,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -873,7 +1004,7 @@ function navGroups() {
       { v: 'demonueva', t: 'Nueva', i: 'plus' }, { v: 'cuentas', f: 'demo', t: 'Activas', i: 'play', n: cnt.demo },
       { v: 'demosvencidas', t: 'Vencidas', i: 'clock', n: trash().filter((c) => c.demo).length }, { v: 'movdemos', t: 'Movimientos', i: 'history' }] },
     { k: 'emby', t: 'Emby', i: 'server', items: emby },
-    ...(noCli() ? [] : [{ k: 'mon', t: 'Monitor', i: 'radio', items: [{ v: 'monitor', t: 'Monitor', i: 'screen' }] }]),
+    ...(noCli() ? [] : [{ k: 'mon', t: 'Monitor', i: 'radio', items: [{ v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'inactivos', t: 'Inactivos', i: 'pause' }, ...(staff() && canDo('reports') ? [{ v: 'uso', t: 'Estadísticas de uso', i: 'chart' }] : [])] }]),
     { k: 'al', t: 'Alertas', i: 'bell', items: [
       { v: 'altrans', t: 'Transcode', i: 'bolt' }, { v: 'alses', t: 'Sesiones excedidas', i: 'screen' }, { v: 'alhist', t: 'Historial de alertas', i: 'history', n: S.d.alertsUnread, hot: true }] },
   ];
@@ -885,9 +1016,11 @@ function navGroups() {
     ...(staff() && canDo('resellers') ? [{ v: 'venajustes', t: 'Ajustes vendedores', i: 'sliders' }] : [])] });
   if (canDo('admins')) g.push({ k: 'adm', items: [{ v: 'admins', t: 'Administradores', i: 'shield' }] });
   const sys = canDo('system');
-  g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
+  g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
   g.push({ k: 'aj', t: 'Ajustes', i: 'sliders', items: [
     { v: 'perfil', t: 'Perfil', i: 'user' },
+    { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
+    ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
     ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
     ...(staff() && !noCli() && !me().useCredits ? [{ v: 'importar', t: 'Importar', i: 'download' }] : []),
     ...(staff() && canDo('reports') ? [{ v: 'logs', t: 'Logs de actividad', i: 'signal' }] : [])] });
@@ -949,6 +1082,8 @@ function showGate(setup) {
   $('#gateYear').textContent = new Date().getFullYear();
   $('#gateErr').hidden = true;
   $('#gateForm').reset();
+  TICKET = null; $('#gStep1').hidden = false; $('#gStep2').hidden = true;
+  ['username', 'password', 'captcha'].forEach((n) => { $('#gateForm').elements[n].required = true; }); $('#gateForm').elements.code.required = false;
   newCaptcha();
   // Contacto de soporte para quien no puede entrar (se configura en Ajustes, Perfil)
   const sp = SUPPORT || {}, help = $('#gateHelp'), wa = waNum(sp.whatsapp), tg = String(sp.telegram || '').replace(/^@/, '').replace(/^https?:\/\/t\.me\//, '');
@@ -965,17 +1100,39 @@ async function newCaptcha() {
   try { CAP = await api('GET', '/api/captcha'); $('#capQ').textContent = `${CAP.q} = ?`; }
   catch (e) { CAP = null; $('#capQ').textContent = 'No se pudo cargar la pregunta'; }
 }
+let TICKET = null;
+function gateStep(two) {
+  $('#gStep1').hidden = two; $('#gStep2').hidden = !two;
+  const f = $('#gateForm').elements;
+  ['username', 'password', 'captcha'].forEach((n) => { f[n].required = !two; });
+  f.code.required = two; f.code.value = '';
+  $('#gateTitle').textContent = two ? 'Verificación en dos pasos' : (gateMode === 'setup' ? 'Bienvenido' : 'Iniciar sesión');
+  $('#gateText').textContent = two ? 'Tu cuenta está protegida con un segundo paso.' : (gateMode === 'setup' ? 'Primera vez: crea el usuario superadministrador. La contraseña necesita al menos 8 caracteres.' : 'Entra con tu usuario del panel.');
+  $('#gateBtn').textContent = two ? 'Verificar y entrar' : (gateMode === 'setup' ? 'Crear superadministrador y entrar' : 'Acceder');
+  $('#gateErr').hidden = true;
+  if (two) setTimeout(() => f.code.focus(), 50); else { TICKET = null; newCaptcha(); }
+}
 $('#gateForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target), btn = $('#gateBtn');
   btn.disabled = true;
   try {
-    await api('POST', gateMode === 'setup' ? '/api/setup' : '/api/login', { username: fd.get('username'), password: fd.get('password'), captchaId: CAP ? CAP.id : '', captchaAnswer: fd.get('captcha') });
+    if (TICKET) {
+      const r = await api('POST', '/api/login/2fa', { ticket: TICKET, code: fd.get('code') });
+      TICKET = null;
+      if (r.rescue) setTimeout(() => toast(`Has entrado con un código de rescate. Te quedan ${r.left}.`), 600);
+    } else {
+      const r = await api('POST', gateMode === 'setup' ? '/api/setup' : '/api/login', { username: fd.get('username'), password: fd.get('password'), captchaId: CAP ? CAP.id : '', captchaAnswer: fd.get('captcha') });
+      if (r.need2fa) { TICKET = r.ticket; gateStep(true); btn.disabled = false; return; }
+    }
     S.view = 'resumen';
+    gateStep(false);
     await start();
   } catch (err) {
     if ($('#gate').hidden) { $('#app').hidden = true; $('#gate').hidden = false; } // si falla al cargar el panel, se vuelve a la entrada con el aviso
-    $('#gateErr').textContent = err.message; $('#gateErr').hidden = false; newCaptcha();
+    if (TICKET && /tiempo|empezar|contraseña/i.test(err.message)) gateStep(false);
+    $('#gateErr').textContent = err.message; $('#gateErr').hidden = false;
+    if (!TICKET) newCaptcha(); else { const c = $('#gateForm').elements.code; c.value = ''; c.focus(); }
   }
   btn.disabled = false;
 });
@@ -986,7 +1143,7 @@ async function boot() {
   if (!st.authed) return showGate(false);
   await start();
 }
-async function start() { $('#gate').hidden = true; $('#app').hidden = false; await reload(); }
+async function start() { $('#gate').hidden = true; $('#app').hidden = false; await reload(); payReturn(); }
 async function reload() { S.d = await api('GET', '/api/data'); render(); }
 
 /* ---------- Pintado ---------- */
@@ -1012,7 +1169,7 @@ function render() {
   applyBrand(d.settings.brand); applyTheme();
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, ingresos: vIngresos, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -1020,6 +1177,12 @@ function render() {
       <p class="muted small">Haz una captura de este mensaje y mándasela a quien te mantiene el panel. El resto del panel sigue funcionando.</p>
       <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" data-view="cuentas" data-filter="all">Ir a Clientes</button>${S.view !== 'resumen' ? '<button class="btn" data-view="resumen">Ir al Resumen</button>' : ''}</div></div>`;
   }
+  if ((S.view === 'pagos' || S.view === 'creditos') && !S.pay && !S.payBusy) loadPay();
+  if (S.view === 'seguridad' && !S.sec && !S.secBusy) loadSec();
+  if (S.view === 'copias' && !S.bk && !S.bkBusy) loadBk();
+  if (S.view === 'uso' && !S.uso && !S.usoBusy) loadUso();
+  if (S.view === 'ingresos' && !S.ing && !S.ingBusy) loadIng();
+  if (S.view === 'inactivos' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
   if (S.view === 'directo') { loadLive(); S.liveTimer = setInterval(loadLive, (S.d.settings.liveSec || 15) * 1000); }
   if ((S.view === 'nuevo' || S.view === 'demonueva') && $('#newClient')) wireCost(+$('#newClient').elements.serverId.value, null, $('#newClient'));
@@ -1081,6 +1244,7 @@ async function loadSeen() {
   document.querySelectorAll('[data-seen]').forEach((el) => { el.textContent = seenText(+el.dataset.seen); });
   document.querySelectorAll('[data-seenbox]').forEach((el) => { el.innerHTML = seenBox(+el.dataset.seenbox); });
   if (S.view === 'cuentas' && S.sort === 'seen' && !dlg.open && !$('.combo-pop:not([hidden])')) render();
+  if (S.view === 'inactivos' && !dlg.open) render();
 }
 function contactHtml(c) {
   const out = [];
@@ -1191,7 +1355,8 @@ function vResumen() {
   const quick = `<div class="qa">${qa('data-act="new"', 'userplus', 'Nueva cuenta', 'pri q-sea')}${qa('data-act="demo"', 'timer', 'Nueva demo', 'q-violet')}${qa('data-view="cuentas" data-filter="soon"', 'clock', 'Por vencer', 'q-sun')}${staff() ? qa('data-act="import"', 'download', 'Importar', 'q-coral') : qa('data-view="cuentas" data-filter="all"', 'list', 'Clientes', 'q-coral')}</div>`;
   // Estados de las cuentas, cada uno lleva a su lista
   const sc = (k, n, label, hint, icon) => `<button type="button" class="sc sc-${k}" data-act="goto" data-filter="${k}"><span class="sc-i">${ic(icon)}</span><b>${n}</b><span class="sc-l">${label}</span><small>${hint}</small></button>`;
-  return `<h1 class="sr-only">Resumen</h1>` + hero + quick + `
+  const secTip = isSuper() && !d.me.twoFa ? `<div class="sectip">${ic('shield')}<div><b>Protege tu cuenta de superadministrador</b><span>Activa la verificación en dos pasos: aunque te roben la contraseña, nadie podrá entrar sin tu móvil.</span></div><button class="btn primary sm" data-view="seguridad">Activar</button></div>` : '';
+  return `<h1 class="sr-only">Resumen</h1>` + secTip + hero + quick + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
     ${sc('active', cnt.active, 'Activas', 'con su contenido', 'check')}
@@ -1427,25 +1592,65 @@ function vCobros() {
 }
 
 function vAuditoria() {
-  return head('Auditoría', 'Compara las cuentas del panel con los usuarios que hay de verdad en Emby.', '<button class="btn" data-act="audit">Volver a comprobar</button>') + `<div id="audit">${auditHtml()}</div>`;
+  return head('Auditoría', 'Compara los clientes del panel con los usuarios que hay de verdad en cada servidor Emby, por si alguno se ha quedado sin eliminar.', '<button class="btn primary" data-act="audit">' + ic('refresh') + 'Volver a comprobar</button>') + `<div id="audit">${auditHtml()}</div>`;
 }
 function auditHtml() {
   const a = S.audit;
-  if (!a) return '<div class="panel"><div class="empty">Comprobando Emby…</div></div>';
+  if (!a) return '<div class="panel"><div class="empty">Comprobando Emby… (puede tardar un poco si hay muchas cuentas)</div></div>';
+  S.auSel = S.auSel || { emby: new Set(), gone: new Set(), mis: new Set() };
+  const sel = S.auSel;
   let h = a.errors.map((e) => `<p class="err" style="max-width:none;margin-bottom:10px">${esc(e)}</p>`).join('');
+  const tile = (n, label, c, icon, hint) => `<div class="ktile" style="--c:${c}">${ic(icon)}<b>${n}</b><span>${label}</span>${hint ? `<small class="muted">${hint}</small>` : ''}</div>`;
+  const ok = a.checked - a.notInEmby.length - a.mismatch.length;
+  h += `<div class="ktiles">${tile(ok, 'cuentas que cuadran', '#19c37d', 'check')}${tile(a.notInPanel.length, 'en Emby pero no en el panel', '#f0616d', 'alert', 'se han quedado sin eliminar o se crearon a mano')}${tile(a.notInEmby.length, 'en el panel pero ya no en Emby', '#f59e0b', 'trash')}${tile(a.mismatch.length, 'con diferencias', '#a46bff', 'wrench')}</div>`;
+  if ((a.servers || []).length) h += `<div class="panel pad au-srv">${a.servers.map((x) => `<div><b>${esc(x.name)}</b><span>${x.emby} usuarios en Emby · ${x.panel} en el panel${x.admins ? ` · ${plural(x.admins, 'administrador', 'administradores')} (no se cuentan)` : ''}</span>${x.emby === x.panel ? '<em class="pillst on">Cuadra</em>' : `<em class="pillst off">${x.emby > x.panel ? '+' + (x.emby - x.panel) + ' en Emby' : '+' + (x.panel - x.emby) + ' en el panel'}</em>`}</div>`).join('')}</div>`;
   if (!a.notInPanel.length && !a.notInEmby.length && !a.mismatch.length) {
-    return h + `<div class="panel"><div class="empty">${a.errors.length ? 'No se pudo comprobar.' : `Todo cuadra: ${plural(a.checked, 'cuenta revisada', 'cuentas revisadas')} y ninguna diferencia con Emby.`}</div></div>`;
+    return h + `<div class="panel"><div class="empty">${a.errors.length ? 'No se pudo comprobar.' : `✅ Todo cuadra: ${plural(a.checked, 'cuenta revisada', 'cuentas revisadas')} y ninguna diferencia con Emby.`}</div></div>`;
   }
-  const who = (r) => `<span class="name">${esc(r.panelName)}</span> <span class="muted small">${esc(r.embyName)}${S.d.servers.length > 1 ? ', ' + esc(r.server) : ''}${r.owner ? ', de ' + esc(r.owner) : ''}</span>`;
-  if (a.mismatch.length) h += `<section><h2>Estado distinto en Emby (${a.mismatch.length})</h2><div class="panel pad audit"><p class="muted small">Alguien lo cambió a mano en Emby. Renovar o editar la cuenta desde el panel vuelve a aplicar su estado.</p><ul>${a.mismatch.map((r) => `<li>${who(r)}: ${esc(r.problems.join('; '))}.</li>`).join('')}</ul></div></section>`;
-  if (a.notInEmby.length) h += `<section><h2>En el panel, pero borradas de Emby (${a.notInEmby.length})</h2><div class="panel pad audit"><p class="muted small">Ya no existen en el servidor. Dalas de baja y elimínalas desde la Papelera.</p><ul>${a.notInEmby.map((r) => `<li>${who(r)}</li>`).join('')}</ul></div></section>`;
-  if (a.notInPanel.length) h += `<section><div class="head" style="margin-bottom:12px"><h2>En Emby, pero fuera del panel (${a.notInPanel.length})</h2><button class="btn" data-act="import">Importar de Emby</button></div><div class="panel pad audit"><p class="muted small">Usuarios que nadie controla: no caducan ni gastan créditos. Los administradores de Emby no se cuentan.</p><ul>${a.notInPanel.map((r) => `<li><span class="name">${esc(r.name)}</span>${S.d.servers.length > 1 ? ' <span class="muted small">' + esc(r.server) + '</span>' : ''}${r.disabled ? ' <span class="muted small">(desactivado)</span>' : ''}</li>`).join('')}</ul></div></section>`;
-  return h;
+  const cb = (grp, key, label) => `<input type="checkbox" class="au-cb" data-au="${grp}" data-k="${esc(key)}"${sel[grp].has(key) ? ' checked' : ''} aria-label="Seleccionar ${esc(label)}">`;
+  const all = (grp, keys) => `<label class="check au-all"><input type="checkbox" data-auall="${grp}"${keys.length && keys.every((k) => sel[grp].has(k)) ? ' checked' : ''}> Seleccionar todas (${keys.length})</label>`;
+  const multi = S.d.servers.length > 1;
+  // 1) En Emby pero no en el panel: lo que se ha quedado sin eliminar
+  if (a.notInPanel.length) {
+    const keys = a.notInPanel.map((r) => r.serverId + ':' + r.embyId), n = keys.filter((k) => sel.emby.has(k)).length;
+    h += `<section class="au-sec au-red"><div class="sec-h"><h2>En Emby, pero fuera del panel (${a.notInPanel.length})</h2></div>
+      <p class="muted small">Usuarios de Emby que el panel no controla: no caducan ni gastan créditos. Suelen ser cuentas que se quedaron sin eliminar o que alguien creó a mano en Emby. Los administradores de Emby no salen aquí y nunca se tocan.</p>
+      <div class="au-bar">${all('emby', keys)}<span class="sp"></span>
+        <button class="btn sm" data-act="au-emby" data-do="disable"${n ? '' : ' disabled'}>${ic('power')}Desactivar${n ? ` (${n})` : ''}</button>
+        <button class="btn sm danger" data-act="au-emby" data-do="delete"${n ? '' : ' disabled'}>${ic('trash')}Eliminar de Emby${n ? ` (${n})` : ''}</button>
+        <button class="btn sm" data-act="import">${ic('download')}Pasarlas al panel</button></div>
+      <div class="panel"><table class="cards"><thead><tr><th></th><th>Usuario de Emby</th><th>Estado en Emby</th><th>Última conexión</th></tr></thead><tbody>${a.notInPanel.map((r) => `<tr>
+        <td style="width:34px">${cb('emby', r.serverId + ':' + r.embyId, r.name)}</td>
+        <td><div class="name">${esc(r.name)}</div>${multi ? `<div class="small muted">${esc(r.server)}</div>` : ''}${r.created ? `<div class="small muted">Creado el ${fmtTs(r.created, true)}</div>` : ''}</td>
+        <td>${r.disabled ? '<span class="pillst">Desactivado</span>' : r.libs ? '<span class="pillst off">Activo, con contenido</span>' : '<span class="pillst">Activo, sin bibliotecas</span>'}</td>
+        <td>${r.seen ? fmtTs(r.seen, true) : '<span class="muted">nunca</span>'}</td></tr>`).join('')}</tbody></table></div></section>`;
+  }
+  // 2) En el panel pero ya no en Emby
+  if (a.notInEmby.length) {
+    const keys = a.notInEmby.map((r) => String(r.id)), n = keys.filter((k) => sel.gone.has(k)).length;
+    h += `<section class="au-sec au-amber"><div class="sec-h"><h2>En el panel, pero borradas de Emby (${a.notInEmby.length})</h2></div>
+      <p class="muted small">Ya no existen en el servidor (alguien las borró en Emby). Quítalas del panel para que no cuenten.</p>
+      <div class="au-bar">${all('gone', keys)}<span class="sp"></span><button class="btn sm danger" data-act="au-forget"${n ? '' : ' disabled'}>${ic('trash')}Quitar del panel${n ? ` (${n})` : ''}</button></div>
+      <div class="panel"><table class="cards"><thead><tr><th></th><th>Cuenta</th><th>Servidor</th><th>Vendedor</th></tr></thead><tbody>${a.notInEmby.map((r) => `<tr>
+        <td style="width:34px">${cb('gone', String(r.id), r.panelName)}</td><td><div class="name">${esc(r.panelName)}</div><div class="small muted">${esc(r.embyName)}</div></td><td>${esc(r.server)}</td><td>${esc(r.owner || '—')}</td></tr>`).join('')}</tbody></table></div></section>`;
+  }
+  // 3) Diferencias
+  if (a.mismatch.length) {
+    const keys = a.mismatch.map((r) => String(r.id)), n = keys.filter((k) => sel.mis.has(k)).length;
+    h += `<section class="au-sec au-violet"><div class="sec-h"><h2>Estado distinto en Emby (${a.mismatch.length})</h2></div>
+      <p class="muted small">Alguien lo cambió a mano en Emby. «Reparar» vuelve a aplicar lo que dice el panel (bibliotecas, pantallas, sin transcodificación…).</p>
+      <div class="au-bar">${all('mis', keys)}<span class="sp"></span><button class="btn sm primary" data-act="au-repair"${n ? '' : ' disabled'}>${ic('wrench')}Reparar${n ? ` (${n})` : ''}</button></div>
+      <div class="panel"><table class="cards"><thead><tr><th></th><th>Cuenta</th><th>Qué pasa</th><th class="r"></th></tr></thead><tbody>${a.mismatch.map((r) => `<tr>
+        <td style="width:34px">${cb('mis', String(r.id), r.panelName)}</td><td><div class="name">${esc(r.panelName)}</div><div class="small muted">${esc(r.embyName)}${multi ? ', ' + esc(r.server) : ''}${r.owner ? ', de ' + esc(r.owner) : ''}</div></td>
+        <td><ul class="au-pr">${r.problems.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></td><td class="r"><button class="btn sm" data-act="m-repair" data-id="${r.id}">Reparar</button></td></tr>`).join('')}</tbody></table></div></section>`;
+  }
+  return h + `<p class="muted small">Comprobado ${fmtTs(a.at || new Date().toISOString(), true)} · ${plural(a.checked, 'cuenta del panel revisada', 'cuentas del panel revisadas')}.</p>`;
 }
 async function loadAudit() {
   S.auditBusy = true; S.audit = null;
   const paint = () => { const el = $('#audit'); if (el) el.innerHTML = auditHtml(); };
   paint();
+  S.auSel = null;
   try { S.audit = await api('GET', '/api/audit'); }
   catch (e) { S.audit = { errors: [e.message], notInPanel: [], notInEmby: [], mismatch: [], checked: 0 }; }
   S.auditBusy = false;
@@ -1595,6 +1800,7 @@ function papeleraTable(rows) {
       <td>${fmt(c.trashedAt)}</td><td>${del}</td>
       <td class="r"><div class="acts">
         ${valid ? `<button class="btn sm primary" data-act="restore" data-id="${c.id}">Restaurar</button>` : `<button class="btn sm primary" data-act="renew" data-id="${c.id}">${c.demo ? 'Convertir en cuenta' : 'Extender'}</button>`}
+        ${c.demo ? '' : `<button class="btn sm" data-act="del-refund" data-id="${c.id}">Eliminar y devolver</button>`}
         ${staff() ? `<button class="btn sm ghost" data-act="delete" data-id="${c.id}">Eliminar ya</button>` : ''}
       </div></td></tr>`;
   }).join('')}</tbody></table></div>`;
@@ -1645,7 +1851,8 @@ function vMonitor() {
   const acts = `<div class="mon-top"><div class="mon-clock">${ic('clock')}<select id="monEvery" aria-label="Actualizar cada">${options([[15, 'Cada 15 s'], [30, 'Cada 30 s'], [60, 'Cada 60 s'], [90, 'Cada 90 s']], f.every)}</select>
     <span class="left" id="monLeft">${f.auto ? f.left + ' s' : 'pausa'}</span></div>
     <button class="btn" data-act="mon-reload" aria-label="Actualizar ahora">${ic('refresh')}</button>
-    <button class="mon-auto" data-act="mon-auto" aria-pressed="${f.auto}">Auto ${f.auto ? 'ON' : 'OFF'}</button></div>`;
+    <button class="mon-auto" data-act="mon-auto" aria-pressed="${f.auto}">Auto ${f.auto ? 'ON' : 'OFF'}</button>
+    <button class="btn" data-act="mon-all">${ic('msg')}Mensaje a todos</button></div>`;
   if (!S.d.servers.length) return head('Monitor', 'Reproducciones en tiempo real.') + noServer();
   return head('Monitor', 'Lo que se está viendo ahora mismo, en tiempo real.', acts) + `
     <div id="monBody">${monBody()}</div>`;
@@ -1677,11 +1884,45 @@ function monBody() {
   const empty = !all.length ? 'Nadie está reproduciendo nada ahora mismo.' : 'Ninguna reproducción coincide con los filtros.';
   return errs + kpis + srv + fil + (rows.length ? `<div class="mgrid">${rows.map(monCard).join('')}</div>` : `<div class="panel"><div class="empty">${empty}</div></div>`);
 }
+/* Por qué convierte Emby una reproducción: lo traduce y da un consejo */
+const TR_REASON = {
+  ContainerNotSupported: 'el aparato no admite el formato del archivo', ContainerBitrateExceedsLimit: 'supera el límite de velocidad (bitrate)',
+  VideoCodecNotSupported: 'el aparato no admite el códec de vídeo', VideoProfileNotSupported: 'perfil de vídeo no compatible', VideoLevelNotSupported: 'nivel de vídeo no compatible',
+  VideoResolutionNotSupported: 'resolución no compatible', VideoBitDepthNotSupported: 'profundidad de color no compatible (10 bits)', VideoFramerateNotSupported: 'fotogramas por segundo no compatibles',
+  VideoBitrateNotSupported: 'bitrate de vídeo demasiado alto', VideoRangeNotSupported: 'HDR no compatible con el aparato', RefFramesNotSupported: 'vídeo no compatible (fotogramas de referencia)',
+  AnamorphicVideoNotSupported: 'vídeo anamórfico no compatible', InterlacedVideoNotSupported: 'vídeo entrelazado no compatible', VideoCodecTagNotSupported: 'etiqueta de vídeo no compatible',
+  AudioCodecNotSupported: 'el aparato no admite este audio', AudioChannelsNotSupported: 'demasiados canales de audio', AudioProfileNotSupported: 'perfil de audio no compatible',
+  AudioSampleRateNotSupported: 'frecuencia de audio no compatible', AudioBitDepthNotSupported: 'profundidad de audio no compatible', AudioBitrateNotSupported: 'bitrate de audio demasiado alto',
+  SecondaryAudioNotSupported: 'pista de audio secundaria no compatible', AudioIsExternal: 'audio en archivo aparte',
+  SubtitleCodecNotSupported: 'subtítulos que el aparato no puede mostrar', DirectPlayError: 'falló la reproducción directa',
+  UnknownVideoStreamInfo: 'Emby no reconoce bien el vídeo', UnknownAudioStreamInfo: 'Emby no reconoce bien el audio',
+};
+const ACODEC = { dts: 'DTS', truehd: 'TrueHD', 'dts-hd': 'DTS-HD', dtshd: 'DTS-HD', eac3: 'EAC3', ac3: 'AC3 (Dolby)', aac: 'AAC', mp3: 'MP3', flac: 'FLAC', opus: 'Opus', pcm: 'PCM', mlp: 'TrueHD' };
+const acName = (c) => ACODEC[c] || (c ? c.toUpperCase() : '');
+function trWhy(x) {
+  if (!x.transcode) return null;
+  const rs = x.trReasons || [], has = (re) => rs.some((r) => re.test(r));
+  const subBurn = has(/^Subtitle/) || (x.subs && !x.subs.text && x.trVideo);
+  const what = x.trVideo && x.trAudio ? 'vídeo y audio' : x.trVideo ? (subBurn ? 'vídeo (graba los subtítulos en la imagen)' : 'vídeo') : x.trAudio ? 'solo el audio' : 'solo el formato del archivo (remux)';
+  const parts = [];
+  if (x.trAudio && x.audio) parts.push(`${acName(x.audio)}${x.audioCh > 2 ? ' ' + (x.audioCh === 6 ? '5.1' : x.audioCh === 8 ? '7.1' : x.audioCh + 'ch') : ''} → ${acName(x.trAudioCodec) || '?'}`);
+  if (x.trVideo && x.trWidth) parts.push(`${x.width}×${x.height} → ${x.trWidth}×${x.trHeight}${x.trCodec ? ' ' + x.trCodec : ''}`);
+  const reasons = [...new Set(rs.map((r) => TR_REASON[r] || r))];
+  let tip = '';
+  if (subBurn) tip = 'Que quite los subtítulos o elija unos de texto (SRT).';
+  else if (x.trAudio || has(/^Audio/)) tip = 'Que elija otra pista de audio (AC3, EAC3 o AAC) en el reproductor.';
+  else if (has(/Bitrate/)) tip = 'Que suba la calidad en la app de Emby (o revisa el límite de velocidad en Emby).';
+  else if (has(/^Container/)) tip = 'El archivo está en un formato que ese aparato no abre (mejor MKV o MP4).';
+  else if (has(/VideoRange|BitDepth/)) tip = 'Ese aparato no reproduce HDR o 10 bits: mejor una versión SDR.';
+  else if (x.trVideo) tip = 'Ese aparato no reproduce el vídeo tal cual: mejor una versión en H264.';
+  return { what, detail: parts.join(' · '), reasons, tip };
+}
 function monCard(x) {
   const pct = x.duration ? Math.min(100, Math.round((x.position / x.duration) * 100)) : 0;
   const c = monColor(x.serverId), rc = RES_COLOR[x.res] || '#8c9aa6';
   const dims = x.width ? `${x.width}×${x.height}${x.codec ? ' ' + x.codec : ''}` : '';
-  const trTo = x.transcode && x.trWidth ? `→ ${x.trWidth}×${x.trHeight}${x.trCodec ? ' ' + x.trCodec : ''}` : '';
+  const why = trWhy(x);
+  const trTo = x.trVideo && x.trWidth ? `→ ${x.trWidth}×${x.trHeight}${x.trCodec ? ' ' + x.trCodec : ''}` : '';
   const pill = x.transcode ? '<span class="pill tr">Transcode</span>' : x.paused ? '<span class="pill pa">En pausa</span>' : '<span class="pill"><span class="l">Reproduciendo</span><span class="s">▶ Viendo</span></span>';
   const kind = { pelicula: 'Película', serie: 'Serie', tv: 'TV' }[x.kind] || '';
   const who = x.client && x.client !== x.user ? `<b>${esc(x.client)}</b><small>${esc(x.user)}${x.demo ? ' · demo' : ''}</small>` : `<b>${esc(x.user)}</b>${x.demo ? '<small>demo</small>' : x.client ? '' : '<small>no está en el panel</small>'}`;
@@ -1693,7 +1934,8 @@ function monCard(x) {
       <div class="tm"><span>${hms(x.position)} (${pct}%)</span><span>${x.duration ? hms(x.duration) : ''}</span></div>
       <h3 title="${esc(x.title)}">${esc(x.title)}</h3>${x.sub ? `<div class="st2" title="${esc(x.sub)}">${esc(x.sub)}</div>` : ''}
       <div class="who">${ic('user')}<div>${who}${x.owner ? `<small>Vendedor: ${esc(x.owner)}</small>` : ''}</div></div>
-      <div class="q">${x.res ? `<span style="--r:${rc}">${x.res}</span>` : ''}${dims ? `<span style="--r:#3fa9f5">${esc(dims)}</span>` : ''}${trTo ? `<span style="--r:#ff7a3d">${esc(trTo)}</span>` : ''}</div>
+      <div class="q">${x.res ? `<span style="--r:${rc}">${x.res}</span>` : ''}${dims ? `<span style="--r:#3fa9f5">${esc(dims)}</span>` : ''}${trTo && !why ? `<span style="--r:#ff7a3d">${esc(trTo)}</span>` : ''}</div>
+      ${why ? `<div class="why" title="${esc([why.reasons.join(', '), why.tip].filter(Boolean).join(' — '))}"><b>${ic('bolt')}Convierte: ${esc(why.what)}</b>${why.detail ? `<span class="wd">${esc(why.detail)}</span>` : ''}${why.reasons.length ? `<span>Motivo: ${esc(why.reasons.slice(0, 2).join(', '))}</span>` : ''}${why.tip ? `<em>💡 ${esc(why.tip)}</em>` : ''}</div>` : ''}
       <div class="ln"><span>Red</span><b>${x.paused ? '0 Mbps' : mbps(x.bitrate)}</b></div>
       <div class="dv" title="${esc(x.device + ' · ' + x.app)}">${ic('screen').replace('class="ic"', 'class="ic" style="width:13px;height:13px;vertical-align:-2px"')} ${esc(x.device || 'Aparato')}${x.app ? ' · ' + esc(x.app) : ''}</div>
       <div class="ft">${pill}<button type="button" class="m" data-act="mon-msg" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Mandar un mensaje a la pantalla" aria-label="Mandar mensaje a ${esc(x.user)}">${ic('msg')}</button><button type="button" class="x" data-act="mon-stop" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Detener la reproducción" aria-label="Detener la reproducción de ${esc(x.user)}">${ic('xc')}</button></div>
@@ -1735,6 +1977,404 @@ function monMsg(el) {
       <label class="f">Mensaje<textarea name="text" rows="3" maxlength="300" required placeholder="Escribe el aviso…"></textarea></label>
       <p class="small muted">No todas las apps de Emby muestran mensajes (algunas TV o apps de terceros no lo hacen).</p>`,
     onSubmit: async (fd) => { await api('POST', '/api/monitor/message', { serverId: x.serverId, sessionId: x.id, text: fd.get('text') }); return 'Mensaje enviado'; } });
+}
+
+/* ---------- Ajustes: Seguridad (verificación en dos pasos, avisos, sesiones) ---------- */
+async function loadSec() {
+  S.secBusy = true;
+  try { S.sec = await api('GET', '/api/security'); } catch (e) { S.sec = { error: e.message }; }
+  S.secBusy = false;
+  if (S.view === 'seguridad') render();
+}
+function vSeguridad() {
+  const sub = 'Protege tu cuenta del panel para que nadie más pueda entrar.';
+  const x = S.sec;
+  if (!x) return head('Seguridad', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (x.error) return head('Seguridad', sub) + `<p class="err">${esc(x.error)}</p>`;
+  const sw = (k, on, label, hint) => `<div class="secrow"><div><b>${label}</b><small>${hint}</small></div><button type="button" class="sw" role="switch" aria-checked="${on}" data-act="sec-al" data-k="${k}" aria-label="${label}"><i></i></button></div>`;
+  const pts = (x.twoFa ? 2 : 0) + (x.tgLinked ? 1 : 0) + (x.sessions.length <= 2 ? 1 : 0) + (!isSuper() || x.idleMin ? 1 : 0);
+  const lvl = pts >= 5 ? ['Muy alta', 'ok', 100] : pts >= 3 ? ['Buena', 'mid', 70] : ['Baja', 'bad', 30];
+  const tips = [!x.twoFa && 'Activa la verificación en dos pasos', !x.tgLinked && x.bot && 'Enlaza tu Telegram para recibir avisos', x.sessions.length > 2 && 'Cierra las sesiones que no reconozcas'].filter(Boolean);
+  const hero = `<section class="sechero sh-${lvl[1]}"><div class="sh-ic">${ic('shield')}</div><div class="sh-t"><small>Nivel de protección</small><b>${lvl[0]}</b>
+    <div class="sh-bar"><i style="width:${lvl[2]}%"></i></div>${tips.length ? `<p>Para mejorarla: ${tips.join(' · ')}.</p>` : '<p>¡Bien hecho! Tu cuenta está muy bien protegida.</p>'}</div></section>`;
+  // 1) Verificacion en dos pasos
+  const tfa = `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#8b5cf6">${ic('lock')}</span><div><h2>Verificación en dos pasos</h2><small>Además de la contraseña, un código de 6 números que cambia cada 30 segundos en tu móvil.</small></div>
+      <span class="pillst ${x.twoFa ? 'on' : 'off'}">${x.twoFa ? 'Activada' : 'Desactivada'}</span></div>
+    ${x.twoFa ? `<p class="muted small">Te quedan <b>${x.codesLeft}</b> códigos de rescate para entrar si pierdes el móvil.${x.codesLeft <= 2 ? ' <b style="color:var(--warn)">Genera unos nuevos.</b>' : ''}</p>
+      <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn" data-act="sec-codes">${ic('note')}Códigos de rescate nuevos</button><button class="btn ghost" data-act="sec-2fa-off">Desactivar</button></div>`
+    : `<ol class="steps"><li>Instala en tu móvil <b>Google Authenticator</b>, <b>Microsoft Authenticator</b> o <b>Authy</b> (gratis).</li><li>Pulsa «Activar» y escanea el código QR con la app.</li><li>Escribe el código de 6 números que te sale y guarda tus códigos de rescate.</li></ol>
+      <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" data-act="sec-2fa-on">${ic('shield')}Activar verificación en dos pasos</button></div>`}
+  </section>`;
+  // 2) Avisos por Telegram
+  const tgs = !x.bot ? `<p class="muted small">Para recibir avisos, primero hay que conectar un bot de Telegram en ${isSuper() ? '<button class="lnk" data-view="notifs">Ajustes › Notificaciones</button>' : 'Ajustes › Notificaciones (pídeselo al superadministrador)'}.</p>`
+    : !x.tgLinked ? `<p class="muted small">Pulsa el botón, se abrirá Telegram con el bot <b>@${esc(x.bot)}</b>: dale a <b>Iniciar</b> y vuelve aquí.</p>
+      <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><a class="btn primary" href="${esc(x.tgLink)}" target="_blank" rel="noopener noreferrer">${ic('bell')}Enlazar mi Telegram</a><button class="btn" data-act="sec-reload">Ya lo he hecho, comprobar</button></div>`
+    : `${sw('login', x.alerts.login, 'Cada vez que alguien entra en mi cuenta', 'Con la hora, la IP y el aparato. Si no has sido tú, lo sabrás al momento.')}
+      ${isSuper() ? sw('staffLogins', x.alerts.staffLogins, 'Cuando entra un administrador', 'Te avisa de las entradas de tus administradores.') + sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar, con el tiempo que estuvo caído.') + sw('backup', x.alerts.backup, 'Copia de seguridad diaria', 'Te llega el archivo cifrado (se configura en Copias de seguridad).') + sw('payments', x.alerts.payments, 'Cuando un vendedor compra créditos', 'Con el importe y su saldo nuevo.') : me().role === 'admin' && canDo('viewServers') ? sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar.') : ''}
+      <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn" data-act="sec-tgtest">Enviar mensaje de prueba</button><button class="btn ghost" data-act="sec-tgoff">Desenlazar</button></div>`;
+  const tgc = `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#0ea5e9">${ic('bell')}</span><div><h2>Avisos de seguridad por Telegram</h2><small>Mensajes privados solo para ti.</small></div>
+    <span class="pillst ${x.tgLinked ? 'on' : 'off'}">${x.tgLinked ? 'Enlazado' : 'Sin enlazar'}</span></div>${tgs}</section>`;
+  // 3) Sesiones abiertas
+  const ses = `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#10b981">${ic('screen')}</span><div><h2>Sesiones abiertas</h2><small>Dónde está abierta tu cuenta ahora mismo.</small></div><span class="pillst">${x.sessions.length}</span></div>
+    <div class="seslist">${x.sessions.map((v) => `<div class="ses${v.current ? ' cur' : ''}"><span class="ses-i">${ic(/Android|iPhone/.test(v.ua) ? 'user' : 'screen')}</span><div><b>${esc(v.ua || 'Aparato')}</b>${v.current ? ' <span class="pillst on">Esta sesión</span>' : ''}<small>IP ${esc(v.ip || '—')} · última actividad ${fmtTs(v.seen)} · entró ${fmtTs(v.created)}</small></div>
+      ${v.current ? '' : `<button class="btn sm ghost" data-act="sec-close" data-sid="${esc(v.sid)}">Cerrar</button>`}</div>`).join('')}</div>
+    ${x.sessions.length > 1 ? '<div class="dfoot" style="justify-content:flex-start"><button class="btn danger" data-act="sec-closeall">Cerrar todas las demás sesiones</button></div>' : ''}
+    <p class="muted small" style="margin-top:8px">Al cambiar tu contraseña se cierran solas todas las demás sesiones.</p></section>`;
+  // 4) Normas del panel (solo superadministrador)
+  const pol = isSuper() ? `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#f59e0b">${ic('clock')}</span><div><h2>Normas para todo el panel</h2><small>Se aplican a todos los usuarios.</small></div></div>
+    <label class="f" style="max-width:360px">Cerrar la sesión tras un tiempo sin usar el panel<select id="secIdle">${options([[0, 'Nunca'], [30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [180, '3 horas'], [480, '8 horas'], [1440, '1 día']], x.idleMin)}</select></label>
+    <p class="muted small">El panel sigue entrando por sí solo cada 7 días como máximo. Con el Monitor abierto la sesión no caduca.</p>
+    <details class="rescue"><summary>¿Y si pierdo el móvil o la contraseña?</summary>
+      <p>Usa uno de tus <b>códigos de rescate</b>. Si tampoco los tienes, entra en <b>Coolify › tu panel › Terminal</b> y escribe:</p>
+      <pre>node server.js sin2fa</pre><p>Quita la verificación en dos pasos del superadministrador. Para poner una contraseña nueva:</p><pre>node server.js clave TuClaveNueva123</pre>
+      <p class="muted small">Se aplica en unos segundos, sin reiniciar. A otros usuarios se la quitas desde su ficha (Más › Quitar verificación en dos pasos).</p></details></section>` : '';
+  return head('Seguridad', sub, '<button class="btn" data-act="sec-reload">Actualizar</button>') + hero + `<div class="secgrid">${tfa}${tgc}</div>` + ses + pol;
+}
+function dTotpOn() {
+  api('POST', '/api/security/totp/start', {}).then((r) => {
+    openDlg({ title: 'Activar verificación en dos pasos', submit: 'Activar',
+      body: `<div class="qrbox"><div class="qr">${r.qr}</div><div><p><b>1.</b> Abre tu app de verificación y pulsa <b>+</b> › <b>Escanear código QR</b>.</p>
+        <p class="muted small">¿Estás en el móvil o no puedes escanear? Elige «Introducir clave» y escribe esta:</p><p class="secret">${esc(r.secret)}</p>
+        <p class="muted small">o <a href="${esc(r.uri)}">ábrela directamente en la app</a> (solo en el móvil).</p></div></div>
+        <label class="f"><b>2.</b> Escribe el código de 6 números que sale en la app<input name="code" required inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" class="bigcode"></label>`,
+      onSubmit: async (fd) => { const x = await api('POST', '/api/security/totp/enable', { code: fd.get('code') }); S.recCodes = x.codes; return 'Verificación en dos pasos activada'; },
+      after: () => { S.sec = null; loadSec(); showCodes(S.recCodes); } });
+  }).catch((e) => toast(e.message, true));
+}
+function showCodes(codes) {
+  if (!codes) return;
+  const txt = `Códigos de rescate de ${BRAND.name} (${me().username})\nCada uno sirve UNA vez para entrar si pierdes el móvil.\n\n${codes.join('\n')}\n`;
+  showDlg('Guarda tus códigos de rescate', `<p>Si pierdes el móvil, podrás entrar escribiendo uno de estos códigos en lugar del de la app. <b>Cada uno sirve una sola vez.</b> Guárdalos en un sitio seguro (no en este mismo móvil).</p>
+    <div class="codes">${codes.map((c) => `<code>${esc(c)}</code>`).join('')}</div>
+    <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button type="button" class="btn primary" data-act="codes-copy">${ic('copy')}Copiar</button><button type="button" class="btn" data-act="codes-dl">${ic('download')}Descargar .txt</button></div>`);
+  S.codesTxt = txt;
+}
+
+/* ---------- Mensaje a todos los conectados ---------- */
+function dBroadcast() {
+  openDlg({ title: 'Mensaje a todos los conectados', submit: 'Enviar a todos',
+    body: `<p class="preview">Aparece unos segundos en la pantalla de todos los que tengan Emby abierto${staff() ? '' : ' (solo tus clientes)'}.</p>
+      ${S.d.servers.length > 1 ? `<label class="f">Servidor<select name="serverId">${options([[0, 'Todos los servidores'], ...S.d.servers.map((x) => [x.id, x.name])], 0)}</select></label>` : ''}
+      <div class="mtpl">${[['Mantenimiento', 'Aviso: en 10 minutos haremos mantenimiento del servidor. Disculpa las molestias.'], ['Ya funciona', 'El servidor ya funciona con normalidad. ¡Gracias por la paciencia!'], ['Novedades', 'Hemos añadido contenido nuevo. ¡Échale un vistazo!']].map(([t, m]) => `<button type="button" data-act="mon-tpl" data-m="${esc(m)}">${t}</button>`).join('')}</div>
+      <label class="f">Mensaje<textarea name="text" rows="3" maxlength="300" required placeholder="Escribe el aviso…"></textarea></label>
+      <p class="small muted">No todas las apps de Emby muestran mensajes.</p>`,
+    onSubmit: async (fd) => { const r = await api('POST', '/api/monitor/broadcast', { serverId: +fd.get('serverId') || 0, text: fd.get('text') }); return r.sent ? `Mensaje enviado a ${plural(r.sent, 'pantalla', 'pantallas')}` : 'No había nadie conectado que pueda recibir mensajes'; } });
+}
+
+/* ---------- Monitor: control de inactivos ---------- */
+function vInactivos() {
+  const sub = 'Clientes con cuenta activa que llevan días sin ver nada. Útil para avisarles o decidir si renuevas.';
+  if (!S.d.servers.length) return head('Inactivos', sub) + noServer();
+  if (!S.seen) return head('Inactivos', sub) + '<div class="panel"><div class="empty">Consultando Emby…</div></div>';
+  const days = S.inDays || 7, now = Date.now();
+  const rows = live().filter((c) => !c.demo && ['active', 'soon'].includes(stage(c))).map((c) => {
+    const v = S.seen ? seenDate(S.seen[c.id]) : null;
+    return { c, d: v, ago: v ? Math.floor((now - v) / 86400000) : Infinity };
+  }).filter((r) => r.ago >= days).sort((a, b) => b.ago - a.ago || a.c.panelName.localeCompare(b.c.panelName));
+  const never = rows.filter((r) => r.ago === Infinity).length;
+  const chip = (n) => `<button type="button" class="chip${days === n ? ' on' : ''}" data-act="in-days" data-k="${n}">${n === 1 ? '1 día' : n + ' días'}</button>`;
+  const tile = (n, label, c) => `<div class="itile" style="--c:${c}"><b>${n}</b><span>${label}</span></div>`;
+  return head('Inactivos', sub, '<button class="btn" data-act="in-reload">Actualizar</button>') + `
+    <div class="itiles">${tile(rows.length, `sin ver nada en ${days} días o más`, '#f59e0b')}${tile(never, 'no se han conectado nunca', '#f0616d')}${tile(live().filter((c) => !c.demo && ['active', 'soon'].includes(stage(c))).length - rows.length, 'activos de verdad', '#10b981')}</div>
+    <div class="tools"><span class="muted small">Sin conectarse desde hace:</span>${[3, 7, 15, 30, 60].map(chip).join('')}</div>
+    ${!S.seen ? '<div class="panel"><div class="empty">Consultando Emby…</div></div>' : rows.length ? `<div class="panel"><table class="cards"><thead><tr><th>Cliente</th><th>Última conexión</th><th>Vence</th><th class="r">Acciones</th></tr></thead><tbody>${rows.map(({ c, d, ago }) => `<tr>
+      <td><div class="name">${esc(c.panelName)}</div><div class="small muted">${esc(c.embyName)}${S.d.servers.length > 1 ? ', en ' + esc(serverName(c.serverId)) : ''}${S.d.users.length > 1 && c.ownerId !== me().id ? ', de ' + esc(userName(c.ownerId)) : ''}</div>${contactHtml(c)}</td>
+      <td><span class="ago ${ago === Infinity ? 'never' : ago > 30 ? 'old' : 'mid'}">${ago === Infinity ? 'Nunca' : `hace ${ago} días`}</span>${d ? `<div class="small muted">${fmtTs(d.toISOString(), true)}</div>` : ''}</td>
+      <td>${fmt(c.expires)}<div class="small muted">${when(c)}</div></td>
+      <td class="r"><div class="acts"><button class="btn sm" data-act="msg" data-id="${c.id}">Mensaje</button><button class="btn sm ghost" data-act="edit" data-id="${c.id}">Ver ficha</button></div></td></tr>`).join('')}</tbody></table></div>`
+      : `<div class="panel"><div class="empty">¡Bien! Todos tus clientes activos se han conectado en los últimos ${days} días.</div></div>`}`;
+}
+
+/* ---------- Gráficas sencillas ---------- */
+const hrs = (m) => (m >= 600 ? Math.round(m / 60) + ' h' : m >= 60 ? (m / 60).toFixed(1).replace('.', ',') + ' h' : Math.round(m) + ' min');
+/** Columnas: [{label, v, tip}] */
+function colChart(items, color, every = 1) {
+  const max = Math.max(1, ...items.map((x) => x.v));
+  return `<div class="cchart" style="--c:${color}">${items.map((x, i) => `<div class="cc" title="${esc(x.tip || x.label + ': ' + x.v)}"><i style="height:${Math.max(x.v ? 3 : 0, (x.v / max) * 100)}%"></i><span>${i % every === 0 ? esc(x.label) : ''}</span></div>`).join('')}</div>`;
+}
+/** Barras tumbadas para rankings: [{label, sub, v, txt}] */
+function rankBars(items, color) {
+  const max = Math.max(1, ...items.map((x) => x.v));
+  return `<div class="rbars">${items.map((x, i) => `<div class="rb" style="--c:${Array.isArray(color) ? color[i % color.length] : color}"><span class="rn">${i + 1}</span><div class="rt"><div class="rl"><b>${esc(x.label)}</b>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}<em>${esc(x.txt)}</em></div><div class="rbar"><i style="width:${(x.v / max) * 100}%"></i></div></div></div>`).join('')}</div>`;
+}
+
+/* ---------- Estadísticas de uso ---------- */
+async function loadUso() {
+  S.usoBusy = true;
+  try { S.uso = await api('GET', '/api/usage?days=' + (S.usoDays || 30)); } catch (e) { S.uso = { error: e.message }; }
+  S.usoBusy = false;
+  if (S.view === 'uso') render();
+}
+function vUso() {
+  const sub = 'Lo que se ve en tus servidores. El panel lo apunta cada minuto mientras está en marcha.';
+  const u = S.uso, days = S.usoDays || 30;
+  const per = `<div class="tools" style="margin:0">${[[7, '7 días'], [30, '30 días'], [90, '90 días']].map(([n, t]) => `<button type="button" class="chip${days === n ? ' on' : ''}" data-act="uso-days" data-k="${n}">${t}</button>`).join('')}</div>`;
+  if (!u) return head('Estadísticas de uso', sub, per) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (u.error) return head('Estadísticas de uso', sub, per) + `<p class="err">${esc(u.error)}</p>`;
+  if (!u.m) return head('Estadísticas de uso', sub, per) + `<div class="panel pad"><h2>Todavía no hay datos</h2><p class="muted">Desde que actualices el panel, se apunta cada minuto qué se está viendo. En unas horas verás aquí lo más visto, las horas punta y qué servidores se usan más.</p></div>`;
+  const k = (n, label, c, icon) => `<div class="ktile" style="--c:${c}">${ic(icon)}<b>${n}</b><span>${label}</span></div>`;
+  const pk = u.peakAt ? new Date(u.peakAt) : null;
+  const best = u.hours.indexOf(Math.max(...u.hours));
+  const COLORS = ['#3fa9f5', '#a46bff', '#19c37d', '#ff7a3d', '#e2457a', '#14b8c4', '#f5a524', '#6b7cff'];
+  return head('Estadísticas de uso', sub, per) + `
+    <div class="ktiles">${k(hrs(u.m), `vistas en ${days} días`, '#3fa9f5', 'play')}${k(u.peak, `pantallas a la vez como máximo${pk ? ' (' + fmtTs(pk.toISOString()) + ')' : ''}`, '#a46bff', 'screen')}${k(`${pad(best)}:00`, 'la hora con más gente', '#ff7a3d', 'clock')}
+      ${k(u.m ? Math.round((u.movies / Math.max(1, u.movies + u.series)) * 100) + '%' : '—', `películas · ${u.m ? Math.round((u.series / Math.max(1, u.movies + u.series)) * 100) : 0}% series`, '#e2457a', 'film')}</div>
+    <div class="ugrid">
+      <section class="panel pad"><h2>Lo más visto</h2>${rankBars(u.titles.map((t) => ({ label: t.t, sub: `${t.k === 'serie' ? 'Serie' : t.k === 'pelicula' ? 'Película' : 'Otro'}${t.y ? ' · ' + t.y : ''} · ${plural(t.n, 'espectador', 'espectadores')}`, v: t.m, txt: hrs(t.m) })), COLORS)}</section>
+      <div>
+        <section class="panel pad"><h2>Horas punta</h2><p class="muted small">Tiempo visto en cada hora del día. Buen momento para mantenimiento: cuando la barra es más baja.</p>${colChart(u.hours.map((v, h) => ({ label: String(h), v, tip: `${pad(h)}:00 · ${hrs(v)}` })), '#ff7a3d', 3)}</section>
+        <section class="panel pad"><h2>Por servidor</h2>${rankBars(u.servers.map((x) => ({ label: x.name, v: x.m, txt: hrs(x.m) })), COLORS)}</section>
+        <section class="panel pad"><h2>Apps más usadas</h2>${rankBars(u.apps.map((x) => ({ label: x.name, v: x.m, txt: hrs(x.m) })), '#14b8c4')}</section>
+      </div>
+    </div>
+    <section class="panel pad"><h2>Cada día</h2>${colChart(u.days.map((d) => { const [, mm, dd] = d.d.split('-').map(Number); return { label: `${dd}/${mm}`, v: d.m, tip: `${dd} ${MES[mm - 1]} · ${hrs(d.m)} · máx. ${d.peak} a la vez` }; }), '#3fa9f5', days > 31 ? 10 : days > 8 ? 5 : 1)}</section>
+    <section class="panel pad"><h2>Clientes que más ven</h2>${u.clients.length ? rankBars(u.clients.map((x) => ({ label: x.name, sub: `${x.emby}${x.owner ? ' · de ' + x.owner : ''}`, v: x.m, txt: hrs(x.m) })), '#19c37d') : '<p class="muted">Sin datos.</p>'}</section>
+    <p class="muted small">Datos desde el ${u.since ? fmt(u.since) : '—'}. Se guardan los últimos 120 días.</p>`;
+}
+
+/* ---------- Informe de ingresos ---------- */
+async function loadIng() {
+  S.ingBusy = true;
+  try { S.ing = await api('GET', '/api/income?months=12'); } catch (e) { S.ing = { error: e.message }; }
+  S.ingBusy = false;
+  if (S.view === 'ingresos') render();
+}
+function vIngresos() {
+  const sub = 'Créditos vendidos a tus vendedores, cuentas nuevas y renovaciones de cada mes.';
+  const x = S.ing;
+  if (!x) return head('Informe de ingresos', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (x.error) return head('Informe de ingresos', sub) + `<p class="err">${esc(x.error)}</p>`;
+  const cur = (n) => money(n || 0, x.currency), M = x.months, last = M[M.length - 1], prev = M[M.length - 2] || {};
+  const yearMoney = M.reduce((n, r) => n + r.money, 0), yearSold = M.reduce((n, r) => n + r.sold, 0);
+  const diffP = (a, b) => (b ? `<small class="${a >= b ? 'up' : 'down'}">${a >= b ? '▲' : '▼'} ${Math.abs(Math.round(((a - b) / b) * 100))}% vs mes anterior</small>` : '');
+  const k = (n, label, c, icon, extra = '') => `<div class="ktile" style="--c:${c}">${ic(icon)}<b>${n}</b><span>${label}</span>${extra}</div>`;
+  const mlab = (m) => { const [y, mm] = m.split('-').map(Number); return `${MES[mm - 1]} ${String(y).slice(2)}`; }, mshort = (m) => MES[Number(m.split('-')[1]) - 1];
+  return head('Informe de ingresos', sub) + `
+    <div class="ktiles">${k(cur(last.money), 'ingresos este mes', '#19c37d', 'wallet', diffP(last.money, prev.money))}${k(plural(last.sold, 'crédito', 'créditos'), 'vendidos este mes', '#3fa9f5', 'coins', diffP(last.sold, prev.sold))}
+      ${k(last.alta + last.renovacion, `${last.alta} nuevas · ${last.renovacion} renovaciones este mes`, '#a46bff', 'userplus')}${k(x.pending, 'cobros pendientes', '#f0616d', 'alert', x.pending ? '<button class="lnk" data-view="cobros">Ver la lista</button>' : '')}</div>
+    <div class="ugrid">
+      <section class="panel pad"><h2>Ingresos por mes</h2><p class="muted small">Créditos vendidos a tus vendedores × su precio por crédito. Últimos 12 meses: <b>${cur(yearMoney)}</b> (${plural(yearSold, 'crédito', 'créditos')}).</p>
+        ${colChart(M.map((r) => ({ label: mshort(r.m), v: r.money, tip: `${mlab(r.m)} · ${cur(r.money)} · ${r.sold} créditos` })), '#19c37d')}</section>
+      <section class="panel pad"><h2>Cuentas nuevas y renovaciones</h2><p class="muted small">Todas las del panel, por mes.</p>
+        ${colChart(M.map((r) => ({ label: mshort(r.m), v: r.alta + r.renovacion, tip: `${mlab(r.m)} · ${r.alta} nuevas · ${r.renovacion} renovaciones · ${r.demo} demos` })), '#a46bff')}</section>
+    </div>
+    <section><div class="sec-h"><h2>Por vendedor (últimos 12 meses)</h2></div>
+    ${x.vendors.length ? `<div class="panel"><table class="cards"><thead><tr><th>Vendedor</th><th>Pagado (créditos)</th><th>Nuevas / Renovaciones</th><th>Créditos gastados</th><th>Saldo</th><th>Clientes</th></tr></thead><tbody>${x.vendors.map((v) => `<tr>
+      <td><div class="name">${esc(v.name)}</div><div class="small muted">${ROLE[v.role] || ''}${v.price ? ' · ' + cur(v.price) + '/crédito' : ''}</div></td>
+      <td><b>${cur(v.money)}</b><div class="small muted">${plural(v.sold, 'crédito', 'créditos')}</div></td>
+      <td>${v.alta} / ${v.renovacion}${v.demo ? `<div class="small muted">${plural(v.demo, 'demo', 'demos')}</div>` : ''}</td>
+      <td>${v.spent}</td><td>${['super'].includes(v.role) ? '—' : v.credits}</td>
+      <td>${v.clients}${v.pending ? `<div class="due">${plural(v.pending, 'cobro pendiente', 'cobros pendientes')}</div>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="panel"><div class="empty">Todavía no hay movimientos.</div></div>'}</section>
+    <details class="tbl"><summary>Ver los meses como tabla</summary><table><thead><tr><th>Mes</th><th>Ingresos</th><th>Créditos vendidos</th><th>Nuevas</th><th>Renovaciones</th><th>Demos</th><th>Cobros recibidos</th></tr></thead><tbody>${[...M].reverse().map((r) => `<tr><td>${mlab(r.m)}</td><td>${cur(r.money)}</td><td>${r.sold}</td><td>${r.alta}</td><td>${r.renovacion}</td><td>${r.demo}</td><td>${r.cobros}</td></tr>`).join('')}</tbody></table></details>
+    <p class="muted small">Los ingresos usan el precio por crédito de cada vendedor (o el general). ${x.keep.ledger || x.keep.log ? 'Ojo: en Retención de datos tienes marcado borrar registros antiguos, así que los meses viejos pueden salir incompletos.' : ''}</p>`;
+}
+
+/* ---------- Ajustes: Copias de seguridad ---------- */
+async function loadBk() {
+  S.bkBusy = true;
+  try { S.bk = await api('GET', '/api/backup'); } catch (e) { S.bk = { error: e.message }; }
+  S.bkBusy = false;
+  if (S.view === 'copias') render();
+}
+function vCopias() {
+  const sub = 'Guarda tus datos fuera del servidor: si el VPS falla, podrás recuperarlo todo.';
+  const b = S.bk;
+  if (!b) return head('Copias de seguridad', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (b.error) return head('Copias de seguridad', sub) + `<p class="err">${esc(b.error)}</p>`;
+  const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' KB');
+  const c = b.cfg;
+  return head('Copias de seguridad', sub) + `
+    <div class="warnbox" style="margin-bottom:14px"><b>🔒 Las copias van cifradas.</b> <span class="small">Llevan tus clientes, contraseñas de Emby y claves de los servidores, por eso solo se abren con la contraseña que elijas. <b>Apúntala bien:</b> sin ella no se pueden recuperar.</span></div>
+    <div class="secgrid">
+      <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#3fa9f5">${ic('download')}</span><div><h2>Descargar una copia ahora</h2><small>Guárdala en tu PC, en un pendrive o en Google Drive.</small></div></div>
+        <p class="muted small">Tamaño actual: ${kb(b.size)}.</p>
+        <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" data-act="bk-dl">${ic('download')}Descargar copia cifrada</button></div></section>
+      <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#0ea5e9">${ic('bell')}</span><div><h2>Copia diaria por Telegram</h2><small>Cada día te llega el archivo cifrado a tu Telegram.</small></div><span class="pillst ${c.on ? 'on' : 'off'}">${c.on ? 'Activada' : 'Desactivada'}</span></div>
+        ${!b.bot ? '<p class="muted small">Primero conecta el bot de Telegram en <button class="lnk" data-view="notifs">Ajustes › Notificaciones</button>.</p>'
+          : !b.tgLinked ? '<p class="muted small">Primero enlaza tu Telegram en <button class="lnk" data-view="seguridad">Ajustes › Seguridad</button>.</p>'
+          : `<p class="muted small">${c.on ? `Se envía cada día a partir de las <b>${pad(c.hour)}:00</b>.` : 'Elige una contraseña para cifrar las copias y la hora.'} ${c.last ? `Última: ${fmtTs(c.last, true)}.` : ''}</p>
+            ${c.lastError ? `<p class="err" style="max-width:none">Último error: ${esc(c.lastError)}</p>` : ''}
+            <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn ${c.on ? '' : 'primary'}" data-act="bk-cfg">${ic('sliders')}${c.on ? 'Cambiar' : 'Activar'}</button>${c.hasKey ? '<button class="btn" data-act="bk-send">Enviar una ahora</button>' : ''}${c.on ? '<button class="btn ghost" data-act="bk-off">Desactivar</button>' : ''}</div>`}
+      </section>
+    </div>
+    <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#10b981">${ic('history')}</span><div><h2>Copias guardadas en el servidor</h2><small>El panel hace una cada día y guarda las últimas (Ajustes › Retención de datos). Puedes bajarte cualquiera, cifrada.</small></div></div>
+      ${b.copies.length ? `<div class="seslist">${b.copies.map((x) => `<div class="ses"><span class="ses-i">${ic('box')}</span><div><b>${fmt(x.date)}</b><small>${kb(x.size)}</small></div><button class="btn sm" data-act="bk-dl" data-name="${esc(x.name)}">Descargar</button></div>`).join('')}</div>` : '<p class="muted">Todavía no hay copias guardadas.</p>'}</section>
+    <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#f0616d">${ic('alert')}</span><div><h2>Restaurar una copia</h2><small>Vuelve a poner todo tal y como estaba en esa copia.</small></div></div>
+      <p class="muted small">Sirve para recuperar el panel en un servidor nuevo o deshacer un desastre. <b>Lo que hayas hecho después de la copia se pierde</b> (aunque antes se guarda lo actual por si acaso). Después tendrás que volver a entrar.</p>
+      <div class="dfoot" style="justify-content:flex-start"><button class="btn danger" data-act="bk-restore">Restaurar desde un archivo…</button></div></section>`;
+}
+async function downloadBackup(name, password) {
+  const r = await fetch('/api/backup/download', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, password }) });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'No se pudo descargar.'); }
+  const fn = (/filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '') || [])[1] || 'copia.concha';
+  const l = Object.assign(document.createElement('a'), { href: URL.createObjectURL(await r.blob()), download: fn });
+  document.body.appendChild(l); l.click(); l.remove();
+}
+
+/* ---------- Buscador rápido (lupa / Ctrl+K) ---------- */
+const QS_KEYS = {
+  resumen: 'inicio dashboard principal portada', nuevo: 'crear cuenta alta nueva cliente añadir', demonueva: 'demo prueba test gratis crear',
+  cobros: 'pagos pendiente cobrar deuda dinero', avisos: 'avisos vencimiento whatsapp recordatorio caduca', auditoria: 'auditoria comprobar comparar comparacion emby diferencias revisar sobran sin eliminar servidor usuarios',
+  movimientos: 'historial registro cambios', papelera: 'borrados eliminados baja desactivados', demosvencidas: 'demos terminadas caducadas', movdemos: 'historial demos',
+  servidores: 'servidor emby api key bibliotecas paquetes basico 4k conectar', plantillas: 'mensajes plantillas textos whatsapp', calendario: 'fechas calendario vencimientos',
+  directo: 'en directo viendo ahora reproduciendo', monitor: 'monitor sesiones reproducciones viendo transcode detener caratulas mensaje pantalla', inactivos: 'inactivos no ven sin conexion ultima conexion',
+  uso: 'estadisticas lo mas visto horas punta peliculas series', altrans: 'transcode alertas conversion', alses: 'sesiones excedidas pantallas compartir cuenta limite', alhist: 'historial alertas',
+  equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
+  admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', ajustes: 'precios paquetes tarifas meses pantallas',
+  perfil: 'perfil nombre email moneda soporte mi contraseña cambiar clave', seguridad: 'seguridad 2fa verificacion dos pasos google authenticator telegram sesiones contraseña codigo rescate proteger',
+  copias: 'copias seguridad backup restaurar descargar guardar datos', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
+  apariencia: 'apariencia colores logo marca tema nombre panel', notifs: 'notificaciones telegram bot avisos pantalla', importar: 'importar csv excel emby subir lista', logs: 'logs actividad registro accesos entradas',
+  guia: 'guia ayuda tutorial como empezar',
+};
+const QS_FILTER = { all: 'clientes lista cuentas todos', soon: 'por vencer caducan pronto renovar', expired: 'vencidos caducados renovar', demo: 'demos activas' };
+const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+let QS = { items: [], sel: 0 };
+function qsIndex() {
+  const out = [];
+  navGroups().forEach((g) => g.items.forEach((x) => out.push({ kind: 'Sección', icon: x.i, label: x.t, sub: g.t || '', key: `${x.t} ${g.t || ''} ${QS_KEYS[x.v] || ''} ${x.f ? QS_FILTER[x.f] || '' : ''}`, view: x.v, filter: x.f })));
+  const acts = [];
+  if (!noCli()) acts.push(['new', 'userplus', 'Crear cuenta nueva', 'alta nuevo cliente'], ['demo', 'timer', 'Crear demo', 'prueba test']);
+  if (staff() && !noCli() && !me().useCredits) acts.push(['import', 'download', 'Importar cuentas de Emby', 'importar']);
+  if (!noCli()) acts.push(['qs-bcast', 'msg', 'Mensaje a todos los conectados', 'aviso pantalla mantenimiento difundir']);
+  acts.push(['theme', 'sun', 'Cambiar tema claro / oscuro', 'modo noche dia oscuro claro'], ['logout', 'logout', 'Cerrar sesión', 'salir desconectar']);
+  acts.forEach(([act, icon, label, k]) => out.push({ kind: 'Acción', icon, label, key: label + ' ' + k, act }));
+  return out;
+}
+function qsResults(q) {
+  const n = norm(q).trim(), words = n.split(/\s+/).filter(Boolean);
+  const idx = qsIndex();
+  if (!words.length) return idx.filter((x) => x.kind === 'Acción' || ['resumen', 'cuentas', 'monitor', 'seguridad'].includes(x.view)).slice(0, 10);
+  const score = (x) => { const lab = norm(x.label), key = norm(x.key); if (!words.every((w) => key.includes(w))) return 0; return (lab.startsWith(words[0]) ? 3 : lab.includes(words[0]) ? 2 : 1) + (x.kind === 'Sección' ? 0.5 : 0); };
+  const opts = idx.map((x) => [x, score(x)]).filter(([, sc]) => sc).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([x]) => x);
+  // Clientes y vendedores por nombre, usuario, correo o teléfono
+  const cl = noCli() ? [] : S.d.clients.filter((c) => words.every((w) => norm(`${c.panelName} ${c.embyName} ${c.email || ''} ${c.whatsapp || ''} ${c.telegram || ''}`).includes(w))).slice(0, 6)
+    .map((c) => ({ kind: 'Cliente', icon: c.demo ? 'timer' : 'user', label: c.panelName, sub: `${c.embyName} · ${STAGE[stage(c)]}${S.d.servers.length > 1 ? ' · ' + serverName(c.serverId) : ''}`, client: c.id }));
+  const us = S.d.users.filter((u) => u.id !== me().id && words.every((w) => norm(`${u.name} ${u.username} ${u.email || ''}`).includes(w))).slice(0, 4)
+    .map((u) => ({ kind: 'Vendedor', icon: 'users', label: u.name, sub: `@${u.username} · ${ROLE[u.role]}`, user: u.id }));
+  return [...opts, ...cl, ...us];
+}
+function qsPaint() {
+  const box = $('#qsr'), q = $('#qsq').value;
+  QS.items = qsResults(q);
+  if (QS.sel >= QS.items.length) QS.sel = 0;
+  let last = '';
+  box.innerHTML = QS.items.length ? QS.items.map((x, i) => { const h = x.kind !== last ? `<div class="qs-g">${!q.trim() && i === 0 ? 'Accesos rápidos' : x.kind === 'Sección' ? 'Secciones' : x.kind === 'Acción' ? 'Acciones' : x.kind === 'Cliente' ? 'Clientes' : 'Vendedores'}</div>` : ''; last = x.kind;
+    return `${h}<button type="button" class="qs-it${i === QS.sel ? ' on' : ''}" role="option" aria-selected="${i === QS.sel}" data-act="qs-go" data-i="${i}"><span class="qs-i k-${norm(x.kind)}">${ic(x.icon)}</span><span class="qs-t"><b>${esc(x.label)}</b>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}</span><span class="qs-k">${x.kind}</span></button>`; }).join('')
+    : `<div class="qs-none">No encuentro «${esc(q)}». Prueba con otra palabra: renovar, Telegram, copia, precios…</div>`;
+  const on = $('.qs-it.on', box); if (on) on.scrollIntoView({ block: 'nearest' });
+}
+function qsOpen() {
+  if (!S.d) return;
+  const d = $('#qs'); if (dlg.open) dlg.close(); closeMenu();
+  QS.sel = 0; $('#qsq').value = ''; qsPaint();
+  if (!d.open) d.showModal();
+  $('#qsq').focus();
+}
+/** Pulsa por dentro un boton con data-view o data-act: asi se reutiliza todo lo que ya hace el menu */
+function fakeClick(attrs) { const b = document.createElement('button'); b.type = 'button'; b.hidden = true; Object.entries(attrs).forEach(([k, v]) => { if (v != null) b.dataset[k] = v; }); document.body.appendChild(b); b.click(); b.remove(); }
+function qsGo(i) {
+  const x = QS.items[i]; if (!x) return;
+  $('#qs').close();
+  if (x.view) { const g = navGroups().find((gr) => gr.items.some((it) => it.v === x.view)); if (g && g.k) NAV_OPEN.add(g.k); fakeClick({ view: x.view, filter: x.filter }); return; }
+  if (x.act === 'qs-bcast') { fakeClick({ view: 'monitor' }); setTimeout(dBroadcast, 50); return; }
+  if (x.act) { fakeClick({ act: x.act }); return; }
+  if (x.client) { const c = S.d.clients.find((k) => k.id === x.client); if (c) { if (c.status === 'trash') { fakeClick({ view: 'papelera' }); return; } dEdit(c); } return; }
+  if (x.user) { const u = S.d.users.find((k) => k.id === x.user); if (u) dUserMore(u); }
+}
+
+/* ---------- Comprar créditos online ---------- */
+async function loadPay() {
+  S.payBusy = true;
+  try { S.pay = await api('GET', '/api/pay'); } catch (e) { S.pay = { error: e.message, methods: [], orders: [], packs: [] }; }
+  S.payBusy = false;
+  if (S.view === 'pagos' || S.view === 'creditos') render();
+}
+const ORDER_ST = { pending: ['Pendiente', 'mid'], paid: ['Pagado', 'on'], expired: ['Caducado', ''], failed: ['Fallido', 'off'] };
+const payName = (m) => (m === 'stripe' ? 'Tarjeta' : 'Cripto');
+function ordersTable(list, who) {
+  if (!list.length) return '<div class="panel"><div class="empty">Todavía no hay compras.</div></div>';
+  return `<div class="panel"><table class="cards"><thead><tr><th>Fecha</th>${who ? '<th>Vendedor</th>' : ''}<th>Créditos</th><th>Importe</th><th>Forma de pago</th><th>Estado</th></tr></thead><tbody>${list.map((o) => { const st = ORDER_ST[o.status] || [o.status, '']; return `<tr>
+    <td>${fmtTs(o.created, true)}<div class="small muted">${esc(o.id)}</div></td>${who ? `<td>${esc(o.user)}</td>` : ''}<td><b>+${o.credits}</b>${o.pack ? `<div class="small muted">${esc(o.pack)}</div>` : ''}</td>
+    <td>${money(o.amount, o.currency)}</td><td>${payName(o.method)}</td><td><span class="pillst ${st[1]}">${st[0]}</span></td></tr>`; }).join('')}</tbody></table></div>`;
+}
+function buyHtml() {
+  const p = S.pay;
+  if (!p || !p.canBuy || !p.methods.length) return '';
+  const cur = (n) => money(n, p.currency);
+  if (!p.price) return `<section><h2>Comprar créditos</h2><div class="warnbox">Tu precio por crédito todavía no está configurado. Avisa a tu administrador para poder comprar online.</div></section>`;
+  const btns = (attrs) => p.methods.map((m) => `<button class="btn ${m === 'stripe' ? 'primary' : ''} sm" data-act="buy" data-m="${m}" ${attrs}>${m === 'stripe' ? '💳 Tarjeta' : '🪙 Cripto'}</button>`).join('');
+  const COLORS = ['#3fa9f5', '#a46bff', '#19c37d', '#ff7a3d', '#e2457a', '#14b8c4'];
+  const n0 = Math.max(p.min, 20);
+  return `<section><h2>Comprar créditos</h2>
+    <p class="muted small" style="margin-bottom:12px">Pagas de forma segura en ${p.methods.map((m) => (m === 'stripe' ? 'Stripe (tarjeta, Apple Pay, Google Pay)' : 'NOWPayments (USDT, BTC y otras)')).join(' o ')}. En cuanto se confirma, los créditos se suman solos. Tu precio: <b>${cur(p.price)}</b> por crédito.</p>
+    <div class="packs">${p.packs.map((k, i) => `<div class="pack" style="--c:${COLORS[i % COLORS.length]}"><span class="pk-n">${esc(k.name)}</span><b>${k.credits}<small> créditos</small></b><span class="pk-p">${cur(k.amount)}</span><div class="pk-b">${btns(`data-pack="${k.i}"`)}</div></div>`).join('')}
+      <div class="pack pk-free" style="--c:#f5a524"><span class="pk-n">Otra cantidad</span><input type="number" id="buyN" min="${p.min}" max="100000" step="1" value="${n0}" aria-label="Créditos a comprar"><span class="pk-p" id="buyP">${cur(n0 * p.price)}</span><div class="pk-b">${btns('data-free="1"')}</div></div></div>
+    <h2 style="margin-top:18px">Mis compras</h2>${ordersTable(p.orders, false)}</section>`;
+}
+async function buyGo(el) {
+  const body = { method: el.dataset.m };
+  if (el.dataset.free) body.credits = +($('#buyN') || {}).value; else body.pack = +el.dataset.pack;
+  el.disabled = true;
+  try { const r = await api('POST', '/api/pay/checkout', body); toast('Abriendo la página de pago…'); location.href = r.url; }
+  catch (e) { toast(e.message, true); el.disabled = false; }
+}
+/** Al volver de la página de pago */
+async function payReturn() {
+  const q = new URLSearchParams(location.search), st = q.get('pago'), id = q.get('o');
+  if (!st) return;
+  history.replaceState(null, '', location.pathname);
+  if (st !== 'ok' || !id) { toast('Pago cancelado: no se te ha cobrado nada.'); return; }
+  S.view = 'creditos'; S.pay = null; render();
+  toast('Comprobando el pago…');
+  for (let k = 0; k < 15; k++) {
+    try { const o = await api('GET', `/api/pay/orders/${encodeURIComponent(id)}`); if (o.status === 'paid') { await reload(); S.pay = null; render(); toast(`¡Pago recibido! Se han sumado ${o.credits} créditos.`); return; } if (o.status !== 'pending') { toast('El pago no se ha completado.', true); return; } } catch (e) { break; }
+    await new Promise((r) => setTimeout(r, k < 5 ? 2000 : 5000));
+  }
+  toast('El pago aún se está confirmando (con cripto puede tardar unos minutos). Los créditos se sumarán solos.');
+}
+/* Ajustes › Pagos online (superadministrador) */
+function vPagos() {
+  const sub = 'Tus vendedores compran créditos desde el panel y se les suman solos al pagar.';
+  const p = S.pay;
+  if (!p) return head('Pagos online', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (p.error) return head('Pagos online', sub) + `<p class="err">${esc(p.error)}</p>`;
+  const c = p.cfg, base = (S.d.settings.brand.url || location.origin).replace(/\/+$/, '');
+  const copy = (txt) => `<div class="cpy"><code>${esc(txt)}</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(txt)}">${ic('copy')}Copiar</button></div>`;
+  const paid = p.all.filter((o) => o.status === 'paid'), ym = new Date().toISOString().slice(0, 7), month = paid.filter((o) => o.paidAt && o.paidAt.slice(0, 7) === ym);
+  const sum = (l) => l.reduce((n, o) => n + o.amount, 0);
+  const tiles = [[money(sum(month), p.currency), 'cobrado online este mes', '#19c37d', 'wallet'], [month.length, 'compras este mes', '#3fa9f5', 'coins'], [p.all.filter((o) => o.status === 'pending').length, 'pagos sin terminar', '#f5a524', 'clock']];
+  return head('Pagos online', sub) + `
+    <div class="warnbox" style="margin-bottom:14px"><b>Antes de activarlo:</b> <span class="small">Stripe y otras pasarelas revisan a qué se dedica cada negocio y pueden cerrar la cuenta o retener el dinero si creen que no cumple sus normas. Lee sus condiciones. Las claves se guardan solo en tu servidor y nunca se enseñan en el panel.</span></div>
+    <div class="ktiles">${tiles.map(([n, l, col, i]) => `<div class="ktile" style="--c:${col}">${ic(i)}<b>${n}</b><span>${l}</span></div>`).join('')}</div>
+    <div class="secgrid">
+      <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#635bff">💳</span><div><h2>Tarjeta con Stripe</h2><small>Tarjeta, Apple Pay y Google Pay. Los créditos llegan al instante.</small></div><span class="pillst ${c.stripe.on ? 'on' : 'off'}">${c.stripe.on ? (c.stripe.test ? 'Activado (pruebas)' : 'Activado') : 'Desactivado'}</span></div>
+        <ol class="steps"><li>Crea tu cuenta en <b>stripe.com</b> y actívala con tus datos.</li><li>En Stripe: <b>Desarrolladores › Claves de API</b>, copia la <b>clave secreta</b> (sk_live_…) y pégala aquí.</li>
+          <li>Recomendado: en <b>Desarrolladores › Webhooks</b>, añade este punto de conexión con el evento <b>checkout.session.completed</b> y pega aquí su secreto (whsec_…):</li></ol>${copy(base + '/api/pay/stripe/webhook')}
+        <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn ${c.stripe.on ? '' : 'primary'}" data-act="pay-stripe">${c.stripe.hasKey ? 'Cambiar claves' : 'Pegar claves'}</button>${c.stripe.hasKey ? `<button class="btn" data-act="pay-onoff" data-k="stripe" data-on="${!c.stripe.on}">${c.stripe.on ? 'Desactivar' : 'Activar'}</button>` : ''}</div>
+        ${c.stripe.hasKey && !c.stripe.hasWh ? '<p class="muted small">Sin webhook también funciona: el panel lo comprueba cuando el vendedor vuelve de pagar. Con webhook es más seguro por si cierra la página antes.</p>' : ''}</section>
+      <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#f5a524">🪙</span><div><h2>Criptomonedas con NOWPayments</h2><small>USDT, BTC, ETH, LTC… Los créditos llegan al confirmarse en la red.</small></div><span class="pillst ${c.nowpay.on ? 'on' : 'off'}">${c.nowpay.on ? 'Activado' : 'Desactivado'}</span></div>
+        <ol class="steps"><li>Crea tu cuenta en <b>nowpayments.io</b> y añade tu cartera (donde recibirás el dinero).</li><li>En <b>Settings › Payments › API keys</b> crea una clave API.</li><li>En <b>Settings › Payments › Instant payment notifications</b> genera el <b>IPN secret</b>. La dirección de aviso la manda el panel solo:</li></ol>${copy(base + '/api/pay/nowpayments/ipn')}
+        <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn ${c.nowpay.on ? '' : 'primary'}" data-act="pay-now">${c.nowpay.hasKey ? 'Cambiar claves' : 'Pegar claves'}</button>${c.nowpay.hasKey ? `<button class="btn" data-act="pay-onoff" data-k="nowpay" data-on="${!c.nowpay.on}">${c.nowpay.on ? 'Desactivar' : 'Activar'}</button>` : ''}</div></section>
+    </div>
+    <section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#19c37d">${ic('coins')}</span><div><h2>Qué pagan</h2><small>Créditos × el precio por crédito de cada vendedor (el general si no tiene uno propio: ${money(S.d.settings.creditPrice || 0, p.currency)}).</small></div></div>
+      <p class="muted small">Los paquetes son los de <button class="lnk" data-view="ajustes">Precios y paquetes</button>. El precio de cada vendedor se cambia en su ficha (Vendedores › Editar perfil). Si un vendedor no tiene precio, no puede comprar.</p>
+      <label class="f" style="max-width:280px">Compra mínima en «Otra cantidad»<input type="number" id="payMin" min="1" max="100000" value="${c.min}"></label></section>
+    <section><div class="sec-h"><h2>Últimas compras</h2></div>${ordersTable(p.all, true)}</section>`;
+}
+
+/* ---------- Eliminar una cuenta devolviendo los créditos ---------- */
+async function dDelRefund(c) {
+  showDlg(`Eliminar a ${c.panelName}`, '<p class="muted">Calculando los créditos a devolver…</p>');
+  let r;
+  try { r = await api('GET', `/api/clients/${c.id}/refund`); } catch (e) { showDlg('No se pudo calcular', `<p class="err">${esc(e.message)}</p>`); return; }
+  const KN = { alta: 'Alta', renovacion: 'Renovación' };
+  const lines = r.lines.length ? `<table class="rftab"><thead><tr><th>Pago</th><th>Pagó</th><th>Vuelve</th></tr></thead><tbody>${r.lines.map((l) => `<tr><td>${KN[l.kind] || l.kind} · ${fmtTs(l.ts, true)}<div class="small muted">${fmt(l.from)} → ${fmt(l.to)} · ${esc(l.why)}</div></td><td>${l.credits}</td><td><b class="${l.back ? 'plus' : ''}">${l.back ? '+' + l.back : '0'}</b></td></tr>`).join('')}</tbody></table>`
+    : '<p class="muted small">Esta cuenta no gastó créditos (la creó alguien sin créditos o era una importación), así que no hay nada que devolver.</p>';
+  const who = r.parts.length ? r.parts.map((p) => `<div class="rfwho"><span>${esc(p.name)}${p.userId === me().id ? ' (tú)' : ''}</span><b>+${p.credits} ${p.credits === 1 ? 'crédito' : 'créditos'}</b></div>`).join('') : '';
+  openDlg({ title: `Eliminar a ${c.panelName}`, submit: r.total ? `Eliminar y devolver ${r.total}` : 'Eliminar', danger: true,
+    body: `<p>El usuario <b>${esc(c.embyName)}</b> se borra de Emby para siempre (con su historial y su progreso). No se puede deshacer.</p>
+      <div class="rfbox"><div class="rfh">${ic('coins')}<div><b>${r.total ? `Se devuelven ${plural(r.total, 'crédito', 'créditos')}` : 'No hay créditos que devolver'}</b><small>Lo pagado hace menos de 24 h vuelve entero; de lo demás, la parte del tiempo que no se ha usado.</small></div></div>${who}${lines}</div>`,
+    onSubmit: async () => { const x = await api('POST', `/api/clients/${c.id}/delete-refund`, {}); return x.refunded ? `Cuenta eliminada. Devueltos ${plural(x.refunded, 'crédito', 'créditos')}` : 'Cuenta eliminada'; } });
 }
 
 const eur = (n) => money(n, S.d.settings.currency);
@@ -1946,7 +2586,7 @@ function vVendedor() {
     <div class="dfoot"><button type="button" class="btn ghost" data-view="equipo">Cancelar</button><button type="submit" class="btn primary">${u ? 'Guardar perfil' : staff() ? 'Crear vendedor' : 'Crear subreseller'}</button></div>
   </form>`;
 }
-const KIND = { credito: 'Crédito', asignacion: 'Asignación', renovacion: 'Renovación', alta: 'Alta', ajuste: 'Ajuste' };
+const KIND = { devolucion: 'Devolución', credito: 'Crédito', asignacion: 'Asignación', renovacion: 'Renovación', alta: 'Alta', ajuste: 'Ajuste' };
 const kindOf = (l) => l.kind || (/^Renovación/.test(l.text) ? 'renovacion' : /^Alta/.test(l.text) ? 'alta' : /^(Traspaso|Para )/.test(l.text) ? 'asignacion' : /^(Recibido|Recarga)/.test(l.text) ? 'credito' : 'ajuste');
 async function dLedger(u) {
   const title = `Historial de créditos de ${u.name}`;
@@ -1984,6 +2624,7 @@ function dUserMore(u) {
     ${u.role === 'admin' ? it('adm-perms', 'Gestionar permisos', 'Qué puede hacer en el panel') + it('adm-link', 'Vincular a panel Xtreme', u.xtreme ? 'Vinculado: ' + esc(u.xtreme.url) : 'Guarda el enlace a su otro panel') : ''}
     ${it('user-clients', 'Ver sus clientes', plural(n, 'cuenta', 'cuentas'))}
     ${staff() && n ? it('user-transfer', 'Transferir sus clientes', 'Pasa todas sus cuentas a otro vendedor') : ''}
+    ${u.twoFa ? it('user-2fa', 'Quitar verificación en dos pasos', 'Si ha perdido el móvil: podrá entrar solo con su contraseña') : ''}
     ${it('user-toggle', u.disabled ? 'Activar' : 'Desactivar', u.disabled ? 'Vuelve a dejarle entrar al panel' : 'Bloquea su acceso; sus cuentas siguen funcionando', 'sep')}
     ${it('user-del', 'Eliminar', 'Solo si ya no tiene cuentas ni subresellers', 'bad')}
   </div>`);
@@ -2059,8 +2700,8 @@ function vCreditos() {
     : '<div class="panel"><div class="empty">Todavía no hay movimientos de créditos.</div></div>';
   const top = staff()
     ? '<p class="muted" style="margin-bottom:26px;max-width:70ch">Como administrador no gastas créditos. Para recargar a un reseller o subreseller, ve a Usuarios y pulsa Créditos.</p>'
-    : `<div class="bal"><b>${d.me.credits}</b><span>${d.me.credits === 1 ? 'crédito disponible' : 'créditos disponibles'}</span></div><p class="flownote">Las demos son gratis. Si necesitas más créditos, pídeselos a tu ${d.me.role === 'sub' ? 'reseller o a un administrador' : 'administrador'}.</p>`;
-  return head('Créditos') + top + `<section><h2>Lo que cuesta cada alta o renovación</h2>${priceTable()}</section><section><h2>Movimientos de créditos</h2>${led}</section>`;
+    : `<div class="bal"><b>${d.me.credits}</b><span>${d.me.credits === 1 ? 'crédito disponible' : 'créditos disponibles'}</span></div><p class="flownote">Las demos son gratis. ${S.pay && S.pay.canBuy && S.pay.methods.length ? 'Puedes comprar más créditos aquí abajo: se suman solos en cuanto se confirma el pago.' : `Si necesitas más créditos, pídeselos a tu ${d.me.role === 'sub' ? 'reseller o a un administrador' : 'administrador'}.`}</p>`;
+  return head('Créditos') + top + buyHtml() + `<section><h2>Lo que cuesta cada alta o renovación</h2>${priceTable()}</section><section><h2>Movimientos de créditos</h2>${led}</section>`;
 }
 
 function logTable(rows) {
@@ -2482,7 +3123,7 @@ function vImportar() {
   </div>`;
 }
 /* ---------- Ajustes: Logs de actividad ---------- */
-const LOG_KIND = { monitor: ['edit', 'Monitor'],  alta: ['new', 'Cuenta creada'], demo: ['new', 'Demo creada'], importada: ['new', 'Cuenta importada'], renovacion: ['edit', 'Renovación'], edicion: ['edit', 'Datos editados'], transferida: ['edit', 'Transferida'], reparada: ['edit', 'Reparada'],
+const LOG_KIND = { seguridad: ['login', 'Seguridad'], monitor: ['edit', 'Monitor'],  alta: ['new', 'Cuenta creada'], demo: ['new', 'Demo creada'], importada: ['new', 'Cuenta importada'], renovacion: ['edit', 'Renovación'], edicion: ['edit', 'Datos editados'], transferida: ['edit', 'Transferida'], reparada: ['edit', 'Reparada'],
   restaurada: ['edit', 'Restaurada'], cobro: ['edit', 'Cobro'], aviso: ['edit', 'Aviso enviado'], ajustes: ['edit', 'Ajustes'], servidor: ['edit', 'Servidor'], alertas: ['edit', 'Alertas'], usuario: ['edit', 'Usuario del panel'],
   baja: ['del', 'A la papelera'], papelera: ['del', 'A la papelera'], caducada: ['del', 'Caducada'], eliminada: ['del', 'Cuenta eliminada'], login: ['login', 'Inicio de sesión'], error: ['warn', 'Error'] };
 const logKind = (l) => (l.type === 'usuario' ? [/^Nuevo/.test(l.text) ? 'new' : /eliminado/.test(l.text) ? 'del' : 'edit', 'Usuario del panel'] : LOG_KIND[l.type] || ['edit', l.type]);
@@ -2767,6 +3408,7 @@ function dMore(c) {
     ${it('m-tg', 'Avisos por Telegram', c.tgLinked ? 'Enlazado' : 'Enlace para que reciba los avisos')}
     ${it('m-repair', 'Reparar', 'Revisa el servidor y vuelve a asignar sus bibliotecas en Emby')}
     ${it('trash', c.demo ? 'Cancelar demo' : 'Desactivar', 'Bloquea la cuenta y la manda a la papelera', 'sep')}
+    ${c.demo ? '' : it('del-refund', 'Eliminar y devolver créditos', 'La borra de Emby y devuelve los créditos del tiempo no usado', 'bad')}
     ${staff() ? it('delete', 'Eliminar', 'La borra de Emby para siempre', 'bad') : ''}
   </div>`);
 }
@@ -3257,6 +3899,10 @@ document.addEventListener('change', (e) => {
   if (e.target.name === 'role' && e.target.form && e.target.form.id === 'vendorForm') { const pb = $('#parentBox'); if (pb) pb.hidden = e.target.value !== 'sub'; const vo = $('#vendOpts'); if (vo) vo.hidden = e.target.value === 'admin'; }
   const monSel = { monSt: 'st', monTr: 'tr', monRes: 'res', monKind: 'kind' }[e.target.id];
   if (monSel) { S.mon[monSel] = e.target.value; monPaint(); }
+  if (e.target.dataset.au) { const g = S.auSel[e.target.dataset.au]; e.target.checked ? g.add(e.target.dataset.k) : g.delete(e.target.dataset.k); const el = $('#audit'); if (el) { const y = window.scrollY; el.innerHTML = auditHtml(); window.scrollTo(0, y); } }
+  if (e.target.dataset.auall) { const grp = e.target.dataset.auall, list = grp === 'emby' ? S.audit.notInPanel.map((r) => r.serverId + ':' + r.embyId) : (grp === 'gone' ? S.audit.notInEmby : S.audit.mismatch).map((r) => String(r.id)); list.forEach((k) => (e.target.checked ? S.auSel[grp].add(k) : S.auSel[grp].delete(k))); const el = $('#audit'); if (el) { const y = window.scrollY; el.innerHTML = auditHtml(); window.scrollTo(0, y); } }
+  if (e.target.id === 'payMin') { api('PUT', '/api/pay/config', { min: +e.target.value }).then(() => toast('Guardado'), (x) => toast(x.message, true)); }
+  if (e.target.id === 'secIdle') { api('PUT', '/api/security/policy', { idleMin: +e.target.value }).then(() => { S.sec.idleMin = +e.target.value; toast('Guardado'); }, (x) => toast(x.message, true)); }
   if (e.target.id === 'monSrv') { S.mon.srv = +e.target.value || 0; monPaint(); }
   if (e.target.id === 'monEvery') { S.mon.every = +e.target.value || 30; S.mon.left = S.mon.every; const l = $('#monLeft'); if (l && S.mon.auto) l.textContent = S.mon.left + ' s'; }
   const alSel = { aType: 'type', aRead: 'read', aPeriod: 'period', aSort: 'sort' }[e.target.id];
@@ -3275,6 +3921,16 @@ document.addEventListener('change', (e) => {
   if (e.target.id === 'fSort') { S.sort = e.target.value; S.page = 1; render(); }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeCombo(); hideTip(); } });
+// Ctrl+K (o Cmd+K, o la tecla /) abre el buscador
+document.addEventListener('keydown', (e) => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
+  if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typing && !$('#app').hidden)) { if (!$('#app').hidden) { e.preventDefault(); qsOpen(); } return; }
+  if (!$('#qs').open) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = QS.items.length; if (n) { QS.sel = (QS.sel + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; qsPaint(); } }
+  if (e.key === 'Enter' && e.target.id === 'qsq') { e.preventDefault(); qsGo(QS.sel); }
+});
+document.addEventListener('input', (e) => { if (e.target.id === 'qsq') { QS.sel = 0; qsPaint(); } });
+$('#qs').addEventListener('click', (e) => { if (e.target.id === 'qs') $('#qs').close(); }); // clic fuera
 document.addEventListener('pointerover', (e) => { const t = e.target.closest && e.target.closest('[data-tip]'); if (t) showTip(t); else hideTip(); });
 document.addEventListener('focusin', (e) => { const t = e.target.closest && e.target.closest('[data-tip]'); if (t) showTip(t); });
 document.addEventListener('focusout', (e) => { if (e.target.closest && e.target.closest('[data-tip]')) hideTip(); });
@@ -3290,6 +3946,11 @@ document.addEventListener('click', (e) => {
     if (AL[S.view]) { Object.assign(S.al, { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 }); }
     if (S.view === 'auditoria') S.audit = null;
     if (S.view === 'monitor') S.mon.data = null;
+    if (S.view === 'seguridad') S.sec = null;
+    if (S.view === 'pagos' || S.view === 'creditos') S.pay = null;
+    if (S.view === 'copias') S.bk = null;
+    if (S.view === 'uso') S.uso = null;
+    if (S.view === 'ingresos') S.ing = null;
     render(); window.scrollTo(0, 0); return;
   }
   const el = e.target.closest('[data-act]');
@@ -3301,6 +3962,54 @@ document.addEventListener('click', (e) => {
     if (el.getAttribute('aria-expanded') === 'true' && el.nextElementSibling && el.nextElementSibling.querySelector('[aria-current]')) return; // el grupo de la seccion actual no se pliega
     render(); return;
   }
+  if (a === 'buy') { buyGo(el); return; }
+  if (a === 'copy-txt') { navigator.clipboard.writeText(el.dataset.t).then(() => toast('Copiado'), () => toast('No se pudo copiar', true)); return; }
+  if (a === 'pay-stripe') { const c = S.pay.cfg.stripe; openDlg({ title: 'Claves de Stripe', submit: 'Guardar y probar', body: `<label class="f">Clave secreta (sk_live_… o sk_test_… para pruebas)<input name="key" autocomplete="off" spellcheck="false" placeholder="${c.hasKey ? 'Vacío = no cambiarla' : 'sk_live_…'}"></label><label class="f">Secreto del webhook (whsec_…, opcional)<input name="wh" autocomplete="off" spellcheck="false" placeholder="${c.hasWh ? 'Vacío = no cambiarlo' : 'whsec_…'}"></label><p class="muted small">No la compartas con nadie ni la pegues en chats.</p>`, onSubmit: async (fd) => { await api('PUT', '/api/pay/config', { stripe: { key: fd.get('key'), whsec: fd.get('wh'), on: true } }); return 'Stripe conectado y activado'; }, after: () => { S.pay = null; loadPay(); } }); return; }
+  if (a === 'pay-now') { const c = S.pay.cfg.nowpay; openDlg({ title: 'Claves de NOWPayments', submit: 'Guardar y probar', body: `<label class="f">API key<input name="key" autocomplete="off" spellcheck="false" placeholder="${c.hasKey ? 'Vacío = no cambiarla' : ''}"></label><label class="f">IPN secret<input name="ipn" autocomplete="off" spellcheck="false" placeholder="${c.hasIpn ? 'Vacío = no cambiarlo' : ''}"></label>`, onSubmit: async (fd) => { await api('PUT', '/api/pay/config', { nowpay: { key: fd.get('key'), ipn: fd.get('ipn'), on: true } }); return 'NOWPayments conectado y activado'; }, after: () => { S.pay = null; loadPay(); } }); return; }
+  if (a === 'pay-onoff') { api('PUT', '/api/pay/config', { [el.dataset.k]: { on: el.dataset.on === 'true' } }).then(() => { toast('Guardado'); S.pay = null; loadPay(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'au-emby') {
+    const items = [...S.auSel.emby].map((k) => { const [sid, id] = k.split(':'); return { serverId: +sid, embyId: id }; });
+    const del = el.dataset.do === 'delete', names = S.audit.notInPanel.filter((r) => S.auSel.emby.has(r.serverId + ':' + r.embyId)).map((r) => r.name);
+    openDlg({ title: del ? `Eliminar ${plural(items.length, 'usuario', 'usuarios')} de Emby` : `Desactivar ${plural(items.length, 'usuario', 'usuarios')} en Emby`, submit: del ? 'Eliminar de Emby' : 'Desactivar', danger: true,
+      body: `<p>${del ? 'Se borran <b>para siempre</b> de Emby (no se puede deshacer).' : 'No podrán entrar ni ver nada, pero siguen existiendo en Emby por si te equivocas.'}</p><p class="preview">${names.slice(0, 30).map(esc).join(', ')}${names.length > 30 ? ` y ${names.length - 30} más` : ''}</p>${del ? '<label class="check"><input type="checkbox" name="sure" required> Sí, estoy seguro: no son clientes de nadie</label>' : ''}`,
+      onSubmit: async () => { const r = await api('POST', '/api/audit/emby-users', { action: del ? 'delete' : 'disable', items }); return bulkResult(r, del ? 'Eliminar de Emby' : 'Desactivar', del ? 'usuario eliminado' : 'usuario desactivado', del ? 'usuarios eliminados' : 'usuarios desactivados', 'no se tocaron'); },
+      after: loadAudit });
+    return;
+  }
+  if (a === 'au-forget') {
+    const ids = [...S.auSel.gone].map(Number);
+    openDlg({ title: `Quitar ${plural(ids.length, 'cuenta', 'cuentas')} del panel`, submit: 'Quitar del panel', danger: true, body: '<p>Ya no existen en Emby. Se quitan del panel (antes se comprueba otra vez que de verdad no están en Emby).</p>',
+      onSubmit: async () => bulkResult(await api('POST', '/api/audit/forget', { ids }), 'Quitar del panel', 'cuenta quitada', 'cuentas quitadas'), after: loadAudit });
+    return;
+  }
+  if (a === 'au-repair') {
+    const ids = [...S.auSel.mis].map(Number);
+    openDlg({ title: `Reparar ${plural(ids.length, 'cuenta', 'cuentas')}`, submit: 'Reparar', body: '<p>Se vuelve a aplicar en Emby lo que dice el panel: bibliotecas de su paquete, pantallas y sin transcodificación de vídeo.</p>',
+      onSubmit: async () => bulkResult(await bulkCall('/api/bulk/repair', ids, {}), 'Reparar cuentas', 'cuenta reparada', 'cuentas reparadas'), after: loadAudit });
+    return;
+  }
+  if (a === 'qs') { qsOpen(); return; }
+  if (a === 'qs-close') { $('#qs').close(); return; }
+  if (a === 'qs-go') { qsGo(+el.dataset.i); return; }
+  if (a === 'mon-all') { dBroadcast(); return; }
+  if (a === 'in-days') { S.inDays = +el.dataset.k; render(); return; }
+  if (a === 'in-reload') { loadSeen().then(render); return; }
+  if (a === 'uso-days') { S.usoDays = +el.dataset.k; S.uso = null; render(); return; }
+  if (a === 'bk-dl') { const name = el.dataset.name || ''; openDlg({ title: 'Descargar copia cifrada', submit: 'Descargar', body: `<p>Elige la contraseña con la que se cifrará${name ? ' la copia del ' + fmt(name.slice(3, 13)) : ' la copia'}. <b>Apúntala:</b> la necesitarás para restaurarla.</p><label class="f">Contraseña de la copia (mín. 8)<input type="password" name="pw" required minlength="8" autocomplete="new-password"></label><label class="f">Repite la contraseña<input type="password" name="pw2" required minlength="8" autocomplete="new-password"></label>`, onSubmit: async (fd) => { if (fd.get('pw') !== fd.get('pw2')) throw new Error('Las dos contraseñas no coinciden.'); await downloadBackup(name, fd.get('pw')); return 'Copia descargada'; } }); return; }
+  if (a === 'bk-cfg') { const c = S.bk.cfg; openDlg({ title: 'Copia diaria por Telegram', submit: 'Guardar', body: `<label class="f">Hora a la que se envía<select name="hour">${options(Array.from({ length: 24 }, (_, h) => [h, pad(h) + ':00']), c.hour)}</select></label><label class="f">${c.hasKey ? 'Nueva contraseña de las copias (vacío = la misma)' : 'Contraseña para cifrar las copias (mín. 10)'}<input type="password" name="pw" ${c.hasKey ? '' : 'required'} minlength="10" autocomplete="new-password"></label><p class="muted small">No se guarda la contraseña, solo una llave sacada de ella. Apúntala en un sitio seguro: es la que pedirá el panel al restaurar.</p>`, onSubmit: async (fd) => { await api('PUT', '/api/backup/config', { on: true, hour: +fd.get('hour'), password: fd.get('pw') || undefined }); return 'Copia diaria activada'; }, after: () => { S.bk = null; loadBk(); } }); return; }
+  if (a === 'bk-off') { api('PUT', '/api/backup/config', { on: false }).then(() => { toast('Copia diaria desactivada'); loadBk(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'bk-send') { el.disabled = true; api('POST', '/api/backup/send', {}).then(() => { toast('Copia enviada: mira tu Telegram'); loadBk(); }, (x) => { toast(x.message, true); el.disabled = false; }); return; }
+  if (a === 'bk-restore') { openDlg({ title: 'Restaurar una copia', submit: 'Restaurar', danger: true, body: `<label class="f">Archivo de la copia (.concha)<input type="file" name="file" accept=".concha,application/octet-stream,application/json" required></label><label class="f">Contraseña de la copia<input type="password" name="pw" required autocomplete="off"></label><label class="f">Tu contraseña del panel (para confirmar)<input type="password" name="mine" required autocomplete="current-password"></label><p class="err" style="max-width:none">Todo volverá a como estaba en la copia. Lo de después se pierde.</p>`, onSubmit: async (fd) => { const f = fd.get('file'); if (!f || !f.size) throw new Error('Elige el archivo.'); const r = await api('POST', '/api/backup/restore', { content: await f.text(), password: fd.get('pw'), mine: fd.get('mine') }); setTimeout(() => location.reload(), 1500); return 'Panel restaurado. Vuelve a entrar.'; } }); return; }
+  if (a === 'sec-reload') { loadSec(); return; }
+  if (a === 'sec-2fa-on') { dTotpOn(); return; }
+  if (a === 'sec-2fa-off') { openDlg({ title: 'Desactivar la verificación en dos pasos', submit: 'Desactivar', danger: true, body: '<p>Tu cuenta quedará protegida solo con la contraseña.</p><label class="f">Tu contraseña<input type="password" name="password" required autocomplete="current-password"></label><label class="f">Código de la app (o un código de rescate)<input name="code" required autocomplete="one-time-code"></label>', onSubmit: async (fd) => { await api('POST', '/api/security/totp/disable', { password: fd.get('password'), code: fd.get('code') }); return 'Verificación desactivada'; }, after: () => { S.sec = null; loadSec(); } }); return; }
+  if (a === 'sec-codes') { openDlg({ title: 'Códigos de rescate nuevos', submit: 'Generar', body: '<p>Los códigos que tenías dejarán de servir.</p><label class="f">Tu contraseña<input type="password" name="password" required autocomplete="current-password"></label>', onSubmit: async (fd) => { S.recCodes = (await api('POST', '/api/security/totp/codes', { password: fd.get('password') })).codes; return ''; }, after: () => { S.sec = null; loadSec(); showCodes(S.recCodes); } }); return; }
+  if (a === 'codes-copy') { navigator.clipboard.writeText(S.codesTxt || '').then(() => toast('Códigos copiados'), () => toast('No se pudo copiar', true)); return; }
+  if (a === 'codes-dl') { const l = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([S.codesTxt || ''], { type: 'text/plain' })), download: 'codigos-rescate.txt' }); l.click(); return; }
+  if (a === 'sec-al') { const k = el.dataset.k, on = el.getAttribute('aria-checked') !== 'true'; el.setAttribute('aria-checked', on); api('PUT', '/api/security/alerts', { [k]: on }).then(() => { S.sec.alerts[k] = on; }).catch((x) => { el.setAttribute('aria-checked', !on); toast(x.message, true); }); return; }
+  if (a === 'sec-tgtest') { api('POST', '/api/security/tg/test', {}).then(() => toast('Mensaje enviado: mira tu Telegram'), (x) => toast(x.message, true)); return; }
+  if (a === 'sec-tgoff') { api('POST', '/api/security/tg/unlink', {}).then(() => { toast('Telegram desenlazado'); loadSec(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'sec-close' || a === 'sec-closeall') { api('POST', '/api/security/sessions/close', a === 'sec-closeall' ? { all: true } : { sid: el.dataset.sid }).then((r) => { toast(r.closed === 1 ? 'Sesión cerrada' : `${r.closed} sesiones cerradas`); loadSec(); }, (x) => toast(x.message, true)); return; }
   if (a === 'mon-reload') { loadMon(); return; }
   if (a === 'mon-auto') { S.mon.auto = !S.mon.auto; S.mon.left = S.mon.every; el.setAttribute('aria-pressed', S.mon.auto); el.textContent = 'Auto ' + (S.mon.auto ? 'ON' : 'OFF'); const l = $('#monLeft'); if (l) l.textContent = S.mon.auto ? S.mon.left + ' s' : 'pausa'; return; }
   if (a === 'mon-k') { const k = el.dataset.k, f = S.mon; if (k === 'all') Object.assign(f, { st: 'all', tr: 'all', kind: 'all' }); else if (k === 'play' || k === 'pause') f.st = f.st === k ? 'all' : k; else if (k === 'tr') f.tr = f.tr === 'yes' ? 'all' : 'yes'; else f.kind = f.kind === k ? 'all' : k; monPaint(); return; }
@@ -3308,6 +4017,7 @@ document.addEventListener('click', (e) => {
   if (a === 'mon-stop') { monStop(el); return; }
   if (a === 'mon-msg') { monMsg(el); return; }
   if (a === 'mon-tpl') { const t = el.closest('form').elements.text; t.value = el.dataset.m; t.focus(); return; }
+  if (a === 'gate-back') { gateStep(false); return; }
   if (a === 'gate-cap') { newCaptcha(); $('#gateForm').elements.captcha.focus(); return; }
   if (a === 'gate-eye') { const i = $('#gateForm').elements.password, show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.innerHTML = ic(show ? 'lock' : 'eye'); el.setAttribute('aria-label', show ? 'Ocultar la contraseña' : 'Mostrar la contraseña'); return; }
   if (a === 'gate-help') { el.nextElementSibling.hidden = !el.nextElementSibling.hidden; return; }
@@ -3398,6 +4108,7 @@ document.addEventListener('click', (e) => {
       c.demo ? 'La demo se desactiva ahora y se borra de Emby mañana.' : 'La cuenta se desactiva en Emby y pasa a la papelera. No se borra nada todavía y puedes restaurarla desde allí. Los créditos gastados no se devuelven.',
       c.demo ? 'Cancelar demo' : 'Dar de baja', () => api('POST', `/api/clients/${c.id}/trash`, {}), 'Enviada a la papelera'); break;
     case 'restore': if (c) act(() => api('POST', `/api/clients/${c.id}/restore`, {}), 'Cuenta restaurada'); break;
+    case 'del-refund': if (c) dDelRefund(c); break;
     case 'delete': if (c) dConfirm(`Eliminar a ${c.panelName}`, `El usuario <b>${esc(c.embyName)}</b> se borra de Emby junto con su historial y su progreso. No se puede deshacer.`,
       'Eliminar para siempre', () => api('DELETE', `/api/clients/${c.id}`), 'Cuenta eliminada'); break;
     case 'goto': S.view = el.dataset.filter === 'trash' ? 'papelera' : 'cuentas'; if (el.dataset.filter !== 'trash') S.filter = el.dataset.filter; S.q = ''; render(); break;
@@ -3414,6 +4125,7 @@ document.addEventListener('click', (e) => {
     case 'user-new': if (dlg.open) dlg.close(); S.vendorId = 0; S.view = 'vendedor'; render(); window.scrollTo(0, 0); break;
     case 'user-edit': if (usr && usr.role === 'admin') dAdmin(usr); else if (usr) { if (dlg.open) dlg.close(); S.vendorId = usr.id; S.view = 'vendedor'; render(); window.scrollTo(0, 0); } break;
     case 'user-info': if (usr) dVendorMsg(usr, ''); break;
+    case 'user-2fa': if (usr) dConfirm(`Quitar la verificación a ${usr.name}`, 'Podrá entrar solo con su contraseña y se cerrarán sus sesiones. Pídele que la vuelva a activar en Ajustes › Seguridad.', 'Quitar verificación', () => api('POST', `/api/users/${usr.id}/reset2fa`, {}), 'Verificación quitada'); break;
     case 'ven-cfg': if (usr) dVenCfg(usr); break;
     case 'user-stats': if (usr) dUserStats(usr); break;
     case 'user-ledger': if (usr) dLedger(usr); break;
@@ -3453,6 +4165,7 @@ document.addEventListener('input', (e) => {
     $('.combo-none', list).hidden = n > 0;
     return;
   }
+  if (id === 'buyN' && S.pay) { const p = $('#buyP'); if (p) p.textContent = money((+e.target.value || 0) * S.pay.price, S.pay.currency); return; }
   if (id === 'monQ') { S.mon.q = e.target.value; monPaint(); return; }
   if (id === 'admq') S.admQ = e.target.value;
   if (id === 'lgq') { S.lg.q = e.target.value; S.lg.n = 200; }
