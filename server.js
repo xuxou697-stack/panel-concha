@@ -231,6 +231,8 @@ const sameLibs = (a, b) => { const n = (x) => [...new Set((x || []).map((v) => S
 async function readPolicy(s, embyId) { return (await emby(s, 'GET', `/Users/${embyId}`)).Policy || {}; }
 /** Da acceso: activa la cuenta, le pone SIEMPRE las bibliotecas de su paquete y su limite de pantallas, y comprueba que Emby lo ha aplicado */
 async function grantAccess(client) {
+  // Desactivada a mano (por ejemplo, no ha pagado): nada la vuelve a activar salvo Activar, Renovar o Restaurar
+  if (client.off) { await removeAccess(client, true); return; }
   const s = serverOf(client);
   const acc = accessOf(client);
   const pol = lockDown(await readPolicy(s, client.embyId));
@@ -292,7 +294,7 @@ async function lifecycle() {
     try {
       if (c.demo && c.status === 'active' && now >= Date.parse(c.expiresAt)) {
         await removeAccess(c, true);
-        c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Demo terminada';
+        c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Demo terminada'; delete c.off; delete c.offBy;
         addLog('papelera', c, 'Demo terminada: cuenta desactivada');
       }
       if (!c.demo && c.status === 'active' && diffDays(t, c.expires) > 0) {
@@ -302,7 +304,7 @@ async function lifecycle() {
       }
       if (c.status === 'expired' && diffDays(t, c.expires) > graceDays) {
         await removeAccess(c, true);
-        c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Sin renovar';
+        c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Sin renovar'; delete c.off; delete c.offBy;
         addLog('papelera', c, `A la papelera tras ${graceDays} días sin renovar: cuenta desactivada`);
       }
       if (c.status === 'trash') {
@@ -1516,7 +1518,7 @@ function assertEmbyNameFree(server, embyName) {
   }
 }
 const pubUser = (u) => ({
-  id: u.id, username: u.username, name: u.name, role: u.role, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, createdAt: u.createdAt,
+  id: u.id, username: u.username, name: u.name, role: u.role, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, offBy: u.offBy || null, offAt: u.offAt || null, createdAt: u.createdAt,
   creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [],
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
   twoFa: !!(u.totp && u.totp.on), tgLinked: !!u.tgChat,
@@ -1700,7 +1702,10 @@ route('POST', '/api/login', null, async ({ req, body, res }) => {
   if (f.until > Date.now()) throw new HttpError(429, 'Demasiados intentos. Espera un minuto.');
   checkCaptcha(body);
   const u = db.users.find((x) => x.username === username);
-  const ok = !!u && !u.disabled && checkPassword(u, typeof body.password === 'string' ? body.password : '');
+  const pwOk = !!u && checkPassword(u, typeof body.password === 'string' ? body.password : '');
+  // Contraseña buena pero acceso desactivado: se le dice claro (solo quien sabe la contraseña lo ve)
+  if (pwOk && u.disabled) throw new HttpError(403, 'Tu acceso al panel está desactivado. Habla con quien te dio de alta.');
+  const ok = pwOk;
   if (!ok) {
     await new Promise((r) => setTimeout(r, 600));
     f.count++; f.total = (f.total || 0) + 1;
@@ -2308,11 +2313,11 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   const t = today();
   // Si aun no ha vencido se suma a su fecha; si ya vencio o era una demo, cuenta desde hoy
   const base = !c.demo && diffDays(c.expires, t) >= 0 ? c.expires : t;
-  const before = { expires: c.expires, status: c.status, screens: c.screens, quality: c.quality, demo: c.demo, expiresAt: c.expiresAt };
+  const before = { expires: c.expires, status: c.status, screens: c.screens, quality: c.quality, demo: c.demo, expiresAt: c.expiresAt, off: c.off };
   c.expires = addMonths(base, plan.months);
-  c.screens = plan.screens; c.quality = plan.quality; c.demo = false; delete c.expiresAt;
+  c.screens = plan.screens; c.quality = plan.quality; c.demo = false; delete c.expiresAt; delete c.off; delete c.offBy; // renovar la vuelve a activar
   try { await grantAccess(c); }
-  catch (e) { Object.assign(c, before); if (before.expiresAt === undefined) delete c.expiresAt; throw e; }
+  catch (e) { Object.assign(c, before); if (before.expiresAt === undefined) delete c.expiresAt; if (before.off === undefined) delete c.off; throw e; }
   c.status = 'active';
   c.paid = body.paid !== false;
   delete c.trashedAt; delete c.trashReason; delete c.lastError;
@@ -2332,12 +2337,31 @@ route('POST', '/api/clients/:id/trash', '*', ({ me, params }) => lock(async () =
   return { ok: true };
 }));
 
+/* Desactivar sin borrar: se queda en su lista, sin acceso en Emby, hasta que la actives o la renueves */
+async function setOff(me, c, off) {
+  if (c.status === 'trash') throw new HttpError(400, 'Está en la papelera. Restáurala o renuévala desde allí.');
+  if (!!c.off === off) return false;
+  if (off) {
+    c.off = new Date().toISOString();
+    try { await removeAccess(c, true); } catch (e) { delete c.off; throw e; }
+    addLog('desactivada', c, 'Desactivada: sin acceso en Emby hasta que se vuelva a activar', me);
+  } else {
+    const was = c.off; delete c.off; delete c.offBy;
+    try { await applyState(c); } catch (e) { c.off = was; throw e; }
+    const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
+    addLog('activada', c, valid ? 'Activada de nuevo: vuelve a tener acceso en Emby' : 'Activada de nuevo, pero está vencida: renuévala para que tenga acceso', me);
+  }
+  return true;
+}
+route('POST', '/api/clients/:id/off', '*', ({ me, params }) => lock(async () => { await setOff(me, clientFor(me, params.id), true); saveDb(); return { ok: true }; }));
+route('POST', '/api/clients/:id/on', '*', ({ me, params }) => lock(async () => { await setOff(me, clientFor(me, params.id), false); saveDb(); return { ok: true }; }));
 route('POST', '/api/clients/:id/restore', '*', ({ me, params }) => lock(async () => {
   const c = clientFor(me, params.id);
   if (c.status !== 'trash') return { ok: true };
   if (c.demo) throw new HttpError(400, 'Las demos no se restauran. Renuévala para convertirla en cuenta.');
   if (diffDays(c.expires, today()) < 0) throw new HttpError(400, 'Su suscripción ya venció. Renuévala para sacarla de la papelera.');
-  await grantAccess(c);
+  const wasOff = c.off; delete c.off; delete c.offBy;
+  try { await grantAccess(c); } catch (e) { if (wasOff) c.off = wasOff; throw e; }
   c.status = 'active';
   delete c.trashedAt; delete c.trashReason;
   addLog('restaurada', c, 'Restaurada desde la papelera', me);
@@ -2425,8 +2449,8 @@ route('GET', '/api/clients/:id/history', '*', ({ me, params }) => {
 /** Deja la cuenta en Emby tal como dice el panel */
 async function applyState(c) {
   const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
-  if (c.status === 'active' && valid) await grantAccess(c);
-  else await removeAccess(c, c.status === 'trash');
+  if (c.status === 'active' && valid && !c.off) await grantAccess(c);
+  else await removeAccess(c, c.status === 'trash' || !!c.off);
 }
 
 /* Reparar: vuelve a aplicar en Emby el estado del panel; si el usuario fue borrado en Emby, lo crea de nuevo */
@@ -2440,7 +2464,7 @@ async function repairClient(me, c) {
   const libs = await embyLibraries(s);
   const libName = new Map(libs.map((l) => [l.id, l.name]));
   const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
-  const shouldHave = c.status === 'active' && valid;
+  const shouldHave = c.status === 'active' && valid && !c.off;
   let wanted = null;
   if (shouldHave) {
     wanted = accessOf(c); // avisa si el paquete no esta configurado
@@ -2471,7 +2495,7 @@ async function repairClient(me, c) {
     if (c.screens > 0) say(!before || before.SimultaneousStreamLimit === c.screens, `Pantallas a la vez: ${c.screens}${before && before.SimultaneousStreamLimit !== c.screens ? ' (corregido)' : ''}.`);
   } else {
     const had = before && polHasLibs(before);
-    say(!had, `${c.status === 'trash' ? 'Está en la papelera' : c.demo ? 'La demo ha terminado' : 'Está caducada'}: ${had ? 'tenía bibliotecas y se le han retirado' : 'no tiene bibliotecas, como debe ser'}.`);
+    say(!had, `${c.status === 'trash' ? 'Está en la papelera' : c.off ? 'La desactivaste tú' : c.demo ? 'La demo ha terminado' : 'Está caducada'}: ${had ? 'tenía bibliotecas y se le han retirado' : 'no tiene bibliotecas, como debe ser'}.`);
   }
   delete c.lastError;
   const fixed = report.filter((r) => !r.ok && !r.warn).length;
@@ -2520,6 +2544,7 @@ route('POST', '/api/clients/:id/move', STAFF, ({ me, params, body }) => lock(asy
 
 async function trashClient(me, c) {
   await removeAccess(c, true);
+  delete c.off; delete c.offBy;
   c.status = 'trash'; c.trashedAt = today(); c.trashReason = c.demo ? 'Demo cancelada' : 'Baja manual';
   addLog('baja', c, 'Baja: cuenta desactivada y enviada a la papelera', me);
 }
@@ -2542,6 +2567,8 @@ async function bulkEach(list, fn) {
   return { ok: true, moved, skipped, failed };
 }
 route('POST', '/api/bulk/repair', '*', ({ me, body }) => lock(async () => bulkEach(bulkClients(me, body), (c) => repairClient(me, c).then(() => true))));
+route('POST', '/api/bulk/off', '*', ({ me, body }) => lock(async () => bulkEach(bulkClients(me, body), (c) => (c.status === 'trash' || c.off ? false : setOff(me, c, true)))));
+route('POST', '/api/bulk/on', '*', ({ me, body }) => lock(async () => bulkEach(bulkClients(me, body), (c) => (c.status === 'trash' || !c.off ? false : setOff(me, c, false)))));
 route('POST', '/api/bulk/trash', '*', ({ me, body }) => lock(async () => bulkEach(bulkClients(me, body), (c) => (c.status === 'trash' ? false : trashClient(me, c).then(() => true)))));
 /* Ajustar fechas: suma o resta dias al vencimiento. No toca demos ni cuentas en la papelera */
 route('POST', '/api/bulk/dates', STAFF, ({ me, body }) => lock(async () => {
@@ -2623,7 +2650,10 @@ route('GET', '/api/audit', STAFF, async () => {
       const pol = u.Policy || {};
       const hasLibs = !!pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0;
       const problems = [];
-      if (c.status === 'active') {
+      if (c.off && c.status !== 'trash') {
+        if (!pol.IsDisabled) problems.push('la desactivaste en el panel, pero en Emby sigue activada');
+        else if (hasLibs) problems.push('la desactivaste en el panel, pero en Emby conserva bibliotecas');
+      } else if (c.status === 'active') {
         if (pol.IsDisabled) problems.push('en el panel está activa, pero en Emby está desactivada');
         else if (!hasLibs) problems.push('en el panel está activa, pero en Emby no tiene bibliotecas');
         if (c.screens > 0 && pol.SimultaneousStreamLimit !== c.screens) problems.push(`tiene ${c.screens} ${c.screens === 1 ? 'pantalla' : 'pantallas'} en el panel y ${pol.SimultaneousStreamLimit || 'sin límite'} en Emby`);
@@ -2635,7 +2665,7 @@ route('GET', '/api/audit', STAFF, async () => {
       if (u.Name !== c.embyName) problems.push(`en Emby ahora se llama "${u.Name}"`);
       if (pol.IsAdministrator) problems.push('es administrador en Emby y no debería');
       if (pol.EnableVideoPlaybackTranscoding !== false) problems.push('tiene permitida la transcodificación de vídeo');
-      if (c.status === 'active' && !pol.IsDisabled && hasLibs && c.quality && packageReady(s, c.quality)) {
+      if (c.status === 'active' && !c.off && !pol.IsDisabled && hasLibs && c.quality && packageReady(s, c.quality)) {
         const pk = s.packages[c.quality];
         if (!!pk.all !== !!pol.EnableAllFolders || (!pk.all && !sameLibs(pk.folders, pol.EnabledFolders))) problems.push(`sus bibliotecas en Emby no son las del paquete ${QUALITIES[c.quality]}`);
       }
@@ -2733,7 +2763,7 @@ route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, bo
   const name = str(body.name, 60);
   if (name) u.name = name;
   if (typeof body.password === 'string' && body.password) { setPassword(u, readNewPassword(body.password)); dropSessions(u.id); }
-  if (body.disabled !== undefined) { u.disabled = !!body.disabled; if (u.disabled) dropSessions(u.id); }
+  if (body.disabled !== undefined) { u.disabled = !!body.disabled; if (u.disabled) dropSessions(u.id); else { delete u.offBy; delete u.offAt; } }
   if (isStaff(me) && u.role === 'sub' && body.parentId !== undefined && Number(body.parentId) !== u.parentId) {
     const parent = userById(body.parentId);
     if (parent.role !== 'reseller') throw new HttpError(400, 'Un subreseller solo puede depender de un reseller.');
@@ -2745,6 +2775,38 @@ route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, bo
   if (before && before !== JSON.stringify([permsOf(u), !!u.useCredits])) addLog('usuario', null, `Permisos de ${u.name} cambiados`, me);
   saveDb();
   return { ok: true };
+}));
+/* Apagar o encender a un usuario del panel (por ejemplo, porque no paga).
+   Con clients: true también apaga sus cuentas (y las de sus subresellers); al encenderlo solo se reactivan las que se apagaron con él */
+route('POST', '/api/users/:id/power', ['super', 'admin', 'reseller'], ({ me, params, body }) => lock(async () => {
+  const u = userById(params.id);
+  if (!canManageUser(me, u)) throw new HttpError(403, 'No puedes cambiar a este usuario.');
+  needPerm(me, u.role === 'admin' ? 'admins' : 'resellers');
+  const off = !!body.off, withClients = !!body.clients;
+  const subs = u.role === 'reseller' ? db.users.filter((x) => x.parentId === u.id) : [];
+  const out = { clients: 0, subs: 0, failed: [] };
+  const people = [u, ...(withClients ? subs : [])];
+  for (const p of people) {
+    if (p === u) { u.disabled = off; if (off) u.offAt = new Date().toISOString(); else delete u.offAt; }
+    else if (off && !p.disabled) { p.disabled = true; p.offBy = u.id; out.subs++; }
+    else if (!off && p.offBy === u.id) { p.disabled = false; delete p.offBy; out.subs++; }
+    if (p.disabled) dropSessions(p.id);
+  }
+  if (withClients) {
+    const owners = new Set([u.id, ...subs.map((x) => x.id)]);
+    for (const c of db.clients.filter((x) => owners.has(x.ownerId) && x.status !== 'trash')) {
+      try {
+        if (off && !c.off) { await setOff(me, c, true); c.offBy = u.id; out.clients++; }
+        else if (!off && c.off && c.offBy === u.id) { await setOff(me, c, false); out.clients++; }
+      } catch (e) { out.failed.push({ name: c.panelName, emby: c.embyName, error: e.message }); }
+      saveDb();
+    }
+  }
+  if (!off) delete u.offBy;
+  const extra = withClients ? `: ${out.clients} ${out.clients === 1 ? 'cuenta' : 'cuentas'}${out.subs ? ` y ${out.subs} ${out.subs === 1 ? 'subreseller' : 'subresellers'}` : ''} ${off ? 'apagadas' : 'encendidas'} con él` : ' (sus cuentas no se tocan)';
+  addLog('usuario', null, `${off ? 'Desactivado' : 'Activado'} ${(ROLE_NAME[u.role] || 'usuario').toLowerCase()} ${u.name}${extra}`, me);
+  saveDb();
+  return { ok: true, ...out };
 }));
 route('DELETE', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params }) => lock(async () => {
   const u = userById(params.id);

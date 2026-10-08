@@ -805,6 +805,16 @@ kbd{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border
 .kind.devolucion{color:#19c37d}
 
 /* ---------- Buscador de clientes del Resumen ---------- */
+.ntiles .nt:last-child:nth-child(3n+1){grid-column:1/-1}
+@media (min-width:1181px){.ntiles .nt:last-child:nth-child(3n+1){grid-column:auto}}
+/* Cuenta desactivada a mano */
+.pw-chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 7%,transparent);line-height:1.45}.pw-chk input{margin-top:3px;flex:none}
+.offbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,#7d8fa8 60%,transparent);background:color-mix(in srgb,#7d8fa8 12%,transparent);font-size:13px}
+.offbar>.ic{width:18px;height:18px;flex:none;color:#9fb0c6}.offbar span{flex:1;min-width:0}.offbar .btn{flex:none}
+.badge.off{color:#9fb0c6}.cav.st-off,.cst.st-off{--k:#7d8fa8}.dq-r.st-off{--c:#7d8fa8}.tag.left.off{opacity:.7}.ccard.off{opacity:.92}
+@media (max-width:560px){.offbar{flex-wrap:wrap}.offbar .btn{margin-left:auto}}
+.credchip{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px;padding:7px 14px;border-radius:20px;border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));background:color-mix(in srgb,var(--brand) 12%,var(--surface));font-size:14px;color:var(--text)}
+.credchip .ic{width:16px;height:16px;margin:0;color:var(--brand)}
 .dsearch{display:flex;align-items:center;gap:12px;padding:6px 8px 6px 16px;margin-bottom:10px;border-radius:16px;border:2px solid color-mix(in srgb,var(--brand) 45%,var(--line));
   background:linear-gradient(120deg,color-mix(in srgb,#3fa9f5 10%,var(--surface)),color-mix(in srgb,#a46bff 10%,var(--surface)));box-shadow:0 10px 30px -20px color-mix(in srgb,var(--brand) 70%,transparent)}
 .dsearch:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px color-mix(in srgb,var(--brand) 20%,transparent)}
@@ -828,7 +838,7 @@ kbd{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border
 .cl-add .ic{width:26px;height:26px;stroke-width:2.4} .cl-add:hover{filter:brightness(1.1)}
 .cl-ib{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);display:grid;place-items:center;cursor:pointer;flex:none;font:inherit;font-size:18px;font-weight:700}
 .cl-ib .ic{width:20px;height:20px} .cl-ib:hover{border-color:var(--brand);color:var(--brand)}
-.ntiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:4px 0 18px}
+.ntiles{display:grid;grid-template-columns:repeat(var(--n,6),1fr);gap:12px;margin:4px 0 18px}
 .nt{--c:#3fa9f5;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px 8px;border-radius:14px;cursor:pointer;color:var(--text);
   border:1.5px solid color-mix(in srgb,var(--c) 65%,transparent);box-shadow:0 0 14px -4px color-mix(in srgb,var(--c) 60%,transparent),inset 0 0 18px -10px var(--c);
   background:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--c) 22%,transparent) 1px,transparent 1.6px) 0 0/9px 9px,linear-gradient(160deg,color-mix(in srgb,var(--c) 14%,var(--surface)),var(--surface))}
@@ -1051,7 +1061,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -1106,7 +1116,7 @@ const noCli = () => me().role === 'admin' && !canDo('clients');
 /** Menu lateral agrupado. v = vista, f = filtro de la lista, a = accion, h = titulo de grupo, l = nivel */
 /** Menu lateral por grupos plegables. v = vista, f = filtro de la lista, i = icono, n = contador, hot = contador que pide atencion */
 function navGroups() {
-  const cnt = { soon: 0, expired: 0, demo: 0 };
+  const cnt = { soon: 0, expired: 0, demo: 0, off: 0 };
   live().forEach((c) => { const st = stage(c); if (cnt[st] !== undefined) cnt[st]++; });
   const unpaid = S.d.clients.filter((c) => c.paid === false && c.status !== 'trash').length;
   const cli = [
@@ -1114,6 +1124,7 @@ function navGroups() {
     { v: 'nuevo', t: 'Nuevo', i: 'userplus' },
     { v: 'cuentas', f: 'soon', t: 'Por vencer', i: 'clock', n: cnt.soon },
     { v: 'cuentas', f: 'expired', t: 'Vencidos', i: 'alert', n: cnt.expired, hot: true },
+    { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off },
     { v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid },
     { v: 'avisos', t: 'Avisos de vencimiento', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length }];
   if (staff() && canDo('reports')) cli.push({ v: 'auditoria', t: 'Auditoría', i: 'check' });
@@ -1155,13 +1166,15 @@ function navGroups() {
 const navItems = () => navGroups().flatMap((g) => g.items);
 function stage(c) {
   if (c.status === 'trash') return 'trash';
+  if (c.off) return 'off'; // desactivada a mano, sin borrar
+
   if (c.demo) return 'demo';
   const left = diff(c.expires, S.d.today);
   if (c.status === 'expired' || left < 0) return 'expired';
   return left <= S.d.settings.warnDays ? 'soon' : 'active';
 }
-const STAGE_SHORT = { active: 'Activa', soon: 'Vence pronto', expired: 'Caducada', trash: 'Papelera', demo: 'Demo' };
-const STAGE = { active: 'Activa', soon: 'Vence pronto', expired: 'Caducada, sin bibliotecas', trash: 'En la papelera', demo: 'Demo en curso' };
+const STAGE_SHORT = { active: 'Activa', soon: 'Vence pronto', expired: 'Caducada', trash: 'Papelera', demo: 'Demo', off: 'Desactivada' };
+const STAGE = { active: 'Activa', soon: 'Vence pronto', expired: 'Caducada, sin bibliotecas', trash: 'En la papelera', demo: 'Demo en curso', off: 'Desactivada' };
 function when(c) {
   if (c.demo) {
     const mins = Math.round((new Date(c.expiresAt) - Date.now()) / 60000);
@@ -1394,7 +1407,7 @@ function clientRow(c, compact) {
     <td><span class="badge ${st}">${STAGE[st]}</span>${c.paid === false ? '<div class="due">Cobro pendiente</div>' : ''}${c.lastError ? `<div class="err">No se pudo aplicar en Emby: ${esc(c.lastError)}</div>` : ''}</td>
     <td class="r"><div class="acts">
       <button class="btn sm primary" data-act="renew" data-id="${c.id}">${c.demo ? 'Convertir en cuenta' : 'Extender'}</button>
-      ${compact ? '' : `<button class="btn sm" data-act="msg" data-id="${c.id}">Mensaje</button><button class="btn sm" data-act="edit" data-id="${c.id}">Editar</button><button class="btn sm ghost" data-act="trash" data-id="${c.id}">${c.demo ? 'Cancelar' : 'Dar de baja'}</button>`}
+      ${compact ? '' : `<button class="btn sm" data-act="msg" data-id="${c.id}">Mensaje</button><button class="btn sm" data-act="edit" data-id="${c.id}">Editar</button>${c.status === 'trash' ? '' : c.off ? `<button class="btn sm" data-act="c-on" data-id="${c.id}">Activar</button>` : `<button class="btn sm" data-act="c-off" data-id="${c.id}">Desactivar</button>`}<button class="btn sm ghost" data-act="trash" data-id="${c.id}">${c.demo ? 'Cancelar' : 'Dar de baja'}</button>`}
     </div></td></tr>`;
 }
 /** Tiempo que le queda, al estilo "4m 17d" */
@@ -1439,6 +1452,7 @@ function clientCard(c) {
     </div>
     <div class="foot small muted"><span>${ic('signal').replace('class="ic"', 'class="ic" style="width:14px;height:14px;margin-right:6px"')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span></span>
       <span><span class="badge ${st}">${STAGE[st]}</span>${c.paid === false ? ' <span class="due" style="display:inline">Cobro pendiente</span>' : ''}</span></div>
+    ${c.off ? `<div class="offbar">${ic('pause')}<span>Desactivada${c.off.length > 9 ? ' el ' + fmt(c.off.slice(0, 10)) : ''}: no puede ver nada en Emby. No se borra ni pasa a la papelera.</span><button type="button" class="btn sm primary" data-act="c-on" data-id="${c.id}">${ic('play')}Activar</button></div>` : ''}
     ${c.lastError ? `<div class="err">No se pudo aplicar en Emby: ${esc(c.lastError)}</div>` : ''}
     ${more}
     ${open ? `<div class="acts"><button class="btn sm" data-act="edit" data-id="${c.id}">${ic('edit')}Editar</button><button class="btn sm primary" data-act="renew" data-id="${c.id}">${ic('clock')}${renewLabel}</button><button class="btn sm" data-act="more" data-id="${c.id}">${ic('more')}Más</button></div>` : ''}
@@ -1456,27 +1470,13 @@ function vResumen() {
       <p class="muted small" style="margin-top:12px">Tu usuario no tiene permiso para ver ni gestionar clientes. Si lo necesitas, pídeselo al superadministrador.</p></div>`;
   }
   if (!d.servers.length) return head('Resumen') + noServer();
-  const cnt = { active: 0, soon: 0, expired: 0, trash: 0, demo: 0 };
+  const cnt = { active: 0, soon: 0, expired: 0, trash: 0, demo: 0, off: 0 };
   d.clients.forEach((c) => { cnt[stage(c)]++; });
   const g = d.settings;
   const urgent = live().filter((c) => ['soon', 'expired'].includes(stage(c))).sort(byExpiry);
   const purge = g.purgeDays > 0 ? `En la papelera se guardan ${plural(g.purgeDays, 'día', 'días')} y después se borran de Emby.` : 'Las cuentas de la papelera no se borran solas.';
-  // Cabecera con saludo, total de cuentas, porcentaje de activas y reparto por estado
-  const total = cnt.active + cnt.soon + cnt.expired + cnt.trash, pct = total ? Math.round((cnt.active / total) * 100) : 0;
-  const h = new Date().getHours(), hi = h < 14 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches';
-  const SEG = [['active', cnt.active, '#8ff0c0', 'activas'], ['soon', cnt.soon, '#ffd27a', 'vencen pronto'], ['expired', cnt.expired, '#ff9b8a', 'caducadas'], ['trash', cnt.trash, 'rgba(255,255,255,.6)', 'en papelera']];
-  const hero = `<section class="hero">
-    <div class="hero-top">
-      <div><p class="hero-hi">${hi}, ${esc(d.me.name)}</p>
-        <h1 class="hero-t">${plural(total, 'cuenta', 'cuentas')} en tu panel</h1>
-        <p class="hero-sub">${cnt.soon + cnt.expired ? `${plural(cnt.soon + cnt.expired, 'necesita', 'necesitan')} tu atención` : 'Todo al día'}${cnt.demo ? ` · ${plural(cnt.demo, 'demo en curso', 'demos en curso')}` : ''}</p></div>
-      <div class="ring" style="--p:${pct}" role="img" aria-label="${pct}% de las cuentas están activas"><div><b>${pct}%</b><span>activas</span></div></div>
-    </div>
-    <div class="hbar" aria-hidden="true">${total ? SEG.filter((x) => x[1]).map(([, n, c]) => `<i style="width:${(n / total) * 100}%;background:${c}"></i>`).join('') : ''}</div>
-    <div class="hlegend">${SEG.map(([, n, c, t]) => `<span><i style="background:${c}"></i>${n} ${t}</span>`).join('')}</div>
-    ${pays() ? `<span class="hchip">${ic('coins')}${plural(d.me.credits, 'crédito disponible', 'créditos disponibles')}</span>` : ''}
-    <svg class="waves" viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden="true"><path d="M0 26 C60 12 120 40 200 26 S330 10 400 24 V48 H0Z" fill="rgba(255,255,255,.10)"/><path d="M0 36 C70 24 140 48 210 36 S340 24 400 34 V48 H0Z" fill="rgba(236,210,155,.22)"/></svg>
-  </section>`;
+  // Créditos disponibles (solo para quien paga créditos). La cabecera grande se quitó a petición del usuario.
+  const hero = pays() ? `<div class="credchip">${ic('coins')}<span>Tienes <b>${plural(d.me.credits, 'crédito disponible', 'créditos disponibles')}</b></span></div>` : '';
   // Accesos rapidos
   const qa = (attrs, icon, label, cls = '') => `<button type="button" class="qa-b ${cls}" ${attrs}><span class="qa-i">${ic(icon)}</span><span>${label}</span></button>`;
   const quick = `<div class="qa">${qa('data-act="new"', 'userplus', 'Nueva cuenta', 'pri q-sea')}${qa('data-act="demo"', 'timer', 'Nueva demo', 'q-violet')}${qa('data-view="cuentas" data-filter="soon"', 'clock', 'Por vencer', 'q-sun')}${staff() ? qa('data-act="import"', 'download', 'Importar', 'q-coral') : qa('data-view="cuentas" data-filter="all"', 'list', 'Clientes', 'q-coral')}</div>`;
@@ -1493,7 +1493,7 @@ function vResumen() {
     ${sc('trash', cnt.trash, 'Papelera', 'cuenta desactivada', 'trash')}
   </div>
   <p class="dnote"><span>Las cuentas avanzan solas de un estado al siguiente. ${purge} Renovar las devuelve a Activas desde cualquier punto.</span>
-    <button class="chip" data-act="goto" data-filter="demo">${plural(cnt.demo, 'demo en curso', 'demos en curso')}</button></p>
+    <button class="chip" data-act="goto" data-filter="demo">${plural(cnt.demo, 'demo en curso', 'demos en curso')}</button>${cnt.off ? ` <button class="chip" data-act="goto" data-filter="off">${plural(cnt.off, 'desactivada', 'desactivadas')}</button>` : ''}</p>
   ${activityHtml()}
   <section><div class="sec-h"><h2>Pendientes de renovar</h2>${urgent.length ? `<small>${plural(urgent.length, 'cuenta', 'cuentas')}</small>` : ''}</div>
   ${urgent.length ? clientTable(urgent, true) : `<div class="panel"><div class="empty">${live().length ? 'Nada pendiente: ninguna cuenta vence en los próximos ' + g.warnDays + ' días.' : 'Todavía no hay cuentas. Crea la primera con «Nueva cuenta».'}</div></div>`}
@@ -1560,16 +1560,17 @@ function showTip(el) {
 function hideTip() { document.querySelectorAll('.tip').forEach((t) => { t.hidden = true; }); }
 /** Recuadros de la lista de clientes, con brillo de color */
 function ntiles() {
-  const cnt = { active: 0, soon: 0, expired: 0, demo: 0 };
+  const cnt = { active: 0, soon: 0, expired: 0, demo: 0, off: 0 };
   let mine = 0, total = 0;
   live().forEach((c) => { cnt[stage(c)]++; if (!c.demo) { total++; if (c.ownerId === me().id) mine++; } });
   const f = (k) => `data-act="filter" data-filter="${k}"`;
   const base = Math.max(1, total + cnt.demo);
   const t = (c, icon, n, label, attrs, on) => `<button type="button" class="nt${on ? ' on' : ''}" style="--c:${c}" ${attrs}><span class="nt-i">${ic(icon)}</span><b>${n}</b><span class="nt-l">${label}</span><i class="nt-bar"><i style="width:${Math.min(100, Math.round((n / base) * 100))}%"></i></i></button>`;
-  return `<div class="ntiles">${S.d.users.length > 1 ? t('#6d7dff', 'user', mine, 'Mis clientes', 'data-act="mine"', S.fOwner === me().id) : ''}${t('#2f9bff', 'users', total, 'Total', f('all'), S.filter === 'all' && !S.fOwner)}${t('#17b26a', 'check', cnt.active, 'Activos', f('active'), S.filter === 'active')}${t('#f59e0b', 'clock', cnt.soon, 'Por vencer', f('soon'), S.filter === 'soon')}${t('#ef4444', 'alert', cnt.expired, 'Vencidos', f('expired'), S.filter === 'expired')}${t('#a855f7', 'timer', cnt.demo, 'Demos', f('demo'), S.filter === 'demo')}</div>`;
+  const nTiles = 5 + (S.d.users.length > 1 ? 1 : 0) + (cnt.off || S.filter === 'off' ? 1 : 0);
+  return `<div class="ntiles" style="--n:${nTiles}">${S.d.users.length > 1 ? t('#6d7dff', 'user', mine, 'Mis clientes', 'data-act="mine"', S.fOwner === me().id) : ''}${t('#2f9bff', 'users', total, 'Total', f('all'), S.filter === 'all' && !S.fOwner)}${t('#17b26a', 'check', cnt.active, 'Activos', f('active'), S.filter === 'active')}${t('#f59e0b', 'clock', cnt.soon, 'Por vencer', f('soon'), S.filter === 'soon')}${t('#ef4444', 'alert', cnt.expired, 'Vencidos', f('expired'), S.filter === 'expired')}${t('#a855f7', 'timer', cnt.demo, 'Demos', f('demo'), S.filter === 'demo')}${cnt.off || S.filter === 'off' ? t('#7d8fa8', 'pause', cnt.off, 'Desactivados', f('off'), S.filter === 'off') : ''}</div>`;
 }
 function tiles() {
-  const cnt = { active: 0, soon: 0, expired: 0, demo: 0 };
+  const cnt = { active: 0, soon: 0, expired: 0, demo: 0, off: 0 };
   let mine = 0, total = 0;
   live().forEach((c) => { cnt[stage(c)]++; if (!c.demo) { total++; if (c.ownerId === me().id) mine++; } });
   const t = (cls, n, label, attrs) => `<button class="tile ${cls}" ${attrs}><b>${n}</b><span>${label}</span></button>`;
@@ -1634,7 +1635,7 @@ function vCuentas() {
   return `<div class="clv">` + head('Clientes Emby', 'Gestiona tus clientes y suscripciones Emby', addBtns) + ntiles() + `
   <div class="cl-tools">
     <label class="cl-search">${sIcon}<input type="search" id="q" placeholder="Buscar…" value="${esc(S.q)}" aria-label="Buscar cuentas por nombre, usuario, contacto, nota o vendedor"></label>
-    <select id="fState" aria-label="Estado">${options([['all', 'Estado'], ['active', 'Activos'], ['soon', 'Por vencer'], ['expired', 'Vencidos'], ['demo', 'Demos']], S.filter)}</select>
+    <select id="fState" aria-label="Estado">${options([['all', 'Estado'], ['active', 'Activos'], ['soon', 'Por vencer'], ['expired', 'Vencidos'], ['demo', 'Demos'], ['off', 'Desactivados']], S.filter)}</select>
     <div class="cl-own">${ic('users')}${vendorBox || '<span class="muted small">Mis clientes</span>'}</div>
     ${sel('fServer', S.fServer, 'Servidor', S.d.servers.map((x) => [x.id, x.name]))}
     <div class="cl-row">
@@ -1666,7 +1667,7 @@ function vNuevo(demo) {
       <label class="f">Nombre en el panel *<span class="inrow"><input name="panelName" required maxlength="80" autocomplete="off" placeholder="nombre_usuario">${gen('panelName', 'Generar un nombre')}</span></label>
       <label class="f">Nombre en Emby *<span class="inrow"><input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" placeholder="user.12abc">${gen('embyName', 'Generar un usuario')}</span></label>
       <label class="f">Contraseña *<span class="inrow"><input name="password" required minlength="4" autocomplete="off" placeholder="Contraseña">${gen('password', 'Generar una contraseña')}</span></label>
-      <label class="f">Email<span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre en Emby')}</span></label>
+      <label class="f">Email<span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span></label>
     </div>
     <div class="row4">
       <label class="f">Servidor *<select name="serverId">${S.d.servers.filter((x) => x.usable !== false).map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></label>
@@ -2588,7 +2589,7 @@ function vendorCard(u, depth) {
       ${can && hasCredits(u) ? b('user-credits', 'Créditos', 'primary') : ''}
       ${b('user-stats', 'Estadísticas')}
       ${hasCredits(u) ? b('user-ledger', 'Historial') : ''}
-      ${can ? b('user-edit', 'Editar') + b('user-more', 'Más') : ''}
+      ${can ? b('user-edit', 'Editar') + b('user-power', u.disabled ? ic('play') + 'Activar' : ic('power') + 'Desactivar', u.disabled ? '' : 'ghost') + b('user-more', 'Más') : ''}
     </div>
   </article>`;
 }
@@ -2597,7 +2598,7 @@ function vEquipo(off) {
   const q = S.uq.trim().toLowerCase();
   const list = all.filter((u) => !!u.disabled === !!off && (!q || (u.name + ' ' + u.username).toLowerCase().includes(q)));
   const title = (staff() ? 'Vendedores' : 'Subresellers') + (off ? ' desactivados' : ' activos');
-  const sub = off ? 'Usuarios con el acceso al panel bloqueado. Sus cuentas siguen funcionando.'
+  const sub = off ? 'Usuarios con el acceso al panel bloqueado. Sus cuentas siguen igual, salvo que las apagaras al desactivarlos.'
     : staff() ? 'Vendedores activos en el sistema. Los administradores no gastan créditos; resellers y subresellers pagan cada alta y renovación con su saldo.'
       : 'Tus subresellers crean cuentas con los créditos que les pases de tu saldo.';
   const vend = all.filter(hasCredits);
@@ -2640,7 +2641,7 @@ function adminCard(u) {
       <div class="abadges">
         <span class="tag vio">${ic('shield')}Sub-Admin</span>
         <button type="button" class="sw" role="switch" aria-checked="${u.tech}" data-act="adm-tech" data-id="${u.id}"${ok ? '' : ' disabled'}><i></i>Técnico</button>
-        <span class="tag ${u.disabled ? 'offk' : 'okk'}">${u.disabled ? 'Eliminado' : 'Activo'}</span>
+        <span class="tag ${u.disabled ? 'offk' : 'okk'}">${u.disabled ? 'Desactivado' : 'Activo'}</span>
       </div>
     </div>
     <div class="astats">
@@ -2653,7 +2654,7 @@ function adminCard(u) {
       ${ib('adm-link', 'link', u.xtreme ? 'Panel Xtreme vinculado' : 'Vincular a panel Xtreme', u.xtreme ? 'on' : '')}
       ${ib('user-edit', 'edit', 'Editar')}
       ${ib('adm-perms', 'shield', 'Gestionar permisos')}
-      ${u.disabled ? `<button class="btn sm" data-act="adm-on" data-id="${u.id}">Restaurar</button>` + ib('user-del', 'trash', 'Borrar para siempre', 'bad') : ib('adm-off', 'trash', 'Eliminar', 'bad')}
+      ${u.disabled ? `<button class="btn sm" data-act="adm-on" data-id="${u.id}">${ic('play')}Activar</button>` + ib('user-del', 'trash', 'Borrar para siempre', 'bad') : ib('adm-off', 'power', 'Desactivar (por ejemplo, si no paga)', 'bad')}
       <span class="sp"></span>
       ${ib('user-more', 'more', 'Más opciones', 'plain')}
     </div>` : ''}
@@ -2666,7 +2667,7 @@ function vAdmins() {
   const nOff = all.filter((u) => u.disabled).length;
   const tab = (k, t, n) => `<button role="tab" data-act="adm-tab" data-k="${k}" aria-selected="${(k === 'off') === off}">${t} (${n})</button>`;
   return head('Gestión de Administradores', 'Gestiona tus administradores y sub-admins: qué puede hacer cada uno y si gasta créditos.', `<button class="btn primary" data-act="adm-new">${ic('userplus')}Crear Sub-Admin</button>`) +
-    `<div class="tabs" role="tablist">${tab('on', 'Activos', all.length - nOff)}${tab('off', 'Eliminados', nOff)}</div>
+    `<div class="tabs" role="tablist">${tab('on', 'Activos', all.length - nOff)}${tab('off', 'Desactivados', nOff)}</div>
     <div class="tools"><input type="search" id="admq" placeholder="Buscar por email o nombre…" value="${esc(S.admQ || '')}" aria-label="Buscar administradores"></div>` +
     (list.length ? `<div class="vcards">${list.map(adminCard).join('')}</div>`
       : `<div class="panel"><div class="empty">${q ? 'Ningún administrador coincide con la búsqueda.' : off ? 'No hay administradores eliminados.' : 'Todavía no hay administradores. Pulsa «Crear Sub-Admin» para añadir el primero.'}</div></div>`);
@@ -2779,7 +2780,7 @@ async function dLedger(u) {
   showDlg(title, html);
 }
 function dUserStats(u) {
-  const r = { active: 0, soon: 0, expired: 0, demo: 0, trash: 0 };
+  const r = { active: 0, soon: 0, expired: 0, demo: 0, trash: 0, off: 0 };
   S.d.clients.forEach((c) => { if (c.ownerId === u.id) r[stage(c)]++; });
   const kids = S.d.users.filter((x) => x.parentId === u.id);
   const fact = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
@@ -2803,9 +2804,33 @@ function dUserMore(u) {
     ${it('user-clients', 'Ver sus clientes', plural(n, 'cuenta', 'cuentas'))}
     ${staff() && n ? it('user-transfer', 'Transferir sus clientes', 'Pasa todas sus cuentas a otro vendedor') : ''}
     ${u.twoFa ? it('user-2fa', 'Quitar verificación en dos pasos', 'Si ha perdido el móvil: podrá entrar solo con su contraseña') : ''}
-    ${it('user-toggle', u.disabled ? 'Activar' : 'Desactivar', u.disabled ? 'Vuelve a dejarle entrar al panel' : 'Bloquea su acceso; sus cuentas siguen funcionando', 'sep')}
+    ${it('user-toggle', u.disabled ? 'Activar' : 'Desactivar', u.disabled ? 'Vuelve a dejarle entrar al panel (y, si quieres, a sus cuentas)' : 'Por ejemplo, si no paga: bloquea su acceso y, si quieres, apaga sus cuentas', 'sep')}
     ${it('user-del', 'Eliminar', 'Solo si ya no tiene cuentas ni subresellers', 'bad')}
   </div>`);
+}
+/** Apagar o encender a un admin, reseller o subreseller (por ejemplo, porque no paga) */
+function dUserPower(u) {
+  const off = !u.disabled, who = ROLE[u.role].toLowerCase();
+  const subs = u.role === 'reseller' ? S.d.users.filter((x) => x.parentId === u.id) : [];
+  const owners = new Set([u.id, ...subs.map((x) => x.id)]);
+  const cl = S.d.clients.filter((c) => owners.has(c.ownerId) && c.status !== 'trash');
+  const nCl = off ? cl.filter((c) => !c.off).length : cl.filter((c) => c.off && c.offBy === u.id).length;
+  const nSub = off ? subs.filter((x) => !x.disabled).length : subs.filter((x) => x.offBy === u.id).length;
+  const what = [nCl ? plural(nCl, 'cuenta', 'cuentas') : '', nSub ? plural(nSub, 'subreseller', 'subresellers') : ''].filter(Boolean).join(' y ');
+  const box = what ? `<label class="check pw-chk"><input type="checkbox" name="cl" value="1" checked> <span>${off
+    ? `<b>Apagar también sus ${what}</b>. Las cuentas dejan de ver Emby al momento; no se borran ni van a la papelera${nSub ? '. Sus subresellers tampoco podrán entrar' : ''}.`
+    : `<b>Encender también las ${what}</b> que se apagaron con él. Las que apagaste tú una a una se quedan como están.`}</span></label>` : '';
+  openDlg({
+    title: `${off ? 'Desactivar' : 'Activar'} a ${u.name}`, submit: off ? 'Desactivar' : 'Activar', danger: off,
+    body: `<p>${off ? `El ${who} <b>no podrá entrar al panel</b> hasta que lo vuelvas a activar. No se borra nada: conserva sus créditos, sus cuentas y su historial.` : `El ${who} vuelve a poder entrar al panel.`}</p>${box}
+      ${off && !what ? '<p class="muted small">No tiene cuentas activas que apagar.</p>' : ''}`,
+    onSubmit: async (fd) => {
+      const r = await api('POST', `/api/users/${u.id}/power`, { off, clients: fd.get('cl') === '1' });
+      if (r.failed && r.failed.length) toast(`${plural(r.failed.length, 'cuenta no se pudo cambiar', 'cuentas no se pudieron cambiar')} en Emby. Revísalas en su lista.`, true);
+      const done = [r.clients ? plural(r.clients, 'cuenta', 'cuentas') : '', r.subs ? plural(r.subs, 'subreseller', 'subresellers') : ''].filter(Boolean).join(' y ');
+      return `${off ? 'Desactivado' : 'Activado'}${done ? ` con sus ${done}` : ''}`;
+    },
+  });
 }
 function dUserTransfer(u) {
   const ids = S.d.clients.filter((c) => c.ownerId === u.id).map((c) => c.id);
@@ -2855,7 +2880,7 @@ function dVenCfg(u) {
 }
 
 function vStats() {
-  const by = new Map(S.d.users.map((u) => [u.id, { active: 0, soon: 0, expired: 0, demo: 0, trash: 0 }]));
+  const by = new Map(S.d.users.map((u) => [u.id, { active: 0, soon: 0, expired: 0, demo: 0, trash: 0, off: 0 }]));
   S.d.clients.forEach((c) => { const r = by.get(c.ownerId); if (r) r[stage(c)]++; });
   const rows = [...S.d.users].sort((a, b) => (b.salesMonth - a.salesMonth) || RANK[a.role] - RANK[b.role] || a.name.localeCompare(b.name));
   return head('Estadísticas', 'Cuentas de cada usuario y lo que ha vendido este mes. Ordenado por ventas.') +
@@ -3428,6 +3453,8 @@ function wireCost(serverId, extra, form) {
   };
   f.onchange = upd; upd();
 }
+// Convierte un nombre en algo valido para usuario/email: "José Luis" -> "jose.luis"
+const nameSlug = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '.').replace(/^[.]+|[.]+$/g, '').slice(0, 24).replace(/[.]+$/, '');
 function genPassword() {
   const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
   return Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => abc[b % abc.length]).join('');
@@ -3585,7 +3612,8 @@ function dMore(c) {
     ${staff() && others ? it('m-move', 'Transferir servidor') : ''}
     ${it('m-tg', 'Avisos por Telegram', c.tgLinked ? 'Enlazado' : 'Enlace para que reciba los avisos')}
     ${it('m-repair', 'Reparar', 'Revisa el servidor y vuelve a asignar sus bibliotecas en Emby')}
-    ${it('trash', c.demo ? 'Cancelar demo' : 'Desactivar', 'Bloquea la cuenta y la manda a la papelera', 'sep')}
+    ${c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso en Emby', 'sep') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'La bloquea en Emby sin borrarla ni mandarla a la papelera', 'sep')}
+    ${it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'Bloquea la cuenta y la manda a la papelera')}
     ${c.demo ? '' : it('del-refund', 'Eliminar y devolver créditos', 'La borra de Emby y devuelve los créditos del tiempo no usado', 'bad')}
     ${staff() ? it('delete', 'Eliminar', 'La borra de Emby para siempre', 'bad') : ''}
   </div>`);
@@ -3717,6 +3745,8 @@ function dListMore() {
     ${staff() && S.d.users.length > 1 ? it('bulk-owner', 'Traspaso entre vendedores', 'Pasa las cuentas a otro vendedor') : ''}
     ${staff() && S.d.servers.length > 1 ? it('bulk-move', 'Transferir servidores', 'Mueve las cuentas a otro servidor Emby') : ''}
     ${staff() ? it('bulk-dates', 'Ajustar fechas de renovación', 'Suma o resta días al vencimiento') : ''}
+    ${it('bulk-off', 'Desactivar', 'Las bloquea en Emby sin borrarlas', 'sep')}
+    ${it('bulk-on', 'Activar', 'Vuelve a dar acceso a las desactivadas')}
     ${it('bulk-trash', 'Eliminar', 'Desactiva las cuentas y las manda a la papelera', 'sep bad')}
   </div>`);
 }
@@ -4215,15 +4245,18 @@ document.addEventListener('click', (e) => {
     case 'close': dlg.close(); break;
     case 'gen': {
       const kind = el.dataset.kind || 'password', inp = el.closest('form').elements[kind];
-      if (kind === 'email') { // nombre de Emby + el dominio del panel; si aun no hay nombre, se genera uno
-        const f = el.closest('form'), n = f.elements.embyName;
-        if (n && !n.value.trim()) n.value = 'user.' + genPassword().slice(0, 5);
-        const local = String(n ? n.value : '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9._-]+/g, '.').replace(/^[.]+|[.]+$/g, '') || 'cliente.' + genPassword().slice(0, 5);
+      const f = el.closest('form'), pn = f.elements.panelName, n = f.elements.embyName;
+      // Usuario de Emby y email salen del «Nombre en el panel» (juan -> juan.k3x9) para no perder la referencia
+      const base = () => nameSlug(pn ? pn.value : '');
+      const embyGen = () => (base() || 'user') + '.' + genPassword().slice(0, 4);
+      if (kind === 'email') {
+        if (n && !n.value.trim()) n.value = embyGen();
+        const local = nameSlug(n ? n.value : '') || (base() || 'cliente') + '.' + genPassword().slice(0, 4);
         let host = ''; try { host = new URL(panelUrl()).hostname; } catch (x) { /* sin direccion del panel */ }
         inp.value = local + '@' + (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(host) && !/^\d+(\.\d+){3}$/.test(host) ? host.replace(/^(www|panel)\./, '') : 'cliente.local');
         break;
       }
-      inp.value = kind === 'password' ? genPassword() : kind === 'embyName' ? 'user.' + genPassword().slice(0, 5) : 'cliente_' + genPassword().slice(0, 4);
+      inp.value = kind === 'password' ? genPassword() : kind === 'embyName' ? embyGen() : 'cliente_' + genPassword().slice(0, 4);
       break;
     }
     case 'new': needServer(() => { S.view = 'nuevo'; render(); window.scrollTo(0, 0); }); break;
@@ -4256,6 +4289,12 @@ document.addEventListener('click', (e) => {
     case 'bulk-repair': dBulkRepair(); break;
     case 'bulk-dates': dBulkDates(); break;
     case 'bulk-trash': dBulkTrash(); break;
+    case 'bulk-off': { const ids = bulkIds(); openDlg({ title: 'Desactivar cuentas', submit: 'Desactivar',
+      body: `<p class="preview">Afecta a <b>${bulkScope(ids)}</b>.</p><p class="muted small">Se bloquean en Emby y dejan de ver contenido, pero siguen en tu lista (filtro «Desactivados»). No se borran ni van a la papelera. Su fecha de vencimiento sigue corriendo. Las vuelves a activar cuando quieras.</p>`,
+      onSubmit: async () => bulkResult(await bulkCall('/api/bulk/off', ids, {}), 'Desactivar cuentas', 'cuenta desactivada', 'cuentas desactivadas', 'ya estaban desactivadas o en la papelera') }); break; }
+    case 'bulk-on': { const ids = bulkIds(); openDlg({ title: 'Activar cuentas', submit: 'Activar',
+      body: `<p class="preview">Afecta a <b>${bulkScope(ids)}</b>.</p><p class="muted small">Las desactivadas vuelven a tener acceso en Emby con su paquete. Las que estén vencidas necesitan renovarse para ver contenido.</p>`,
+      onSubmit: async () => bulkResult(await bulkCall('/api/bulk/on', ids, {}), 'Activar cuentas', 'cuenta activada', 'cuentas activadas', 'no estaban desactivadas') }); break; }
     case 'list-more': dListMore(); break;
     case 'export': dExport(); break;
     case 'exp': runExport(el.dataset.f); break;
@@ -4291,6 +4330,9 @@ document.addEventListener('click', (e) => {
     case 'trash': if (c) dConfirm(c.demo ? `Cancelar la demo de ${c.panelName}` : `Dar de baja a ${c.panelName}`,
       c.demo ? 'La demo se desactiva ahora y se borra de Emby mañana.' : 'La cuenta se desactiva en Emby y pasa a la papelera. No se borra nada todavía y puedes restaurarla desde allí. Los créditos gastados no se devuelven.',
       c.demo ? 'Cancelar demo' : 'Dar de baja', () => api('POST', `/api/clients/${c.id}/trash`, {}), 'Enviada a la papelera'); break;
+    case 'c-off': if (c) dConfirm(`Desactivar a ${c.panelName}`, `Se bloquea en Emby y deja de ver contenido al momento. <b>No se borra ni va a la papelera</b>: sigue en tu lista y la vuelves a activar cuando quieras (o al renovarla).${c.demo ? '' : ' Su fecha de vencimiento sigue corriendo.'}`,
+      'Desactivar', () => api('POST', `/api/clients/${c.id}/off`, {}), 'Cuenta desactivada'); break;
+    case 'c-on': if (c) act(() => api('POST', `/api/clients/${c.id}/on`, {}), stage({ ...c, off: null }) === 'expired' ? 'Activada, pero está vencida: renuévala para que vea contenido' : 'Cuenta activada'); break;
     case 'restore': if (c) act(() => api('POST', `/api/clients/${c.id}/restore`, {}), 'Cuenta restaurada'); break;
     case 'del-refund': if (c) dDelRefund(c); break;
     case 'delete': if (c) dConfirm(`Eliminar a ${c.panelName}`, `El usuario <b>${esc(c.embyName)}</b> se borra de Emby junto con su historial y su progreso. No se puede deshacer.`,
@@ -4330,11 +4372,10 @@ document.addEventListener('click', (e) => {
     case 'adm-link': if (usr) dXtreme(usr); break;
     case 'adm-unlink': if (usr) { dlg.close(); act(() => api('PUT', `/api/users/${usr.id}`, { xtreme: null }), 'Panel desvinculado'); } break;
     case 'adm-tech': if (usr) act(() => api('PUT', `/api/users/${usr.id}`, { tech: !usr.tech }), usr.tech ? `${usr.name} ya no es técnico` : `${usr.name} marcado como técnico`); break;
-    case 'adm-on': if (usr) act(() => api('PUT', `/api/users/${usr.id}`, { disabled: false }), 'Administrador restaurado'); break;
-    case 'adm-off': if (usr) dConfirm(`Eliminar a ${usr.name}`, 'Deja de poder entrar al panel y pasa a la pestaña «Eliminados». Desde ahí puedes restaurarlo o borrarlo para siempre.', 'Eliminar administrador', () => api('PUT', `/api/users/${usr.id}`, { disabled: true }), 'Administrador eliminado'); break;
+    case 'adm-on': case 'adm-off': if (usr) dUserPower(usr); break;
     case 'user-transfer': if (usr) dUserTransfer(usr); break;
     case 'user-clients': if (usr) { if (dlg.open) dlg.close(); S.view = 'cuentas'; S.filter = 'all'; S.q = ''; S.fServer = 0; S.fOwner = usr.id; S.page = 1; render(); window.scrollTo(0, 0); } break;
-    case 'user-toggle': if (usr) { if (dlg.open) dlg.close(); act(() => api('PUT', `/api/users/${usr.id}`, { disabled: !usr.disabled }), usr.disabled ? 'Vendedor activado' : 'Vendedor desactivado'); } break;
+    case 'user-toggle': case 'user-power': if (usr) dUserPower(usr); break;
     case 'user-credits': if (usr) dCredits(usr); break;
     case 'user-del': if (usr) dConfirm(`Eliminar a ${usr.name}`, `Se borra su acceso al panel${usr.credits ? ` y se pierden sus ${plural(usr.credits, 'crédito', 'créditos')}` : ''}. Solo se puede si ya no tiene cuentas.`, 'Eliminar usuario', () => api('DELETE', `/api/users/${usr.id}`), 'Usuario eliminado'); break;
     case 'logout': api('POST', '/api/logout', {}).then(() => showGate(false)); break;
