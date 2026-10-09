@@ -1035,6 +1035,7 @@ button.ck{cursor:pointer}.ck>span{font-size:13px;color:var(--muted)}.ck>b{font-s
   .cweek{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}.cw{flex:0 0 42%;scroll-snap-align:start}}
 @media (max-width:560px){.b-hero{padding:20px}.bd-in{flex-direction:column}.dlegs{width:100%}.donut{width:140px;height:140px}.bk>b,.ct>b,.ck>b{font-size:26px}.l-a,.c-ha{width:100%}.l-a .btn,.c-ha .btn{flex:1;justify-content:center}}
 /* Ajustar fechas */
+.fx-only{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--brand) 12%,var(--raised))}.fx-only>.ic{color:var(--brand);flex:none}.fx-only span{flex:1}
 .fx{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .fx-s{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;min-width:0;margin:0}
 .fx-s>header{display:flex;gap:12px;align-items:center;margin-bottom:14px}.fx-s h2{margin:0;font-size:17px}.fx-s header small{color:var(--muted);font-size:12.5px}
@@ -4821,16 +4822,12 @@ function dBulkRepair() {
   });
 }
 function dBulkDates() {
-  const ids = bulkIds();
-  openDlg({
-    title: 'Ajustar fechas de renovación', submit: 'Ajustar fechas',
-    body: `<p class="preview">Afecta a <b>${bulkScope(ids)}</b>.</p>
-      <label class="f">Días que se suman al vencimiento (número negativo para restar)<input type="number" name="days" required min="-3650" max="3650" step="1" placeholder="Por ejemplo 3, o -2"></label>
-      <p class="muted small">Sirve para compensar una caída del servicio. No descuenta créditos. No se tocan las demos ni las cuentas de la papelera. Las vencidas que vuelvan a estar en plazo recuperan sus bibliotecas; las que queden vencidas las pierden.</p>`,
-    onSubmit: async (fd) => bulkResult(await bulkCall('/api/bulk/dates', ids, { days: +fd.get('days') }), 'Ajustar fechas', 'fecha ajustada', 'fechas ajustadas', 'sin tocar (demos o papelera)'),
-  });
+  // Abre la pantalla de 3 pasos. Si había cuentas marcadas en la lista, solo con esas
+  const f = fxState();
+  f.only = new Set(bulkIds()); f.onlyTxt = S.sel.size ? 'que marcaste' : 'de la lista'; f.excl.clear();
+  if (dlg.open) dlg.close();
+  S.view = 'fechas'; render(); window.scrollTo(0, 0);
 }
-/* ---------- Ajustar fechas: filtrar, ver cómo quedan y confirmar ---------- */
 function fxState() {
   if (!S.fx) S.fx = { owner: 0, server: 0, st: new Set(['active', 'soon']), q: 'all', from: '', to: '', within: '', search: '', exOff: false, mode: 'add', amount: 1, unit: 'd', date: '', onlyFuture: true, reason: '', excl: new Set() };
   return S.fx;
@@ -4845,10 +4842,11 @@ function fxRows() {
   const f = fxState(), t = S.d.today, q = f.search.trim().toLowerCase();
   return S.d.clients.filter((c) => {
     if (c.demo || c.status === 'trash') return false;
+    if (f.only) return f.only.has(c.id); // cuentas marcadas en la lista
     const st = stage(c);
     if (!f.st.has(st)) return false;
     if (f.exOff && c.off) return false;
-    if (f.owner && c.ownerId !== f.owner) return false;
+    if (f.owner && c.ownerId !== f.owner && (S.d.users.find((u) => u.id === c.ownerId) || {}).parentId !== f.owner) return false; // el vendedor y sus subresellers
     if (f.server && c.serverId !== f.server) return false;
     if (f.q !== 'all' && c.quality !== f.q) return false;
     if (f.from && c.expires < f.from) return false;
@@ -4866,13 +4864,14 @@ function vFechas() {
   const stc = (k, t) => `<label><input type="checkbox" name="st" value="${k}"${f.st.has(k) ? ' checked' : ''}><span>${t}</span></label>`;
   const owners = d.users.filter((u) => u.role !== 'super' || u.id === me().id);
   const step = (n, title, hint, body) => `<section class="fx-s"><header><span class="fx-n">${n}</span><div><h2>${title}</h2>${hint ? `<small>${hint}</small>` : ''}</div></header>${body}</section>`;
-  const s1 = step(1, '¿Qué cuentas?', 'Las demos y la papelera no se tocan nunca.', `
+  const s1 = f.only ? step(1, '¿Qué cuentas?', 'Las demos y la papelera no se tocan nunca.', `<div class="fx-only">${ic('check')}<span>Solo las <b>${plural(f.only.size, 'cuenta ' + (f.onlyTxt || 'que marcaste'), 'cuentas ' + (f.onlyTxt || 'que marcaste'))}</b>.</span><button type="button" class="btn sm ghost" data-act="fx-all">Usar filtros</button></div>`) : step(1, '¿Qué cuentas?', 'Las demos y la papelera no se tocan nunca.', `
     <div class="pmeth fx-st">${stc('active', 'Activas')}${stc('soon', 'Vencen pronto')}${stc('expired', 'Caducadas')}${stc('off', 'Desactivadas')}</div>
     <div class="fx-g">
-      ${d.users.length > 1 ? `<label class="f">Vendedor<select name="owner"><option value="0">Todos (${owners.length})</option>${owners.map((u) => `<option value="${u.id}"${f.owner === u.id ? ' selected' : ''}>${esc(u.name)}</option>`).join('')}</select></label>` : ''}
-      ${d.servers.length > 1 ? `<label class="f">Servidor<select name="server"><option value="0">Todos (${d.servers.length})</option>${d.servers.map((s) => `<option value="${s.id}"${f.server === s.id ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>` : ''}
+      <label class="f">Vendedor<select name="owner"><option value="0">Todos (${owners.length})</option>${owners.sort((a, b) => (RANK[a.role] - RANK[b.role]) || a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${f.owner === u.id ? ' selected' : ''}>${u.id === me().id ? 'Yo · ' : ''}${esc(u.name)} (${ROLE[u.role] || u.role})</option>`).join('')}</select></label>
+      <label class="f">Cliente<input type="search" name="search" list="fxCli" value="${esc(f.search)}" placeholder="Todos · escribe para elegir uno" autocomplete="off"></label>
+      <datalist id="fxCli">${[...new Set(d.clients.filter((c) => !c.demo && c.status !== 'trash').map((c) => c.panelName))].sort((a, b) => a.localeCompare(b)).map((n) => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <label class="f">Servidor<select name="server"><option value="0">Todos (${d.servers.length})</option>${d.servers.map((s) => `<option value="${s.id}"${f.server === s.id ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>
       <label class="f">Contenido<select name="q">${options([['all', 'Todos'], ['basico', 'Básico'], ['k4', '4K']], f.q)}</select></label>
-      <label class="f">Buscar<input type="search" name="search" value="${esc(f.search)}" placeholder="Nombre, usuario, email…"></label>
     </div>
     <details class="fx-more"${f.from || f.to || f.within !== '' || f.exOff ? ' open' : ''}><summary>Más filtros</summary><div class="fx-g">
       <label class="f">Vencen desde<input type="date" name="from" value="${f.from}"></label>
@@ -4913,9 +4912,11 @@ function fxPaint() {
 function fxRead() {
   const fm = $('#fxForm'); if (!fm) return;
   const f = fxState(), E = fm.elements, before = JSON.stringify([f.mode]);
-  f.st = new Set([...fm.querySelectorAll('[name=st]:checked')].map((x) => x.value));
-  f.owner = E.owner ? +E.owner.value : 0; f.server = E.server ? +E.server.value : 0; f.q = E.q.value; f.search = E.search.value;
-  f.from = E.from.value; f.to = E.to.value; f.within = E.within.value; f.exOff = E.exOff.checked;
+  if (!f.only) {
+    f.st = new Set([...fm.querySelectorAll('[name=st]:checked')].map((x) => x.value));
+    f.owner = E.owner ? +E.owner.value : 0; f.server = E.server ? +E.server.value : 0; f.q = E.q.value; f.search = E.search.value;
+    f.from = E.from.value; f.to = E.to.value; f.within = E.within.value; f.exOff = E.exOff.checked;
+  }
   f.mode = (fm.querySelector('[name=mode]:checked') || {}).value || 'add'; f.amount = E.amount.value; f.unit = E.unit.value; f.date = E.date.value;
   f.onlyFuture = E.onlyFuture.checked; f.reason = E.reason.value;
   $('.fx-amt').hidden = f.mode === 'set'; $('.fx-date').hidden = f.mode !== 'set';
@@ -5401,6 +5402,7 @@ document.addEventListener('click', (e) => {
     S.view = nav.dataset.view;
     if (nav.dataset.filter) { S.filter = nav.dataset.filter; S.q = ''; S.fOwner = 0; S.fServer = 0; S.page = 1; }
     if (/^mov/.test(S.view)) S.logF = 'all';
+    if (S.view === 'fechas' && S.fx) S.fx.only = null;
     if (AL[S.view]) { Object.assign(S.al, { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 }); }
     if (S.view === 'auditoria') S.audit = null;
     if (S.view === 'monitor') S.mon.data = null;
@@ -5483,6 +5485,7 @@ document.addEventListener('click', (e) => {
   if (a === 'mon-notice') { monNotice(el); return; }
   if (a === 'guide-tg') { el.disabled = true; api('POST', `/api/clients/${id}/guide`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Guía enviada por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
   if (a === 'fx-apply') { fxApply(); return; }
+  if (a === 'fx-all') { fxState().only = null; render(); return; }
   if (a === 'fx-clear') { const f = fxState(); Object.assign(f, { owner: 0, server: 0, st: new Set(['active', 'soon']), q: 'all', from: '', to: '', within: '', search: '', exOff: false }); f.excl.clear(); render(); return; }
   if (a === 'fx-quick') { const f = fxState(); f.mode = 'add'; f.amount = el.dataset.a; f.unit = el.dataset.u; render(); return; }
   if (a === 'fx-reason') { const r = $('#fxForm').elements.reason; r.value = el.dataset.t; fxRead(); return; }
