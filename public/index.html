@@ -151,7 +151,7 @@ dialog h2{margin-bottom:16px}
 #gate p{color:var(--muted);margin-bottom:18px}
 
 @media (max-width:860px){
-  #app{grid-template-columns:1fr}
+  #app{grid-template-columns:1fr;align-content:start}
   .flow{grid-template-columns:1fr 1fr}
   .stg:nth-child(2){border-right:0}
   .stg:nth-child(-n+2){border-bottom:1px solid var(--line)}
@@ -807,6 +807,149 @@ kbd{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;padding:3px 6px;border
 /* ---------- Buscador de clientes del Resumen ---------- */
 .ntiles .nt:last-child:nth-child(3n+1){grid-column:1/-1}
 @media (min-width:1181px){.ntiles .nt:last-child:nth-child(3n+1){grid-column:auto}}
+/* Monitor: método de reproducción y calidad, por separado */
+.mmeth{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px}.mmeth span{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;border:1px solid var(--line);background:var(--raised)}
+.mm-directplay{color:#19c37d}.mm-directstream{color:#3fa9f5}.mm-transcode{color:#ff7a3d}
+.ql-none{color:#19c37d}.ql-possible{color:#f5a524}.ql-likely{color:#f0616d;border-color:color-mix(in srgb,#f0616d 50%,var(--line))!important}
+.qtxt{font-size:11.5px;color:var(--muted);margin:2px 0 4px;line-height:1.35}.qlim{font-size:11px;color:#f5a524;margin:4px 0}
+.mc .ft button:disabled{opacity:.35;cursor:not-allowed}.mc .ft button.q:hover:not(:disabled){background:#f5a524;color:#fff}
+.qprev{white-space:pre-wrap;font:inherit;background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0}
+/* Calidad remota */
+.qinfo{border:1px solid color-mix(in srgb,var(--brand) 35%,var(--line));background:color-mix(in srgb,var(--brand) 8%,var(--surface));border-radius:14px;padding:14px 16px;margin-bottom:16px;line-height:1.5}
+.qinfo .qt{display:block;margin-bottom:4px;font-weight:700}.qinfo ul{margin:6px 0 0 18px}
+.qjob{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px;background:var(--surface)}.qjob .bar{height:10px;border-radius:6px;background:var(--raised);overflow:hidden;margin-top:8px}.qjob .bar i{display:block;height:100%;background:linear-gradient(90deg,#3fa9f5,#19c37d);transition:width .3s}
+.qsrv{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:16px;margin-bottom:14px}
+.qsrv .qh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.qsrv .qh h2{margin:0;font-size:18px;flex:1;min-width:140px}
+.qsrv .qset{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:12px 0}.qsrv .qset label.f{margin:0;max-width:200px}.qsrv .qset .hint{font-size:12px;color:var(--muted)}
+.qchips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.qchips span{font-size:12.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:var(--raised)}
+.qchips .p{color:#f5a524}.qchips .c{color:#19c37d}.qchips .e{color:#9fb0c6}.qchips .a{color:#a46bff}.qchips .n{color:#8c9aa6}.qchips .x{color:#f0616d}
+.qacts{display:flex;flex-wrap:wrap;gap:8px}
+.qtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}.qtable th,.qtable td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}.qtable th{color:var(--muted);font-weight:600;font-size:12px}
+.qst{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:12px;background:var(--raised)}.qst.pendiente{color:#f5a524}.qst.correcto{color:#19c37d}.qst.excluido,.qst.admin{color:#a46bff}.qst.nodisp,.qst.error{color:#f0616d}
+.qwrap{overflow-x:auto}.qrep{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.qrep .grow{flex:1;min-width:180px}
+.qres-Correcto{color:#19c37d}.qres-Error{color:#f0616d}.qres-Excluido{color:#a46bff}.qres-Simulado{color:#3fa9f5}
+/* Último acceso e historial de accesos */
+.lacc{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin:4px 0 6px;line-height:1.4}.lacc .ic{width:14px;height:14px;flex:none;margin-top:2px}.lacc b{color:var(--text);font-weight:600}.lacc .on{color:#19c37d;font-style:normal;font-weight:700}.lacc.pad{padding:0 16px 10px}
+.ak{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:12px;background:var(--raised);border:1px solid var(--line)}
+.ak-entrada{color:#19c37d}.ak-salida{color:#8c9aa6}.ak-fallido,.ak-fallido2fa,.ak-bloqueado{color:#f0616d;border-color:color-mix(in srgb,#f0616d 45%,var(--line))}.ak-new{color:#f5a524;border-color:color-mix(in srgb,#f5a524 45%,var(--line))}
+table.acc tr.k-fallido td,table.acc tr.k-fallido2fa td,table.acc tr.k-bloqueado td{background:color-mix(in srgb,#f0616d 6%,transparent)}
+/* Resumen: «Para revisar» */
+.rv{display:flex;flex-wrap:wrap;gap:10px;margin:-2px 0 18px}.rvb{display:flex;align-items:center;gap:10px;flex:1;min-width:240px;padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,#3fa9f5 40%,var(--line));background:color-mix(in srgb,#3fa9f5 9%,var(--surface));color:var(--text);cursor:pointer;text-align:left;font:inherit}
+.rvb .ic{width:20px;height:20px;color:#3fa9f5;flex:none}.rvb span{flex:1}.rvb em{font-style:normal;font-weight:700;color:#3fa9f5;font-size:13px}.rvb.warn{border-color:color-mix(in srgb,#f5a524 45%,var(--line));background:color-mix(in srgb,#f5a524 9%,var(--surface))}.rvb.warn .ic,.rvb.warn em{color:#f5a524}
+.rvb:hover{filter:brightness(1.08)}
+/* Cuentas compartidas */
+.shgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.shc{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-top:3px solid #f5a524}.shc.lv-alto{border-top-color:#f0616d}
+.shc header{display:flex;align-items:center;gap:10px}.shc .who{flex:1;min-width:0;display:flex;flex-direction:column}.shc .who small{color:var(--muted);font-size:12px}
+.shc .cav{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--raised);flex:none}
+.lvp{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:12px;color:#f5a524;background:color-mix(in srgb,#f5a524 14%,transparent)}.lv-alto .lvp{color:#f0616d;background:color-mix(in srgb,#f0616d 14%,transparent)}
+.shc .why{font-size:13px;color:var(--muted);margin:0}.shc .acts{display:flex;flex-wrap:wrap;gap:6px}
+.devs{display:flex;flex-wrap:wrap;gap:6px}.devs span{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 9px;border-radius:12px;background:var(--raised);border:1px solid var(--line)}.devs .ic{width:13px;height:13px}
+.cstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.cstats.sm{grid-template-columns:repeat(3,1fr);margin:0}
+.cs{background:var(--raised);border-radius:12px;padding:9px 10px;text-align:center}.cs b{display:block;font-size:20px}.cs span{font-size:11.5px;color:var(--muted)}
+.cwarn{display:flex;gap:8px;align-items:flex-start;color:#f5a524;font-size:13px;margin:0 0 12px}.cwarn .ic{width:16px;height:16px;flex:none;margin-top:1px}
+.ctl{max-height:52vh;overflow:auto;padding-right:4px}.cday h4{margin:12px 0 6px;font-size:13px;color:var(--muted);font-weight:700}.cday:first-child h4{margin-top:0}
+.crow{display:grid;grid-template-columns:10px 92px 1fr;gap:4px 10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}.crow i{width:8px;height:8px;border-radius:50%;background:#8c9aa6}.crow i.pl{background:#19c37d}
+.crow .ct{font-weight:700;font-variant-numeric:tabular-nums}.crow .ci{grid-column:3;font-size:12px;color:var(--muted)}
+.sb-more{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px}.sb-more .ic{width:14px;height:14px}
+.empty.okmsg{display:flex;flex-direction:column;align-items:center;gap:4px}.empty.okmsg .ic{width:28px;height:28px;color:#19c37d}.empty.okmsg b{font-size:16px;color:var(--text)}
+/* Seguimiento de demos */
+.fulist{display:flex;flex-direction:column;gap:10px}.fuc{display:flex;flex-wrap:wrap;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:12px 14px}
+.fu-l{flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px}.fu-l small{color:var(--muted);font-size:12.5px}.fuc .acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+/* Mensaje a clientes */
+.bcf{max-width:760px}.row3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.row3 .f{margin:0}
+.bci{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 10px;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--raised)}.bci .big{font-size:26px;font-weight:800;color:#3fa9f5}.bci small{grid-column:1/-1;color:var(--muted);font-size:12.5px}.bci.warn{display:block;color:#f5a524}.bci .qjob{grid-column:1/-1}
+@media (max-width:560px){.cstats{grid-template-columns:repeat(2,1fr)}.crow{grid-template-columns:10px 1fr}.crow .cd,.crow .ci{grid-column:2}.rvb{min-width:0}}
+/* Equipo: atención */
+.tsec{margin-bottom:22px}@media (max-width:560px){.tsec .sec-h small{display:none}}.incl{margin:0 0 0 18px;padding:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.atr{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.atr span{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;padding:3px 10px;border-radius:12px;background:var(--raised);border:1px solid var(--line)}.atr .ic{width:13px;height:13px}
+.atr .at-creditos{color:#f5a524}.atr .at-ventas{color:#3fa9f5}.atr .at-acceso{color:#9fb0c6}
+.tcfg{margin-top:20px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:12px 16px}.tcfg summary{cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600}.tcfg summary .ic{width:16px;height:16px}.tcfg summary .muted{font-weight:400;font-size:13px}
+.rvb.bad{border-color:color-mix(in srgb,#f0616d 45%,var(--line));background:color-mix(in srgb,#f0616d 9%,var(--surface))}.rvb.bad .ic,.rvb.bad em{color:#f0616d}
+.tag.rr.ok{color:#19c37d}.tag.rr.mid{color:#f5a524}.tag.rr.low{color:#f0616d}
+/* Cobros y deudas */
+.payfs{border:1px solid var(--line);border-radius:14px;padding:12px 14px 6px;margin:6px 0 4px}.payfs legend{display:flex;align-items:center;gap:6px;padding:0 6px;font-weight:700;font-size:14px}.payfs legend .ic{width:16px;height:16px}
+.pmeth,.pstat{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.pmeth label,.pstat label{cursor:pointer}.pmeth input,.pstat input{position:absolute;opacity:0;pointer-events:none}
+.pmeth span,.pstat span{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--raised);font-size:13px}.pstat .ic{width:14px;height:14px}
+.pmeth input:checked+span,.pstat input:checked+span{border-color:#3fa9f5;background:color-mix(in srgb,#3fa9f5 18%,var(--raised));color:var(--text);font-weight:700}
+.pmeth input:focus-visible+span,.pstat input:focus-visible+span{outline:2px solid #3fa9f5}
+.vptiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}.vpt{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:16px}.vpt b{display:block;font-size:26px}.vpt span{font-weight:600}.vpt small{display:block;color:var(--muted);margin-top:2px}
+.vpt.ok b{color:#19c37d}.vpt.bad b{color:#f0616d}.vpt.warn b{color:#f5a524}
+.vpamt{font-size:22px;font-weight:800;color:#f0616d;min-width:90px;text-align:right}
+.vpcols{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}.vpcols>.panel{margin:0}.vpcols h3{margin:0 0 10px;font-size:14px;color:var(--muted)}
+.vbar{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:center;margin-bottom:8px;font-size:13px}.vbar i{height:8px;border-radius:5px;background:var(--raised);overflow:hidden}.vbar i b{display:block;height:100%;background:linear-gradient(90deg,#3fa9f5,#19c37d)}.vbar em{font-style:normal;font-weight:700}.vbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sec-h select{max-width:180px}
+.vplist .vprow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}.vprow:last-child{border-bottom:0}.vprow small{display:block;color:var(--muted);font-size:12px}.vpr{text-align:right}.vpr .dup{color:#f5a524}
+.tag.debt{color:#f0616d;border-color:color-mix(in srgb,#f0616d 45%,var(--line))}
+.strow{display:grid;grid-template-columns:110px 1fr auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}.strow .d{color:var(--muted)}.strow .plus{color:#19c37d}.strow .minus{color:#f0616d}
+.cs.bad b{color:#f0616d}
+@media (max-width:700px){.vpcols{grid-template-columns:1fr}.vprow{grid-template-columns:1fr auto}.vprow .qst{grid-column:1/-1;justify-self:start}.strow{grid-template-columns:1fr auto}.strow .d{grid-column:1/-1}.vpamt{text-align:left;min-width:0}}
+/* Tarjeta de cliente (v56) */
+.lbar{height:4px;border-radius:3px;background:var(--raised);overflow:hidden;margin:2px 0 8px}.lbar i{display:block;height:100%;border-radius:3px}
+.lbar.ok i{background:#19c37d}.lbar.mid i{background:#3fa9f5}.lbar.warn i{background:#f5a524}.lbar.bad i{background:#f0616d}
+.cline{display:flex;align-items:center;font-size:13px;color:var(--muted);min-height:20px}.cline .ic{width:14px;height:14px;margin-right:6px;vertical-align:-2px}
+.cnow{color:var(--text)}.cnow i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#19c37d;margin-right:7px;box-shadow:0 0 0 3px color-mix(in srgb,#19c37d 25%,transparent);animation:cpulse 1.6s infinite}.cnow b{font-weight:600}
+@keyframes cpulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,#19c37d 5%,transparent)}}
+.flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.flag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;border:1px solid var(--line);background:var(--raised);font-family:inherit;cursor:default}.flag .ic{width:13px;height:13px}
+.flag.warn{color:#f5a524;border-color:color-mix(in srgb,#f5a524 45%,var(--line));cursor:pointer}.flag.bad{color:#f0616d;border-color:color-mix(in srgb,#f0616d 45%,var(--line))}
+.cnote{display:flex;gap:7px;align-items:flex-start;margin-top:8px;font-size:12.5px;color:var(--muted);font-style:italic}.cnote .ic{width:14px;height:14px;flex:none;margin-top:1px}.cnote.full span{white-space:pre-wrap}
+.more2{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.cfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.cf{display:flex;gap:8px;align-items:center;background:var(--raised);border-radius:12px;padding:9px 11px}.cf .ic{width:16px;height:16px;color:var(--muted);flex:none}.cf small{display:block;font-size:11.5px;color:var(--muted)}.cf b{font-size:13.5px}
+.sb2{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px}.sb2>div{display:flex;flex-direction:column;gap:2px;min-width:0}.sb2 span{font-size:13px;color:var(--text)}.sb2 small{font-size:12px;color:var(--muted)}.sb2 .sb-dot{margin-top:5px;flex:none}.sb2 .sb-more{margin-top:4px}
+.cchips{display:flex;flex-wrap:wrap;gap:6px}.cchip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--raised);color:var(--text);text-decoration:none;font-family:inherit;cursor:pointer}.cchip .ic{width:14px;height:14px}
+.cchip.wa{color:#19c37d;border-color:color-mix(in srgb,#19c37d 45%,var(--line))}.cchip.tgc{color:#3fa9f5;border-color:color-mix(in srgb,#3fa9f5 45%,var(--line))}.cchip.ok{color:#19c37d;cursor:default}.cchip.add{border-style:dashed;color:var(--muted)}
+/* Menú «Más» por bloques */
+.mlist2{display:flex;flex-direction:column;gap:14px}.mgrp h4{margin:0 0 6px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mgrid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}.mgrid2 .mitem{border:1px solid var(--line);border-radius:12px;padding:10px;margin:0;background:var(--raised)}.mgrid2 .mitem small{font-size:11.5px}
+.mgrp.danger{padding-top:10px;border-top:1px dashed var(--line)}
+.clv .ccard .tags .tag:nth-child(4){color:#a46bff;border-color:color-mix(in srgb,#a46bff 45%,transparent);background:color-mix(in srgb,#a46bff 12%,transparent)}
+.cfacts{grid-template-columns:repeat(3,1fr)!important}.cf{flex-direction:column;align-items:flex-start;gap:4px}.cf .ic{display:none}
+.mgrid2{grid-template-columns:repeat(3,1fr)}.mgrid2 .mitem{flex-direction:column;align-items:center;text-align:center;gap:6px;padding:12px 6px;font-size:13px;line-height:1.25}.mgrid2 .mitem .ic{width:20px;height:20px;margin:0}
+.mgrp.danger .mgrid2{grid-template-columns:1fr 1fr}.mgrp.danger .mitem{flex-direction:row;align-items:flex-start;text-align:left;padding:10px}.mgrp.danger .mitem .ic{width:18px;height:18px}
+@media (max-width:380px){.mgrid2{grid-template-columns:1fr 1fr}}
+/* Bienvenida del Resumen */
+.welcome{margin:4px 0 18px}.welcome .wg{margin:0 0 2px;font-size:14px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.welcome h1{margin:0;font-size:clamp(26px,4.2vw,36px);line-height:1.15;font-weight:800;letter-spacing:-.01em}
+.welcome h1 span{background:linear-gradient(90deg,var(--brand),#a46bff 60%,#e2457a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.welcome .wl{margin:6px 0 0;color:var(--muted);font-size:15px}
+.welcome .wrole{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:color-mix(in srgb,var(--brand) 14%,transparent);color:var(--brand)}
+.welcome .wrole.r-admin{background:color-mix(in srgb,#a46bff 16%,transparent);color:#a46bff}.welcome .wrole.r-reseller{background:color-mix(in srgb,#1fa971 16%,transparent);color:#1fa971}.welcome .wrole.r-sub{background:color-mix(in srgb,#e2457a 14%,transparent);color:#e2457a}
+/* Licencias */
+.licgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;align-items:start}
+.licc{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:12px;border-top:3px solid var(--ok)}
+.licc.st-soon{border-top-color:var(--warn)}.licc.st-grace{border-top-color:#f08a4b}.licc.st-off{border-top-color:var(--bad);opacity:.92}
+.licc header{display:flex;align-items:center;gap:10px}.licc .who{flex:1;min-width:0;display:flex;flex-direction:column}.licc .who b{font-size:16px}
+.licc .who a,.licc .who small{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}.licc .who a:hover{color:var(--brand)}
+.licc .cav{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--brand),#a46bff);flex:none}
+.lpill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.lpill.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent)}.lpill.soon{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent)}
+.lpill.grace{color:#f08a4b;background:color-mix(in srgb,#f08a4b 16%,transparent)}.lpill.off{color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,transparent)}
+.lbig{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}.lbig small{display:block;color:var(--muted);font-size:12px}.lbig b{font-size:20px;white-space:nowrap}.lbig .r{text-align:right}
+.lbig em{font-style:normal;font-size:13px;font-weight:600}.lbig em.ok{color:var(--ok)}.lbig em.soon{color:var(--warn)}.lbig em.grace{color:#f08a4b}.lbig em.off{color:var(--bad)}
+.lbar{height:6px;border-radius:6px;background:var(--raised);overflow:hidden}.lbar i{display:block;height:100%;border-radius:6px;background:var(--ok)}
+.lbar i.soon{background:var(--warn)}.lbar i.grace{background:#f08a4b}.lbar i.off{background:var(--bad)}
+.lmeta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}.lmeta span{display:inline-flex;align-items:center;gap:5px}.lmeta .ic{width:14px;height:14px}.lmeta .on{color:var(--ok)}
+.lnote{margin:0;font-size:13px;color:var(--muted);padding:8px 10px;border-radius:10px;background:var(--raised)}
+.licc .acts{display:flex;flex-wrap:wrap;gap:6px}
+.licnav{display:flex;align-items:center;gap:8px}.licnav b{min-width:130px;text-align:center}
+.lcal .has{background:color-mix(in srgb,var(--brand) 5%,var(--surface))}
+.lcal button.lc-ok{box-shadow:inset 3px 0 0 var(--ok)}.lcal button.lc-soon{box-shadow:inset 3px 0 0 var(--warn)}.lcal button.lc-grace{box-shadow:inset 3px 0 0 #f08a4b}.lcal button.lc-off{box-shadow:inset 3px 0 0 var(--bad)}
+.flabel{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+.lnew{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:var(--raised);margin:4px 0 12px}.lnew span{color:var(--muted);font-size:13px}.lnew b{font-size:17px;color:var(--ok)}
+.ltok{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--raised);margin:10px 0}.ltok code{flex:1;word-break:break-all;font-size:13px}
+.lenv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px;margin:10px 0}.lenv div{display:flex;flex-direction:column}.lenv small{color:var(--muted);font-size:11px}.lenv code{word-break:break-all}
+.lsteps{margin:12px 0 8px;padding-left:20px;line-height:1.6;font-size:14px}.lsteps li{margin-bottom:6px}.lsteps code{font-size:12.5px;padding:1px 5px;border-radius:5px;background:var(--raised)}
+.licban{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;margin-bottom:14px;border:1px solid}.licban>div{display:flex;flex-direction:column;gap:2px}.licban span{font-size:13.5px;color:var(--muted)}
+.licban.soon{border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 10%,var(--surface))}.licban.soon>.ic{color:var(--warn)}
+.licban.grace{border-color:color-mix(in srgb,var(--bad) 45%,transparent);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}.licban.grace>.ic{color:var(--bad)}
+#licLock{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:radial-gradient(1200px 600px at 50% -10%,color-mix(in srgb,var(--brand) 22%,var(--bg)),var(--bg));overflow:auto;z-index:50}
+.llk{max-width:440px;width:100%;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:30px 24px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.llk-ic{width:64px;height:64px;margin:0 auto 14px;border-radius:20px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--brand),#a46bff 60%,#e2457a)}.llk-ic .ic{width:30px;height:30px}
+.llk h1{margin:0 0 8px;font-size:26px}.llk>p{color:var(--muted);margin:0 0 16px;line-height:1.5}
+.llk-ok{display:flex;gap:10px;text-align:left;align-items:flex-start;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--ok) 10%,var(--raised));font-size:13.5px;margin-bottom:14px}.llk-ok .ic{color:var(--ok);flex:none;margin-top:2px}
+.llk-ct{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:14px;background:var(--raised);margin-bottom:16px}.llk-ct small{color:var(--muted)}.llk-ct b{font-size:17px}
+.llk .btn{width:100%;justify-content:center}
+@media (max-width:560px){.vptiles.lict{grid-template-columns:1fr 1fr;gap:10px}.licgrid{grid-template-columns:1fr}.lbig b{font-size:18px}.licnav b{min-width:0}}
 /* Cuenta desactivada a mano */
 .pw-chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 7%,transparent);line-height:1.45}.pw-chk input{margin-top:3px;flex:none}
 .offbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,#7d8fa8 60%,transparent);background:color-mix(in srgb,#7d8fa8 12%,transparent);font-size:13px}
@@ -1030,7 +1173,8 @@ async function api(method, url, body) {
   const r = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
   const j = await r.json().catch(() => ({}));
   if (r.status === 401 && !url.startsWith('/api/login')) { showGate(false); throw new Error('La sesión ha caducado. Vuelve a entrar.'); }
-  if (!r.ok) throw new Error(j.error || 'Algo ha fallado.');
+  if (r.status === 423 && j.licLocked) { api('GET', '/api/state').then((st) => st.license && showLock(st.license)).catch(() => {}); throw new Error(j.error); }
+  if (!r.ok) { const e = new Error(j.error || 'Algo ha fallado.'); e.status = r.status; throw e; }
   return j;
 }
 let toastTimer;
@@ -1042,7 +1186,8 @@ function toast(msg, bad) {
 
 /* ---------- Iconos (trazos propios, 24x24) ---------- */
 const IC = {
-  radio: 'M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8', film: 'M4 4h16v16H4zM8 4v16M16 4v16M4 8h4M4 12h4M4 16h4M16 8h4M16 12h4M16 16h4', tv: 'M3 7h18v12H3zM8 3l4 4 4-4', pause: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10 9v6M14 9v6', wifi: 'M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a14.5 14.5 0 0 1 20 0M12 19.5h.01', xc: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6', refresh: 'M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4',
+  key: 'M15.5 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM13 11l-9 9M6 18l2 2M9 15l2 2',
+  send: 'M21 3 10 14M21 3l-7 18-4-7-7-4z', radio: 'M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8', film: 'M4 4h16v16H4zM8 4v16M16 4v16M4 8h4M4 12h4M4 16h4M16 8h4M16 12h4M16 16h4', tv: 'M3 7h18v12H3zM8 3l4 4 4-4', pause: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10 9v6M14 9v6', wifi: 'M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a14.5 14.5 0 0 1 20 0M12 19.5h.01', xc: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6', refresh: 'M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4',
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', server: 'M4 5h16v6H4zM4 13h16v6H4zM7.5 8h.01M7.5 16h.01', msg: 'M4 5h16v11H9l-5 4z',
   users: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.8c2.1.7 3.5 2.6 3.5 5.2',
   user: 'M12 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5', userplus: 'M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5M19 5v6M16 8h6',
@@ -1061,7 +1206,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -1103,7 +1248,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN; try { NAV_OPEN = new Set(JSON.parse(localStorage.getItem('menu') || '["cli"]')); } catch (e) { NAV_OPEN = new Set(['cli']); }
 
 /* ---------- Estado ---------- */
-const S = { mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -1126,19 +1271,22 @@ function navGroups() {
     { v: 'cuentas', f: 'expired', t: 'Vencidos', i: 'alert', n: cnt.expired, hot: true },
     { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off },
     { v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid },
+    { v: 'compartidas', t: 'Cuentas compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true },
+    { v: 'mensajecli', t: 'Mensaje a clientes', i: 'send' },
     { v: 'avisos', t: 'Avisos de vencimiento', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length }];
   if (staff() && canDo('reports')) cli.push({ v: 'auditoria', t: 'Auditoría', i: 'check' });
   cli.push({ v: 'movimientos', t: 'Movimientos', i: 'history' }, { v: 'papelera', t: 'Papelera', i: 'trash', n: trash().length });
   const emby = [];
   if (canDo('viewServers')) emby.push({ v: 'servidores', t: 'Servidores', i: 'server' });
   if (canDo('system')) emby.push({ v: 'plantillas', t: 'Plantillas de mensajes', i: 'msg' });
+  if (staff() && canDo('servers')) emby.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' });
   if (!noCli()) emby.push({ v: 'calendario', t: 'Calendario', i: 'calendar' }, { v: 'directo', t: 'En directo', i: 'play' });
   let g = [
     { k: 'ini', items: [{ v: 'resumen', t: 'Resumen', i: 'grid' }] },
     { k: 'cli', t: 'Clientes', i: 'users', items: cli },
     { k: 'demo', t: 'Demos', i: 'timer', items: [
       { v: 'demonueva', t: 'Nueva', i: 'plus' }, { v: 'cuentas', f: 'demo', t: 'Activas', i: 'play', n: cnt.demo },
-      { v: 'demosvencidas', t: 'Vencidas', i: 'clock', n: trash().filter((c) => c.demo).length }, { v: 'movdemos', t: 'Movimientos', i: 'history' }] },
+      { v: 'demosvencidas', t: 'Vencidas', i: 'clock', n: trash().filter((c) => c.demo).length }, { v: 'seguimiento', t: 'Seguimiento', i: 'send', n: S.d.followPending || 0, hot: true }, { v: 'movdemos', t: 'Movimientos', i: 'history' }] },
     { k: 'emby', t: 'Emby', i: 'server', items: emby },
     ...(noCli() ? [] : [{ k: 'mon', t: 'Monitor', i: 'radio', items: [{ v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'inactivos', t: 'Inactivos', i: 'pause' }, ...(staff() && canDo('reports') ? [{ v: 'uso', t: 'Estadísticas de uso', i: 'chart' }] : [])] }]),
     { k: 'al', t: 'Alertas', i: 'bell', items: [
@@ -1148,18 +1296,20 @@ function navGroups() {
   if (noCli()) g = g.filter((x) => x.k === 'ini' || (x.k === 'emby' && emby.length));
   const venOk = me().role === 'admin' ? canDo('resellers') || canDo('credits') : me().role !== 'sub';
   if (venOk) g.push({ k: 'ven', t: staff() ? 'Vendedores' : 'Subresellers', i: 'user', items: [
-    { v: 'equipo', t: 'Activos', i: 'users' }, { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length }, { v: 'stats', t: 'Estadísticas', i: 'chart' },
+    { v: 'equipo', t: 'Activos', i: 'users' }, { v: 'atencion', t: 'Atención', i: 'alert', n: S.d.teamCount || 0, hot: true }, { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length }, { v: 'stats', t: 'Estadísticas', i: 'chart' }, { v: 'mensajeeq', t: staff() ? 'Mensaje al equipo' : 'Mensaje a subresellers', i: 'send' },
+    ...(isSuper() || (me().role === 'admin' && canDo('credits')) || me().role === 'reseller' ? [{ v: 'cobrosven', t: 'Cobros y deudas', i: 'wallet', n: S.d.users.filter((x) => x.debt > 0).length, hot: true }] : []),
     ...(staff() && canDo('resellers') ? [{ v: 'venajustes', t: 'Ajustes vendedores', i: 'sliders' }] : [])] });
   if (canDo('admins')) g.push({ k: 'adm', items: [{ v: 'admins', t: 'Administradores', i: 'shield' }] });
   const sys = canDo('system');
-  g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
+  g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []), ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
   g.push({ k: 'aj', t: 'Ajustes', i: 'sliders', items: [
     { v: 'perfil', t: 'Perfil', i: 'user' },
     { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
     ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
     ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
     ...(staff() && !noCli() && !me().useCredits ? [{ v: 'importar', t: 'Importar', i: 'download' }] : []),
-    ...(staff() && canDo('reports') ? [{ v: 'logs', t: 'Logs de actividad', i: 'signal' }] : [])] });
+    ...(staff() && canDo('reports') ? [{ v: 'logs', t: 'Logs de actividad', i: 'signal' }] : []),
+    ...(staff() || me().role === 'reseller' ? [{ v: 'accesos', t: 'Historial de accesos', i: 'lock' }] : [])] });
   if (sys) g.push({ k: 'guia', items: [{ v: 'guia', t: 'Guía de inicio rápido', i: 'note' }] });
   return g;
 }
@@ -1278,18 +1428,19 @@ $('#gateForm').addEventListener('submit', async (e) => {
 async function boot() {
   const st = await api('GET', '/api/state');
   applyBrand(st.brand); applyTheme(); SUPPORT = st.support || null;
+  if (st.license && st.license.state === 'locked') return showLock(st.license);
   if (st.needsSetup) return showGate(true);
   if (!st.authed) return showGate(false);
   await start();
 }
-async function start() { $('#gate').hidden = true; $('#app').hidden = false; await reload(); payReturn(); }
+async function start() { $('#gate').hidden = true; $('#app').hidden = false; navFromHash(); await reload(); payReturn(); }
 async function reload() { S.d = await api('GET', '/api/data'); render(); }
 
 /* ---------- Pintado ---------- */
 function render() {
   const d = S.d, items = navItems();
   if (!items.some((x) => x.v === S.view) && !(S.view === 'vendedor' && me().role !== 'sub')) S.view = 'resumen';
-  const listF = ['soon', 'expired', 'demo'].includes(S.filter) ? S.filter : 'all';
+  const listF = ['soon', 'expired', 'demo', 'off'].includes(S.filter) ? S.filter : 'all';
   const navTop = $('#nav').scrollTop;
   const item = (x) => {
     const cur = x.v === S.view && (!x.f || x.f === listF);
@@ -1308,7 +1459,7 @@ function render() {
   applyBrand(d.settings.brand); applyTheme();
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, ingresos: vIngresos, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -1320,6 +1471,7 @@ function render() {
   if (S.view === 'seguridad' && !S.sec && !S.secBusy) loadSec();
   if (S.view === 'copias' && !S.bk && !S.bkBusy) loadBk();
   if (S.view === 'uso' && !S.uso && !S.usoBusy) loadUso();
+  if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
   if (S.view === 'ingresos' && !S.ing && !S.ingBusy) loadIng();
   if (S.view === 'inactivos' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
@@ -1327,12 +1479,66 @@ function render() {
   if ((S.view === 'nuevo' || S.view === 'demonueva') && $('#newClient')) wireCost(+$('#newClient').elements.serverId.value, null, $('#newClient'));
   if (S.view === 'resumen' && S.d.servers.length && !noCli()) loadLive();
   if (S.view === 'cuentas' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
+  if (S.view === 'cuentas' && S.d.servers.length && !noCli() && (!S.liveAt || Date.now() - S.liveAt > 30000)) { S.liveAt = Date.now(); loadLive(); }
   const tab = (attrs, icon, label, cur) => `<button type="button" ${attrs}${cur ? ' aria-current="page"' : ''}>${ic(icon)}<span>${label}</span></button>`;
   $('#tabbar').innerHTML = tab('data-act="menu"', 'menu', 'Menú') + tab('data-view="resumen"', 'grid', 'Resumen', S.view === 'resumen') + (noCli() ? '' : tab('data-act="new"', 'userplus', 'Cuenta', S.view === 'nuevo') +
     tab('data-act="demo"', 'timer', 'Demo', S.view === 'demonueva') + tab('data-view="cuentas" data-filter="all"', 'users', 'Clientes', S.view === 'cuentas'));
   if (S.view === 'auditoria' && !S.audit && !S.auditBusy) loadAudit();
   if (S.view === 'logs' && !S.logs && !S.logsBusy) loadLogs();
+  if (S.view === 'accesos' && !S.acc.data && !S.acc.busy) loadAccess();
+  if (S.view === 'compartidas' && !S.sh.busy && (!S.sh.data || Date.now() - S.sh.at > 60000)) loadShared();
+  if (S.view === 'seguimiento' && !S.fu.busy && (!S.fu.data || Date.now() - S.fu.at > 30000)) loadFollow();
+  if (S.view === 'mensajecli') bcRefresh();
+  if (S.view === 'atencion' && !S.tm.busy && (!S.tm.data || Date.now() - S.tm.at > 30000)) loadTeam();
+  if (S.view === 'mensajeeq') vbRefresh();
+  if (S.view === 'cobrosven' && !S.vp.busy && (!S.vp.data || Date.now() - S.vp.at > 20000)) loadVpay();
+  if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
+  navSync();
+}
+/* ---------- Botón «Atrás» del navegador y del móvil ----------
+   Cada pantalla queda guardada en el historial (#/cuentas/soon…), así «Atrás» vuelve a la anterior en vez de salir del panel.
+   Una ventana abierta (Más, Editar…) también ocupa un paso: «Atrás» la cierra. */
+const NAV = { skip: false, fromPop: false, closing: false };
+const navKey = () => S.view + (S.view === 'cuentas' ? '/' + (S.filter || 'all') : S.view === 'vendedor' ? '/' + (S.vendorId || 0) : '');
+const navState = (extra) => ({ k: navKey(), v: S.view, f: S.filter, vid: S.vendorId, ...extra });
+function navSync() {
+  if (NAV.fromPop) { NAV.fromPop = false; return; }
+  const st = history.state || {}, k = navKey();
+  if (!st.k) { history.replaceState(navState(), '', '#/' + k); return; }
+  if (st.dlg || st.k === k) return; // con una ventana abierta decide su cierre
+  history.pushState(navState(), '', '#/' + k);
+}
+function navDlgOpened() {
+  const st = history.state || {};
+  if (!st.dlg) history.pushState(navState({ dlg: 1 }), '', location.hash || '#/' + navKey());
+}
+function navDlgClosed() {
+  if (NAV.closing) return;
+  setTimeout(() => {
+    const st = history.state || {};
+    if (!st.dlg || dlg.open) return; // se abrió otra ventana encima: sigue ocupando el mismo paso
+    if (navKey() === st.k) { NAV.skip = true; history.back(); } // se cierra sin cambiar de pantalla: quitamos su paso
+    else history.replaceState(navState(), '', '#/' + navKey()); // la ventana llevó a otra pantalla: ese paso pasa a ser la pantalla nueva
+  }, 0);
+}
+window.addEventListener('popstate', (e) => {
+  if (NAV.skip) { NAV.skip = false; return; }
+  if (dlg.open) { NAV.closing = true; dlg.close(); NAV.closing = false; }
+  closeMenu();
+  const st = e.state;
+  if (!st || !st.v || $('#app').hidden || !S.d) return;
+  if (st.k === navKey()) return;
+  S.view = st.v; if (st.f) S.filter = st.f; if (st.vid != null) S.vendorId = st.vid; S.page = 1;
+  NAV.fromPop = true; render(); window.scrollTo(0, 0);
+});
+/** Al entrar o recargar (F5) se abre la pantalla que había en la dirección */
+function navFromHash() {
+  const m = /^#\/([a-z]+)(?:\/(\w+))?$/.exec(location.hash || '');
+  if (!m) return;
+  S.view = m[1];
+  if (m[1] === 'cuentas' && m[2]) S.filter = m[2];
+  if (m[1] === 'vendedor') S.vendorId = Number(m[2]) || 0;
 }
 const head = (title, sub, acts = '') => `<div class="head"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="acts">${acts}</div></div>`;
 const newBtns = () => `${staff() ? `<button class="btn" data-act="import">${ic('download')}Importar de Emby</button>` : ''}<button class="btn" data-act="demo">${ic('timer')}Nueva demo</button><button class="btn primary" data-act="new">${ic('plus')}Nueva cuenta</button>`;
@@ -1346,6 +1552,20 @@ const SEEN_DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'vierne
 const seenDate = (v) => { const d = v ? new Date(v) : null; return !d || isNaN(d) || d.getFullYear() < 2000 ? null : d; };
 const seenAgo = (d) => diff(S.d.today, `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
 const hhmm = (d) => d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+/** Fecha y hora cortas: "hoy, 10:24", "ayer, 22:15" o "lun 5 oct, 21:30" */
+function whenShort(v) {
+  const d = seenDate(v); if (!d) return 'nunca';
+  const ago = seenAgo(d);
+  if (ago <= 0) return 'hoy, ' + hhmm(d);
+  if (ago === 1) return 'ayer, ' + hhmm(d);
+  return `${SEEN_DIAS[d.getDay()].slice(0, 3)} ${d.getDate()} ${MES[d.getMonth()]}${ago > 300 ? ' ' + d.getFullYear() : ''}, ${hhmm(d)}`;
+}
+/** Último acceso de un admin, reseller o subreseller */
+function lastAccessHtml(u, cls = '') {
+  const l = u.lastLogin, seen = seenDate(u.lastSeen);
+  const now = seen && Date.now() - seen < 5 * 60000;
+  return `<div class="lacc ${cls}">${ic('lock')}<span>Último acceso: <b>${l ? whenShort(l.at) : 'nunca'}</b>${l ? ` · ${esc(l.dev || '')}${l.ip ? ' · IP ' + esc(l.ip) : ''}` : ''}${now ? ' · <em class="on">conectado ahora</em>' : seen && l ? ` · activo por última vez ${whenShort(u.lastSeen)}` : ''}</span></div>`;
+}
 /** Corto, para la lista: "hoy, 10:24", "ayer, 22:15" o "lun 5 oct, 21:30" */
 function seenText(id) {
   if (!S.seen) return '…';
@@ -1364,18 +1584,19 @@ function seenLong(v) {
   const ago = seenAgo(d), rel = Date.now() - d < 10 * 60000 ? 'ahora mismo' : ago <= 0 ? 'hoy' : ago === 1 ? 'ayer' : `hace ${ago} días`;
   return { text: `${SEEN_DIAS[d.getDay()]} ${d.getDate()} de ${d.toLocaleDateString('es-ES', { month: 'long' })} de ${d.getFullYear()} a las ${hhmm(d)}`, rel, ago, now: Date.now() - d < 10 * 60000 };
 }
-/** Bloque "Conexión a Emby" del perfil de la cuenta */
+/** Bloque "Conexión a Emby" del perfil de la cuenta, en dos líneas */
 function seenBox(id) {
   if (!S.seen) return '<div class="sb-empty">Consultando Emby…</div>';
   const inf = (S.seenInfo && S.seenInfo[id]) || {}, a = seenLong(inf.seen || S.seen[id]), l = seenLong(inf.login), dv = inf.dev;
-  if (!a && !l) return '<div class="sb-empty">Esta cuenta todavía no se ha conectado nunca a Emby.</div>';
+  const c0 = S.d.clients.find((v) => v.id === id), now = c0 && S.live && S.live.sessions ? S.live.sessions.find((v) => v.clientId === id) : null;
+  if (now) return `<div class="sb2"><i class="sb-dot now"></i><div><b>Conectado ahora mismo</b><span>${now.paused ? 'En pausa' : 'Viendo'}: ${esc(now.title)}</span><small>${esc(now.device)}${now.app ? ' · ' + esc(now.app) : ''}</small><button type="button" class="linkbtn sb-more" data-act="m-conn" data-id="${id}">${ic('signal')}Ver historial de conexiones</button></div></div>`;
+  if (!a && !l) return `<div class="sb-empty">Todavía no se ha conectado nunca a Emby.</div>`;
   const cls = !a ? 'off' : a.now ? 'now' : a.ago <= 1 ? 'ok' : a.ago <= 7 ? 'mid' : 'off';
-  const row = (icon, label, val, sub) => `<div class="sb-r">${ic(icon)}<div><small>${label}</small><b>${val}</b>${sub ? `<em>${sub}</em>` : ''}</div></div>`;
-  return `<div class="sb-h"><i class="sb-dot ${cls}"></i>${a ? (a.now ? 'Conectado ahora mismo' : 'Última conexión ' + a.rel) : 'Sin actividad reciente'}</div>
-    ${a ? row('clock', 'Última conexión', a.text, a.rel) : ''}
-    ${l ? row('lock', 'Último inicio de sesión', l.text, l.rel) : ''}
-    ${dv && dv.name ? row('screen', 'Último aparato', esc(dv.name), esc(dv.app || '')) : ''}
-    ${inf.live === false ? '<div class="sb-empty">Emby no responde ahora: es el último dato guardado.</div>' : ''}`;
+  const short = (v) => whenShort(v);
+  return `<div class="sb2"><i class="sb-dot ${cls}"></i><div><b>${a ? (a.now ? 'Conectado ahora mismo' : 'Última conexión ' + short(inf.seen || S.seen[id])) : 'Sin conexión reciente'}</b>${dv && dv.name ? `<span>${esc(dv.name)}${dv.app ? ' · ' + esc(dv.app) : ''}</span>` : ''}
+    ${l ? `<small>Inició sesión ${short(inf.login)}</small>` : ''}
+    ${inf.live === false ? '<small>Emby no responde ahora: es el último dato guardado.</small>' : ''}
+    <button type="button" class="linkbtn sb-more" data-act="m-conn" data-id="${id}">${ic('signal')}Ver historial de conexiones</button></div></div>`;
 }
 async function loadSeen() {
   S.seenAt = Date.now();
@@ -1420,19 +1641,36 @@ function leftText(c) {
   const days = diff(c.expires, addMonths(S.d.today, m));
   return m ? `${m}m ${days}d` : `${days}d`;
 }
+/** Lo que está viendo ahora (si está reproduciendo algo) */
+function liveOf(c) { const x = S.live && S.live.sessions ? S.live.sessions.find((v) => v.clientId === c.id) : null; return x ? `<span class="cnow">${x.paused ? '⏸' : '<i></i>'}${x.paused ? 'En pausa' : 'Viendo'}: <b>${esc(x.title)}</b>${x.device ? ' · ' + esc(x.device) : ''}</span>` : ''; }
+/** Cuánto tiempo le queda, como barra (12 meses = llena) */
+function leftBar(c) {
+  if (c.demo || c.status === 'trash') return '';
+  const d = diff(c.expires, S.d.today);
+  const pct = d <= 0 ? 0 : Math.max(3, Math.min(100, Math.round((d / 365) * 100)));
+  const cls = d < 0 ? 'bad' : d <= (S.d.settings.warnDays || 7) ? 'warn' : d <= 30 ? 'mid' : 'ok';
+  return `<div class="lbar ${cls}" title="Quedan ${Math.max(0, d)} días"><i style="width:${pct}%"></i></div>`;
+}
 function clientCard(c) {
   const st = stage(c), open = S.open.has(c.id), shown = S.pw.has(c.id);
-  const kv = (k, v, cls = '') => `<div class="kv ${cls}">${k}: <span>${v}</span></div>`;
-  const more = open ? `<div class="more">
-      ${kv('Nombre completo', esc(c.panelName), 'wide')}
-      ${kv('Vendedor', esc(userName(c.ownerId) || '—'))}
-      ${kv('Pantallas', c.screens ? c.screens : 'sin límite')}
-      ${kv('Suscripción', c.demo ? fmtTs(c.expiresAt) : fmt(c.expires))}
-      ${kv('Alta', fmt(c.createdAt))}
-      <div class="wide seenbox" data-seenbox="${c.id}">${seenBox(c.id)}</div>
-      ${S.d.settings.notices.telegram.bot ? kv('Avisos por Telegram', c.tgLinked ? 'enlazado' : 'sin enlazar') : ''}
-      ${contactHtml(c) ? `<div class="wide">${contactHtml(c)}</div>` : ''}
-      ${c.note ? kv('Notas', esc(c.note), 'wide') : ''}
+  const mine = c.ownerId === me().id, ren = (S.d.renewals || {})[c.id] || 0;
+  const shared = (S.d.sharedIds || []).includes(c.id);
+  // Avisos que solo salen cuando toca
+  const flags = [shared ? `<button type="button" class="flag warn" data-act="m-conn" data-id="${c.id}">${ic('users')}Parece compartida</button>` : '', c.paid === false ? `<span class="flag bad">${ic('wallet')}Cobro pendiente</span>` : ''].filter(Boolean).join('');
+  const note = c.note ? `<div class="cnote">${ic('note')}<span>${esc(c.note.split('\n')[0].slice(0, 90))}</span></div>` : '';
+  // Ficha abierta: solo lo que no se ve ya en la tarjeta
+  const chip = (href, icon, label, cls = '') => href ? `<a class="cchip ${cls}" href="${href}" target="_blank" rel="noopener">${ic(icon)}${label}</a>` : `<span class="cchip ${cls}">${ic(icon)}${label}</span>`;
+  const contacts = [];
+  if (c.whatsapp) { const n = waNum(c.whatsapp); contacts.push(chip(n ? `https://wa.me/${n}` : '', 'msg', 'WhatsApp ' + esc(c.whatsapp), 'wa')); }
+  if (c.telegram) { const t = c.telegram.replace(/^@/, ''); contacts.push(chip(/^[A-Za-z0-9_]{3,40}$/.test(t) ? `https://t.me/${t}` : '', 'send', 'Telegram @' + esc(t), 'tgc')); }
+  if (c.signal) contacts.push(chip('', 'msg', 'Signal ' + esc(c.signal)));
+  if (S.d.settings.notices.telegram.bot) contacts.push(c.tgLinked ? `<span class="cchip ok">${ic('bell')}Avisos por Telegram ✓</span>` : `<button type="button" class="cchip add" data-act="m-tg" data-id="${c.id}">${ic('bell')}Enlazar avisos por Telegram</button>`);
+  const fact = (icon, label, val) => `<div class="cf">${ic(icon)}<div><small>${label}</small><b>${val}</b></div></div>`;
+  const more = open ? `<div class="more2">
+      <div class="cfacts">${fact('calendar', c.demo ? 'Termina' : 'Vence', c.demo ? fmtTs(c.expiresAt) : fmt(c.expires))}${fact('user', 'Cliente desde', fmt(c.createdAt))}${c.demo ? '' : fact('history', 'Renovaciones', ren ? String(ren) : 'ninguna aún')}</div>
+      <div class="seenbox2" data-seenbox="${c.id}">${seenBox(c.id)}</div>
+      ${contacts.length ? `<div class="cchips">${contacts.join('')}</div>` : ''}
+      ${c.note && c.note.includes('\n') ? `<div class="cnote full">${ic('note')}<span>${esc(c.note)}</span></div>` : ''}
     </div>` : '';
   const picked = S.sel.has(c.id);
   const ib = (act, icon, label, cls = '') => `<button type="button" class="ib ${cls}" data-act="${act}" data-id="${c.id}" title="${label}" aria-label="${label}: ${esc(c.panelName)}">${ic(icon)}</button>`;
@@ -1447,15 +1685,16 @@ function clientCard(c) {
     <div class="kv">${ic('mail')}<em>Email:</em><span>${c.email ? esc(c.email) : '—'}</span></div>
     <div class="kv">${ic('lock')}<em>Pass:</em><span>${c.password ? (shown ? esc(c.password) : '••••••••') : 'Contraseña no guardada'}</span>${c.password ? `<button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}" title="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}">${ic('eye')}</button>` : ''}</div>
     <div class="foot">
-      <div class="tags"><span class="tag">${ic('server')}${esc(serverName(c.serverId))}</span><span class="tag q">${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}</span><span class="tag">${ic('user')}${esc(userName(c.ownerId) || '—')}</span></div>
+      <div class="tags"><span class="tag">${ic('server')}${esc(serverName(c.serverId))}</span><span class="tag q">${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}</span><span class="tag">${ic('screen')}${c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite'}</span>${mine ? '' : `<span class="tag">${ic('user')}${esc(userName(c.ownerId) || '—')}</span>`}</div>
       <span class="tag left ${st}" title="Tiempo restante">${ic('clock')}${leftText(c)}</span>
     </div>
-    <div class="foot small muted"><span>${ic('signal').replace('class="ic"', 'class="ic" style="width:14px;height:14px;margin-right:6px"')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span></span>
-      <span><span class="badge ${st}">${STAGE[st]}</span>${c.paid === false ? ' <span class="due" style="display:inline">Cobro pendiente</span>' : ''}</span></div>
+    ${leftBar(c)}
+    <div class="cline"><span data-live="${c.id}">${liveOf(c) || `${ic('signal')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span>`}</span></div>
+    ${flags ? `<div class="flags">${flags}</div>` : ''}
+    ${note}
     ${c.off ? `<div class="offbar">${ic('pause')}<span>Desactivada${c.off.length > 9 ? ' el ' + fmt(c.off.slice(0, 10)) : ''}: no puede ver nada en Emby. No se borra ni pasa a la papelera.</span><button type="button" class="btn sm primary" data-act="c-on" data-id="${c.id}">${ic('play')}Activar</button></div>` : ''}
     ${c.lastError ? `<div class="err">No se pudo aplicar en Emby: ${esc(c.lastError)}</div>` : ''}
     ${more}
-    ${open ? `<div class="acts"><button class="btn sm" data-act="edit" data-id="${c.id}">${ic('edit')}Editar</button><button class="btn sm primary" data-act="renew" data-id="${c.id}">${ic('clock')}${renewLabel}</button><button class="btn sm" data-act="more" data-id="${c.id}">${ic('more')}Más</button></div>` : ''}
   </article>`;
 }
 const clientTable = (rows, compact) => `<div class="panel"><table class="cards"><thead><tr><th>Cuenta</th><th>Plan</th><th>Vence</th><th>Estado</th><th class="r">${compact ? '' : 'Acciones'}</th></tr></thead><tbody>${rows.map((c) => clientRow(c, compact)).join('')}</tbody></table></div>`;
@@ -1469,7 +1708,7 @@ function vResumen() {
       ${mine.length ? `<div class="permlist" style="margin:8px 0 0">${mine.map(([, t, hint]) => `<label style="cursor:default">${ic('check')}<span>${t}<small>${hint}</small></span></label>`).join('')}</div>` : '<p class="muted" style="margin-top:8px">Tu usuario todavía no tiene permisos. Pídeselos al superadministrador.</p>'}
       <p class="muted small" style="margin-top:12px">Tu usuario no tiene permiso para ver ni gestionar clientes. Si lo necesitas, pídeselo al superadministrador.</p></div>`;
   }
-  if (!d.servers.length) return head('Resumen') + noServer();
+  if (!d.servers.length) return head('Resumen') + licBanner() + noServer();
   const cnt = { active: 0, soon: 0, expired: 0, trash: 0, demo: 0, off: 0 };
   d.clients.forEach((c) => { cnt[stage(c)]++; });
   const g = d.settings;
@@ -1484,7 +1723,22 @@ function vResumen() {
   const sc = (k, n, label, hint, icon) => `<button type="button" class="sc sc-${k}" data-act="goto" data-filter="${k}"><span class="sc-i">${ic(icon)}</span><b>${n}</b><span class="sc-l">${label}</span><small>${hint}</small></button>`;
   const secTip = isSuper() && !d.me.twoFa ? `<div class="sectip">${ic('shield')}<div><b>Protege tu cuenta de superadministrador</b><span>Activa la verificación en dos pasos: aunque te roben la contraseña, nadie podrá entrar sin tu móvil.</span></div><button class="btn primary sm" data-view="seguridad">Activar</button></div>` : '';
   const dsearch = `<div class="dsearch" role="search"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><input type="search" id="dq" value="${esc(S.dq || '')}" placeholder="Buscar cliente: nombre, usuario, email o teléfono…" autocomplete="off" spellcheck="false" aria-label="Buscar clientes" aria-controls="dqr"></div><div id="dqr">${dqHtml()}</div>`;
-  return `<h1 class="sr-only">Resumen</h1>` + secTip + dsearch + hero + quick + `
+  const rv = [];
+  if (S.d.teamCount) rv.push(`<button type="button" class="rvb bad" data-view="atencion">${ic('alert')}<span><b>${S.d.teamCount}</b> ${S.d.teamCount === 1 ? 'aviso de tu equipo' : 'avisos de tu equipo'}</span><em>Revisar</em></button>`);
+  if (S.d.followPending) rv.push(`<button type="button" class="rvb" data-view="seguimiento">${ic('send')}<span><b>${S.d.followPending}</b> ${S.d.followPending === 1 ? 'demo terminó' : 'demos terminaron'} sin comprar</span><em>Escribirles</em></button>`);
+  if (S.d.sharedCount) rv.push(`<button type="button" class="rvb warn" data-view="compartidas">${ic('users')}<span><b>${S.d.sharedCount}</b> ${S.d.sharedCount === 1 ? 'cuenta parece compartida' : 'cuentas parecen compartidas'}</span><em>Revisar</em></button>`);
+  const review = rv.length ? `<div class="rv">${rv.join('')}</div>` : '';
+  // Bienvenida: saludo con el nombre y una frase según la hora
+  const hr = new Date().getHours(), brandN = esc((S.d.settings.brand && S.d.settings.brand.name) || 'tu panel');
+  const greet = hr < 6 ? 'Buenas noches' : hr < 14 ? 'Buenos días' : hr < 21 ? 'Buenas tardes' : 'Buenas noches';
+  const lines = hr < 6 ? ['Trabajando hasta tarde. Aquí tienes todo en orden.', 'La noche es tranquila: este es el estado de tu panel.']
+    : hr < 14 ? ['Que tengas un gran día. Esto es lo que pasa hoy en ' + brandN + '.', 'Empieza el día con todo bajo control.']
+      : hr < 21 ? ['Así va tu día en ' + brandN + '.', 'Todo lo importante, de un vistazo.']
+        : ['Repaso de la jornada antes de cerrar.', 'Así ha ido hoy en ' + brandN + '.'];
+  const phrase = lines[new Date().getDate() % lines.length];
+  const wRaw = String(d.me.username || d.me.name || ''), wName = wRaw.charAt(0).toUpperCase() + wRaw.slice(1);
+  const welcome = `<div class="welcome"><p class="wg">${greet} ${hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙'}</p><h1>Bienvenido, <span>${esc(wName)}</span></h1><span class="wrole r-${d.me.role}">${ROLE[d.me.role] || ''}</span><p class="wl">${phrase}</p></div>`;
+  return welcome + licBanner() + secTip + dsearch + hero + quick + review + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
     ${sc('active', cnt.active, 'Activas', 'con su contenido', 'check')}
@@ -1835,7 +2089,7 @@ function vAlertas(kind) {
     ? tile(all.length, 'Total de detecciones') + tile(all.filter((x) => now - Date.parse(x.ts) < 86400000).length, 'Últimas 24 horas', 'soon') + tile(new Set(all.map((x) => x.clientId)).size, 'Usuarios afectados', 'mine')
     : tile(all.length, 'Total') + tile(all.filter((x) => !x.read).length, 'Sin leer', 'soon') + tile(all.filter((x) => x.level === 'critica').length, 'Críticas', 'expired') + tile(all.filter((x) => x.type === 'sesiones').length, 'Sesiones excedidas');
   const module = cfg ? `<div class="module">
-      <div class="grow"><b>Vigilancia en Emby</b><div class="small muted">${cfg.on ? (cfg.stop ? 'Encendida: detiene la reproducción y avisa al usuario en pantalla.' : 'Encendida: solo registra el aviso, no detiene nada.') : 'Apagada: no se vigila ni se detiene nada.'} Guarda el historial ${plural(cfg.retention, 'día', 'días')}.</div></div>
+      <div class="grow"><b>Vigilancia en Emby</b><div class="small muted">${cfg.on ? (cfg.stop ? 'Encendida: detiene la reproducción y avisa al usuario en pantalla.' : def.key === 'transcode' && cfg.tip !== false ? 'Encendida: no corta nada, pero le explica en su pantalla cómo subir la calidad.' : 'Encendida: solo registra el aviso, no detiene nada.') : 'Apagada: no se vigila ni se detiene nada.'} Guarda el historial ${plural(cfg.retention, 'día', 'días')}.</div></div>
       <span class="state${cfg.on ? ' on' : ''}">${cfg.on ? 'Activo' : 'Apagado'}</span>
       ${staff() ? `<button class="btn ${cfg.on ? '' : 'primary'}" data-act="al-toggle" data-k="${def.key}">${cfg.on ? 'Apagar' : 'Encender'}</button>` : ''}
     </div>` : '';
@@ -1845,7 +2099,12 @@ function vAlertas(kind) {
     body = `<form id="alcfg" data-k="${def.key}" class="panel pad formpage" style="max-width:720px">
       <label class="check"><input type="checkbox" name="stop"${cfg.stop ? ' checked' : ''}> Detener la reproducción automáticamente (si no, solo se registra el aviso)</label>
       ${def.key === 'transcode' ? `<label class="check"><input type="checkbox" name="onlyVideo"${cfg.onlyVideo ? ' checked' : ''}> Actuar solo cuando se convierte el vídeo (ignorar si solo cambia el audio o los subtítulos)</label>` : ''}
-      <label class="f" style="margin-top:14px">Mensaje que ve el usuario en pantalla al detenerle<textarea name="message" rows="3" maxlength="300">${esc(cfg.message)}</textarea></label>
+      <label class="f" style="margin-top:14px">Mensaje que ve el usuario al detenerle<textarea name="message" rows="3" maxlength="300">${esc(cfg.message)}</textarea></label>
+      ${def.key === 'transcode' ? `<h2 class="sep">Aviso de calidad baja</h2>
+      <label class="check"><input type="checkbox" name="tip"${cfg.tip !== false ? ' checked' : ''}> Si no se detiene, mandarle a su pantalla cómo poner la calidad al máximo. Solo cuando el vídeo pierde calidad de verdad: si solo se convierte el audio o el formato, no se avisa.</label>
+      <label class="f" style="max-width:300px">Repetir el aviso al mismo aparato como mucho cada (minutos)<input type="number" name="tipEvery" min="5" max="1440" value="${cfg.tipEvery || 30}"></label>
+      <label class="f">Texto del aviso (se muestra 120 segundos; algunas apps lo quitan antes)<textarea name="tipText" rows="6" maxlength="400">${esc(cfg.tipText || QUALITY_TEXT)}</textarea></label>
+      <p style="margin:-4px 0 12px"><button type="button" class="btn sm" data-act="al-tipmsg">Volver al texto recomendado</button></p>` : ''}
       <label class="f" style="max-width:260px">Días que se guarda el historial<input type="number" name="retention" min="1" max="365" value="${cfg.retention}" required></label>
       <p class="muted small" style="margin-bottom:12px">${def.key === 'transcode' ? 'Solo se vigilan las cuentas creadas o importadas en el panel. Los administradores de Emby no se tocan.' : 'El límite es el número de pantallas de cada cuenta. Las cuentas importadas sin límite de pantallas no se vigilan. Al detener, se cortan las reproducciones que llevan menos tiempo.'} La comprobación se hace cada 30 segundos.</p>
       <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="submit">Guardar configuración</button></div>
@@ -1856,7 +2115,7 @@ function vAlertas(kind) {
     const rows = [...by.values()].filter((r) => r.n >= 2).sort((p, q) => q.n - p.n);
     body = rows.length ? `<div class="panel"><table class="cards"><thead><tr><th>Cliente</th><th>Detecciones</th><th>Última vez</th><th>Vendedor</th><th class="r"></th></tr></thead><tbody>${rows.map((r) => `<tr>
         <td><div class="name">${esc(r.x.client)}</div><div class="small muted">@${esc(r.x.emby)}</div></td><td><b class="minus">${r.n}</b></td><td>${fmtTs(r.last, true)}</td><td>${esc(userName(r.x.ownerId) || '—')}</td>
-        <td class="r"><div class="acts"><button class="btn sm" data-act="al-client" data-q="${esc(r.x.emby)}">Ver cliente</button></div></td></tr>`).join('')}</tbody></table></div>`
+        <td class="r"><div class="acts">${r.x.clientId ? `<button class="btn sm primary" data-act="al-guide" data-id="${r.x.clientId}">${ic('send')}Enviar guía</button>` : ''}<button class="btn sm" data-act="al-client" data-q="${esc(r.x.emby)}">Ver cliente</button></div></td></tr>`).join('')}</tbody></table></div>`
       : '<div class="panel"><div class="empty">Nadie ha repetido todavía. Aquí aparecen las cuentas con dos o más detecciones.</div></div>';
   } else {
     const rows = alertRows(kind);
@@ -1970,6 +2229,7 @@ async function loadLive() {
   try { S.live = await api('GET', '/api/sessions'); } catch (e) { S.live = { sessions: [], errors: [e.message] }; }
   const el = $('#live'); if (el) el.innerHTML = liveHtml();
   const np = $('#nowPlaying'); if (np) np.textContent = S.live.sessions.length;
+  document.querySelectorAll('[data-live]').forEach((n) => { const c = S.d.clients.find((v) => v.id === +n.dataset.live); const h = c && liveOf(c); if (h) n.innerHTML = h; });
 }
 
 
@@ -1995,7 +2255,7 @@ function vMonitor() {
   const acts = `<div class="mon-top"><div class="mon-clock">${ic('clock')}<select id="monEvery" aria-label="Actualizar cada">${options([[15, 'Cada 15 s'], [30, 'Cada 30 s'], [60, 'Cada 60 s'], [90, 'Cada 90 s']], f.every)}</select>
     <span class="left" id="monLeft">${f.auto ? f.left + ' s' : 'pausa'}</span></div>
     <button class="btn" data-act="mon-reload" aria-label="Actualizar ahora">${ic('refresh')}</button>
-    <button class="mon-auto" data-act="mon-auto" aria-pressed="${f.auto}">Auto ${f.auto ? 'ON' : 'OFF'}</button>
+    <button class="mon-auto" data-act="mon-auto" aria-pressed="${f.auto}">${f.auto ? '⏸ Pausar monitorización' : '▶ Iniciar monitorización'}</button>
     <button class="btn" data-act="mon-all">${ic('msg')}Mensaje a todos</button></div>`;
   if (!S.d.servers.length) return head('Monitor', 'Reproducciones en tiempo real.') + noServer();
   return head('Monitor', 'Lo que se está viendo ahora mismo, en tiempo real.', acts) + `
@@ -2015,7 +2275,7 @@ function monBody() {
     ${k('tr', all.filter((x) => x.transcode).length, 'Transcode', 'bolt', '#ff7a3d', f.tr === 'yes')}
     ${k('pelicula', all.filter((x) => x.kind === 'pelicula').length, 'Películas', 'film', '#e2457a', f.kind === 'pelicula')}
     ${k('serie', all.filter((x) => x.kind === 'serie').length, 'Series', 'tv', '#14b8c4', f.kind === 'serie')}
-    ${k('all', bw >= 1e9 ? (bw / 1e9).toFixed(2) + '<small> Gbps</small>' : Math.round(bw / 1e6) + '<small> Mbps</small>', 'Consumo', 'wifi', '#a46bff', false)}</div>`;
+    ${k('all', bw >= 1e9 ? (bw / 1e9).toFixed(2) + '<small> Gbps</small>' : Math.round(bw / 1e6) + '<small> Mbps</small>', 'Consumo aprox.', 'wifi', '#a46bff', false)}</div>`;
   const srv = d.servers.length > 1 ? `<div class="msrv">${d.servers.map((s) => `<button type="button" data-act="mon-srv" data-id="${s.id}" style="--c:${monColor(s.id)}" aria-pressed="${f.srv === s.id}"><i class="${s.ok ? '' : 'off'}"></i>${esc(s.name)} <em>${s.ok ? s.n : 'sin conexión'}</em></button>`).join('')}</div>` : '';
   const sel = (id, v, list, label) => `<label><span>${label}</span><select id="${id}">${options(list, v)}</select></label>`;
   const fil = `<div class="mfil"><label><span>Buscar</span><input type="search" id="monQ" placeholder="Cliente, usuario Emby, título o aparato…" value="${esc(f.q)}"></label>
@@ -2080,9 +2340,13 @@ function monCard(x) {
       <div class="who">${ic('user')}<div>${who}${x.owner ? `<small>Vendedor: ${esc(x.owner)}</small>` : ''}</div></div>
       <div class="q">${x.res ? `<span style="--r:${rc}">${x.res}</span>` : ''}${dims ? `<span style="--r:#3fa9f5">${esc(dims)}</span>` : ''}${trTo && !why ? `<span style="--r:#ff7a3d">${esc(trTo)}</span>` : ''}</div>
       ${why ? `<div class="why" title="${esc([why.reasons.join(', '), why.tip].filter(Boolean).join(' — '))}"><b>${ic('bolt')}Convierte: ${esc(why.what)}</b>${why.detail ? `<span class="wd">${esc(why.detail)}</span>` : ''}${why.reasons.length ? `<span>Motivo: ${esc(why.reasons.slice(0, 2).join(', '))}</span>` : ''}${why.tip ? `<em>💡 ${esc(why.tip)}</em>` : ''}</div>` : ''}
-      <div class="ln"><span>Red</span><b>${x.paused ? '0 Mbps' : mbps(x.bitrate)}</b></div>
+      <div class="mmeth"><span class="mm-${(x.method || 'x').toLowerCase()}" title="Método de reproducción tal como lo informa Emby">${esc(METHOD[x.method] || x.method || 'Desconocido')}</span>${x.quality ? `<span class="ql ql-${x.quality.level}" title="${esc(x.quality.text)}">${x.quality.level === 'none' ? 'Imagen sin pérdida' : x.quality.level === 'likely' ? 'Calidad baja probable' : 'Vídeo recodificado'}</span>` : ''}</div>
+      ${x.quality && x.quality.level !== 'none' ? `<div class="qtxt">${esc(x.quality.text)}</div>` : ''}
+      <div class="ln"><span>Archivo</span><b>${x.srcBitrate ? mbps(x.srcBitrate) : '—'}</b></div>
+      ${x.encBitrate ? `<div class="ln" title="Es el bitrate que Emby pide al codificador, no una medida real de la red"><span>Pedido al codificador</span><b>${mbps(x.encBitrate)}</b></div>` : ''}
+      ${!x.canMsg || !x.remote ? `<div class="qlim">${!x.canMsg ? 'Este aparato no admite mensajes. ' : ''}${!x.remote ? 'No admite control remoto: puede ignorar «Detener».' : ''}</div>` : ''}
       <div class="dv" title="${esc(x.device + ' · ' + x.app)}">${ic('screen').replace('class="ic"', 'class="ic" style="width:13px;height:13px;vertical-align:-2px"')} ${esc(x.device || 'Aparato')}${x.app ? ' · ' + esc(x.app) : ''}</div>
-      <div class="ft">${pill}<button type="button" class="m" data-act="mon-msg" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Mandar un mensaje a la pantalla" aria-label="Mandar mensaje a ${esc(x.user)}">${ic('msg')}</button><button type="button" class="x" data-act="mon-stop" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Detener la reproducción" aria-label="Detener la reproducción de ${esc(x.user)}">${ic('xc')}</button></div>
+      <div class="ft">${pill}<button type="button" class="m q" data-act="mon-notice" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Aviso de calidad: cómo poner la calidad al máximo" aria-label="Aviso de calidad a ${esc(x.user)}"${x.canMsg ? '' : ' disabled'}>${ic('bolt')}</button><button type="button" class="m" data-act="mon-msg" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Mandar un mensaje a la pantalla" aria-label="Mandar mensaje a ${esc(x.user)}"${x.canMsg ? '' : ' disabled'}>${ic('msg')}</button><button type="button" class="x" data-act="mon-stop" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Detener la reproducción" aria-label="Detener la reproducción de ${esc(x.user)}">${ic('xc')}</button></div>
     </div></article>`;
 }
 function monPaint() { const el = $('#monBody'); if (!el) return; const a = document.activeElement, id = a && a.id, pos = a && a.selectionStart; el.innerHTML = monBody(); if (id && $('#' + id)) { const n = $('#' + id); n.focus(); if (pos != null && n.setSelectionRange) try { n.setSelectionRange(pos, pos); } catch (x) { /* select */ } } }
@@ -2106,7 +2370,7 @@ function monStop(el) {
   openDlg({ title: 'Detener reproducción', submit: 'Detener', danger: true,
     body: `<p class="preview"><b>${esc(x.client || x.user)}</b> está viendo <b>${esc(x.title)}</b>${x.sub ? ' (' + esc(x.sub) + ')' : ''} en ${esc(x.device || 'un aparato')}.</p>
       <label class="f">Mensaje que verá en la pantalla<textarea name="message" rows="2" maxlength="300">Tu reproducción ha sido detenida.</textarea></label>`,
-    onSubmit: async (fd) => { await api('POST', '/api/monitor/stop', { serverId: x.serverId, sessionId: x.id, message: fd.get('message') }); return 'Reproducción detenida'; },
+    onSubmit: async (fd) => { const r = await api('POST', '/api/monitor/stop', { serverId: x.serverId, sessionId: x.id, itemId: x.itemId, message: fd.get('message') }); if (!r.stopped) toast(r.note, true); loadMon(); return r.stopped ? r.note : ''; },
     after: loadMon });
 }
 function monMsg(el) {
@@ -2120,7 +2384,156 @@ function monMsg(el) {
       <div class="mtpl">${tpl.map(([t, m]) => `<button type="button" data-act="mon-tpl" data-m="${esc(m)}">${t}</button>`).join('')}</div>
       <label class="f">Mensaje<textarea name="text" rows="3" maxlength="300" required placeholder="Escribe el aviso…"></textarea></label>
       <p class="small muted">No todas las apps de Emby muestran mensajes (algunas TV o apps de terceros no lo hacen).</p>`,
-    onSubmit: async (fd) => { await api('POST', '/api/monitor/message', { serverId: x.serverId, sessionId: x.id, text: fd.get('text') }); return 'Mensaje enviado'; } });
+    onSubmit: async (fd) => { const r = await api('POST', '/api/monitor/message', { serverId: x.serverId, sessionId: x.id, itemId: x.itemId, text: fd.get('text') }); return r.note; } });
+}
+const METHOD = { DirectPlay: 'Reproducción directa', DirectStream: 'Directo (cambia el contenedor)', Transcode: 'Transcode' };
+const QUALITY_TEXT = 'Para ver el vídeo con la mejor calidad:\n1. Abre los Ajustes de Emby en este dispositivo.\n2. Busca Calidad de vídeo o Calidad remota.\n3. Elige la calidad máxima: el valor más alto que aparezca.\nDespués, vuelve a reproducir el vídeo.';
+function monNotice(el) {
+  const x = monFind(el); if (!x) return;
+  openDlg({ title: 'Aviso de calidad', submit: 'Enviar aviso',
+    body: `<p class="preview">Se mostrará en la pantalla de <b>${esc(x.client || x.user)}</b> (${esc(x.device || 'aparato')}) durante 120 segundos. Algunas apps lo quitan antes.</p>
+      <pre class="qprev">${esc(S.d.settings.alerts && S.d.settings.alerts.transcode && S.d.settings.alerts.transcode.tipText || QUALITY_TEXT)}</pre>
+      ${x.quality ? `<p class="small muted">${esc(x.quality.text)}.</p>` : ''}`,
+    onSubmit: async () => { const r = await api('POST', '/api/monitor/notice', { serverId: x.serverId, sessionId: x.id, itemId: x.itemId }); return r.note; } });
+}
+
+
+/* ---------- Calidad remota (Emby Quality Guard) ---------- */
+const QMODE = { apply: 'Informe: aplicación real', simulate: 'Informe: simulación', undo: 'Informe: cambio deshecho' };
+const QMODE_SHORT = { apply: 'Aplicación real', simulate: 'Simulación', undo: 'Deshacer' };
+function qUndo(name) {
+  openDlg({ title: 'Deshacer el cambio de calidad', submit: 'Deshacer', danger: true,
+    body: `<p class="preview">Cada usuario de esa aplicación vuelve a la calidad remota que tenía antes.</p>
+      <ul class="small" style="margin:8px 0 0 18px;line-height:1.6"><li>Solo se toca ese ajuste: las pantallas, bibliotecas y cambios posteriores se respetan.</li><li>Si alguien cambió a mano la calidad de un usuario después, ese no se toca.</li><li>Se comprueba leyendo de nuevo cada usuario en Emby.</li></ul>`,
+    onSubmit: async () => { const r = await api('POST', '/api/quality/undo', { name }); if (!S.qg.data) await loadQuality(true); S.qg.data.job = r.job; if (S.view !== 'calidad') { S.view = 'calidad'; render(); } else qPaint(); qPoll(); return 'Deshaciendo en segundo plano…'; } });
+}
+const QST = { pendiente: 'Pendiente', correcto: 'Correcto', excluido: 'Excluido', admin: 'Admin (protegido)', nodisp: 'Sin el ajuste', error: 'Error al leer' };
+const fmtBps = (v) => (v == null ? '—' : `${Math.round((v / 1e6) * 100) / 100} Mbps`);
+async function loadQuality(quiet) {
+  const q = S.qg; if (q.busy) return;
+  q.busy = true; if (!quiet && S.view === 'calidad') qPaint();
+  try { q.data = await api('GET', '/api/quality'); } catch (e) { q.data = { servers: [], reports: [], error: e.message }; }
+  q.busy = false;
+  if (S.view === 'calidad') qPaint();
+  qPoll();
+}
+function qPoll() {
+  const q = S.qg; clearTimeout(q.timer);
+  const j = q.data && q.data.job;
+  if (!j || j.finished) return;
+  q.timer = setTimeout(async () => {
+    try { const r = await api('GET', '/api/quality/job'); q.data.job = r.job; } catch (e) { /* se reintenta */ }
+    if (q.data.job && q.data.job.finished) { const rid = q.data.job.reportId, mode = q.data.job.mode; await loadQuality(true); toast(mode === 'apply' ? 'Aplicación terminada: mira el informe' : mode === 'undo' ? 'Cambio deshecho: mira el informe' : 'Simulación terminada: mira el informe'); if (rid) qReport(rid); return; }
+    if (S.view === 'calidad') qPaint(); qPoll();
+  }, 1000);
+}
+function qPaint() { const el = $('#qgBody'); if (el) el.innerHTML = qBody(); }
+function vCalidad() {
+  return head('Calidad remota', 'Fija desde el panel la calidad remota de cada usuario de Emby, en uno o en todos los servidores.',
+    `<button class="btn" data-act="qg-reload">${ic('refresh')}Actualizar</button>`) + `<div id="qgBody">${qBody()}</div>`;
+}
+function qBody() {
+  const q = S.qg, d = q.data;
+  const info = `<div class="qinfo"><span class="qt">Cómo funciona</span>
+    Emby 4.9.3 añadió un ajuste por usuario: su <b>calidad remota automática</b>. El panel la pone en el valor que elijas (por defecto 100 Mbps = 100.000.000 bits/s) sin tocar nada más de la cuenta.
+    <ul><li>Primero pulsa <b>Simular</b>: verás a quién cambiaría, sin escribir nada.</li><li><b>Aplicar</b> guarda antes una copia de cada usuario, cambia solo ese ajuste y lo vuelve a leer de Emby para comprobarlo.</li>
+    <li>Los administradores de Emby nunca se tocan. Puedes excluir a quien quieras.</li><li>Si un servidor tiene Emby antiguo, verás «Sin el ajuste» y no se cambia nada.</li>
+    <li>Las apps que guardan su propia calidad en el aparato pueden seguir usando la suya: para eso está el <b>Aviso de calidad</b> del Monitor.</li></ul></div>`;
+  if (!d) return info + '<div class="panel"><div class="empty">Leyendo los usuarios de Emby…</div></div>';
+  const j = d.job, running = j && !j.finished;
+  const job = running ? `<div class="qjob" role="status"><b>${j.mode === 'apply' ? 'Aplicando de verdad' : j.mode === 'undo' ? 'Deshaciendo un cambio' : 'Simulando (no se escribe nada)'}</b> · ${esc(j.phase)} <span class="muted">${j.done} de ${j.total || '…'} usuarios</span>
+    <div class="bar"><i style="width:${j.total ? Math.round((j.done / j.total) * 100) : 3}%"></i></div><p class="small muted" style="margin-top:6px">Puedes seguir usando el panel mientras tanto.</p></div>` : '';
+  const all = d.servers.length > 1 ? `<div class="qacts" style="margin-bottom:14px"><button class="btn" data-act="qg-run" data-mode="simulate" data-id="0"${running ? ' disabled' : ''}>${ic('eye')}Simular en todos</button><button class="btn primary" data-act="qg-run" data-mode="apply" data-id="0"${running ? ' disabled' : ''}>${ic('check')}Aplicar en todos</button></div>` : '';
+  const cards = d.servers.map((x) => qServerCard(x, running)).join('') || '<div class="panel"><div class="empty">No hay servidores Emby conectados.</div></div>';
+  const reps = (d.reports || []).length ? `<h2 class="sep" style="margin-top:22px">Informes</h2><div class="panel pad">${d.reports.map((r) => {
+    const t = r.servers.reduce((a, x) => ({ c: a.c + x.correctos, sc: a.sc + x.sinCambios, ex: a.ex + x.excluidos, er: a.er + x.errores + (x.error ? 1 : 0), sim: a.sim + x.simulados }), { c: 0, sc: 0, ex: 0, er: 0, sim: 0 });
+    return `<div class="qrep"><div class="grow"><b>${QMODE_SHORT[r.mode] || r.mode}${r.auto ? ' automática' : ''}</b> · ${fmtTs(r.at, true)} · ${esc(r.by || '')}<div class="small muted">${r.servers.map((x) => esc(x.name)).join(', ')}</div></div>
+      <span class="small">${r.mode !== 'simulate' ? `<span class="qres-Correcto">${t.c} ${r.mode === 'undo' ? 'devueltos' : 'correctos'}</span> · ` : `<span class="qres-Simulado">${t.sim} cambiarían</span> · `}${t.sc} sin cambios · ${t.ex} excluidos · <span class="${t.er ? 'qres-Error' : ''}">${t.er} errores</span></span>
+      <button class="btn sm" data-act="qg-rep" data-id="${r.id}">Ver informe</button></div>`; }).join('')}
+      <p style="margin-top:12px"><button class="btn sm" data-act="qg-backups">${ic('download')}Copias de seguridad de las políticas</button></p></div>` : '';
+  const g = d.guard || { daily: {}, sat: {} };
+  const hours = Array.from({ length: 24 }, (_, h) => [h, String(h).padStart(2, '0') + ':00']);
+  const guard = `<h2 class="sep" style="margin-top:22px">Vigilancia automática</h2>
+    <form id="qguard" class="panel pad formpage" style="max-width:760px">
+      <label class="check"><input type="checkbox" name="dOn"${g.daily.on ? ' checked' : ''}> <span><b>Revisión diaria:</b> cada día corrige solo a los usuarios de Emby que no tengan el objetivo (también los creados fuera del panel) y te manda un resumen por Telegram.</span></label>
+      <label class="f" style="max-width:220px">Hora de la revisión<select name="dHour">${options(hours, g.daily.hour ?? 5)}</select></label>
+      ${g.daily.last ? `<p class="small muted" style="margin:-6px 0 12px">Última revisión: ${fmtTs(g.daily.last, true)}</p>` : ''}
+      <label class="check" style="margin-top:8px"><input type="checkbox" name="sOn"${g.sat.on ? ' checked' : ''}> <span><b>Aviso de saturación:</b> te llega un Telegram al momento si un servidor está convirtiendo muchos vídeos a la vez, con quiénes son. Y otro cuando vuelve a la normalidad.</span></label>
+      <div class="row2"><label class="f">Avisar a partir de (vídeos convirtiéndose a la vez)<input type="number" name="sLimit" min="1" max="200" value="${g.sat.limit || 5}"></label>
+        <label class="f">No repetir el aviso antes de (minutos)<input type="number" name="sCd" min="5" max="1440" value="${g.sat.cooldown || 30}"></label></div>
+      <p class="small muted" style="margin-bottom:12px">Los Telegram llegan al superadministrador y a los administradores que lo activen en Ajustes › Seguridad › «Calidad y saturación».</p>
+      <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="submit">Guardar vigilancia</button></div>
+    </form>`;
+  return info + (d.error ? `<p class="err">${esc(d.error)}</p>` : '') + job + all + cards + guard + reps;
+}
+function qServerCard(x, running) {
+  const q = S.qg, open = q.open.has(x.id), c = x.counts || {};
+  if (!x.ok) return `<section class="qsrv"><div class="qh"><h2>${esc(x.name)}</h2><span class="qst error">Sin conexión</span></div><p class="err" style="margin-top:8px">${esc(x.error || '')}</p><p class="small muted">Los demás servidores siguen funcionando con normalidad.</p></section>`;
+  const filt = (q.f[x.id] || '').toLowerCase();
+  const rows = x.rows.filter((r) => !filt || r.name.toLowerCase().includes(filt) || (r.panel || '').toLowerCase().includes(filt) || (QST[r.status] || '').toLowerCase().includes(filt));
+  const table = open ? `<div class="qset"><label class="f" style="max-width:320px">Buscar usuario o estado<input type="search" data-qf="${x.id}" value="${esc(q.f[x.id] || '')}" placeholder="Nombre, cuenta del panel o «pendiente»"></label></div>
+    <div class="qwrap"><table class="qtable"><thead><tr><th>Usuario de Emby</th><th>Cuenta del panel</th><th>Calidad actual</th><th>Estado</th><th>Excluir</th></tr></thead><tbody>
+    ${rows.slice(0, 300).map((r) => `<tr><td>${esc(r.name)}${r.isNew ? ' <span class="qst pendiente">nuevo</span>' : ''}</td><td>${esc(r.panel || '—')}</td><td title="${r.value == null ? '' : r.value + ' bits/s'}">${fmtBps(r.value)}</td><td><span class="qst ${r.status}">${QST[r.status] || r.status}</span></td>
+      <td>${r.admin ? '<span class="small muted">siempre</span>' : `<input type="checkbox" data-act="qg-ex" data-sid="${x.id}" data-uid="${esc(r.id)}" aria-label="Excluir a ${esc(r.name)}"${r.status === 'excluido' ? ' checked' : ''}>`}</td></tr>`).join('')}
+    </tbody></table>${rows.length > 300 ? `<p class="small muted">Se muestran 300 de ${rows.length}. Usa el buscador.</p>` : ''}</div>` : '';
+  return `<section class="qsrv"><div class="qh"><h2>${esc(x.name)}</h2>${x.supported ? '<span class="qst correcto">Ajuste disponible</span>' : '<span class="qst nodisp">Este Emby no tiene el ajuste (hace falta 4.9.3 o superior)</span>'}</div>
+    <form class="qset" data-qcfg="${x.id}"><label class="f">Objetivo (Mbps)<input type="number" name="mbps" min="1" max="1000" step="1" value="${x.mbps}" required></label>
+      <span class="hint">= ${(Math.round(x.mbps * 1e6)).toLocaleString('es-ES')} bits/s</span>
+      <label class="check" style="margin:0"><input type="checkbox" name="auto"${x.auto ? ' checked' : ''}> Ponerlo solo en cada cuenta nueva, demo y renovación</label>
+      <button class="btn sm" type="submit">Guardar</button></form>
+    <div class="qchips"><span class="p">${c.pendiente || 0} pendientes</span><span class="c">${c.correcto || 0} correctos</span><span class="e">${c.excluido || 0} excluidos</span><span class="a">${c.admin || 0} admins protegidos</span>${c.nodisp ? `<span class="n">${c.nodisp} sin el ajuste</span>` : ''}${c.error ? `<span class="x">${c.error} con error</span>` : ''}${x.nuevos ? `<span class="p">${x.nuevos} nuevos desde la última vez</span>` : ''}<span class="n">${x.total} usuarios${x.paged ? ' (leídos por páginas)' : ''}</span></div>
+    <div class="qacts"><button class="btn" data-act="qg-run" data-mode="simulate" data-id="${x.id}"${running ? ' disabled' : ''}>${ic('eye')}Simular</button>
+      <button class="btn primary" data-act="qg-run" data-mode="apply" data-id="${x.id}"${running || !x.supported || !c.pendiente ? ' disabled' : ''}>${ic('check')}Aplicar a ${c.pendiente || 0}</button>
+      <button class="btn ghost" data-act="qg-open" data-id="${x.id}" aria-expanded="${open}">${open ? 'Ocultar usuarios' : 'Ver usuarios'}</button></div>${table}</section>`;
+}
+function qRun(mode, id) {
+  const d = S.qg.data, list = d.servers.filter((x) => x.ok && (!id || x.id === id));
+  const pend = list.reduce((n, x) => n + ((x.counts || {}).pendiente || 0), 0);
+  const where = id ? `«${esc(list[0] ? list[0].name : '')}»` : 'todos los servidores';
+  if (mode === 'simulate') return qStart(mode, id);
+  openDlg({ title: 'Aplicar calidad remota', submit: 'Aplicar de verdad', danger: true,
+    body: `<p class="preview">Se cambiará la calidad remota de <b>${plural(pend, 'usuario', 'usuarios')}</b> en ${where}.</p>
+      <ul class="small" style="margin:8px 0 0 18px;line-height:1.6"><li>Antes se guarda una copia de la política completa de cada uno.</li><li>Solo se cambia ese ajuste: pantallas, bibliotecas y lo demás se quedan igual.</li><li>Después se vuelve a leer de Emby para comprobarlo.</li><li>Los administradores y los excluidos no se tocan.</li></ul>
+      <p class="small muted" style="margin-top:8px">¿Has hecho antes la simulación? Es la forma de ver a quién afecta sin cambiar nada.</p>`,
+    onSubmit: async () => { await qStart(mode, id, true); return ''; } });
+}
+async function qStart(mode, id, inDlg) {
+  try { const r = await api('POST', '/api/quality/run', { mode, serverId: id }); S.qg.data.job = r.job; qPaint(); qPoll(); toast(mode === 'apply' ? 'Aplicando en segundo plano…' : 'Simulando en segundo plano…'); }
+  catch (e) { if (inDlg) throw e; toast(e.message, true); }
+}
+async function qReport(id) {
+  let r; try { r = (await api('GET', `/api/quality/reports/${id}`)).report; } catch (e) { return toast(e.message, true); }
+  S.qg.rep = r;
+  const order = { Error: 0, Correcto: 1, Simulado: 1, 'Sin cambios': 2, Excluido: 3 };
+  const rows = [...r.rows].sort((a, b) => (order[a.result] ?? 9) - (order[b.result] ?? 9) || a.name.localeCompare(b.name));
+  const sum = r.servers.map((x) => `<tr><td>${esc(x.name)}</td><td>${x.error ? `<span class="qres-Error">${esc(x.error)}</span>` : x.total}</td><td>${r.mode === 'simulate' ? x.simulados : x.modificados}</td><td>${r.mode === 'simulate' ? '—' : x.verificados}</td><td class="qres-Correcto">${x.correctos}</td><td>${x.sinCambios}</td><td>${x.excluidos}</td><td class="${x.errores ? 'qres-Error' : ''}">${x.errores}</td></tr>`).join('');
+  showDlg(`${QMODE[r.mode] || 'Informe'}${r.auto ? ' (automática)' : ''} · ${fmtTs(r.at, true)}`, `
+    ${r.mode === 'simulate' ? '<p class="preview">Es una <b>simulación</b>: no se ha cambiado nada en Emby.</p>' : r.mode === 'undo' ? '<p class="preview">Se ha devuelto la calidad remota al valor que tenía antes. Solo se tocó ese ajuste, y no a quien alguien había cambiado después.</p>' : `<p class="preview">Cambios reales en Emby, comprobados leyendo de nuevo cada usuario.${r.backup ? ` Copia de ${plural(r.backupUsers, 'política', 'políticas')} guardada.` : ''}</p>`}
+    <div class="qwrap"><table class="qtable"><thead><tr><th>Servidor</th><th>Usuarios</th><th>${r.mode === 'simulate' ? 'Cambiarían' : 'Modificados'}</th><th>Verificados</th><th>Correctos</th><th>Sin cambios</th><th>Excluidos</th><th>Errores</th></tr></thead><tbody>${sum}</tbody></table></div>
+    <div class="qwrap" style="max-height:340px;overflow:auto;margin-top:12px"><table class="qtable"><thead><tr><th>Usuario</th><th>Antes</th><th>Después</th><th>Resultado</th><th>Detalle</th></tr></thead><tbody>
+    ${rows.slice(0, 400).map((x) => `<tr><td>${esc(x.name)}${r.servers.length > 1 ? `<div class="small muted">${esc(x.server)}</div>` : ''}</td><td>${fmtBps(x.before)}</td><td>${fmtBps(x.after)}</td><td class="qres-${x.result.replace(' ', '')}">${esc(x.result)}</td><td class="small">${esc(x.detail)}</td></tr>`).join('')}</tbody></table></div>
+    ${rows.length > 400 ? `<p class="small muted">Se muestran 400 de ${rows.length}. Descarga el informe para verlos todos.</p>` : ''}
+    <div class="qacts" style="margin-top:12px"><button class="btn" data-act="qg-csv">${ic('download')}Descargar informe (CSV)</button>${r.backup ? `<button class="btn" data-act="qg-bk" data-name="${esc(r.backup)}">${ic('download')}Descargar copia</button><button class="btn danger" data-act="qg-undo" data-name="${esc(r.backup)}">${ic('history')}Deshacer este cambio</button>` : ''}</div>`);
+}
+function qCsv() {
+  const r = S.qg.rep; if (!r) return;
+  const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const lines = [['Servidor', 'Usuario', 'Antes (bits/s)', 'Antes (Mbps)', 'Después (bits/s)', 'Después (Mbps)', 'Resultado', 'Detalle'].map(q).join(';'),
+    ...r.rows.map((x) => [x.server, x.name, x.before, x.before == null ? '' : x.before / 1e6, x.after, x.after == null ? '' : x.after / 1e6, x.result, x.detail].map(q).join(';'))];
+  const l = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })), download: `calidad-${r.mode === 'apply' ? 'aplicacion' : 'simulacion'}-${r.at.slice(0, 10)}.csv` });
+  l.click();
+}
+async function qBackupDl(name) {
+  try {
+    const res = await fetch(`/api/quality/backups/${encodeURIComponent(name)}`, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('No se pudo descargar la copia.');
+    const l = Object.assign(document.createElement('a'), { href: URL.createObjectURL(await res.blob()), download: name }); l.click();
+  } catch (e) { toast(e.message, true); }
+}
+async function qBackups() {
+  let b; try { b = (await api('GET', '/api/quality/backups')).backups; } catch (e) { return toast(e.message, true); }
+  showDlg('Copias de las políticas', `<p class="preview">Antes de cada aplicación real se guarda la política completa de cada usuario cambiado, tal como estaba en Emby.</p>
+    ${b.length ? b.map((x) => `<div class="qrep"><div class="grow"><b>${fmtTs(x.at, true)}</b><div class="small muted">${esc(x.name)} · ${Math.max(1, Math.round(x.size / 1024))} KB</div></div><button class="btn sm" data-act="qg-bk" data-name="${esc(x.name)}">${ic('download')}Descargar</button><button class="btn sm danger" data-act="qg-undo" data-name="${esc(x.name)}">${ic('history')}Deshacer</button></div>`).join('') : '<p class="muted">Todavía no hay copias: se crean al aplicar.</p>'}`);
 }
 
 /* ---------- Ajustes: Seguridad (verificación en dos pasos, avisos, sesiones) ---------- */
@@ -2157,7 +2570,7 @@ function vSeguridad() {
         <div class="cpy"><code>${esc(x.tgLink.split('start=')[1] || '')}</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(x.tgLink.split('start=')[1] || '')}">${ic('copy')}Copiar</button></div>
         <p class="muted small">El bot te contestará «Listo…». Luego pulsa «Ya lo he hecho, comprobar». Si el bot no contesta nada, puede que ese mismo bot esté puesto en otro programa o panel (por ejemplo, el panel antiguo de tu PC): ciérralo, porque solo uno puede leer sus mensajes.</p></details>`
     : `${sw('login', x.alerts.login, 'Cada vez que alguien entra en mi cuenta', 'Con la hora, la IP y el aparato. Si no has sido tú, lo sabrás al momento.')}
-      ${isSuper() ? sw('staffLogins', x.alerts.staffLogins, 'Cuando entra un administrador', 'Te avisa de las entradas de tus administradores.') + sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar, con el tiempo que estuvo caído.') + sw('backup', x.alerts.backup, 'Copia de seguridad diaria', 'Te llega el archivo cifrado (se configura en Copias de seguridad).') + sw('payments', x.alerts.payments, 'Cuando un vendedor compra créditos', 'Con el importe y su saldo nuevo.') : me().role === 'admin' && canDo('viewServers') ? sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar.') : ''}
+      ${isSuper() ? sw('credits', x.alerts.credits, 'Créditos cargados por otros', 'Si un admin carga muchos créditos, sin cobrar o sin apuntar el cobro, y si se repite una referencia de pago.') : ''}${isSuper() ? sw('daily', x.alerts.daily, 'Resumen diario a las 9:00', 'Cómo fue ayer y qué hay que revisar hoy, en un solo mensaje. <button type="button" class="linkbtn" data-act="daily-test">Probar ahora</button>') : ''}${isSuper() || (me().role === 'admin' && canDo('resellers')) ? sw('sabotage', x.alerts.sabotage, 'Acciones raras del equipo', 'Si alguien borra, desactiva o cambia muchas cosas seguidas.') : ''}${isSuper() || (me().role === 'admin' && canDo('servers')) ? sw('quality', x.alerts.quality, 'Calidad y saturación', 'Resumen de la revisión diaria de calidad y aviso si un servidor convierte muchos vídeos a la vez.') : ''}${isSuper() ? sw('staffLogins', x.alerts.staffLogins, 'Cuando entra un administrador', 'Te avisa de las entradas de tus administradores.') + sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar, con el tiempo que estuvo caído.') + sw('backup', x.alerts.backup, 'Copia de seguridad diaria', 'Te llega el archivo cifrado (se configura en Copias de seguridad).') + sw('payments', x.alerts.payments, 'Cuando un vendedor compra créditos', 'Con el importe y su saldo nuevo.') : me().role === 'admin' && canDo('viewServers') ? sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar.') : ''}
       <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn" data-act="sec-tgtest">Enviar mensaje de prueba</button><button class="btn ghost" data-act="sec-tgoff">Desenlazar</button></div>`;
   const tgc = `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#0ea5e9">${ic('bell')}</span><div><h2>Avisos de seguridad por Telegram</h2><small>Mensajes privados solo para ti.</small></div>
     <span class="pillst ${x.tgLinked ? 'on' : 'off'}">${x.tgLinked ? 'Enlazado' : 'Sin enlazar'}</span></div>${tgs}</section>`;
@@ -2478,7 +2891,7 @@ async function buyGo(el) {
 async function payReturn() {
   const q = new URLSearchParams(location.search), st = q.get('pago'), id = q.get('o');
   if (!st) return;
-  history.replaceState(null, '', location.pathname);
+  history.replaceState(null, '', location.pathname + location.hash);
   if (st !== 'ok' || !id) { toast('Pago cancelado: no se te ha cobrado nada.'); return; }
   S.view = 'creditos'; S.pay = null; render();
   toast('Comprobando el pago…');
@@ -2578,10 +2991,13 @@ function vendorCard(u, depth) {
     <div class="vmain">
       <div class="vrole">${ROLE[u.role]}${u.disabled ? ', desactivado' : ''}</div>
       <div><span class="name">${esc(u.name)}</span>${u.id === me().id ? ' <span class="muted small">(tú)</span>' : ''} <span class="muted small">@${esc(u.username)}${u.parentId ? ', de ' + esc(userName(u.parentId) || 'otro reseller') : ''}</span></div>
+      ${u.id !== me().id ? lastAccessHtml(u) : ''}
       <div class="tags">
         <span class="tag cr">${hasCredits(u) ? plural(u.credits, 'crédito', 'créditos') : 'Créditos ilimitados'}</span>
         ${hasCredits(u) && u.creditPrice ? `<span class="tag eur">${eur(u.credits * u.creditPrice)}</span>` : ''}
         <span class="tag">${plural(n, 'cliente', 'clientes')}</span>
+        ${u.debt > 0 ? `<span class="tag debt" title="Recargas pendientes de pago y saldo en negativo">Debe ${eur(u.debt)}</span>` : ''}
+        ${u.renew && u.renew.rate != null ? `<span class="tag rr ${u.renew.rate >= 70 ? 'ok' : u.renew.rate >= 40 ? 'mid' : 'low'}" title="Últimos 90 días: ${u.renew.ren} renovaciones y ${u.renew.lost} cuentas perdidas por no renovar">Renuevan ${u.renew.rate}%</span>` : ''}
         ${kids ? `<span class="tag">${plural(kids, 'subreseller', 'subresellers')}</span>` : ''}
       </div>
     </div>
@@ -2650,6 +3066,7 @@ function adminCard(u) {
       ${st('Precio crédito', u.creditPrice ? money(u.creditPrice, u.currency) : 'Sin precio')}
       ${st('Permisos', n ? `${n} de ${PERM_INFO.length}` : 'Solo su resumen')}
     </div>
+    ${lastAccessHtml(u, 'pad')}
     ${ok ? `<div class="abar">
       ${ib('adm-link', 'link', u.xtreme ? 'Panel Xtreme vinculado' : 'Vincular a panel Xtreme', u.xtreme ? 'on' : '')}
       ${ib('user-edit', 'edit', 'Editar')}
@@ -2798,7 +3215,7 @@ function dUserMore(u) {
   showDlg(u.name, `<div class="mlist">
     ${it('user-info', 'Copiar información', 'Mensaje con sus datos de acceso al panel')}
     ${it('user-stats', 'Ver estadísticas')}
-    ${hasCredits(u) ? it('user-ledger', 'Historial de créditos') + it('user-credits', 'Asignar créditos') : ''}
+    ${hasCredits(u) ? it('user-ledger', 'Historial de créditos') + it('user-credits', 'Asignar créditos') + it('user-statement', 'Extracto de cuenta', 'Recargas, pagos, gastos y lo que debe') : ''}
     ${it('user-edit', 'Editar perfil', u.role === 'admin' ? 'Nombre, correo, contraseña, precio y créditos' : staff() ? 'Nombre, contraseña, precio, demos y servidores' : 'Nombre, contraseña y acceso')}
     ${u.role === 'admin' ? it('adm-perms', 'Gestionar permisos', 'Qué puede hacer en el panel') + it('adm-link', 'Vincular a panel Xtreme', u.xtreme ? 'Vinculado: ' + esc(u.xtreme.url) : 'Guarda el enlace a su otro panel') : ''}
     ${it('user-clients', 'Ver sus clientes', plural(n, 'cuenta', 'cuentas'))}
@@ -2929,7 +3346,7 @@ const pkgText = (s, k) => { const p = (s.packages || {})[k] || {}; return p.all 
 function vServidores() {
   const d = S.d;
   return head('Servidores Emby', 'En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', d.servers.length && canDo('servers') ? '<button class="btn primary" data-act="server-new">Conectar otro servidor</button>' : '') + (d.servers.length ? `<div class="panel"><table><thead><tr><th>Nombre</th><th>Dirección</th><th>Contenido</th><th class="r">Acciones</th></tr></thead><tbody>${d.servers.map((s) => `<tr>
-      <td class="name">${esc(s.name)}</td><td>${esc(s.url)}</td>
+      <td class="name">${esc(s.name)}${s.keyLost ? '<div class="err" style="max-width:none;margin-top:4px">Falta su API key: pulsa Editar y vuelve a pegarla.</div>' : ''}</td><td>${esc(s.url)}</td>
       <td>${s.ready.basico && s.ready.k4 ? `Básico: ${pkgText(s, 'basico')}<br>4K: ${pkgText(s, 'k4')}${(s.packages.basico || {}).all ? '<br><span class="err" style="max-width:none">Básico da acceso a todo, también al 4K</span>' : ''}` : `<span class="err">Falta elegir bibliotecas de ${[!s.ready.basico && 'Básico', !s.ready.k4 && '4K'].filter(Boolean).join(' y ')}</span>`}</td>
       <td class="r"><div class="acts">${canDo('packages') ? `<button class="btn sm primary" data-act="server-pkg" data-id="${s.id}">Contenido</button>` : ''}<button class="btn sm" data-act="server-test" data-id="${s.id}">Probar conexión</button>${canDo('servers') ? `<button class="btn sm" data-act="server-edit" data-id="${s.id}">Editar</button><button class="btn sm ghost" data-act="server-del" data-id="${s.id}">Quitar</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>` : noServer());
 }
@@ -3330,6 +3747,481 @@ const LOG_KIND = { seguridad: ['login', 'Seguridad'], monitor: ['edit', 'Monitor
   restaurada: ['edit', 'Restaurada'], cobro: ['edit', 'Cobro'], aviso: ['edit', 'Aviso enviado'], ajustes: ['edit', 'Ajustes'], servidor: ['edit', 'Servidor'], alertas: ['edit', 'Alertas'], usuario: ['edit', 'Usuario del panel'],
   baja: ['del', 'A la papelera'], papelera: ['del', 'A la papelera'], caducada: ['del', 'Caducada'], eliminada: ['del', 'Cuenta eliminada'], login: ['login', 'Inicio de sesión'], error: ['warn', 'Error'] };
 const logKind = (l) => (l.type === 'usuario' ? [/^Nuevo/.test(l.text) ? 'new' : /eliminado/.test(l.text) ? 'del' : 'edit', 'Usuario del panel'] : LOG_KIND[l.type] || ['edit', l.type]);
+
+
+/* ---------- Historial de conexiones de un cliente ---------- */
+const DIA_L = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+function dayLabel(d) { const ago = seenAgo(d); return ago <= 0 ? 'Hoy' : ago === 1 ? 'Ayer' : `${DIA_L[d.getDay()]} ${d.getDate()} ${MES[d.getMonth()]}`; }
+function durTxt(ms) { const m = Math.max(1, Math.round(ms / 60000)); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}`; }
+async function dConn(c) {
+  let r; try { r = await api('GET', `/api/clients/${c.id}/connections`); } catch (e) { return toast(e.message, true); }
+  const w = r.week, groups = new Map();
+  for (const x of r.rows.slice(0, 120)) { const d = new Date(x.from), k = d.toDateString(); if (!groups.has(k)) groups.set(k, { d, rows: [] }); groups.get(k).rows.push(x); }
+  const stat = (n, label) => `<div class="cs"><b>${n}</b><span>${label}</span></div>`;
+  const body = `<div class="cstats">${stat(w.devices, w.devices === 1 ? 'aparato' : 'aparatos')}${stat(w.places, w.places === 1 ? 'sitio' : 'sitios')}${stat(w.maxAt, 'a la vez (máx.)')}${stat(c.screens || '∞', 'pantallas contratadas')}</div>
+    <p class="small muted" style="margin:-4px 0 12px">Últimos 7 días. «Sitio» es la zona de la conexión (casa, trabajo, datos del móvil…).</p>
+    ${w.reasons.length ? `<p class="cwarn">${ic('alert')}Parece compartida: ${esc(w.reasons.join(', '))}.</p>` : ''}
+    ${groups.size ? `<div class="ctl">${[...groups.values()].map((g) => `<div class="cday"><h4>${dayLabel(g.d)}</h4>${g.rows.map((x) => `<div class="crow"><i class="${x.playing ? 'pl' : ''}" title="${x.playing ? 'Vio contenido' : 'Solo navegó'}"></i><span class="ct">${hhmm(new Date(x.from))} – ${hhmm(new Date(x.to))}</span><span class="cd"><b>${esc(x.dev)}</b>${x.app ? ' · ' + esc(x.app) : ''}</span><span class="ci">${x.ip ? 'IP ' + esc(x.ip) : ''} · ${durTxt(Date.parse(x.to) - Date.parse(x.from) + 60000)}</span></div>`).join('')}</div>`).join('')}</div>`
+      : '<div class="empty" style="padding:20px 0">Todavía no hay conexiones apuntadas. El panel las va guardando desde esta versión, cada vez que el cliente usa Emby.</div>'}`;
+  showDlg(`Conexiones de ${c.panelName}`, body);
+}
+
+/* ---------- Cuentas compartidas ---------- */
+async function loadShared() {
+  S.sh.busy = true;
+  try { S.sh.data = await api('GET', '/api/shared'); S.sh.at = Date.now(); } catch (e) { S.sh.data = { list: [], error: e.message }; }
+  S.sh.busy = false;
+  if (S.view === 'compartidas') render();
+}
+function vCompartidas() {
+  const d = S.sh.data;
+  const sub = 'Cuentas que en los últimos 7 días se han usado desde demasiados aparatos o sitios, o con más pantallas a la vez de las contratadas.';
+  if (!d) return head('Cuentas compartidas', sub) + '<div class="panel"><div class="empty">Revisando conexiones…</div></div>';
+  const since = d.since ? `<p class="small muted" style="margin:-6px 0 14px">El panel apunta conexiones desde el ${fmtTs(d.since)}. Con al menos una semana de datos el detector es más fiable.</p>` : '<p class="small muted" style="margin:-6px 0 14px">El panel empieza a apuntar las conexiones a partir de esta versión. En unos días verás resultados aquí.</p>';
+  if (!d.list.length) return head('Cuentas compartidas', sub) + since + `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Todo en orden</b><span>Ninguna cuenta parece compartida ahora mismo.</span></div></div>`;
+  const cards = d.list.map((x) => {
+    const c = S.d.clients.find((v) => v.id === x.id); if (!c) return '';
+    const chip = (n, l) => `<div class="cs"><b>${n}</b><span>${l}</span></div>`;
+    return `<article class="shc lv-${x.level}">
+      <header><span class="cav">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="who"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)}${S.d.users.length > 1 ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small></div><span class="lvp">${x.level === 'alto' ? 'Muy probable' : 'Revisar'}</span></header>
+      <div class="cstats sm">${chip(x.devices, 'aparatos')}${chip(x.places, 'sitios')}${chip(x.maxAt + '/' + (c.screens || '∞'), 'a la vez')}</div>
+      <p class="why">${esc(x.reasons.join(' · '))}</p>
+      <div class="devs">${x.devList.slice(0, 4).map((v) => `<span>${ic('screen')}${esc(v.name)}</span>`).join('')}${x.devList.length > 4 ? `<span>+${x.devList.length - 4}</span>` : ''}</div>
+      <div class="acts"><button class="btn sm" data-act="m-conn" data-id="${c.id}">${ic('signal')}Conexiones</button><button class="btn sm primary" data-act="sh-msg" data-id="${c.id}">${ic('send')}Escribirle</button>${c.off ? '' : `<button class="btn sm ghost" data-act="c-off" data-id="${c.id}">${ic('pause')}Desactivar</button>`}</div>
+    </article>`;
+  }).join('');
+  return head('Cuentas compartidas', sub, `<button class="btn" data-act="sh-reload">${ic('refresh')}Actualizar</button>`) + since + `<div class="shgrid">${cards}</div>`;
+}
+function dShareMsg(c) {
+  const text = `Hola ${c.panelName} 👋\n\nHemos visto tu cuenta de Emby conectada desde varios aparatos y sitios distintos a la vez. Tu plan incluye ${c.screens ? (c.screens === 1 ? '1 pantalla' : c.screens + ' pantallas') : 'las pantallas contratadas'}.\n\nSi la usáis más personas, te puedo ampliar pantallas por poco más. ¿Te lo preparo?`;
+  dQuickMsg(c, 'Escribir a ' + c.panelName, text);
+}
+/** Mensaje rápido a un cliente: Telegram (si lo tiene enlazado), WhatsApp o copiar */
+function dQuickMsg(c, title, text, tgUrl) {
+  const wa = waNum(c.whatsapp), bot = S.d.settings.notices.telegram.bot;
+  const canTg = (c.tgLinked && bot) || tgUrl;
+  openDlg({ title, submit: 'Copiar mensaje',
+    body: `<label class="f">Mensaje (puedes retocarlo)<textarea name="msg" rows="8">${esc(text)}</textarea></label>
+      <div class="qacts">${canTg ? `<button type="button" class="btn primary" data-act="qm-tg" data-id="${c.id || ''}" data-url="${esc(tgUrl || '')}">${ic('send')}Enviar por Telegram</button>` : ''}
+      ${wa ? `<a class="btn" id="qmWa" target="_blank" rel="noopener" style="text-decoration:none" href="https://wa.me/${wa}?text=${encodeURIComponent(text)}">Enviar por WhatsApp</a>` : ''}</div>
+      ${!canTg && !wa ? '<p class="small muted" style="margin-top:8px">No tiene Telegram enlazado ni WhatsApp apuntado: copia el mensaje y mándaselo por donde habléis.</p>' : ''}`,
+    onOpen: () => { const f = dlgForm; f.elements.msg.oninput = () => { const a = $('#qmWa', f); if (a) a.href = `https://wa.me/${wa}?text=${encodeURIComponent(f.elements.msg.value)}`; }; },
+    onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Mensaje copiado: pégalo en el chat'; } });
+}
+
+/* ---------- Seguimiento de demos ---------- */
+async function loadFollow() {
+  S.fu.busy = true;
+  try { S.fu.data = await api('GET', '/api/followups'); S.fu.at = Date.now(); } catch (e) { S.fu.data = { list: [], error: e.message }; }
+  S.fu.busy = false;
+  if (S.view === 'seguimiento') render();
+}
+function vSeguimiento() {
+  const f = S.fu, d = f.data;
+  const sub = 'Demos que terminaron y no se pasaron a cuenta. Un mensaje a tiempo recupera muchas ventas.';
+  if (!d) return head('Seguimiento de demos', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  const pend = d.list.filter((x) => x.status === 'pending'), done = d.list.filter((x) => x.status !== 'pending');
+  const tabs = `<div class="tabs" role="tablist"><button role="tab" data-act="fu-tab" data-k="pending" aria-selected="${f.tab === 'pending'}">Por escribir (${pend.length})</button><button role="tab" data-act="fu-tab" data-k="done" aria-selected="${f.tab === 'done'}">Hechos (${done.length})</button></div>`;
+  const rows = f.tab === 'pending' ? pend : done;
+  const ST = { done: 'Escrito', skip: 'Descartado', bought: 'Compró ✓' };
+  const card = (x) => {
+    const ago = Math.floor((Date.now() - Date.parse(x.endedAt)) / 86400000);
+    const contact = [x.whatsapp ? `${ic('msg')}${esc(x.whatsapp)}` : '', x.telegram ? `${ic('send')}${esc(x.telegram)}` : '', x.tgLinked ? `${ic('bell')}bot enlazado` : ''].filter(Boolean).map((t) => `<span>${t}</span>`).join('');
+    return `<article class="fuc"><div class="fu-l"><b>${esc(x.name)}</b><small>@${esc(x.emby)} · terminó ${ago <= 0 ? 'hoy' : ago === 1 ? 'ayer' : `hace ${ago} días`}${S.d.users.length > 1 && userName(x.ownerId) ? ' · ' + esc(userName(x.ownerId)) : ''}</small>${contact ? `<div class="devs">${contact}</div>` : ''}</div>
+      <div class="acts">${x.status === 'pending' ? `<button class="btn sm primary" data-act="fu-msg" data-k="${x.id}">${ic('send')}Escribirle</button><button class="btn sm" data-act="fu-set" data-k="${x.id}" data-st="done" title="Ya le he escrito">${ic('check')}Hecho</button><button class="btn sm ghost" data-act="fu-set" data-k="${x.id}" data-st="skip" title="No hace falta">Descartar</button>`
+        : `<span class="qst ${x.status === 'bought' ? 'correcto' : ''}">${ST[x.status] || x.status}</span>${x.status !== 'bought' ? `<button class="btn sm ghost" data-act="fu-set" data-k="${x.id}" data-st="pending">Volver a pendientes</button>` : ''}`}</div></article>`;
+  };
+  const empty = f.tab === 'pending' ? `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Nada pendiente</b><span>Cuando una demo termine sin comprar, aparecerá aquí.</span></div></div>` : '<div class="panel"><div class="empty">Todavía no hay ninguno.</div></div>';
+  return head('Seguimiento de demos', sub) + tabs + (rows.length ? `<div class="fulist">${rows.map(card).join('')}</div>` : empty)
+    + '<p class="small muted" style="margin-top:12px">El texto del mensaje se cambia en Emby › Plantillas de mensajes › «Seguimiento de una demo». Se guardan los últimos 30 días.</p>';
+}
+
+/* ---------- Mensaje a clientes por Telegram ---------- */
+let bcTimer = null;
+async function bcRefresh() {
+  const b = S.bc;
+  try { b.prev = await api('POST', '/api/broadcast/preview', { who: b.who, serverId: b.serverId, ownerId: b.ownerId }); const r = await api('GET', '/api/broadcast'); b.job = r.job; b.history = r.history; } catch (e) { /* se reintenta */ }
+  if (S.view === 'mensajecli') { const el = $('#bcInfo'), h = $('#bcHist'); if (el) el.outerHTML = bcInfo(); if (h) h.outerHTML = bcHist(); if (!el) render(); }
+  clearTimeout(bcTimer);
+  if (b.job && !b.job.finished && S.view === 'mensajecli') bcTimer = setTimeout(bcRefresh, 1000);
+}
+function bcInfo() {
+  const b = S.bc, p = b.prev, j = b.job;
+  if (!p) return '<div id="bcInfo" class="bci">Contando clientes…</div>';
+  if (!p.bot) return '<div id="bcInfo" class="bci warn">El bot de Telegram no está configurado. Hazlo en Ajustes › Notificaciones.</div>';
+  const run = j && !j.finished ? `<div class="qjob" style="margin:10px 0 0"><b>Enviando…</b> <span class="muted">${j.done} de ${j.total}</span><div class="bar"><i style="width:${Math.round((j.done / j.total) * 100)}%"></i></div></div>` : '';
+  return `<div id="bcInfo" class="bci"><span class="big">${p.targets}</span><span>${p.targets === 1 ? 'cliente lo recibirá' : 'clientes lo recibirán'}</span><small>${p.linked} de tus ${p.total} cuentas tienen Telegram enlazado con el bot.${p.total - p.linked ? ' A los demás no les llega: puedes mandarles el enlace del bot desde «Más › Avisos por Telegram».' : ''}</small>${run}</div>`;
+}
+function bcHist() {
+  const b = S.bc;
+  return `<div id="bcHist">${(b.history || []).length ? `<h2 class="sep" style="margin-top:22px">Últimos envíos</h2><div class="panel pad">${b.history.map((h) => `<div class="qrep"><div class="grow"><b>${fmtTs(h.at, true)}</b> · ${esc(h.by)}<div class="small muted">${esc(h.text)}</div></div><span class="small"><span class="qres-Correcto">${h.ok} enviados</span>${h.fail ? ` · <span class="qres-Error">${h.fail} fallidos</span>` : ''}</span></div>`).join('')}</div>` : ''}</div>`;
+}
+function vMensajeCli() {
+  const b = S.bc;
+  const sel = (id, cur, list, label) => `<label class="f"><span>${label}</span><select id="${id}">${list.map(([v, t]) => `<option value="${v}"${String(v) === String(cur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const hist = bcHist();
+  return head('Mensaje a clientes', 'Un aviso por Telegram a todos tus clientes a la vez: mantenimiento, novedades, ofertas…') + `
+    <form id="bcForm" class="panel pad formpage bcf">
+      <div class="row3">${sel('bcWho', b.who, [['active', 'Cuentas activas'], ['all', 'Todas (también caducadas)'], ['demo', 'Demos en curso']], 'A quién')}
+        ${S.d.servers.length > 1 ? sel('bcSrv', b.serverId, [[0, 'Todos los servidores'], ...S.d.servers.map((x) => [x.id, x.name])], 'Servidor') : ''}
+        ${staff() && S.d.users.length > 1 ? sel('bcOwner', b.ownerId, [[0, 'Todos los vendedores'], ...S.d.users.map((u) => [u.id, u.name])], 'Vendedor') : ''}</div>
+      ${bcInfo()}
+      <label class="f" style="margin-top:14px">Mensaje<textarea name="text" id="bcText" rows="6" maxlength="2000" placeholder="Hola {nombre} 👋&#10;&#10;Esta noche de 2:00 a 3:00 haremos mantenimiento del servidor. Disculpa las molestias.">${esc(b.text)}</textarea></label>
+      <p class="small muted" style="margin:-6px 0 14px">Puedes usar {nombre}, {usuario}, {vence} y {cuando}: se rellenan con los datos de cada cliente.</p>
+      <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="submit">${ic('send')}Enviar por Telegram</button></div>
+    </form>` + hist;
+}
+
+
+
+/* ---------- Licencias: alquiler del panel ---------- */
+const LIC_ST = { ok: ['Al día', 'ok'], soon: ['Vence pronto', 'soon'], grace: ['En margen', 'grace'], locked: ['En pausa', 'off'], blocked: ['Bloqueada', 'off'] };
+async function loadLic() {
+  S.lic.busy = true;
+  try { S.lic.data = await api('GET', '/api/licenses'); S.lic.at = Date.now(); } catch (e) { S.lic.data = { list: [], contact: '', error: e.message }; }
+  S.lic.busy = false;
+  if (S.view === 'licencias') render();
+}
+const licLeftTxt = (l) => l.state === 'blocked' ? 'Bloqueada a mano' : l.left > 1 ? `Quedan ${l.left} días` : l.left === 1 ? 'Vence mañana' : l.left === 0 ? 'Vence hoy' : l.state === 'grace' ? `Venció hace ${plural(-l.left, 'día', 'días')} · se pausa en ${plural(S.lic.data.grace + 1 + l.left, 'día', 'días')}` : `Pausado el ${fmt(addDays(l.until, S.lic.data.grace + 1)).replace(/ \d{4}$/, '')}`;
+function vLicencias() {
+  const d = S.lic.data;
+  const sub = 'Quién usa tu panel, hasta qué día ha pagado y cuándo renueva.';
+  const acts = `<button class="btn primary" data-act="lic-new">${ic('plus')}Nueva licencia</button>`;
+  if (!d) return head('Licencias', sub, acts) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (d.error) return head('Licencias', sub, acts) + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
+  const L = d.list.slice().sort((a, b) => a.until.localeCompare(b.until));
+  const act = L.filter((l) => l.state === 'ok' || l.state === 'soon' || l.state === 'grace');
+  const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
+  const soon = L.filter((l) => l.state === 'soon' || l.state === 'grace').length, off = L.filter((l) => l.state === 'locked' || l.state === 'blocked').length;
+  const month = d.today.slice(0, 7), cobrado = L.reduce((n, l) => n + (l.payments || []).filter((p) => p.at.slice(0, 7) === month).reduce((m, p) => m + (p.amount || 0), 0), 0);
+  const tiles = `<div class="vptiles lict">${tile(act.length, 'Paneles funcionando', act.length ? eur(act.reduce((n, l) => n + (l.price || 0), 0)) + ' al mes' : '', 'ok')}${tile(soon, 'Vencen pronto', 'en 7 días o en margen', soon ? 'warn' : '')}${tile(off, 'En pausa', 'sin renovar', off ? 'bad' : '')}${tile(eur(cobrado), 'Cobrado este mes', '')}</div>`;
+  // Calendario del mes
+  if (!S.lic.cal) S.lic.cal = d.today.slice(0, 7);
+  const [y, m] = S.lic.cal.split('-').map(Number), days = new Date(Date.UTC(y, m, 0)).getUTCDate(), offset = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
+  const by = {}; L.forEach((l) => { (by[l.until] = by[l.until] || []).push(l); });
+  let cells = ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((x) => `<div class="dow">${x}</div>`).join('');
+  for (let i = 0; i < offset; i++) cells += '<div class="out"></div>';
+  for (let i = 1; i <= days; i++) {
+    const ds = `${y}-${pad(m)}-${pad(i)}`, list = by[ds] || [];
+    cells += `<div class="${ds === d.today ? 'today' : ''}${list.length ? ' has' : ''}"><span class="dn">${i}</span>${list.map((l) => `<button class="lc-${LIC_ST[l.state][1]}" data-act="lic-renew" data-id="${l.id}" title="${esc(l.name)}: renovar">${esc(l.name)}</button>`).join('')}</div>`;
+  }
+  for (let i = 0; i < (7 - ((offset + days) % 7)) % 7; i++) cells += '<div class="out"></div>';
+  const cal = `<section class="tsec"><div class="sec-h"><h2>Calendario de vencimientos</h2><div class="licnav"><button class="btn sm ghost" data-act="lic-cal" data-step="-1" aria-label="Mes anterior">‹</button><b>${MES_L[m - 1]} ${y}</b><button class="btn sm ghost" data-act="lic-cal" data-step="1" aria-label="Mes siguiente">›</button></div></div><div class="panel"><div class="cal lcal">${cells}</div></div></section>`;
+  const card = (l) => {
+    const [stTxt, stCls] = LIC_ST[l.state], last = (l.payments || []).slice(-1)[0];
+    const total = Math.max(1, ((last && last.months) || 1) * 30), done = Math.min(100, Math.max(0, Math.round((1 - Math.max(0, l.left) / total) * 100)));
+    return `<article class="licc st-${stCls}">
+      <header><span class="cav">${esc(l.name.charAt(0).toUpperCase())}</span><div class="who"><b>${esc(l.name)}</b>${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.url.replace(/^https?:\/\//, ''))}</a>` : '<small class="muted">sin dirección</small>'}</div><span class="lpill ${stCls}">${stTxt}</span></header>
+      <div class="lbig"><div><small>Pagado hasta</small><b>${fmt(l.until)}</b></div><div class="r"><small>${l.price ? eur(l.price) + ' / mes' : 'sin precio'}</small><em class="${stCls}">${licLeftTxt(l)}</em></div></div>
+      <div class="lbar"><i class="${stCls}" style="width:${l.state === 'ok' || l.state === 'soon' ? done : 100}%"></i></div>
+      <div class="lmeta">${l.contact ? `<span>${ic('send')}${esc(l.contact)}</span>` : ''}<span class="${l.online ? 'on' : ''}">${ic('signal')}${l.lastCheck ? (l.online ? 'Conectado' : 'Última conexión ' + whenShort(l.lastCheck)) : 'Aún no se ha conectado'}</span></div>
+      ${l.notes ? `<p class="lnote">${esc(l.notes)}</p>` : ''}
+      <div class="acts"><button class="btn sm primary" data-act="lic-renew" data-id="${l.id}">${ic('refresh')}Renovar</button><button class="btn sm" data-act="lic-edit" data-id="${l.id}">${ic('edit')}Editar</button><button class="btn sm ghost" data-act="lic-more" data-id="${l.id}">Más…</button></div>
+    </article>`;
+  };
+  const list = L.length ? `<section class="tsec"><div class="sec-h"><h2>Paneles alquilados</h2><small>${plural(L.length, 'licencia', 'licencias')}</small></div><div class="licgrid">${L.map(card).join('')}</div></section>`
+    : `<div class="panel" style="margin-bottom:18px"><div class="empty okmsg">${ic('key')}<b>Todavía no alquilas el panel a nadie</b><span>Pulsa «Nueva licencia» cuando alguien quiera usarlo con su Emby.</span></div></div>`;
+  const cfg = `<details class="tcfg"><summary>${ic('send')}Tu contacto para renovar <span class="muted">· ${d.contact ? esc(d.contact) : 'sin poner'}</span></summary>
+    <form id="licContact" class="formpage" style="margin-top:12px"><p class="small muted" style="margin:0 0 10px">Es lo que verán en su panel cuando vaya a vencer o esté en pausa. Por ejemplo: «Telegram @serviparte» o «WhatsApp 600 000 000».</p>
+    <label class="f">Contacto<input name="contact" maxlength="120" value="${esc(d.contact)}" placeholder="Telegram @tuusuario"></label><button class="btn primary" type="submit" style="margin-top:8px">Guardar</button></form></details>
+    <details class="tcfg"><summary>${ic('note')}Cómo poner en marcha un panel alquilado</summary><ol class="lsteps">
+      <li>Pulsa <b>Nueva licencia</b> y apunta sus datos. Te saldrá una <b>clave</b>: cópiala.</li>
+      <li>En <b>Coolify</b> crea una aplicación nueva con el mismo repositorio de GitHub, con <b>su propio volumen</b> en <code>/app/data</code> y su propia dirección (por ejemplo, otro subdominio de DuckDNS).</li>
+      <li>En esa aplicación, en <b>Environment Variables</b>, añade <code>LICENSE_SERVER</code> = <code>${esc(location.origin)}</code> y <code>LICENSE_TOKEN</code> = la clave.</li>
+      <li>Despliega, abre su dirección y <b>crea tú el superadministrador</b>. Después dale el usuario y la contraseña a esa persona.</li>
+      <li>Listo: su panel te pregunta cada hora si está pagado. Cuando renueves, se desbloquea solo en unos minutos.</li></ol>
+      <p class="small muted">Al caducar tiene ${plural(d.grace, 'día', 'días')} de margen con aviso. Después su panel se pone en pausa, pero <b>las cuentas Emby de sus clientes siguen funcionando</b>.</p></details>`;
+  return head('Licencias', sub, acts) + tiles + list + cal + cfg;
+}
+const licOf = (id) => S.lic.data.list.find((x) => x.id === id);
+const licMonths = (name, sel = 1) => `<div class="pmeth lmon">${[1, 3, 6, 12].map((n) => `<label><input type="radio" name="${name}" value="${n}"${n === sel ? ' checked' : ''}><span>${plural(n, 'mes', 'meses')}</span></label>`).join('')}</div>`;
+const licMethods = () => `<div class="pmeth">${PAY_METHODS.filter((x) => x !== 'Sin cobro').map((x, i) => `<label><input type="radio" name="method" value="${x}"${i === 0 ? ' checked' : ''}><span>${x}</span></label>`).join('')}</div>`;
+function licShowToken(name, token) {
+  showDlg('Clave de ' + name, `<p>Esta es la clave de su panel. <b>Solo se muestra ahora</b>: cópiala y pégala en Coolify.</p>
+    <div class="ltok"><code id="licTok">${esc(token)}</code><button type="button" class="btn sm primary" data-act="lic-copy">${ic('copy')}Copiar</button></div>
+    <div class="lenv"><div><small>Nombre</small><code>LICENSE_SERVER</code></div><div><small>Valor</small><code>${esc(location.origin)}</code></div><div><small>Nombre</small><code>LICENSE_TOKEN</code></div><div><small>Valor</small><code>la clave de arriba</code></div></div>
+    <p class="small muted">No se la mandes a esa persona: va solo en Coolify. Si se pierde, en «Más…» puedes crear una nueva.</p>`);
+}
+function licNew() {
+  openDlg({ title: 'Nueva licencia', submit: 'Crear licencia',
+    body: `<label class="f">Nombre de quien alquila<input name="name" required maxlength="60" placeholder="Juanito"></label>
+      <div class="row2"><label class="f">Dirección de su panel (opcional)<input name="url" maxlength="200" placeholder="https://juanito.duckdns.org"></label><label class="f">Su contacto (opcional)<input name="contact" maxlength="80" placeholder="Telegram @juanito"></label></div>
+      <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="0"></label><label class="f">Empieza el<input type="date" name="start" value="${S.d.today}"></label></div>
+      <span class="flabel">Meses pagados</span>${licMonths('months')}
+      <p class="small muted" id="licUntil" style="margin:8px 0"></p>
+      <label class="check"><input type="checkbox" name="paid" checked> Ya me ha pagado (se apunta el cobro)</label>
+      <div id="licPay">${licMethods()}</div>
+      <label class="f">Notas (opcional)<input name="notes" maxlength="300"></label>`,
+    onOpen: () => { const f = dlgForm, upd = () => { const mo = +f.elements.months.value || 1, st = f.elements.start.value || S.d.today; $('#licUntil').innerHTML = `Pagado hasta el <b>${fmt(addMonths(st, mo))}</b>${+f.elements.price.value ? ` · ${eur(+f.elements.price.value * mo)}` : ''}`; $('#licPay').hidden = !f.elements.paid.checked; }; f.oninput = upd; f.onchange = upd; upd(); },
+    onSubmit: async (fd) => {
+      const r = await api('POST', '/api/licenses', { name: fd.get('name'), url: fd.get('url'), contact: fd.get('contact'), price: +fd.get('price') || 0, start: fd.get('start'), months: +fd.get('months'), paid: !!fd.get('paid'), method: fd.get('method') || '', notes: fd.get('notes') });
+      S.lic.tok = { name: r.lic.name, token: r.token }; S.lic.data = null; loadLic(); return 'Licencia creada';
+    }, after: () => { if (S.lic.tok) { licShowToken(S.lic.tok.name, S.lic.tok.token); S.lic.tok = null; } } });
+}
+function licRenew(id) {
+  const l = licOf(id); if (!l) return;
+  const base = l.until > S.d.today ? l.until : S.d.today;
+  openDlg({ title: 'Renovar a ' + l.name, submit: 'Renovar',
+    body: `<p class="preview">${l.until >= S.d.today ? `Ahora está pagado hasta el <b>${fmt(l.until)}</b>. Los meses se suman a esa fecha.` : `Venció el <b>${fmt(l.until)}</b>. Los meses cuentan desde hoy.`}</p>
+      <span class="flabel">¿Cuántos meses paga?</span>${licMonths('months')}
+      <div class="lnew"><span>Nuevo vencimiento</span><b id="licNewU"></b></div>
+      <label class="f">Importe cobrado (€)<input type="number" name="amount" min="0" step="0.5"></label>
+      ${licMethods()}`,
+    onOpen: () => { const f = dlgForm; let last = 0; const upd = () => { const mo = +f.elements.months.value || 1; $('#licNewU').textContent = fmt(addMonths(base, mo)); if (mo !== last) { f.elements.amount.value = Math.round((l.price || 0) * mo * 100) / 100; last = mo; } }; f.onchange = upd; upd(); },
+    onSubmit: async (fd) => { const r = await api('POST', `/api/licenses/${id}/renew`, { months: +fd.get('months'), amount: +fd.get('amount') || 0, method: fd.get('method') || '' }); S.lic.data = null; loadLic(); return `${l.name}: pagado hasta el ${fmt(r.lic.until)}`; } });
+}
+function licEdit(id) {
+  const l = licOf(id); if (!l) return;
+  openDlg({ title: 'Editar ' + l.name, submit: 'Guardar',
+    body: `<label class="f">Nombre<input name="name" required maxlength="60" value="${esc(l.name)}"></label>
+      <div class="row2"><label class="f">Dirección de su panel<input name="url" maxlength="200" value="${esc(l.url)}"></label><label class="f">Su contacto<input name="contact" maxlength="80" value="${esc(l.contact)}"></label></div>
+      <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="${l.price || 0}"></label><label class="f">Pagado hasta (cambiar a mano)<input type="date" name="until" value="${l.until}" required></label></div>
+      <label class="f">Notas<input name="notes" maxlength="300" value="${esc(l.notes)}"></label>`,
+    onSubmit: async (fd) => { await api('PUT', `/api/licenses/${id}`, Object.fromEntries(['name', 'url', 'contact', 'notes', 'until'].map((k) => [k, fd.get(k)]).concat([['price', +fd.get('price') || 0]]))); S.lic.data = null; loadLic(); return 'Cambios guardados'; } });
+}
+function licMore(id) {
+  const l = licOf(id); if (!l) return;
+  const it = (act, icon, label, hint, cls = '') => `<button type="button" class="mitem ${cls}" data-act="${act}" data-id="${id}">${ic(icon)}<span>${label}<small>${hint}</small></span></button>`;
+  const pays = (l.payments || []).slice().reverse();
+  showDlg(l.name, `<div class="mgrid2">${it('lic-block', l.blocked ? 'play' : 'pause', l.blocked ? 'Desbloquear' : 'Bloquear ya', l.blocked ? 'vuelve a funcionar al momento' : 'su panel se pausa en unos minutos')}${it('lic-token', 'key', 'Clave nueva', 'si la perdiste; hay que cambiarla en Coolify')}${it('lic-del', 'trash', 'Borrar licencia', 'su panel se pausará', 'danger')}</div>
+    <h3 style="margin:16px 0 8px">Pagos</h3><div class="ctl">${pays.length ? pays.map((p) => `<div class="strow"><span class="d">${whenShort(p.at)}</span><span class="t">${plural(p.months, 'mes', 'meses')}${p.method ? ' · ' + esc(p.method) : ''} · hasta el ${fmt(p.until)}</span><b class="plus">${eur(p.amount || 0)}</b></div>`).join('') : '<div class="empty" style="padding:14px 0">Sin pagos apuntados.</div>'}</div>
+    ${l.lastIp ? `<p class="small muted" style="margin-top:10px">Última conexión de su panel: ${whenShort(l.lastCheck)}</p>` : ''}`);
+}
+/* Panel alquilado en pausa: pantalla de aviso */
+function showLock(lic) {
+  $('#app').hidden = true; $('#gate').hidden = true;
+  let box = $('#licLock');
+  if (!box) { document.body.insertAdjacentHTML('beforeend', '<div id="licLock" role="alert"></div>'); box = $('#licLock'); }
+  const why = lic.reason === 'invalid' ? 'La licencia de este panel no es válida o se ha dado de baja.' : lic.reason === 'blocked' ? 'El uso de este panel está en pausa.' : `La suscripción de este panel venció el <b>${fmt(lic.until)}</b> y no se ha renovado.`;
+  box.innerHTML = `<div class="llk"><div class="llk-ic">${ic('pause')}</div><h1>Panel en pausa</h1><p>${why}</p>
+    <div class="llk-ok">${ic('check')}<span><b>Las cuentas de tus clientes siguen funcionando.</b> No se ha borrado nada: al renovar, todo vuelve a estar como lo dejaste.</span></div>
+    ${lic.contact ? `<div class="llk-ct"><small>Para renovar, contacta con</small><b>${esc(lic.contact)}</b></div>` : '<p class="muted small">Para renovar, contacta con quien te dio acceso al panel.</p>'}
+    <button class="btn primary" id="licRe">${ic('refresh')}Ya he renovado, comprobar</button><p class="small muted" id="licReMsg" style="margin-top:10px"></p></div>`;
+  box.hidden = false;
+  $('#licRe').onclick = async () => {
+    const b = $('#licRe'); b.disabled = true; $('#licReMsg').textContent = 'Comprobando…';
+    try { const r = await api('POST', '/api/license/recheck', {}); if (r.license && r.license.state !== 'locked') { location.reload(); return; } $('#licReMsg').textContent = 'Todavía no consta la renovación. Prueba de nuevo en un momento.'; } catch (e) { $('#licReMsg').textContent = e.message; }
+    b.disabled = false;
+  };
+}
+function licBanner() {
+  const L = S.d.license; if (!L || !isSuper()) return '';
+  const who = L.contact ? ` Para renovar: <b>${esc(L.contact)}</b>.` : '';
+  if (L.state === 'grace') return `<div class="licban grace">${ic('alert')}<div><b>Tu suscripción al panel venció el ${fmt(L.until)}</b><span>El panel se pondrá en pausa el ${fmt(L.lockOn)} si no la renuevas. Las cuentas de tus clientes no se tocan.${who}</span></div></div>`;
+  if (L.state === 'soon') return `<div class="licban soon">${ic('calendar')}<div><b>Tu suscripción al panel vence ${L.left === 0 ? 'hoy' : L.left === 1 ? 'mañana' : `en ${L.left} días`}</b><span>Pagado hasta el ${fmt(L.until)}.${who}</span></div></div>`;
+  return '';
+}
+
+/* ---------- Cobros y deudas de vendedores ---------- */
+const PAY_METHODS = ['Bizum', 'Efectivo', 'Transferencia', 'PayPal', 'Cripto', 'Tarjeta', 'Otro', 'Sin cobro'];
+async function loadVpay() {
+  const v = S.vp; v.busy = true;
+  try { v.data = await api('GET', '/api/vpay' + (v.month ? '?month=' + v.month : '')); v.at = Date.now(); } catch (e) { v.data = { error: e.message, debtors: [], recent: [], byMethod: {}, byUser: {}, months: [] }; }
+  v.busy = false;
+  if (S.view === 'cobrosven') render();
+}
+const MES_N = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const monthName = (m) => { const [y, mm] = m.split('-').map(Number); return `${MES_N[mm - 1]} ${y}`; };
+function vCobrosVen() {
+  const d = S.vp.data;
+  const sub = 'Lo que te pagan tus vendedores por los créditos, y quién te debe.';
+  if (!d) return head('Cobros y deudas', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  const diff = d.prevTotal ? Math.round(((d.total - d.prevTotal) / d.prevTotal) * 100) : null;
+  const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
+  const tiles = `<div class="vptiles">${tile(eur(d.total), 'Cobrado en ' + monthName(d.month), diff == null ? plural(d.count, 'pago', 'pagos') : `${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)}% que el mes anterior`, 'ok')}${tile(eur(d.debt), 'Te deben ahora', plural(d.debtors.length, 'vendedor', 'vendedores'), d.debt ? 'bad' : '')}${d.gifts ? tile(d.gifts, 'Créditos sin cobro', 'este mes', 'warn') : ''}</div>`;
+  const debt = d.debtors.length ? `<section class="tsec"><div class="sec-h"><h2>Te deben</h2></div><div class="fulist">${d.debtors.map((x) => `<article class="fuc">
+      <div class="fu-l"><b>${esc(x.name)}</b><small>@${esc(x.username)} · ${ROLE[x.role] || x.role}</small>
+        <div class="atr">${x.pending ? `<span class="at-creditos">${ic('clock')}${plural(x.pending, 'recarga pendiente', 'recargas pendientes')}${x.days ? ` · la más antigua hace ${plural(x.days, 'día', 'días')}` : ''}</span>` : ''}${x.negCredits ? `<span class="at-ventas">${ic('coins')}${plural(x.negCredits, 'crédito', 'créditos')} en negativo</span>` : ''}</div></div>
+      <div class="vpamt">${eur(x.amount)}</div>
+      <div class="acts">${x.pending ? `<button class="btn sm primary" data-act="vp-settle" data-id="${x.id}">${ic('check')}Ha pagado</button>` : ''}<button class="btn sm" data-act="vp-remind" data-id="${x.id}">${ic('send')}Recordar</button><button class="btn sm ghost" data-act="user-statement" data-id="${x.id}">${ic('note')}Extracto</button></div>
+    </article>`).join('')}</div></section>` : `<div class="panel" style="margin-bottom:18px"><div class="empty okmsg">${ic('check')}<b>Nadie te debe nada</b><span>Cuando apuntes una recarga como «pendiente», aparecerá aquí.</span></div></div>`;
+  const bars = (obj) => { const arr = Object.entries(obj).sort((a, b) => b[1] - a[1]), max = Math.max(1, ...arr.map((x) => x[1])); return arr.length ? arr.map(([k, v]) => `<div class="vbar"><span>${esc(k)}</span><i><b style="width:${Math.max(3, Math.round((v / max) * 100))}%"></b></i><em>${eur(v)}</em></div>`).join('') : '<p class="muted small">Sin cobros este mes.</p>'; };
+  const month = `<section class="tsec"><div class="sec-h"><h2>Cobrado en ${monthName(d.month)}</h2><select id="vpMonth" aria-label="Mes">${d.months.map((m) => `<option value="${m}"${m === d.month ? ' selected' : ''}>${monthName(m)}</option>`).join('')}</select></div>
+    <div class="vpcols"><div class="panel pad"><h3>Por forma de pago</h3>${bars(d.byMethod)}</div><div class="panel pad"><h3>Por vendedor</h3>${bars(d.byUser)}</div></div></section>`;
+  const st = (x) => x.gift ? '<span class="qst">Sin cobro</span>' : x.status === 'pending' ? '<span class="qst pendiente">Pendiente</span>' : '<span class="qst correcto">Pagado</span>';
+  const recent = d.recent.length ? `<section class="tsec"><div class="sec-h"><h2>Últimas recargas</h2></div><div class="panel"><div class="vplist">${d.recent.slice(0, 25).map((x) => `<div class="vprow"><div><b>${esc(x.user)}</b><small>${whenShort(x.at)} · ${plural(x.credits, 'crédito', 'créditos')}${x.by ? ' · por ' + esc(x.by) : ''}</small></div>
+      <div class="vpr">${x.gift ? '' : `<b>${eur(x.amount)}</b><small>${esc(x.method)}${x.ref ? ' · ' + esc(x.ref) : ''}</small>`}${x.dupOf ? '<small class="dup">⚠️ referencia repetida</small>' : ''}</div>${st(x)}</div>`).join('')}</div></div></section>` : '';
+  const c = d.cfg;
+  const cfg = c ? `<details class="tcfg"><summary>${ic('sliders')}Ajustes de cobros <span class="muted">· ${c.limit || c.days ? `límite ${c.limit ? eur(c.limit) : ''}${c.limit && c.days ? ' o ' : ''}${c.days ? c.days + ' días' : ''}` : 'sin límite de deuda'}</span></summary>
+    <form id="vpCfg" class="formpage" style="margin-top:12px">
+      <p class="small muted" style="margin:0 0 10px">Si un vendedor pasa el límite, no puede dar altas ni renovar hasta que pague. 0 = sin límite.</p>
+      <div class="row2"><label class="f">Deuda máxima (€)<input type="number" name="limit" min="0" step="1" value="${c.limit || 0}"></label><label class="f">Días máximos con un pago pendiente<input type="number" name="days" min="0" max="365" value="${c.days || 0}"></label></div>
+      <div class="row2"><label class="f">Recordarle por Telegram cada (días, 0 = no)<input type="number" name="remind" min="0" max="60" value="${c.remind || 0}"></label><label class="f">Avisarme si otro carga más de (créditos)<input type="number" name="giftAlert" min="1" value="${c.giftAlert || 50}"></label></div>
+      <label class="check"><input type="checkbox" name="receipts"${c.receipts !== false ? ' checked' : ''}> Mandarle un justificante por Telegram en cada recarga y pago</label>
+      <label class="check"><input type="checkbox" name="monthly"${c.monthly ? ' checked' : ''}> Mandarle su extracto del mes anterior cada día 1</label>
+      <button class="btn primary" type="submit" style="margin-top:8px">Guardar</button></form></details>` : '';
+  return head('Cobros y deudas', sub, `<button class="btn" data-act="vp-reload">${ic('refresh')}Actualizar</button>`) + tiles + debt + month + recent + cfg;
+}
+function vpSettle(id) {
+  const x = S.vp.data.debtors.find((v) => v.id === id); if (!x) return;
+  openDlg({ title: `Pago de ${x.name}`, submit: 'Registrar pago',
+    body: `<p class="preview">Se marcan como pagadas sus <b>${plural(x.pending, 'recarga pendiente', 'recargas pendientes')}</b>${x.negCredits ? '. Su saldo en negativo se arregla cargándole créditos' : ''}.</p>
+      <div class="pmeth">${PAY_METHODS.filter((m) => m !== 'Sin cobro').map((m, i) => `<label><input type="radio" name="pmethod" value="${m}"${i === 0 ? ' checked' : ''}><span>${m}</span></label>`).join('')}</div>
+      <label class="f" style="margin-top:12px">Referencia (opcional)<input name="pref" maxlength="60"></label>`,
+    onSubmit: async (fd) => { const r = await api('POST', '/api/vpay/settle', { userId: id, method: fd.get('pmethod'), ref: fd.get('pref') || '' }); S.vp.data = null; loadVpay(); return `Pago de ${eur(r.total)} registrado`; } });
+}
+function vpRemind(id) {
+  const x = S.vp.data.debtors.find((v) => v.id === id); if (!x) return;
+  const text = `Hola ${x.name} 👋\n\nTienes pendiente de pago ${eur(x.amount)}${x.pending ? ` (${plural(x.pending, 'recarga', 'recargas')})` : ''}.\n\nCuando puedas, házmelo llegar. ¡Gracias!`;
+  openDlg({ title: 'Recordar a ' + x.name, submit: 'Copiar mensaje',
+    body: `<label class="f">Mensaje (puedes retocarlo)<textarea name="msg" rows="6">${esc(text)}</textarea></label>${x.tgLinked && S.d.settings.notices.telegram.bot ? `<div class="qacts"><button type="button" class="btn primary" data-act="vp-tg" data-id="${id}">${ic('send')}Enviar por Telegram</button></div>` : '<p class="small muted">No tiene Telegram enlazado con el bot: copia el mensaje y mándaselo.</p>'}`,
+    onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Mensaje copiado'; } });
+}
+async function dStatement(u, days = 30) {
+  let st; try { st = await api('GET', `/api/users/${u.id}/statement?days=${days}`); } catch (e) { return toast(e.message, true); }
+  const stat = (n, l, cls = '') => `<div class="cs ${cls}"><b>${n}</b><span>${l}</span></div>`;
+  showDlg(`Extracto de ${u.name}`, `
+    <label class="f" style="max-width:220px"><span>Periodo</span><select id="stDays" data-id="${u.id}">${options([[30, 'Últimos 30 días'], [90, 'Últimos 90 días'], [365, 'Último año']], days)}</select></label>
+    <div class="cstats">${stat('+' + st.loaded, 'créditos recargados')}${stat(st.spent, 'gastados en altas')}${stat(eur(st.paid), 'pagado')}${stat(st.debt.amount ? eur(st.debt.amount) : '0', 'pendiente ahora', st.debt.amount ? 'bad' : '')}</div>
+    <p class="small muted" style="margin:-4px 0 10px">Saldo actual: <b>${plural(st.user.credits, 'crédito', 'créditos')}</b>${st.refunds ? ` · ${st.refunds} devueltos por cuentas borradas` : ''}</p>
+    <div class="ctl">${st.rows.length ? st.rows.map((r) => `<div class="strow"><span class="d">${whenShort(r.ts)}</span><span class="t">${esc(r.text)}</span><b class="${r.delta >= 0 ? 'plus' : 'minus'}">${r.delta >= 0 ? '+' : ''}${r.delta}</b></div>`).join('') : '<div class="empty" style="padding:16px 0">Sin movimientos en este periodo.</div>'}</div>
+    <div class="qacts" style="margin-top:12px">${st.tgLinked && S.d.settings.notices.telegram.bot ? `<button class="btn primary" data-act="st-tg" data-id="${u.id}" data-days="${days}">${ic('send')}Enviar por Telegram</button>` : ''}<button class="btn" data-act="st-copy">${ic('copy')}Copiar resumen</button><button class="btn" data-act="st-csv">${ic('download')}Descargar (CSV)</button></div>`);
+  S.vp.st = st;
+}
+
+/* ---------- Equipo: atención ---------- */
+async function loadTeam() {
+  S.tm.busy = true;
+  try { S.tm.data = await api('GET', '/api/team'); S.tm.at = Date.now(); } catch (e) { S.tm.data = { attention: [], suspicious: [], incidents: [], error: e.message }; }
+  S.tm.busy = false;
+  if (S.view === 'atencion') render();
+}
+function vAtencion() {
+  const d = S.tm.data;
+  const sub = 'Lo que conviene revisar de tu equipo. Si no hay nada, todo está en orden.';
+  if (!d) return head('Atención', sub) + '<div class="panel"><div class="empty">Revisando…</div></div>';
+  const open = d.incidents.filter((x) => !x.closed), closed = d.incidents.filter((x) => x.closed);
+  const role = (r) => ROLE[r] || r;
+  const sec = (title, hint, body) => `<section class="tsec"><div class="sec-h"><h2>${title}</h2>${hint ? `<small>${hint}</small>` : ''}</div>${body}</section>`;
+  const inc = open.length ? sec('Acciones raras', 'muchas acciones delicadas seguidas', `<div class="shgrid">${open.map((x) => `<article class="shc lv-alto">
+      <header><span class="cav">${esc(x.name.charAt(0).toUpperCase())}</span><div class="who"><b>${esc(x.name)}</b><small>${role(x.role)} · ${whenShort(x.at)}</small></div><span class="lvp">${x.blocked ? 'Bloqueado' : 'Revisar'}</span></header>
+      <p class="why"><b>${x.count} acciones delicadas</b> en menos de ${x.minutes} minutos:</p>
+      <ul class="incl">${x.sample.slice(0, 3).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+      <div class="acts">${staff() && canDo('reports') ? `<button class="btn sm" data-act="acc-did" data-id="${x.userId}">${ic('history')}Qué hizo</button>` : ''}${x.blocked ? `<button class="btn sm primary" data-act="inc-close" data-k="${x.id}" data-unblock="1">${ic('play')}Desbloquear</button>` : `<button class="btn sm ghost" data-act="user-power" data-id="${x.userId}">${ic('power')}Desactivar</button>`}<button class="btn sm" data-act="inc-close" data-k="${x.id}">${ic('check')}Revisado</button></div>
+    </article>`).join('')}</div>`) : '';
+  const sus = d.suspicious.length ? sec('Accesos sospechosos', 'últimos 7 días', `<div class="shgrid">${d.suspicious.map((x) => `<article class="shc lv-${x.level}">
+      <header><span class="cav">${esc(x.name.charAt(0).toUpperCase())}</span><div class="who"><b>${esc(x.name)}</b><small>@${esc(x.username)} · ${role(x.role)}</small></div><span class="lvp">${x.level === 'alto' ? 'Muy probable' : 'Revisar'}</span></header>
+      <p class="why">${esc(x.reasons.join(' · '))}</p>
+      ${x.devs.length ? `<div class="devs">${x.devs.map((v) => `<span>${ic('screen')}${esc(v)}</span>`).join('')}</div>` : ''}
+      <p class="small muted" style="margin:0">Puede que haya pasado su contraseña a otra persona o que se la hayan robado.</p>
+      <div class="acts"><button class="btn sm" data-act="tm-acc" data-id="${x.id}">${ic('lock')}Ver sus accesos</button><button class="btn sm ghost" data-act="user-power" data-id="${x.id}">${ic('power')}Desactivar</button></div>
+    </article>`).join('')}</div>`) : '';
+  const ICO = { ventas: 'chart', acceso: 'clock', creditos: 'coins' };
+  const att = d.attention.length ? sec('Necesitan atención', 'para vender más', `<div class="fulist">${d.attention.map((x) => `<article class="fuc">
+      <div class="fu-l"><b>${esc(x.name)}</b><small>@${esc(x.username)} · ${role(x.role)} · ${plural(x.clients, 'cliente', 'clientes')}${d.rates[x.id] && d.rates[x.id].rate != null ? ` · renuevan ${d.rates[x.id].rate}%` : ''}</small>
+        <div class="atr">${x.reasons.map((r) => `<span class="at-${r.k}">${ic(ICO[r.k] || 'alert')}${esc(r.t)}</span>`).join('')}</div></div>
+      <div class="acts"><button class="btn sm primary" data-act="tm-msg" data-id="${x.id}">${ic('send')}Escribirle</button>${x.reasons.some((r) => r.k === 'creditos') && canDo('credits') ? `<button class="btn sm" data-act="user-credits" data-id="${x.id}">${ic('coins')}Créditos</button>` : ''}</div>
+    </article>`).join('')}</div>`) : '';
+  const nothing = !inc && !sus && !att ? `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Todo en orden</b><span>Nadie de tu equipo necesita atención ahora mismo.</span></div></div>` : '';
+  const g = d.guard;
+  const cfg = g ? `<details class="tcfg"><summary>${ic('shield')}Ajustes de la alerta de acciones raras <span class="muted">· ${g.on ? `${g.limit} acciones en ${g.minutes} min${g.block ? ', bloquea' : ''}` : 'apagada'}</span></summary>
+    <form id="guardForm" class="formpage" style="margin-top:12px">
+      <label class="check"><input type="checkbox" name="on"${g.on ? ' checked' : ''}> Avisarme por Telegram si alguien del equipo hace muchas acciones delicadas seguidas (borrar, desactivar o transferir cuentas, cambiar contraseñas, detener reproducciones, tocar servidores…)</label>
+      <div class="row2"><label class="f">Número de acciones<input type="number" name="limit" min="3" max="200" value="${g.limit}"></label><label class="f">En cuántos minutos<input type="number" name="minutes" min="1" max="120" value="${g.minutes}"></label></div>
+      <label class="check"><input type="checkbox" name="block"${g.block ? ' checked' : ''}> Además, bloquearle el acceso al momento hasta que yo lo revise</label>
+      <p class="small muted" style="margin:6px 0 12px">Tus propias acciones de superadministrador no cuentan.</p>
+      <button class="btn primary" type="submit">Guardar</button></form></details>` : '';
+  return head('Atención', sub, `<button class="btn" data-act="tm-reload">${ic('refresh')}Actualizar</button>`) + inc + sus + att + nothing
+    + (closed.length ? `<p class="small muted" style="margin-top:14px">${plural(closed.length, 'aviso de acciones raras ya revisado', 'avisos de acciones raras ya revisados')}.</p>` : '') + cfg;
+}
+function tmMsg(id) {
+  const x = (S.tm.data.attention || []).find((v) => v.id === id) || {}, u = S.d.users.find((v) => v.id === id); if (!u) return;
+  const k = (x.reasons || []).map((r) => r.k);
+  const text = k.includes('creditos') ? `Hola ${u.name} 👋\n\n${u.credits > 0 ? `Te quedan ${u.credits === 1 ? '1 crédito' : u.credits + ' créditos'}` : 'Te has quedado sin créditos'}. ¿Te hago una recarga para que no te quedes sin poder dar altas?`
+    : k.includes('ventas') ? `Hola ${u.name} 👋\n\n¿Cómo va todo? Hace tiempo que no veo altas tuyas. Si necesitas demos, material o un precio especial para arrancar, dímelo y lo vemos.`
+    : `Hola ${u.name} 👋\n\nHace días que no entras al panel. ¿Va todo bien? Si tienes algún problema para entrar, dímelo.`;
+  openDlg({ title: 'Escribir a ' + u.name, submit: 'Copiar mensaje',
+    body: `<label class="f">Mensaje (puedes retocarlo)<textarea name="msg" rows="7">${esc(text)}</textarea></label>
+      ${x.tgLinked && S.d.settings.notices.telegram.bot ? `<div class="qacts"><button type="button" class="btn primary" data-act="tm-tg" data-id="${id}">${ic('send')}Enviar por Telegram</button></div>` : '<p class="small muted">No tiene Telegram enlazado con el bot: copia el mensaje y mándaselo por donde habléis.</p>'}`,
+    onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Mensaje copiado'; } });
+}
+
+/* ---------- Mensaje al equipo ---------- */
+let vbTimer = null;
+async function vbRefresh() {
+  const b = S.vb;
+  try { b.prev = await api('POST', '/api/vbroadcast/preview', { who: b.who }); const r = await api('GET', '/api/vbroadcast'); b.job = r.job; b.history = r.history; } catch (e) { /* se reintenta */ }
+  if (S.view === 'mensajeeq') { const el = $('#vbInfo'), h = $('#vbHist'); if (el) el.outerHTML = vbInfo(); if (h) h.outerHTML = vbHist(); if (!el) render(); }
+  clearTimeout(vbTimer);
+  if (b.job && !b.job.finished && S.view === 'mensajeeq') vbTimer = setTimeout(vbRefresh, 1000);
+}
+function vbInfo() {
+  const b = S.vb, p = b.prev, j = b.job;
+  if (!p) return '<div id="vbInfo" class="bci">Contando…</div>';
+  if (!p.bot) return '<div id="vbInfo" class="bci warn">El bot de Telegram no está configurado. Hazlo en Ajustes › Notificaciones.</div>';
+  const run = j && !j.finished ? `<div class="qjob" style="margin:10px 0 0"><b>Enviando…</b> <span class="muted">${j.done} de ${j.total}</span><div class="bar"><i style="width:${Math.round((j.done / j.total) * 100)}%"></i></div></div>` : '';
+  return `<div id="vbInfo" class="bci"><span class="big">${p.targets}</span><span>${p.targets === 1 ? 'persona lo recibirá' : 'personas lo recibirán'}</span><small>${p.linked} de ${p.total} tienen su Telegram enlazado (cada uno lo hace en Ajustes › Seguridad).</small>${run}</div>`;
+}
+function vbHist() {
+  const b = S.vb;
+  return `<div id="vbHist">${(b.history || []).length ? `<h2 class="sep" style="margin-top:22px">Últimos envíos</h2><div class="panel pad">${b.history.map((h) => `<div class="qrep"><div class="grow"><b>${fmtTs(h.at, true)}</b> · ${esc(h.by)}<div class="small muted">${esc(h.text)}</div></div><span class="small"><span class="qres-Correcto">${h.ok} enviados</span>${h.fail ? ` · <span class="qres-Error">${h.fail} fallidos</span>` : ''}</span></div>`).join('')}</div>` : ''}</div>`;
+}
+function vMensajeEq() {
+  const b = S.vb, opts = isSuper() ? [['vendors', 'Resellers y subresellers'], ['admins', 'Administradores'], ['all', 'Todo el equipo']] : staff() ? [['vendors', 'Resellers y subresellers']] : [['vendors', 'Mis subresellers']];
+  return head(staff() ? 'Mensaje al equipo' : 'Mensaje a subresellers', 'Un aviso por Telegram a tu equipo: cambios de precio, novedades, mantenimiento…') + `
+    <form id="vbForm" class="panel pad formpage bcf">
+      ${opts.length > 1 ? `<label class="f" style="max-width:320px"><span>A quién</span><select id="vbWho">${options(opts, b.who)}</select></label>` : ''}
+      ${vbInfo()}
+      <label class="f" style="margin-top:14px">Mensaje<textarea name="text" id="vbText" rows="6" maxlength="2000" placeholder="Hola {nombre} 👋&#10;&#10;A partir del día 1 cambian los precios de los créditos…">${esc(b.text)}</textarea></label>
+      <p class="small muted" style="margin:-6px 0 14px">Puedes usar {nombre} y {creditos}: se rellenan con los datos de cada uno.</p>
+      <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="submit">${ic('send')}Enviar por Telegram</button></div>
+    </form>` + vbHist();
+}
+
+/* ---------- Historial de accesos al panel ---------- */
+const ACC_KIND = { entrada: 'Entrada', fallido: 'Contraseña incorrecta', fallido2fa: 'Código de verificación incorrecto', bloqueado: 'Intento con el acceso desactivado', salida: 'Salida' };
+async function loadAccess() {
+  S.acc.busy = true;
+  try { S.acc.data = await api('GET', '/api/access'); } catch (e) { S.acc.data = { access: [], error: e.message }; }
+  S.acc.busy = false;
+  if (S.view === 'accesos') render();
+}
+function accRows() {
+  const f = S.acc, d = f.data; if (!d) return [];
+  // IP nueva: la primera vez que ese usuario entra desde esa IP
+  const seenIp = new Map();
+  for (let i = d.access.length - 1; i >= 0; i--) {
+    const e = d.access[i]; if (e.kind !== 'entrada' || !e.userId) continue;
+    const set = seenIp.get(e.userId) || new Set();
+    e.newIp = set.size > 0 && !set.has(e.ip); set.add(e.ip); seenIp.set(e.userId, set);
+  }
+  const lim = { d1: 1, d7: 7, d30: 30 }[f.period], q = f.q.trim().toLowerCase();
+  return d.access.filter((e) => (!f.user || String(e.userId) === f.user || (f.user === 'x' && !e.userId)) && (f.kind === 'all' || (f.kind === 'fail' ? /fallido|bloqueado/.test(e.kind) : e.kind === f.kind))
+    && (!lim || Date.now() - Date.parse(e.ts) < lim * 86400000) && (!q || `${e.ip} ${e.dev} ${e.user} ${e.name}`.toLowerCase().includes(q)));
+}
+function vAccesos() {
+  const f = S.acc, d = f.data;
+  const sub = 'Quién ha entrado al panel, cuándo, desde qué IP y con qué aparato. Se guarda aparte del resto del registro (hasta 400 días) y va dentro de las copias de seguridad.';
+  if (!d) return head('Historial de accesos', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  const rows = accRows(), shown = rows.slice(0, 400);
+  const users = [...new Map(d.access.filter((e) => e.userId).map((e) => [e.userId, e.name || e.user])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+  const fails = d.access.filter((e) => /fallido|bloqueado/.test(e.kind) && Date.now() - Date.parse(e.ts) < 7 * 86400000).length;
+  const sel = (id, cur, list, label) => `<select id="${id}" aria-label="${label}">${list.map(([v, t]) => `<option value="${v}"${String(v) === String(cur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
+  const tools = `<div class="tools">
+    <input type="search" id="accq" placeholder="Buscar IP, aparato o usuario" value="${esc(f.q)}" aria-label="Buscar accesos">
+    ${sel('accUser', f.user, [['', 'Todos los usuarios'], ...users.map(([id, n]) => [id, n]), ...(isSuper() ? [['x', 'Usuarios que no existen']] : [])], 'Usuario')}
+    ${sel('accKind', f.kind, [['all', 'Todo'], ['entrada', 'Entradas'], ['fail', 'Intentos fallidos'], ['salida', 'Salidas']], 'Tipo')}
+    ${sel('accPeriod', f.period, [['all', 'Todas las fechas'], ['d1', 'Últimas 24 horas'], ['d7', 'Últimos 7 días'], ['d30', 'Últimos 30 días']], 'Período')}</div>`;
+  const canLogs = staff() && canDo('reports');
+  const table = shown.length ? `<div class="panel"><table class="cards acc"><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Qué pasó</th><th>IP</th><th>Aparato</th>${canLogs ? '<th class="r"></th>' : ''}</tr></thead><tbody>
+    ${shown.map((e) => `<tr class="k-${e.kind}"><td><b>${fmtTs(e.ts, true)}</b></td><td><div class="name">${esc(e.name || e.user || '—')}</div><div class="small muted">${e.userId ? '@' + esc(e.user) + (e.role ? ' · ' + (ROLE[e.role] || e.role) : '') : 'usuario que no existe: «' + esc(e.user) + '»'}</div></td>
+      <td><span class="ak ak-${e.kind}">${ACC_KIND[e.kind] || e.kind}</span>${e.via2fa ? ' <span class="small muted">con verificación en dos pasos</span>' : ''}</td>
+      <td>${esc(e.ip || '—')}${e.newIp ? ' <span class="ak ak-new" title="Primera vez que entra desde esta IP">IP nueva</span>' : ''}</td><td>${esc(e.dev || '—')}</td>
+      ${canLogs ? `<td class="r">${e.userId && e.kind === 'entrada' ? `<button class="btn sm" data-act="acc-did" data-id="${e.userId}">Qué hizo</button>` : ''}</td>` : ''}</tr>`).join('')}
+    </tbody></table></div>${rows.length > shown.length ? `<p class="small muted" style="margin-top:8px">Se muestran ${shown.length} de ${rows.length}. Descarga el historial para verlos todos.</p>` : ''}`
+    : '<div class="panel"><div class="empty">No hay accesos con esos filtros.</div></div>';
+  return head('Historial de accesos', sub, `<button class="btn" data-act="acc-csv">${ic('download')}Descargar (CSV)</button><button class="btn" data-act="acc-reload">${ic('refresh')}Actualizar</button>`)
+    + (fails ? `<p class="err" style="max-width:none;margin-bottom:12px">${plural(fails, 'intento fallido', 'intentos fallidos')} en los últimos 7 días. Fíltralos en «Intentos fallidos».</p>` : '')
+    + tools + table;
+}
+function accCsv() {
+  const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const rows = accRows();
+  const lines = [['Fecha', 'Hora', 'Usuario', 'Nombre', 'Tipo de usuario', 'Qué pasó', 'IP', 'Aparato'].map(q).join(';'),
+    ...rows.map((e) => { const d = new Date(e.ts); return [d.toLocaleDateString('es-ES'), d.toLocaleTimeString('es-ES'), e.user, e.name, ROLE[e.role] || '', (ACC_KIND[e.kind] || e.kind) + (e.via2fa ? ' (2 pasos)' : ''), e.ip, e.dev].map(q).join(';'); })];
+  const l = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })), download: `accesos-${S.d.today}.csv` });
+  l.click();
+}
 async function loadLogs() {
   S.logsBusy = true;
   try { S.logs = await api('GET', '/api/logs'); } catch (e) { S.logs = { log: [], total: 0, error: e.message }; }
@@ -3399,6 +4291,7 @@ function vGuia() {
 
 /* ---------- Diálogos ---------- */
 const dlg = $('#dlg'), dlgForm = $('#dlgForm');
+dlg.addEventListener('close', navDlgClosed);
 function openDlg({ title, body, submit, danger, onSubmit, onOpen, after }) {
   dlgForm.onchange = null;
   dlgForm.innerHTML = `<h2>${esc(title)}</h2>${body}<p class="derr" hidden></p>
@@ -3417,7 +4310,7 @@ function openDlg({ title, body, submit, danger, onSubmit, onOpen, after }) {
   };
   dlgForm.onchange = null; dlgForm.oninput = null;
   if (dlg.open) dlg.close();
-  dlg.showModal();
+  dlg.showModal(); navDlgOpened();
   if (onOpen) onOpen();
 }
 const serverSelect = () => (S.d.servers.length > 1
@@ -3595,27 +4488,22 @@ function showDlg(title, body) {
   dlgForm.onchange = null; dlgForm.oninput = null; dlgForm.onsubmit = (e) => e.preventDefault();
   dlgForm.innerHTML = `<h2>${esc(title)}</h2>${body}<div class="dfoot"><button type="button" class="btn ghost" data-act="close">Cerrar</button></div>`;
   if (dlg.open) dlg.close();
-  dlg.showModal();
+  dlg.showModal(); navDlgOpened();
 }
 function dMore(c) {
   const it = (act, label, hint, cls = '') => `<button type="button" class="mitem ${cls}" data-act="${act}" data-id="${c.id}">${ic(ICON_ACT[act])}<span>${label}${hint ? `<small>${hint}</small>` : ''}</span></button>`;
   const others = S.d.servers.filter((x) => x.id !== c.serverId).length;
-  showDlg(c.panelName, `<div class="mlist">
-    ${it('msg', 'Copiar info', 'Mensaje con sus datos para enviárselo')}
-    ${it('m-notes', 'Notas y contactos')}
-    ${it('edit', 'Editar')}
-    ${it('m-pass', 'Cambiar contraseña')}
-    ${it('m-hist', 'Historial')}
-    ${it('m-quality', 'Cambiar paquete', 'Contenido Básico o 4K')}
-    ${staff() ? it('m-screens', 'Gestionar pantallas') : ''}
-    ${staff() && S.d.users.length > 1 ? it('m-owner', 'Transferir revendedor') : ''}
-    ${staff() && others ? it('m-move', 'Transferir servidor') : ''}
-    ${it('m-tg', 'Avisos por Telegram', c.tgLinked ? 'Enlazado' : 'Enlace para que reciba los avisos')}
-    ${it('m-repair', 'Reparar', 'Revisa el servidor y vuelve a asignar sus bibliotecas en Emby')}
-    ${c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso en Emby', 'sep') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'La bloquea en Emby sin borrarla ni mandarla a la papelera', 'sep')}
-    ${it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'Bloquea la cuenta y la manda a la papelera')}
-    ${c.demo ? '' : it('del-refund', 'Eliminar y devolver créditos', 'La borra de Emby y devuelve los créditos del tiempo no usado', 'bad')}
-    ${staff() ? it('delete', 'Eliminar', 'La borra de Emby para siempre', 'bad') : ''}
+  const owner = S.d.users.find((u) => u.id === c.ownerId);
+  const noCredits = !owner || owner.role === 'super' || (owner.role === 'admin' && !owner.useCredits);
+  const grp = (title, items, cls = '') => { const html = items.filter(Boolean).join(''); return html ? `<div class="mgrp ${cls}"><h4>${title}</h4><div class="mgrid2">${html}</div></div>` : ''; };
+  showDlg(c.panelName, `<div class="mlist2">
+    ${grp('Enviar al cliente', [it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
+    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), staff() ? it('m-screens', 'Pantallas') : '', it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', staff() && others ? it('m-move', 'Servidor') : ''])}
+    ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
+    ${grp('Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
+      it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'A la papelera'),
+      c.demo || noCredits ? '' : it('del-refund', 'Eliminar y devolver', 'Devuelve los créditos', 'bad'),
+      staff() ? it('delete', 'Eliminar', 'Para siempre', 'bad') : ''], 'danger')}
   </div>`);
 }
 const putClient = (c, body) => api('PUT', `/api/clients/${c.id}`, body);
@@ -3869,8 +4757,8 @@ function dMove(c) {
     },
   });
 }
-const TPL = [['created', 'Cuenta creada'], ['demo', 'Demo creada'], ['renewed', 'Cuenta renovada'], ['expiring', 'Aviso de vencimiento']];
-const TPL_ALL = [...TPL, ['vendor', 'Acceso al panel para un vendedor']];
+const TPL = [['created', 'Cuenta creada'], ['demo', 'Demo creada'], ['renewed', 'Cuenta renovada'], ['expiring', 'Aviso de vencimiento'], ['quality', 'Guía de calidad']];
+const TPL_ALL = [...TPL, ['followup', 'Seguimiento de una demo que terminó'], ['vendor', 'Acceso al panel para un vendedor']];
 /** Direccion del panel que se da a los vendedores: la de Ajustes o, si no hay, la que se esta usando ahora */
 function panelUrl() {
   const set = (S.d.settings.brand || {}).url;
@@ -3921,17 +4809,29 @@ function dMessage(c, password, key) {
   openDlg({
     title: `Mensaje para ${c.panelName}`, submit: 'Copiar mensaje',
     body: `<label class="f">Plantilla<select name="tpl">${options(TPL, key || (c.demo ? 'demo' : 'created'))}</select></label>
+      <label class="check"><input type="checkbox" name="guide" checked> Añadir al final la guía para poner la calidad al máximo (en cuentas y demos nuevas)</label>
       <label class="f">Mensaje (puedes retocarlo antes de copiarlo)<textarea name="msg" rows="13" style="font-family:ui-monospace,Consolas,monospace;font-size:13.5px"></textarea></label>
       ${notes.map((n) => `<p class="muted small" style="margin-bottom:8px">${n}</p>`).join('')}
       ${wa ? '<a class="btn" id="waLink" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">Enviar por WhatsApp</a>' : ''}`,
     onOpen: () => {
       const f = dlgForm;
       const link = () => { const a = $('#waLink', f); if (a) a.href = `https://wa.me/${wa}?text=${encodeURIComponent(f.elements.msg.value)}`; };
-      const upd = () => { f.elements.msg.value = fillTpl(f.elements.tpl.value, c, password); link(); };
-      f.elements.tpl.onchange = upd; f.elements.msg.oninput = link; upd();
+      const upd = () => { const k = f.elements.tpl.value, add = f.elements.guide.checked && (k === 'created' || k === 'demo'); f.elements.msg.value = fillTpl(k, c, password) + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link(); };
+      f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; f.elements.msg.oninput = link; upd();
     },
     onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Mensaje copiado'; },
   });
+}
+/** Guía de calidad para un cliente: por Telegram (si lo tiene enlazado), WhatsApp o copiar */
+function dGuide(c) {
+  const text = fillTpl('quality', c, ''), wa = waNum(c.whatsapp), bot = S.d.settings.notices.telegram.bot;
+  openDlg({ title: `Guía de calidad para ${c.panelName}`, submit: 'Copiar guía',
+    body: `<label class="f">Mensaje (puedes retocarlo; el texto fijo se cambia en Plantillas de mensajes)<textarea name="msg" rows="8">${esc(text)}</textarea></label>
+      <div class="qacts">${c.tgLinked && bot ? `<button type="button" class="btn primary" data-act="guide-tg" data-id="${c.id}">${ic('send')}Enviar por Telegram</button>` : ''}
+      ${wa ? `<a class="btn" id="guideWa" target="_blank" rel="noopener" style="text-decoration:none" href="https://wa.me/${wa}?text=${encodeURIComponent(text)}">Enviar por WhatsApp</a>` : ''}</div>
+      ${!c.tgLinked ? '<p class="small muted" style="margin-top:8px">Este cliente no tiene Telegram enlazado con el bot: mándasela por WhatsApp o cópiala.</p>' : ''}`,
+    onOpen: () => { const f = dlgForm; f.elements.msg.oninput = () => { const a = $('#guideWa', f); if (a) a.href = `https://wa.me/${wa}?text=${encodeURIComponent(f.elements.msg.value)}`; }; },
+    onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Guía copiada: pégala en el chat'; } });
 }
 function vPlantillas() {
   const t = S.d.settings.templates || {};
@@ -3952,7 +4852,10 @@ function dServer(s) {
       <p class="muted small">La API key se crea en Emby: Ajustes, Avanzado, Claves de API. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,
     onSubmit: async (fd) => {
       const body = { name: fd.get('name'), url: fd.get('url'), publicUrl: fd.get('publicUrl'), apiKey: fd.get('apiKey') };
-      if (s) await api('PUT', `/api/servers/${s.id}`, body); else await api('POST', '/api/servers', body);
+      if (s) {
+        try { await api('PUT', `/api/servers/${s.id}`, body); }
+        catch (e) { if (e.status !== 409 || !window.confirm(e.message + '\n\n¿Seguro que quieres cambiarlo? Las cuentas del panel están creadas en el servidor anterior.')) throw e; await api('PUT', `/api/servers/${s.id}`, { ...body, confirmOther: true }); }
+      } else await api('POST', '/api/servers', body);
       return 'Conexión con Emby correcta';
     },
   });
@@ -4069,8 +4972,14 @@ function dCredits(u) {
       ${packs.length ? `<label class="f">Paquete<select name="pack"><option value="">Sin paquete</option>${packs.map((p, k) => `<option value="${k}">${esc(p.name)} (${plural(p.credits, 'crédito', 'créditos')})</option>`).join('')}</select></label>` : ''}
       <label class="f">Créditos adicionales${neg ? (mine ? ' (número negativo para que te los devuelva)' : ' (número negativo para restar)') : ''}<input type="number" name="amount" step="1" ${neg ? 'min="-100000"' : 'min="0"'} max="100000" placeholder="0"></label>
       ${mine ? '' : `<label class="f">Motivo (opcional)<select name="reason"><option value="">Sin motivo</option>${reasons.map((r) => `<option>${r}</option>`).join('')}</select></label>`}
-      <label class="f">Nota (opcional)<input name="note" maxlength="120" placeholder="Pago por Bizum, transferencia…"></label>
-      <p class="preview" id="cost"></p>`,
+      <label class="f">Nota (opcional)<input name="note" maxlength="120" placeholder="Algo que quieras recordar de esta recarga"></label>
+      <p class="preview" id="cost"></p>
+      <fieldset class="payfs" id="payBox"><legend>${ic('wallet')}Cobro de esta recarga</legend>
+        <div class="pmeth">${PAY_METHODS.map((m, i) => `<label><input type="radio" name="pmethod" value="${m}"${i === 0 ? ' checked' : ''}><span>${m}</span></label>`).join('')}</div>
+        <div class="row2 pamount"><label class="f">Importe<input type="number" name="pamount" min="0" step="0.01" inputmode="decimal"></label>
+          <label class="f">Referencia (opcional)<input name="pref" maxlength="60" placeholder="Concepto del Bizum, nº de transferencia…"></label></div>
+        <div class="pstat"><label><input type="radio" name="pstatus" value="paid" checked><span>${ic('check')}Ya pagado</span></label><label><input type="radio" name="pstatus" value="pending"><span>${ic('clock')}Pendiente (fiado)</span></label></div>
+      </fieldset>`,
     onOpen: () => {
       const f = dlgForm, btn = $('button[type=submit]', f);
       const upd = () => {
@@ -4082,11 +4991,19 @@ function dCredits(u) {
           : short ? `<span class="err" style="max-width:none">Son ${total} créditos y tú tienes ${me().credits}.</span>`
             : `${total > 0 ? 'Se le suman' : 'Se le restan'} <b>${Math.abs(total)}</b>. <span class="muted small">Tiene ${u.credits}, se queda con ${after}${u.creditPrice ? ' (' + eur(after * u.creditPrice) + ')' : ''}.</span>`;
         btn.disabled = total === 0 || short;
+        // Cobro: solo cuando se suman créditos. El importe se rellena con su precio hasta que lo cambies a mano
+        const box = $('#payBox', f); box.hidden = total <= 0;
+        const gift = (f.querySelector('[name=pmethod]:checked') || {}).value === 'Sin cobro';
+        $('.pamount', f).hidden = gift; $('.pstat', f).hidden = gift;
+        const pa = f.elements.pamount; if (!pa.dataset.touched) pa.value = total > 0 && u.creditPrice ? (Math.round(total * u.creditPrice * 100) / 100) : (pa.value || '');
       };
+      f.elements.pamount.addEventListener('input', () => { f.elements.pamount.dataset.touched = '1'; });
       f.oninput = upd; f.onchange = upd; upd();
     },
     onSubmit: async (fd) => {
-      const r = await api('POST', `/api/users/${u.id}/credits`, { pack: fd.get('pack') || '', amount: fd.get('amount') === '' ? 0 : +fd.get('amount'), reason: fd.get('reason') || '', note: fd.get('note') });
+      const pk = fd.get('pack') !== null && fd.get('pack') !== '' ? packs[+fd.get('pack')].credits : 0, tot = pk + (+fd.get('amount') || 0);
+      const payment = tot > 0 ? { method: fd.get('pmethod'), amount: +fd.get('pamount') || 0, ref: fd.get('pref') || '', status: fd.get('pstatus') } : null;
+      const r = await api('POST', `/api/users/${u.id}/credits`, { pack: fd.get('pack') || '', amount: fd.get('amount') === '' ? 0 : +fd.get('amount'), reason: fd.get('reason') || '', note: fd.get('note'), payment });
       return `${u.name} tiene ahora ${plural(r.credits, 'crédito', 'créditos')}`;
     },
   });
@@ -4099,6 +5016,13 @@ function closeMenu() { $('.side').classList.remove('open'); $('#shade').classLis
 document.addEventListener('change', (e) => {
   if (e.target.id === 'lgWhen') { S.lg.when = e.target.value; S.lg.n = 200; render(); }
   if (e.target.id === 'lgKind') { S.lg.kind = e.target.value; S.lg.n = 200; render(); }
+  if (e.target.id === 'vpMonth') { S.vp.month = e.target.value; S.vp.data = null; loadVpay(); }
+  if (e.target.id === 'stDays') { const uu = S.d.users.find((v) => v.id === +e.target.dataset.id); if (uu) dStatement(uu, +e.target.value); }
+  if (e.target.id === 'vbWho') { const t = $('#vbText'); if (t) S.vb.text = t.value; S.vb.who = e.target.value; vbRefresh(); }
+  if (e.target.id === 'bcWho' || e.target.id === 'bcSrv' || e.target.id === 'bcOwner') { const b = S.bc, t = $('#bcText'); if (t) b.text = t.value; if (e.target.id === 'bcWho') b.who = e.target.value; else if (e.target.id === 'bcSrv') b.serverId = +e.target.value; else b.ownerId = +e.target.value; bcRefresh(); }
+  if (e.target.id === 'accUser') { S.acc.user = e.target.value; render(); }
+  if (e.target.id === 'accKind') { S.acc.kind = e.target.value; render(); }
+  if (e.target.id === 'accPeriod') { S.acc.period = e.target.value; render(); }
   if (e.target.id === 'lgActor') { S.lg.actor = e.target.value; S.lg.n = 200; render(); }
   if (e.target.id === 'fOwner') { S.fOwner = +e.target.value || 0; S.page = 1; render(); }
   if (e.target.id === 'fServer') { S.fServer = +e.target.value || 0; S.page = 1; render(); }
@@ -4225,11 +5149,60 @@ document.addEventListener('click', (e) => {
   if (a === 'sec-tgoff') { api('POST', '/api/security/tg/unlink', {}).then(() => { toast('Telegram desenlazado'); loadSec(); }, (x) => toast(x.message, true)); return; }
   if (a === 'sec-close' || a === 'sec-closeall') { api('POST', '/api/security/sessions/close', a === 'sec-closeall' ? { all: true } : { sid: el.dataset.sid }).then((r) => { toast(r.closed === 1 ? 'Sesión cerrada' : `${r.closed} sesiones cerradas`); loadSec(); }, (x) => toast(x.message, true)); return; }
   if (a === 'mon-reload') { loadMon(); return; }
-  if (a === 'mon-auto') { S.mon.auto = !S.mon.auto; S.mon.left = S.mon.every; el.setAttribute('aria-pressed', S.mon.auto); el.textContent = 'Auto ' + (S.mon.auto ? 'ON' : 'OFF'); const l = $('#monLeft'); if (l) l.textContent = S.mon.auto ? S.mon.left + ' s' : 'pausa'; return; }
+  if (a === 'mon-auto') { S.mon.auto = !S.mon.auto; S.mon.left = S.mon.every; el.setAttribute('aria-pressed', S.mon.auto); el.textContent = S.mon.auto ? '⏸ Pausar monitorización' : '▶ Iniciar monitorización'; if (S.mon.auto) loadMon(); const l = $('#monLeft'); if (l) l.textContent = S.mon.auto ? S.mon.left + ' s' : 'pausa'; return; }
   if (a === 'mon-k') { const k = el.dataset.k, f = S.mon; if (k === 'all') Object.assign(f, { st: 'all', tr: 'all', kind: 'all' }); else if (k === 'play' || k === 'pause') f.st = f.st === k ? 'all' : k; else if (k === 'tr') f.tr = f.tr === 'yes' ? 'all' : 'yes'; else f.kind = f.kind === k ? 'all' : k; monPaint(); return; }
   if (a === 'mon-srv') { S.mon.srv = S.mon.srv === id ? 0 : id; monPaint(); return; }
   if (a === 'mon-stop') { monStop(el); return; }
   if (a === 'mon-msg') { monMsg(el); return; }
+  if (a === 'mon-notice') { monNotice(el); return; }
+  if (a === 'guide-tg') { el.disabled = true; api('POST', `/api/clients/${id}/guide`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Guía enviada por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
+  if (a === 'lic-new') { licNew(); return; }
+  if (a === 'lic-renew') { licRenew(id); return; }
+  if (a === 'lic-edit') { licEdit(id); return; }
+  if (a === 'lic-more') { licMore(id); return; }
+  if (a === 'lic-cal') { const st = +el.dataset.step, [yy, mm] = S.lic.cal.split('-').map(Number), t = new Date(Date.UTC(yy, mm - 1 + st, 1)); S.lic.cal = `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}`; render(); return; }
+  if (a === 'lic-copy') { copyText($('#licTok').textContent, $('#licTok')).then(() => toast('Clave copiada')); return; }
+  if (a === 'lic-block') { const l = licOf(id); api('POST', `/api/licenses/${id}/block`, { blocked: !l.blocked }).then(() => { dlg.close(); toast(l.blocked ? `${l.name}: desbloqueada` : `${l.name}: bloqueada`); S.lic.data = null; loadLic(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'lic-token') { const l = licOf(id); openDlg({ title: 'Clave nueva para ' + l.name, submit: 'Crear clave nueva', danger: true, body: '<p>La clave actual dejará de servir. Tendrás que poner la nueva en Coolify, en su aplicación, o su panel se pausará.</p>', onSubmit: async () => { S.lic.tok = { name: l.name, token: (await api('POST', `/api/licenses/${id}/token`, {})).token }; return ''; }, after: () => { if (S.lic.tok) { licShowToken(S.lic.tok.name, S.lic.tok.token); S.lic.tok = null; } } }); return; }
+  if (a === 'lic-del') { const l = licOf(id); dConfirm('Borrar la licencia de ' + l.name, 'Su panel se pondrá en pausa en unos minutos. Las cuentas Emby de sus clientes no se tocan.', 'Borrar', async () => { await api('DELETE', `/api/licenses/${id}`); S.lic.data = null; loadLic(); }, 'Licencia borrada'); return; }
+  if (a === 'vp-reload') { S.vp.data = null; loadVpay(); render(); return; }
+  if (a === 'vp-settle') { vpSettle(id); return; }
+  if (a === 'vp-remind') { vpRemind(id); return; }
+  if (a === 'vp-tg') { el.disabled = true; api('POST', '/api/vpay/remind', { userId: id, text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Recordatorio enviado por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
+  if (a === 'st-tg') { el.disabled = true; api('POST', `/api/users/${id}/statement/send`, { days: +el.dataset.days }).then(() => toast('Extracto enviado por Telegram'), (x) => { el.disabled = false; toast(x.message, true); }); return; }
+  if (a === 'st-copy') { const t = S.vp.st && S.vp.st.text; if (t) navigator.clipboard.writeText(t).then(() => toast('Resumen copiado: pégalo en el chat'), () => toast('No se pudo copiar', true)); return; }
+  if (a === 'st-csv') { const st = S.vp.st; if (!st) return; const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`; const lines = [['Fecha', 'Movimiento', 'Créditos', 'Saldo'].map(q).join(';'), ...st.rows.map((r) => [new Date(r.ts).toLocaleString('es-ES'), r.text, r.delta, r.balance].map(q).join(';'))]; const l = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })), download: `extracto-${st.user.name}-${S.d.today}.csv` }); l.click(); return; }
+  if (a === 'tm-reload') { S.tm.data = null; loadTeam(); render(); return; }
+  if (a === 'tm-acc') { S.acc.user = String(id); S.acc.kind = 'all'; S.acc.data = null; S.view = 'accesos'; render(); window.scrollTo(0, 0); return; }
+  if (a === 'tm-msg') { tmMsg(id); return; }
+  if (a === 'tm-tg') { el.disabled = true; api('POST', `/api/users/${id}/message`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Enviado por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
+  if (a === 'inc-close') { api('POST', `/api/incidents/${el.dataset.k}`, { unblock: !!el.dataset.unblock }).then(async () => { S.tm.data = null; await reload(); toast(el.dataset.unblock ? 'Desbloqueado' : 'Marcado como revisado'); }, (x) => toast(x.message, true)); return; }
+  if (a === 'daily-test') { api('POST', '/api/daily/test', {}).then(() => toast('Resumen enviado: mira tu Telegram'), (x) => toast(x.message, true)); return; }
+  if (a === 'm-conn') { const cc = S.d.clients.find((v) => v.id === id); if (cc) dConn(cc); return; }
+  if (a === 'sh-reload') { S.sh.data = null; loadShared(); render(); return; }
+  if (a === 'sh-msg') { const cc = S.d.clients.find((v) => v.id === id); if (cc) dShareMsg(cc); return; }
+  if (a === 'qm-tg') {
+    const msg = (dlgForm.elements.msg || {}).value || '', url = el.dataset.url;
+    el.disabled = true;
+    api('POST', url || `/api/clients/${id}/guide`, { text: msg }).then(() => { if (dlg.open) dlg.close(); toast('Enviado por Telegram'); if (url) { S.fu.data = null; reload(); } }, (x) => { el.disabled = false; toast(x.message, true); });
+    return;
+  }
+  if (a === 'fu-tab') { S.fu.tab = el.dataset.k; render(); return; }
+  if (a === 'fu-msg') { const x = (S.fu.data.list || []).find((v) => v.id === el.dataset.k); if (x) dQuickMsg({ panelName: x.name, whatsapp: x.whatsapp, tgLinked: x.tgLinked }, 'Escribir a ' + x.name, x.text, x.tgLinked && S.d.settings.notices.telegram.bot ? `/api/followups/${x.id}/telegram` : ''); return; }
+  if (a === 'fu-set') { api('POST', `/api/followups/${el.dataset.k}`, { status: el.dataset.st }).then(async () => { S.fu.data = null; await reload(); toast(el.dataset.st === 'done' ? 'Apuntado como hecho' : el.dataset.st === 'skip' ? 'Descartado' : 'Vuelve a pendientes'); }, (x) => toast(x.message, true)); return; }
+  if (a === 'acc-reload') { S.acc.data = null; loadAccess(); render(); return; }
+  if (a === 'acc-csv') { accCsv(); return; }
+  if (a === 'acc-did') { S.lg.actor = String(id); S.lg.n = 200; S.logs = null; S.view = 'logs'; render(); window.scrollTo(0, 0); return; }
+  if (a === 'qg-reload') { S.qg.data = null; loadQuality(); return; }
+  if (a === 'qg-open') { const q = S.qg; if (q.open.has(id)) q.open.delete(id); else q.open.add(id); qPaint(); return; }
+  if (a === 'qg-run') { qRun(el.dataset.mode, id); return; }
+  if (a === 'qg-rep') { qReport(el.dataset.id); return; }
+  if (a === 'qg-csv') { qCsv(); return; }
+  if (a === 'qg-bk') { qBackupDl(el.dataset.name); return; }
+  if (a === 'qg-backups') { qBackups(); return; }
+  if (a === 'qg-undo') { qUndo(el.dataset.name); return; }
+  if (a === 'm-guide' || a === 'al-guide') { const cc = S.d.clients.find((v) => v.id === id); if (cc) dGuide(cc); else toast('Esa cuenta ya no está en el panel.', true); return; }
+  if (a === 'qg-ex') { const on = el.checked; api('POST', '/api/quality/exclude', { serverId: +el.dataset.sid, userId: el.dataset.uid, on }).then(() => { const x = S.qg.data.servers.find((v) => v.id === +el.dataset.sid), r = x && x.rows.find((v) => v.id === el.dataset.uid); if (r) { const was = r.status; r.status = on ? 'excluido' : (r.value == null ? 'nodisp' : r.value === x.bps ? 'correcto' : 'pendiente'); x.counts[was] = Math.max(0, (x.counts[was] || 0) - 1); x.counts[r.status] = (x.counts[r.status] || 0) + 1; } qPaint(); toast(on ? 'Excluido: no se le cambiará la calidad' : 'Ya no está excluido'); }, (x) => { el.checked = !on; toast(x.message, true); }); return; }
   if (a === 'mon-tpl') { const t = el.closest('form').elements.text; t.value = el.dataset.m; t.focus(); return; }
   if (a === 'gate-back') { gateStep(false); return; }
   if (a === 'gate-cap') { newCaptcha(); $('#gateForm').elements.captcha.focus(); return; }
@@ -4289,6 +5262,7 @@ document.addEventListener('click', (e) => {
     case 'bulk-repair': dBulkRepair(); break;
     case 'bulk-dates': dBulkDates(); break;
     case 'bulk-trash': dBulkTrash(); break;
+    case 'al-tipmsg': { const t = $('#alcfg textarea[name=tipText]'); if (t) { t.value = QUALITY_TEXT; t.focus(); } break; }
     case 'bulk-off': { const ids = bulkIds(); openDlg({ title: 'Desactivar cuentas', submit: 'Desactivar',
       body: `<p class="preview">Afecta a <b>${bulkScope(ids)}</b>.</p><p class="muted small">Se bloquean en Emby y dejan de ver contenido, pero siguen en tu lista (filtro «Desactivados»). No se borran ni van a la papelera. Su fecha de vencimiento sigue corriendo. Las vuelves a activar cuando quieras.</p>`,
       onSubmit: async () => bulkResult(await bulkCall('/api/bulk/off', ids, {}), 'Desactivar cuentas', 'cuenta desactivada', 'cuentas desactivadas', 'ya estaban desactivadas o en la papelera') }); break; }
@@ -4355,6 +5329,7 @@ document.addEventListener('click', (e) => {
     case 'ven-cfg': if (usr) dVenCfg(usr); break;
     case 'user-stats': if (usr) dUserStats(usr); break;
     case 'user-ledger': if (usr) dLedger(usr); break;
+    case 'user-statement': if (usr) dStatement(usr); break;
     case 'user-more': if (usr) dUserMore(usr); break;
     case 'adm-tab': S.admTab = el.dataset.k; render(); break;
     case 'tm-tab': S.tmTab = el.dataset.k; render(); break;
@@ -4383,6 +5358,7 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('input', (e) => {
   const id = e.target.id;
+  if (e.target.dataset.qf) { const sid = +e.target.dataset.qf, pos = e.target.selectionStart; S.qg.f[sid] = e.target.value; qPaint(); const n = $(`[data-qf="${sid}"]`); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) { /* */ } } return; }
   if (id === 'vq') { // filtra la lista de vendedores sin repintar la pagina
     const t = e.target.value.trim().toLowerCase(), list = e.target.nextElementSibling;
     let n = 0;
@@ -4393,6 +5369,7 @@ document.addEventListener('input', (e) => {
   if (id === 'buyN' && S.pay) { const p = $('#buyP'); if (p) p.textContent = money((+e.target.value || 0) * S.pay.price, S.pay.currency); return; }
   if (id === 'dq') { S.dq = e.target.value; const r = $('#dqr'); if (r) r.innerHTML = dqHtml(); if (S.d.servers.length && !S.seen && Date.now() - S.seenAt > 60000) loadSeen(); return; }
   if (id === 'monQ') { S.mon.q = e.target.value; monPaint(); return; }
+  if (id === 'accq') { S.acc.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#accq'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
   if (id === 'admq') S.admQ = e.target.value;
   if (id === 'lgq') { S.lg.q = e.target.value; S.lg.n = 200; }
   if (id !== 'q' && id !== 'uq' && id !== 'aq' && id !== 'admq' && id !== 'lgq') return;
@@ -4402,6 +5379,51 @@ document.addEventListener('input', (e) => {
   const q = $('#' + id); q.focus(); q.setSelectionRange(pos, pos);
 });
 document.addEventListener('submit', (e) => {
+  if (e.target.id === 'licContact') { e.preventDefault(); api('PUT', '/api/licenses/contact', { contact: e.target.elements.contact.value }).then(() => { toast('Contacto guardado'); S.lic.data = null; loadLic(); }, (x) => toast(x.message, true)); return; }
+  if (e.target.id === 'vpCfg') {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    api('PUT', '/api/vpay/config', { limit: +fd.get('limit'), days: +fd.get('days'), remind: +fd.get('remind'), giftAlert: +fd.get('giftAlert'), receipts: fd.get('receipts') === 'on', monthly: fd.get('monthly') === 'on' })
+      .then(() => { toast('Ajustes de cobros guardados'); S.vp.data = null; loadVpay(); }).catch((x) => toast(x.message, true));
+    return;
+  }
+  if (e.target.id === 'guardForm') {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    api('PUT', '/api/guard', { on: fd.get('on') === 'on', block: fd.get('block') === 'on', limit: +fd.get('limit'), minutes: +fd.get('minutes') })
+      .then(async () => { toast('Alerta guardada'); S.tm.data = null; await loadTeam(); }).catch((x) => toast(x.message, true));
+    return;
+  }
+  if (e.target.id === 'vbForm') {
+    e.preventDefault();
+    const b = S.vb, text = e.target.elements.text.value.trim(); b.text = text;
+    if (!b.prev || !b.prev.targets) return toast('Nadie de ese grupo tiene Telegram enlazado.', true);
+    dConfirm('Enviar mensaje al equipo', `Le llegará por Telegram a <b>${plural(b.prev.targets, 'persona', 'personas')}</b>. No se puede deshacer.<pre class="qprev">${esc(text)}</pre>`, 'Enviar ahora',
+      async () => { await api('POST', '/api/vbroadcast', { text, who: b.who }); b.text = ''; setTimeout(vbRefresh, 300); }, 'Enviando…');
+    return;
+  }
+  if (e.target.id === 'bcForm') {
+    e.preventDefault();
+    const b = S.bc, text = e.target.elements.text.value.trim(); b.text = text;
+    if (!b.prev || !b.prev.targets) return toast('Ninguno de esos clientes tiene Telegram enlazado.', true);
+    dConfirm('Enviar mensaje a clientes', `Le llegará por Telegram a <b>${plural(b.prev.targets, 'cliente', 'clientes')}</b>. No se puede deshacer.<pre class="qprev">${esc(text)}</pre>`, 'Enviar ahora',
+      async () => { await api('POST', '/api/broadcast', { text, who: b.who, serverId: b.serverId, ownerId: b.ownerId }); b.text = ''; setTimeout(bcRefresh, 300); }, 'Enviando…');
+    return;
+  }
+  if (e.target.id === 'qguard') {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    api('PUT', '/api/quality/guard', { daily: { on: fd.get('dOn') === 'on', hour: +fd.get('dHour') }, sat: { on: fd.get('sOn') === 'on', limit: +fd.get('sLimit'), cooldown: +fd.get('sCd') } })
+      .then(async () => { toast('Vigilancia guardada'); await loadQuality(true); }).catch((x) => toast(x.message, true));
+    return;
+  }
+  if (e.target.dataset.qcfg) {
+    e.preventDefault();
+    const fd = new FormData(e.target), sid = +e.target.dataset.qcfg;
+    api('PUT', `/api/quality/server/${sid}`, { mbps: +fd.get('mbps'), auto: fd.get('auto') === 'on' })
+      .then(async () => { toast('Guardado. Pulsa Simular para ver a quién afecta.'); S.qg.data = null; await loadQuality(); }).catch((x) => toast(x.message, true));
+    return;
+  }
   if (e.target.id === 'rules') {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -4458,8 +5480,8 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'alcfg') {
     e.preventDefault();
     const fd = new FormData(e.target), k = e.target.dataset.k;
-    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', message: fd.get('message'), retention: +fd.get('retention') } })
-      .then(async () => { await loadAlerts(); render(); toast('Configuración guardada'); }).catch((x) => toast(x.message, true));
+    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', tip: fd.get('tip') === 'on', ...(k === 'transcode' ? { tipEvery: +fd.get('tipEvery'), tipText: fd.get('tipText') } : {}), message: fd.get('message'), retention: +fd.get('retention') } })
+      .then(async () => { await loadAlerts(); await reload(); toast('Configuración guardada'); }).catch((x) => toast(x.message, true));
   }
   if (e.target.id === 'noticeForm') {
     e.preventDefault();

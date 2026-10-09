@@ -27,7 +27,7 @@ const CHECK_EVERY_MS = 60 * 1000;
 
 /* Alertas: los dos modulos vienen apagados; los enciende un administrador */
 const DEFAULT_ALERTS = {
-  transcode: { on: false, stop: true, onlyVideo: true, retention: 30, message: 'Tu dispositivo está convirtiendo el vídeo (transcodificando). Elige calidad original o usa la app oficial de Emby.' },
+  transcode: { on: false, stop: true, tip: true, tipEvery: 30, tipText: '', onlyVideo: true, retention: 30, message: 'Tu app está convirtiendo el vídeo y eso satura el servidor. Ve a Ajustes › Reproducción › Velocidad de transmisión máx. y elige la más alta (1000 Mbit/s o la máxima que tenga). Así se verá fluido.' },
   sessions: { on: false, stop: false, retention: 30, grace: 5, policy: 'newest', message: 'Has superado el número de pantallas de tu cuenta. Se ha detenido esta reproducción.' },
 };
 /* Avisos de vencimiento al cliente. Vienen apagados; los enciende el superadministrador */
@@ -75,6 +75,8 @@ const DEFAULT_TEMPLATES = {
   demo: 'Hola {nombre} 👋\n\nTu demo de Emby está lista:\n\nUsuario: {usuario}\nContraseña: {contraseña}\nServidor: {servidor}\nDirección: {direccion}\nTermina: {vence}\n\nSi te gusta, avísame antes de que termine y te la dejo como cuenta fija.',
   renewed: 'Hola {nombre} 👋\n\nTu cuenta Emby ({usuario}) está renovada.\nNuevo vencimiento: {vence}\n\n¡Gracias!',
   expiring: 'Hola {nombre} 👋\n\nTu cuenta Emby ({usuario}) vence el {vence}.\nAvísame si quieres renovarla para no quedarte sin servicio.',
+  quality: '📺 Para ver Emby con la mejor calidad y sin cortes:\n1. Abre Emby en tu aparato y entra en Ajustes.\n2. Busca «Reproducción», «Calidad de vídeo» o «Calidad remota».\n3. Elige la calidad máxima: el valor más alto que aparezca (por ejemplo 1000 Mbps o «Máxima»).\nDespués, vuelve a reproducir el vídeo. Hazlo en cada aparato donde uses Emby.',
+  followup: 'Hola {nombre} 👋\n\n¿Qué tal la prueba de Emby? Si te ha gustado, te la dejo hoy mismo como cuenta fija con todo el contenido.\n\n¿Te la activo?',
   vendor: 'Hola {nombre} 👋\n\nYa tienes acceso al panel {panel}:\n\nDirección: {direccion}\nUsuario: {usuario}\nContraseña: {contraseña}\nTipo de cuenta: {tipo}\nCréditos: {creditos}\n\nCambia la contraseña al entrar, en Panel, Mi contraseña.',
 };
 const DEFAULT_SETTINGS = { graceDays: 5, purgeDays: 30, demoPurgeDays: 1, warnDays: 7, demoMax: 3, demoHours: [2, 4, 12], monitorSec: 30, liveSec: 15, currency: 'EUR', creditPrice: 0,
@@ -97,6 +99,25 @@ function loadDb() {
   const nt = db.settings.notices || {};
   db.settings.notices = { screen: { ...DEFAULT_NOTICES.screen, ...(nt.screen || {}) }, chat: { ...DEFAULT_NOTICES.chat, ...(nt.chat || {}) }, telegram: { ...DEFAULT_NOTICES.telegram, ...(nt.telegram || {}) } };
   if (!db.secret) db.secret = crypto.randomBytes(24).toString('hex');
+  openApiKeys(db.servers);
+  if (!Array.isArray(db.access)) db.access = [];
+  if (!Array.isArray(db.followups)) db.followups = [];
+  if (!Array.isArray(db.broadcasts)) db.broadcasts = [];
+  if (!Array.isArray(db.incidents)) db.incidents = [];
+  if (!Array.isArray(db.vpay)) db.vpay = [];
+  if (!Array.isArray(db.licenses)) db.licenses = [];
+  if (typeof db.settings.licContact !== 'string') db.settings.licContact = '';
+  if (!db.licState || typeof db.licState !== 'object') db.licState = {};
+  db.settings.vpay = { limit: 0, days: 0, remind: 3, receipts: true, monthly: false, giftAlert: 50, ...(db.settings.vpay || {}) };
+  db.settings.guard = { on: true, limit: 10, minutes: 10, block: false, ...(db.settings.guard || {}) };
+  if (!Array.isArray(db.churn)) { // renovaciones y bajas por vendedor; la primera vez se rellena con el registro
+    db.churn = [];
+    for (const l of db.log) {
+      if (l.type === 'renovacion' && /^Renovada/.test(l.text) && l.ownerId != null) db.churn.push({ t: l.ts, o: l.ownerId, k: 'ren' });
+      if (l.type === 'papelera' && /sin renovar/i.test(l.text) && l.ownerId != null) db.churn.push({ t: l.ts, o: l.ownerId, k: 'lost' });
+    }
+  }
+  db.quality = { servers: {}, reports: [], ...(db.quality || {}) };
   db.settings.alerts = { transcode: { ...DEFAULT_ALERTS.transcode, ...(al.transcode || {}) }, sessions: { ...DEFAULT_ALERTS.sessions, ...(al.sessions || {}) } };
   if (!Array.isArray(db.alerts)) db.alerts = [];
   db.settings.security = { idleMin: 180, ...(db.settings.security || {}) };
@@ -116,9 +137,57 @@ function loadDb() {
     if (c.quality === undefined) c.quality = null;
   }
 }
+/* API keys de Emby cifradas en el disco (AES-256-GCM). La clave vive en data/clave-servidores.key
+   (o en la variable SERVER_KEY). En memoria se usan en claro; nunca se mandan al navegador ni a los registros. */
+const KEY_FILE = path.join(DATA_DIR, 'clave-servidores.key');
+let srvKeyBuf = null;
+function srvKey() {
+  if (srvKeyBuf) return srvKeyBuf;
+  const env = String(process.env.SERVER_KEY || '');
+  if (/^[0-9a-f]{64}$/i.test(env)) srvKeyBuf = Buffer.from(env, 'hex');
+  else {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (fs.existsSync(KEY_FILE)) srvKeyBuf = Buffer.from(fs.readFileSync(KEY_FILE, 'utf8').trim(), 'hex');
+    if (!srvKeyBuf || srvKeyBuf.length !== 32) { srvKeyBuf = crypto.randomBytes(32); fs.writeFileSync(KEY_FILE, srvKeyBuf.toString('hex'), { mode: 0o600 }); }
+  }
+  return srvKeyBuf;
+}
+const encMemo = new Map(); // clave en claro -> texto cifrado (para no recifrar en cada guardado)
+function encApiKey(plain) {
+  if (!plain) return '';
+  if (encMemo.has(plain)) return encMemo.get(plain);
+  const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', srvKey(), iv);
+  const ct = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
+  const out = ['v1', iv.toString('base64'), c.getAuthTag().toString('base64'), ct.toString('base64')].join(':');
+  encMemo.set(plain, out);
+  return out;
+}
+function decApiKey(enc) {
+  const [v, iv, tag, ct] = String(enc || '').split(':');
+  if (v !== 'v1') throw new Error('formato desconocido');
+  const d = crypto.createDecipheriv('aes-256-gcm', srvKey(), Buffer.from(iv, 'base64'));
+  d.setAuthTag(Buffer.from(tag, 'base64'));
+  const plain = Buffer.concat([d.update(Buffer.from(ct, 'base64')), d.final()]).toString('utf8');
+  encMemo.set(plain, enc);
+  return plain;
+}
+/** Lo que se escribe en db.json: igual que en memoria, pero con las API keys cifradas */
+function dbForDisk() {
+  // Si una clave no se pudo descifrar (falta el archivo de la clave), se guarda tal cual estaba: si el archivo vuelve, se recupera
+  return { ...db, servers: (db.servers || []).map(({ apiKey, lostEnc, keyLost, ...x }) => ({ ...x, apiKeyEnc: apiKey ? encApiKey(apiKey) : (lostEnc || '') })) };
+}
+/** Al cargar: descifra las API keys. Si no se puede (falta la clave), el servidor queda marcado para volver a pegar su API key */
+function openApiKeys(list) {
+  for (const x of list || []) {
+    if (x.apiKeyEnc) {
+      try { x.apiKey = decApiKey(x.apiKeyEnc); delete x.keyLost; delete x.lostEnc; } catch { x.apiKey = ''; x.keyLost = true; x.lostEnc = x.apiKeyEnc; }
+      delete x.apiKeyEnc;
+    }
+  }
+}
 function saveDb() {
   const tmp = DB_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
+  fs.writeFileSync(tmp, JSON.stringify(dbForDisk(), null, 2));
   fs.renameSync(tmp, DB_FILE);
 }
 function backupDb() {
@@ -151,6 +220,7 @@ function addLog(type, client, text, actor) {
     text, auto: !actor,
   });
   if (db.log.length > 5000) db.log.length = 5000;
+  if (actor && actor.role && actor.role !== 'super') guardTrack(actor, type, text);
 }
 /** kind: credito (recarga), asignacion (traspaso a un subreseller), alta, renovacion, ajuste */
 function addLedger(user, delta, text, by, kind, paid) {
@@ -224,6 +294,7 @@ function lockDown(pol) {
   pol.EnableRemoteControlOfOtherUsers = false;
   pol.EnableLiveTvManagement = false;
   pol.EnableVideoPlaybackTranscoding = false; // ningun cliente puede transcodificar video: es lo que mas carga el servidor
+  pol.RemoteClientBitrateLimit = 0; // sin tope de velocidad en el servidor: un tope bajo obliga a convertir el video
   return pol;
 }
 const polHasLibs = (pol) => !!pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0;
@@ -240,6 +311,9 @@ async function grantAccess(client) {
   pol.EnableAllFolders = !!acc.all;
   pol.EnabledFolders = acc.all ? [] : acc.folders;
   if (client.screens > 0) pol.SimultaneousStreamLimit = client.screens;
+  // Calidad remota: si el servidor la tiene activada y este Emby trae el ajuste, se pone el objetivo
+  const qc = db.quality && db.quality.servers[s.id];
+  if (qc && qc.auto && 'AutoRemoteQuality' in pol && !(qc.exclude || []).includes(client.embyId)) pol.AutoRemoteQuality = Math.round((qc.mbps || 100) * 1e6);
   await emby(s, 'POST', `/Users/${client.embyId}/Policy`, pol);
   const now = await readPolicy(s, client.embyId);
   if (now.IsAdministrator) throw new Error('Emby sigue marcando la cuenta como administrador. Revísala en Emby.');
@@ -295,6 +369,7 @@ async function lifecycle() {
       if (c.demo && c.status === 'active' && now >= Date.parse(c.expiresAt)) {
         await removeAccess(c, true);
         c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Demo terminada'; delete c.off; delete c.offBy;
+        addFollowup(c);
         addLog('papelera', c, 'Demo terminada: cuenta desactivada');
       }
       if (!c.demo && c.status === 'active' && diffDays(t, c.expires) > 0) {
@@ -305,6 +380,7 @@ async function lifecycle() {
       if (c.status === 'expired' && diffDays(t, c.expires) > graceDays) {
         await removeAccess(c, true);
         c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Sin renovar'; delete c.off; delete c.offBy;
+        addChurn(c.ownerId, 'lost');
         addLog('papelera', c, `A la papelera tras ${graceDays} días sin renovar: cuenta desactivada`);
       }
       if (c.status === 'trash') {
@@ -408,6 +484,7 @@ function currentUser(req) {
   if (!u || u.disabled) { sessions.delete(tok); return null; }
   s.seen = Date.now();
   if (req.headers['x-forwarded-for'] || req.socket) s.ip = clientIp(req);
+  if (!u.lastSeen || Date.now() - Date.parse(u.lastSeen) > 60000) u.lastSeen = new Date().toISOString();
   return u;
 }
 function dropSessions(userId, keep) { for (const [k, v] of sessions) if (v.userId === userId && k !== keep) sessions.delete(k); }
@@ -1398,7 +1475,7 @@ function notifyStaff(kind, text) {
   for (const u of db.users) {
     if (u.disabled || !u.tgChat) continue;
     const pref = (u.secAlerts || {})[kind];
-    if (u.role === 'super' ? pref !== false : (u.role === 'admin' && pref === true && (kind !== 'servers' || can(u, 'viewServers')))) notifyUser(u, text);
+    if (u.role === 'super' ? pref !== false : (u.role === 'admin' && pref === true && (kind !== 'servers' || can(u, 'viewServers')) && (kind !== 'quality' || can(u, 'servers')) && (kind !== 'sabotage' || can(u, 'resellers')))) notifyUser(u, text);
   }
 }
 const whenTxt = () => new Date().toLocaleString('es-ES', { timeZone: process.env.TZ || 'Europe/Madrid', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
@@ -1461,6 +1538,7 @@ function price(months, screens) {
 /** Administradores y superadministrador no gastan creditos */
 function costFor(me, months, screens) { return paysCredits(me) ? price(months, screens) : 0; }
 function ensureCredits(me, cost) {
+  if (cost > 0) debtGate(me);
   if (cost > me.credits && !me.allowNegative) throw new HttpError(400, `No tienes créditos suficientes: hacen falta ${cost} y tienes ${me.credits}. Pide una recarga a tu administrador.`);
 }
 function spend(me, cost, text) {
@@ -1519,6 +1597,7 @@ function assertEmbyNameFree(server, embyName) {
 }
 const pubUser = (u) => ({
   id: u.id, username: u.username, name: u.name, role: u.role, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, offBy: u.offBy || null, offAt: u.offAt || null, createdAt: u.createdAt,
+  lastLogin: u.lastLogin || null, lastSeen: u.lastSeen || null, renew: u.role === 'reseller' || u.role === 'sub' ? renewRate([u.id]) : null, debt: u.role === 'reseller' || u.role === 'sub' ? debtOf(u).amount : 0,
   creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [],
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
   twoFa: !!(u.totp && u.totp.on), tgLinked: !!u.tgChat,
@@ -1620,9 +1699,12 @@ function publicData(me) {
   return {
     today: today(), now: new Date().toISOString(),
     me: pubUser(me),
+    licMaster: me.role === 'super' && !LIC_CLIENT,
+    licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
+    license: me.role === 'super' ? licStatus() : null,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } } },
     servers: db.servers.map((s) => (seeServers
-      ? { id: s.id, name: s.name, usable: true, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } }
+      ? { id: s.id, name: s.name, usable: true, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } }
       : { id: s.id, name: s.name, usable: serverAllowed(me, s), publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
     clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId))).map((c) => ({ ...c, tgChat: undefined, tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
@@ -1630,6 +1712,11 @@ function publicData(me) {
     ledger: db.ledger.filter((l) => (adm && !P.reports ? l.userId === me.id : !vis || vis.has(l.userId))).slice(0, 500),
     lastRun: db.lastRun,
     alertsUnread: !seeClients ? 0 : db.alerts.reduce((n, a) => n + (!a.read && (!vis || vis.has(a.ownerId)) ? 1 : 0), 0),
+    followPending: !seeClients ? 0 : db.followups.filter((f) => f.status === 'pending' && (!vis || vis.has(f.ownerId))).length,
+    sharedCount: !seeClients ? 0 : sharedCount(vis),
+    sharedIds: !seeClients ? [] : ((shareCache.get(vis ? [...vis].sort().join(',') : 'all') || {}).ids || []),
+    renewals: !seeClients ? {} : (() => { const m = {}; for (const l of db.log) if (l.type === 'renovacion' && l.clientId != null && /^Renovada/.test(l.text)) m[l.clientId] = (m[l.clientId] || 0) + 1; return m; })(),
+    teamCount: teamCount(me),
   };
 }
 
@@ -1642,7 +1729,7 @@ function route(method, pattern, roles, handler) {
 const STAFF = ['super', 'admin'];
 const SUPER = ['super'];
 
-route('GET', '/api/state', null, ({ req }) => ({ needsSetup: !db.users.length, authed: !!currentUser(req), brand: db.settings.brand, support: db.settings.support }));
+route('GET', '/api/state', null, ({ req }) => ({ needsSetup: !db.users.length, authed: !!currentUser(req), brand: db.settings.brand, support: db.settings.support, license: licStatus() }));
 /* Marca del panel: nombre, color y logo propios */
 route('PUT', '/api/brand', SUPER, ({ me, body }) => lock(async () => {
   const name = str(body.name, 30) || 'Concha';
@@ -1704,9 +1791,10 @@ route('POST', '/api/login', null, async ({ req, body, res }) => {
   const u = db.users.find((x) => x.username === username);
   const pwOk = !!u && checkPassword(u, typeof body.password === 'string' ? body.password : '');
   // Contraseña buena pero acceso desactivado: se le dice claro (solo quien sabe la contraseña lo ve)
-  if (pwOk && u.disabled) throw new HttpError(403, 'Tu acceso al panel está desactivado. Habla con quien te dio de alta.');
+  if (pwOk && u.disabled) { addAccess(u, 'bloqueado', req); throw new HttpError(403, 'Tu acceso al panel está desactivado. Habla con quien te dio de alta.'); }
   const ok = pwOk;
   if (!ok) {
+    addAccess(u || null, 'fallido', req, { typed: username });
     await new Promise((r) => setTimeout(r, 600));
     f.count++; f.total = (f.total || 0) + 1;
     if (f.count >= 5) { f.count = 0; f.until = Date.now() + 60000; }
@@ -1730,8 +1818,25 @@ route('POST', '/api/login', null, async ({ req, body, res }) => {
   finishLogin(req, res, u, false);
   return { ok: true };
 });
+/* Historial de accesos: aparte del registro de actividad, para que no se pierda entre otros apuntes.
+   Se guardan hasta 20.000 accesos o 400 días. Va dentro de las copias de seguridad. */
+const ACCESS_KIND = { entrada: 'Entrada', fallido: 'Contraseña incorrecta', fallido2fa: 'Código de verificación incorrecto', bloqueado: 'Intento con el acceso desactivado', salida: 'Salida' };
+function addAccess(u, kind, req, extra) {
+  const e = { ts: new Date().toISOString(), kind, userId: u ? u.id : null, user: u ? u.username : String((extra && extra.typed) || '').slice(0, 40), name: u ? u.name : '', role: u ? u.role : '',
+    ip: clientIp(req), dev: uaShort(req.headers['user-agent']), ...(extra && extra.via2fa ? { via2fa: true } : {}) };
+  lock(async () => {
+    db.access.unshift(e);
+    const limit = Date.now() - 400 * 86400000;
+    if (db.access.length > 20000) db.access.length = 20000;
+    while (db.access.length && Date.parse(db.access[db.access.length - 1].ts) < limit) db.access.pop();
+    saveDb();
+  }).catch(() => {});
+}
 /** Entrada correcta: abre la sesion, la apunta y avisa por Telegram */
 function finishLogin(req, res, u, via2fa) {
+  u.lastLogin = { at: new Date().toISOString(), ip: clientIp(req), dev: uaShort(req.headers['user-agent']), via2fa: !!via2fa };
+  u.lastSeen = u.lastLogin.at;
+  addAccess(u, 'entrada', req, { via2fa });
   startSession(res, u, isHttps(req), req);
   const ip = clientIp(req), dev = uaShort(req.headers['user-agent']);
   // No se espera a la cola de guardado: si una revisión con Emby está en marcha, entrar no debe quedarse esperando
@@ -1756,6 +1861,7 @@ route('POST', '/api/login/2fa', null, async ({ req, body, res }) => {
   });
   if (!ok) {
     t.tries++; ipFail(ip);
+    addAccess(u, 'fallido2fa', req);
     if (t.tries >= 5) { tickets.delete(body.ticket); notifyUser(u, `⚠️ Alguien ha escrito bien tu contraseña pero ha fallado 5 veces el código de verificación.\nIP: ${ip}\n${whenTxt()}\n\nCambia tu contraseña cuanto antes.`); throw new HttpError(400, 'Demasiados códigos incorrectos. Vuelve a empezar.'); }
     throw new HttpError(400, 'El código no es correcto. Mira el que sale ahora en tu app de verificación.');
   }
@@ -1770,6 +1876,8 @@ route('POST', '/api/login/2fa', null, async ({ req, body, res }) => {
 
 route('POST', '/api/logout', null, ({ req, res }) => {
   const tok = sessionToken(req);
+  const sv = tok && sessions.get(tok), su = sv && db.users.find((x) => x.id === sv.userId);
+  if (su) addAccess(su, 'salida', req);
   if (tok) sessions.delete(tok);
   res.setHeader('Set-Cookie', 'sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
   return { ok: true };
@@ -1861,6 +1969,15 @@ route('PUT', '/api/me', '*', ({ me, body }) => lock(async () => {
 }));
 /* Registro de actividad completo, con los inicios de sesion */
 route('GET', '/api/logs', STAFF, () => ({ log: db.log.slice(0, 3000), total: db.log.length }));
+/* Historial de accesos. El superadministrador lo ve todo (también los intentos con usuarios que no existen).
+   Un administrador ve los de resellers y subresellers y los suyos; un reseller, los suyos y los de sus subresellers. */
+route('GET', '/api/access', ['super', 'admin', 'reseller'], ({ me }) => {
+  let ok;
+  if (me.role === 'super') ok = () => true;
+  else if (me.role === 'admin') ok = (e) => e.userId === me.id || e.role === 'reseller' || e.role === 'sub';
+  else { const mine = new Set([me.id, ...db.users.filter((u) => u.parentId === me.id).map((u) => u.id)]); ok = (e) => mine.has(e.userId); }
+  return { access: db.access.filter(ok).slice(0, 5000), total: db.access.length };
+});
 
 /* ---------- Avisos de vencimiento ---------- */
 function tgCode(c) { return `c${c.id}_${crypto.createHmac('sha256', db.secret).update('tg' + c.id).digest('hex').slice(0, 10)}`; }
@@ -2008,6 +2125,15 @@ route('POST', '/api/clients/:id/noticed', '*', ({ me, params, body }) => lock(as
   return { ok: true };
 }));
 /* Desenlaza el Telegram de un cliente */
+route('POST', '/api/clients/:id/guide', '*', async ({ me, params, body }) => {
+  const c = clientFor(me, params.id), cfg = db.settings.notices.telegram;
+  if (!c.tgChat) throw new HttpError(400, 'Este cliente no tiene Telegram enlazado. Mándasela por WhatsApp o cópiala.');
+  if (!cfg.token) throw new HttpError(400, 'El bot de Telegram no está configurado.');
+  const custom = typeof body.text === 'string' ? body.text.trim().slice(0, 1500) : '';
+  await tg('sendMessage', { chat_id: c.tgChat, text: custom || fillText(db.settings.templates.quality || DEFAULT_TEMPLATES.quality, c) });
+  await lock(async () => { addLog('aviso', c, custom ? `Mensaje enviado por Telegram: ${custom.slice(0, 80)}` : 'Guía de calidad enviada por Telegram', me); saveDb(); });
+  return { ok: true };
+});
 route('POST', '/api/clients/:id/tg-unlink', '*', ({ me, params }) => lock(async () => {
   const c = clientFor(me, params.id);
   if (c.tgChat) { delete c.tgChat; addLog('aviso', c, 'Telegram desenlazado', me); saveDb(); }
@@ -2031,6 +2157,7 @@ route('POST', '/api/servers', SUPER, ({ me, body }) => lock(async () => {
   if (!s.name) throw new HttpError(400, 'Ponle un nombre al servidor.');
   if (!s.apiKey) throw new HttpError(400, 'Falta la API key.');
   const info = await emby(s, 'GET', '/System/Info');
+  if (info && info.Id) s.embyServerId = String(info.Id).slice(0, 64);
   s.id = newId();
   db.servers.push(s);
   addLog('servidor', null, `Servidor "${s.name}" conectado (Emby ${info && info.Version ? info.Version : '?'})`, me);
@@ -2040,8 +2167,14 @@ route('POST', '/api/servers', SUPER, ({ me, body }) => lock(async () => {
 route('PUT', '/api/servers/:id', SUPER, ({ params, body }) => lock(async () => {
   const s = serverById(params.id);
   const next = { ...s, name: str(body.name, 60) || s.name, url: cleanUrl(body.url), publicUrl: body.publicUrl === undefined ? (s.publicUrl || '') : str(body.publicUrl, 200), apiKey: str(body.apiKey, 200) || s.apiKey };
-  await emby(next, 'GET', '/System/Info');
+  const info = await emby(next, 'GET', '/System/Info');
+  const newId_ = info && info.Id ? String(info.Id).slice(0, 64) : '';
+  // Si la nueva direccion es OTRO servidor Emby, se avisa: las cuentas del panel no existirian alli
+  if (s.embyServerId && newId_ && newId_ !== s.embyServerId && !body.confirmOther) throw new HttpError(409, `Esa dirección lleva a otro servidor Emby («${info.ServerName || '?'}»), no al que tenías. Si es correcto, confírmalo.`);
+  if (newId_) next.embyServerId = newId_;
+  delete next.keyLost; delete next.lostEnc;
   Object.assign(s, next);
+  if (s.apiKey) { delete s.keyLost; delete s.lostEnc; }
   saveDb();
   return { ok: true };
 }));
@@ -2054,8 +2187,11 @@ route('DELETE', '/api/servers/:id', SUPER, ({ me, params }) => lock(async () => 
   return { ok: true };
 }));
 route('GET', '/api/servers/:id/test', SUPER, async ({ params }) => {
-  const info = await emby(serverById(params.id), 'GET', '/System/Info');
-  return { ok: true, name: info.ServerName, version: info.Version };
+  const s = serverById(params.id);
+  const info = await emby(s, 'GET', '/System/Info');
+  const same = !s.embyServerId || !info.Id || String(info.Id) === s.embyServerId;
+  if (!s.embyServerId && info.Id) await lock(async () => { s.embyServerId = String(info.Id).slice(0, 64); saveDb(); });
+  return { ok: true, name: info.ServerName, version: info.Version, same };
 });
 route('GET', '/api/servers/:id/libraries', STAFF, async ({ params }) => ({ libraries: await embyLibraries(serverById(params.id)) }));
 /* Que bibliotecas incluye cada contenido. Se aplica al momento a las cuentas activas. */
@@ -2323,7 +2459,9 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   delete c.trashedAt; delete c.trashReason; delete c.lastError;
   const what = `${plan.months} ${plan.months === 1 ? 'mes' : 'meses'}, ${plan.screens} ${plan.screens === 1 ? 'pantalla' : 'pantallas'}${plan.quality ? ', ' + QUALITIES[plan.quality] : ''}`;
   spend(me, cost, `${before.demo ? 'Alta desde demo' : 'Renovación'} de ${c.embyName} (${what})`);
+  if (before.demo) for (const f of db.followups) if (f.clientId === c.id && f.status === 'pending') { f.status = 'bought'; f.doneAt = new Date().toISOString(); }
   if (cost > 0) { c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: me.id, credits: cost, from: base, to: c.expires, kind: before.demo ? 'alta' : 'renovacion' }].slice(-24); }
+  if (!before.demo) addChurn(c.ownerId, 'ren');
   addLog('renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
   saveDb();
   return { ok: true, expires: c.expires };
@@ -2484,6 +2622,7 @@ async function repairClient(me, c) {
     say(false, 'El usuario no existía en Emby: se ha creado de nuevo con su contraseña.');
   }
   if (before && before.IsAdministrator) say(false, 'Era administrador en Emby: se le han quitado esos permisos.');
+  if (before && before.RemoteClientBitrateLimit > 0) say(false, `Tenía en Emby un tope de velocidad de ${Math.round(before.RemoteClientBitrateLimit / 1e5) / 10} Mbit/s: se ha quitado.`);
   if (before) say(before.EnableVideoPlaybackTranscoding === false, before.EnableVideoPlaybackTranscoding === false ? 'La transcodificación de vídeo ya estaba desactivada.' : 'Tenía permitida la transcodificación de vídeo: se ha desactivado.');
   await applyState(c);
   const after = await readPolicy(s, c.embyId);
@@ -2553,13 +2692,16 @@ function bulkClients(me, body) {
   const ids = Array.isArray(body.ids) ? [...new Set(body.ids.map(Number))] : [];
   if (!ids.length) throw new HttpError(400, 'No has seleccionado ninguna cuenta.');
   if (ids.length > 500) throw new HttpError(400, 'Selecciona como mucho 500 cuentas cada vez.');
-  return ids.map((id) => clientFor(me, id));
+  const list = ids.map((id) => clientFor(me, id));
+  list.me = me; // para cortar si a mitad le bloquean el acceso
+  return list;
 }
 /** Aplica fn a cada cuenta; cada una se guarda aunque el proceso se corte. fn devuelve false para saltarla */
 async function bulkEach(list, fn) {
   let moved = 0, skipped = 0;
   const failed = [];
   for (const c of list) {
+    if (list.me && list.me.disabled) { skipped++; continue; } // bloqueado a mitad (acciones raras): no se sigue
     try { if (await fn(c) === false) skipped++; else moved++; }
     catch (e) { failed.push({ name: c.panelName, emby: c.embyName, error: e.message }); }
     saveDb();
@@ -2665,6 +2807,7 @@ route('GET', '/api/audit', STAFF, async () => {
       if (u.Name !== c.embyName) problems.push(`en Emby ahora se llama "${u.Name}"`);
       if (pol.IsAdministrator) problems.push('es administrador en Emby y no debería');
       if (pol.EnableVideoPlaybackTranscoding !== false) problems.push('tiene permitida la transcodificación de vídeo');
+      if (pol.RemoteClientBitrateLimit > 0) problems.push(`tiene en Emby un tope de velocidad de ${Math.round(pol.RemoteClientBitrateLimit / 1e5) / 10} Mbit/s, que obliga a convertir el vídeo`);
       if (c.status === 'active' && !c.off && !pol.IsDisabled && hasLibs && c.quality && packageReady(s, c.quality)) {
         const pk = s.packages[c.quality];
         if (!!pk.all !== !!pol.EnableAllFolders || (!pk.all && !sameLibs(pk.folders, pol.EnabledFolders))) problems.push(`sus bibliotecas en Emby no son las del paquete ${QUALITIES[c.quality]}`);
@@ -2835,11 +2978,13 @@ route('POST', '/api/users/:id/credits', ['super', 'admin', 'reseller'], ({ me, p
   const note = str(body.note, 120);
   const reason = str(body.reason, 40);
   const detail = (pack ? ` (${pack.name})` : '') + (note ? ': ' + note : '');
+  const pay = amount > 0 ? readPayment(body, u, amount) : null;
   if (!paysCredits(me)) {
     if (u.credits + amount < 0 && !u.allowNegative) throw new HttpError(400, `No se pueden retirar ${-amount}: solo tiene ${u.credits}.`);
     u.credits += amount;
     const label = reason || (amount > 0 ? 'Recarga' : 'Retirada');
-    addLedger(u, amount, label + detail, me, amount < 0 || /ajuste|penaliz|devoluc/i.test(label) ? 'ajuste' : 'credito');
+    addLedger(u, amount, label + detail + payText(pay), me, amount < 0 || /ajuste|penaliz|devoluc/i.test(label) ? 'ajuste' : 'credito');
+    afterRecharge(me, u, amount, pay);
   } else {
     if (amount < 0 && me.role !== 'admin') throw new HttpError(400, 'Solo puedes pasar créditos, no retirarlos.');
     if (amount < 0) {
@@ -2854,9 +2999,10 @@ route('POST', '/api/users/:id/credits', ['super', 'admin', 'reseller'], ({ me, p
     }
     ensureCredits(me, amount);
     me.credits -= amount;
-    addLedger(me, -amount, `Para ${u.name}` + detail, me, 'asignacion');
+    addLedger(me, -amount, `Para ${u.name}` + detail + payText(pay), me, 'asignacion');
     u.credits += amount;
-    addLedger(u, amount, `Recibido de ${me.name}` + detail, me, 'credito');
+    addLedger(u, amount, `Recibido de ${me.name}` + detail + payText(pay), me, 'credito');
+    afterRecharge(me, u, amount, pay);
   }
   saveDb();
   return { ok: true, credits: u.credits };
@@ -2968,6 +3114,16 @@ async function monitor() {
             const video = ti ? ti.IsVideoDirect === false : method === 'Transcode';
             const any = video || method === 'Transcode' || (!!ti && ti.IsAudioDirect === false);
             if (!(cfg.transcode.onlyVideo ? video : any)) continue;
+            // Aviso de calidad: solo si el vídeo PIERDE calidad de verdad, y como mucho cada «tipEvery» minutos por aparato
+            let tipped = false;
+            if (!cfg.transcode.stop && cfg.transcode.tip !== false && videoInfo(x).quality.level === 'likely') {
+              const tk = `q:${s.id}:${x.DeviceId || x.Id}`;
+              if (!recent.has(tk) || now - recent.get(tk) >= (cfg.transcode.tipEvery || 30) * 60000) {
+                recent.set(tk, now);
+                const caps = sessionCaps(x);
+                if (caps.canMsg) { try { await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Calidad de vídeo', Text: (cfg.transcode.tipText || QUALITY_TEXT).slice(0, 400), TimeoutMs: 120000 }); tipped = true; } catch { /* queda registrado como aviso */ } }
+              }
+            }
             const key = `t:${s.id}:${x.Id}:${(x.NowPlayingItem || {}).Id || ''}`;
             if (recent.has(key) && now - recent.get(key) < (cfg.transcode.stop ? 20000 : 6 * 3600000)) continue;
             recent.set(key, now);
@@ -2975,7 +3131,7 @@ async function monitor() {
             if (cfg.transcode.stop) {
               try { await stopSession(s, x, cfg.transcode.message); action = 'Reproducción detenida'; live = live.filter((y) => y !== x); }
               catch (e) { action = 'No se pudo detener'; }
-            }
+            } else if (tipped) action = 'Aviso de calidad en su pantalla';
             events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x),
               reason: (ti && Array.isArray(ti.TranscodeReasons) && ti.TranscodeReasons.length ? ti.TranscodeReasons.join(', ') : (video ? 'Vídeo transcodificado' : 'Audio transcodificado')) });
           }
@@ -3038,6 +3194,9 @@ route('PUT', '/api/alerts/config', STAFF, ({ me, body }) => lock(async () => {
     if (b.on !== undefined) cur[k].on = !!b.on;
     if (b.stop !== undefined) cur[k].stop = !!b.stop;
     if (k === 'transcode' && b.onlyVideo !== undefined) cur[k].onlyVideo = !!b.onlyVideo;
+    if (k === 'transcode' && b.tip !== undefined) cur[k].tip = !!b.tip;
+    if (k === 'transcode' && b.tipEvery !== undefined) { const n = Number(b.tipEvery); if (Number.isInteger(n) && n >= 5 && n <= 1440) cur[k].tipEvery = n; }
+    if (k === 'transcode' && typeof b.tipText === 'string') cur[k].tipText = b.tipText.trim().slice(0, 400);
     if (b.retention !== undefined) cur[k].retention = days(b.retention, cur[k].retention);
     if (k === 'sessions' && b.grace !== undefined) { const n = Number(b.grace); if (Number.isInteger(n) && n >= 0 && n <= 300) cur[k].grace = n; }
     if (k === 'sessions' && ['newest', 'oldest', 'all'].includes(b.policy)) cur[k].policy = b.policy;
@@ -3074,6 +3233,7 @@ route('GET', '/api/sessions', '*', async ({ me }) => {
   await Promise.all(db.servers.map(async (s) => {
     try {
       const mine = vis ? new Set(db.clients.filter((c) => c.serverId === s.id && vis.has(c.ownerId)).map((c) => c.embyId)) : null;
+      const byEmby = new Map(db.clients.filter((c) => c.serverId === s.id).map((c) => [c.embyId, c.id]));
       const list = await emby(s, 'GET', '/Sessions');
       for (const x of list || []) {
         const it = x.NowPlayingItem;
@@ -3084,7 +3244,7 @@ route('GET', '/api/sessions', '*', async ({ me }) => {
           const ep = it.ParentIndexNumber != null && it.IndexNumber != null ? ` ${it.ParentIndexNumber}x${pad(it.IndexNumber)}` : '';
           title = `${it.SeriesName}${ep} – ${it.Name}`;
         }
-        out.push({ server: s.name, user: x.UserName || '', device: x.DeviceName || '', app: x.Client || '', title, paused: !!ps.IsPaused, method: ps.PlayMethod || '', position: ps.PositionTicks || 0, duration: it.RunTimeTicks || 0 });
+        out.push({ server: s.name, clientId: byEmby.get(x.UserId) || null, user: x.UserName || '', device: x.DeviceName || '', app: x.Client || '', title, paused: !!ps.IsPaused, method: ps.PlayMethod || '', position: ps.PositionTicks || 0, duration: it.RunTimeTicks || 0 });
       }
     } catch (e) { if (isStaff(me)) errors.push(e.message); else errors.push('No se pudo consultar el servidor.'); }
   }));
@@ -3159,6 +3319,7 @@ async function recordUsage() {
       try { list = await emby(s, 'GET', '/Sessions'); } catch { continue; }
       const byEmby = new Map(db.clients.filter((c) => c.serverId === s.id).map((c) => [c.embyId, c]));
       for (const x of list || []) {
+        recordConn(byEmby.get(x.UserId), x);
         const it = x.NowPlayingItem;
         if (!it || (x.PlayState || {}).IsPaused) continue;
         now++;
@@ -3180,8 +3341,160 @@ async function recordUsage() {
     const keys = Object.keys(db.usage.days).sort();
     for (const k of keys.slice(0, Math.max(0, keys.length - 120))) delete db.usage.days[k];
     if (++usageDirty >= 5) { usageDirty = 0; lock(async () => saveDb()).catch(() => {}); }
+    saveConn();
   } finally { usageBusy = false; }
 }
+
+/* ======================================================================
+   Historial de conexiones de los clientes (sale de las sesiones de Emby que el panel ya lee cada minuto).
+   Se guarda aparte, en data/conexiones.json: 45 días y hasta 150 tramos por cuenta.
+   Cada tramo: [inicio, fin, aparato, app, ip, idAparato, viendo]
+   ====================================================================== */
+const CONN_FILE = path.join(DATA_DIR, 'conexiones.json');
+let conn = null, connDirty = false, connSaved = 0;
+function connLoad() { if (conn) return conn; try { conn = JSON.parse(fs.readFileSync(CONN_FILE, 'utf8')); } catch { conn = {}; } return conn; }
+function saveConn(force) {
+  if (!connDirty || (!force && Date.now() - connSaved < 120000)) return;
+  try {
+    const lim = Date.now() - 45 * 86400000;
+    for (const k of Object.keys(conn)) { conn[k] = conn[k].filter((r) => Date.parse(r[1]) >= lim).slice(-150); if (!conn[k].length || !db.clients.some((c) => String(c.id) === k)) delete conn[k]; }
+    fs.writeFileSync(CONN_FILE + '.tmp', JSON.stringify(conn)); fs.renameSync(CONN_FILE + '.tmp', CONN_FILE);
+    connDirty = false; connSaved = Date.now();
+  } catch (e) { console.error('Conexiones:', e.message); }
+}
+function recordConn(c, x) {
+  if (!c || !x || !x.UserId) return;
+  const act = Date.parse(x.LastActivityDate || '') || 0;
+  if (!x.NowPlayingItem && Date.now() - act > 3 * 60000) return; // sesion abierta pero sin uso reciente: no cuenta
+  const all = connLoad(), list = all[c.id] || (all[c.id] = []);
+  const nowIso = new Date().toISOString(), dev = String(x.DeviceName || 'Aparato').slice(0, 50), app = String(x.Client || '').slice(0, 40);
+  const ip = String(x.RemoteEndPoint || '').replace(/^::ffff:/, '').slice(0, 45), did = String(x.DeviceId || dev + app).slice(0, 80);
+  // Mismo aparato y menos de 10 minutos desde la ultima vez: se alarga el mismo tramo
+  for (let i = list.length - 1; i >= 0 && i >= list.length - 8; i--) {
+    const r = list[i];
+    if (r[5] === did && Date.now() - Date.parse(r[1]) < 10 * 60000) { r[1] = nowIso; if (ip) r[4] = ip; if (x.NowPlayingItem) r[6] = 1; connDirty = true; return; }
+  }
+  list.push([nowIso, nowIso, dev, app, ip, did, x.NowPlayingItem ? 1 : 0]);
+  connDirty = true;
+}
+/** Zona aproximada de una IP: las tres primeras partes (casa, trabajo, datos del movil...) */
+const ipZone = (ip) => { const m = /^(\d+\.\d+\.\d+)\.\d+$/.exec(ip || ''); return m ? m[1] : (ip || '').split(':').slice(0, 4).join(':'); };
+/** Resumen de los ultimos dias de una cuenta, y si parece compartida */
+function shareInfo(c, days = 7) {
+  const lim = Date.now() - days * 86400000, rows = (connLoad()[c.id] || []).filter((r) => Date.parse(r[1]) >= lim);
+  const devs = new Map(), zones = new Set();
+  for (const r of rows) { devs.set(r[5], { name: r[2], app: r[3], last: r[1] }); if (r[4]) zones.add(ipZone(r[4])); }
+  // Aparatos a la vez: tramos que se solapan
+  let maxAt = 0;
+  const ev = []; for (const r of rows) { if (!r[6]) continue; ev.push([Date.parse(r[0]), 1, r[5]]); ev.push([Date.parse(r[1]) + 60000, -1, r[5]]); } // solo aparatos viendo algo
+  ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const on = new Map(); for (const [, d, id] of ev) { on.set(id, (on.get(id) || 0) + d); const n = [...on.values()].filter((v) => v > 0).length; if (n > maxAt) maxAt = n; }
+  const screens = c.screens || 1, reasons = [];
+  if (devs.size >= Math.max(4, screens * 2 + 1)) reasons.push(`${devs.size} aparatos distintos`);
+  if (zones.size >= 3) reasons.push(`desde ${zones.size} sitios diferentes`);
+  if (c.screens > 0 && maxAt > c.screens) reasons.push(`${maxAt} aparatos a la vez con ${plural(c.screens, 'pantalla', 'pantallas')}`);
+  const level = reasons.length >= 2 || (c.screens > 0 && maxAt > c.screens) ? 'alto' : reasons.length ? 'medio' : 'no';
+  return { devices: devs.size, places: zones.size, maxAt, sessions: rows.length, reasons, level, devList: [...devs.values()].sort((a, b) => b.last.localeCompare(a.last)).slice(0, 8) };
+}
+const plural = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+/** Cuántas cuentas parecen compartidas (se recalcula como mucho cada minuto) */
+const shareCache = new Map();
+function sharedCount(vis) {
+  const key = vis ? [...vis].sort().join(',') : 'all', hit = shareCache.get(key);
+  if (hit && Date.now() - hit.at < 60000) return hit.n;
+  const ids = db.clients.filter((c) => c.status !== 'trash' && !c.demo && (!vis || vis.has(c.ownerId)) && shareInfo(c).level !== 'no').map((c) => c.id);
+  shareCache.set(key, { n: ids.length, ids, at: Date.now() });
+  return ids.length;
+}
+route('GET', '/api/shared', '*', ({ me }) => {
+  const vis = visibleOwners(me);
+  const list = db.clients.filter((c) => c.status !== 'trash' && !c.demo && (!vis || vis.has(c.ownerId)))
+    .map((c) => ({ id: c.id, ...shareInfo(c) })).filter((x) => x.level !== 'no')
+    .sort((a, b) => (a.level === b.level ? 0 : a.level === 'alto' ? -1 : 1) || b.devices - a.devices);
+  return { list, since: (() => { let min = null; for (const v of Object.values(connLoad())) for (const r of v) if (!min || r[0] < min) min = r[0]; return min; })() };
+});
+route('GET', '/api/clients/:id/connections', '*', ({ me, params }) => {
+  const c = clientFor(me, params.id);
+  const rows = (connLoad()[c.id] || []).slice().reverse().map((r) => ({ from: r[0], to: r[1], dev: r[2], app: r[3], ip: r[4], devId: r[5], playing: !!r[6] }));
+  return { rows, week: shareInfo(c, 7), month: shareInfo(c, 30) };
+});
+
+/* ======================================================================
+   Seguimiento de demos que terminaron sin comprar
+   ====================================================================== */
+function addFollowup(c) {
+  if (db.followups.some((f) => f.clientId === c.id)) return;
+  db.followups.unshift({ id: crypto.randomBytes(5).toString('hex'), clientId: c.id, name: c.panelName, emby: c.embyName, ownerId: c.ownerId, serverId: c.serverId,
+    whatsapp: c.whatsapp || '', telegram: c.telegram || '', email: c.email || '', tgChat: c.tgChat || null, endedAt: new Date().toISOString(), status: 'pending' });
+  const lim = Date.now() - 30 * 86400000;
+  db.followups = db.followups.filter((f) => Date.parse(f.endedAt) >= lim).slice(0, 2000);
+}
+const fuVisible = (me) => { const vis = visibleOwners(me); return db.followups.filter((f) => !vis || vis.has(f.ownerId)); };
+route('GET', '/api/followups', '*', ({ me }) => ({
+  list: fuVisible(me).map(({ tgChat, ...f }) => ({ ...f, tgLinked: !!tgChat, text: fillText(db.settings.templates.followup || DEFAULT_TEMPLATES.followup, { panelName: f.name, embyName: f.emby, serverId: f.serverId, expires: today(), screens: 0, quality: null }) })),
+}));
+route('POST', '/api/followups/:id', '*', ({ me, params, body }) => lock(async () => {
+  const f = fuVisible(me).find((x) => x.id === params.id);
+  if (!f) throw new HttpError(404, 'Ese seguimiento ya no existe.');
+  const st = ['done', 'skip', 'pending'].includes(body.status) ? body.status : null;
+  if (!st) throw new HttpError(400, 'Estado no válido.');
+  f.status = st; f.doneAt = new Date().toISOString(); f.doneBy = me.name;
+  saveDb();
+  return { ok: true };
+}));
+route('POST', '/api/followups/:id/telegram', '*', async ({ me, params, body }) => {
+  const f = fuVisible(me).find((x) => x.id === params.id);
+  if (!f) throw new HttpError(404, 'Ese seguimiento ya no existe.');
+  if (!f.tgChat) throw new HttpError(400, 'Este cliente no tenía Telegram enlazado. Escríbele por WhatsApp o copia el mensaje.');
+  const text = (typeof body.text === 'string' && body.text.trim()) ? body.text.trim().slice(0, 1500) : fillText(db.settings.templates.followup, { panelName: f.name, embyName: f.emby, serverId: f.serverId, expires: today(), screens: 0, quality: null });
+  await tg('sendMessage', { chat_id: f.tgChat, text });
+  await lock(async () => { f.status = 'done'; f.doneAt = new Date().toISOString(); f.doneBy = me.name; addLog('aviso', null, `Seguimiento de la demo de ${f.name} enviado por Telegram`, me); saveDb(); });
+  return { ok: true };
+});
+
+/* ======================================================================
+   Mensaje por Telegram a muchos clientes a la vez
+   ====================================================================== */
+function bcTargets(me, body) {
+  const vis = visibleOwners(me), who = body.who || 'active';
+  return db.clients.filter((c) => c.tgChat && (!vis || vis.has(c.ownerId))
+    && (who === 'all' ? c.status !== 'trash' || c.demo : who === 'demo' ? c.demo && c.status === 'active' : !c.demo && c.status !== 'trash' && (who !== 'active' || c.status === 'active'))
+    && (!Number(body.serverId) || c.serverId === Number(body.serverId)) && (!Number(body.ownerId) || c.ownerId === Number(body.ownerId)));
+}
+route('POST', '/api/broadcast/preview', '*', ({ me, body }) => {
+  const vis = visibleOwners(me);
+  const mine = db.clients.filter((c) => c.status !== 'trash' && (!vis || vis.has(c.ownerId)));
+  return { targets: bcTargets(me, body).length, linked: mine.filter((c) => c.tgChat).length, total: mine.length, bot: !!db.settings.notices.telegram.token };
+});
+let bcJob = null;
+route('GET', '/api/broadcast', '*', ({ me }) => ({ job: bcJob && (isStaff(me) || bcJob.byId === me.id) ? { total: bcJob.total, done: bcJob.done, ok: bcJob.ok, fail: bcJob.fail, finished: bcJob.finished } : null,
+  history: db.broadcasts.filter((b) => isStaff(me) || b.byId === me.id).slice(0, 10) }));
+route('POST', '/api/broadcast', '*', ({ me, body }) => {
+  const text = typeof body.text === 'string' ? body.text.trim().slice(0, 2000) : '';
+  if (text.length < 3) throw new HttpError(400, 'Escribe el mensaje.');
+  if (!db.settings.notices.telegram.token) throw new HttpError(400, 'El bot de Telegram no está configurado.');
+  if (bcJob && !bcJob.finished) throw new HttpError(409, 'Ya se está enviando otro mensaje. Espera a que termine.');
+  const list = bcTargets(me, body);
+  if (!list.length) throw new HttpError(400, 'Ninguno de esos clientes tiene Telegram enlazado.');
+  bcJob = { byId: me.id, total: list.length, done: 0, ok: 0, fail: 0, finished: false };
+  const job = bcJob;
+  (async () => {
+    for (const c of list) {
+      try { await tg('sendMessage', { chat_id: c.tgChat, text: fillText(text, c) }); job.ok++; }
+      catch (e) { job.fail++; if (/blocked|chat not found|deactivated/i.test(e.message)) await lock(async () => { delete c.tgChat; saveDb(); }); }
+      job.done++;
+      await new Promise((r) => setTimeout(r, Number(process.env.BC_DELAY_MS) || 60)); // Telegram admite unos 30 mensajes por segundo
+    }
+    job.finished = true;
+    await lock(async () => {
+      db.broadcasts.unshift({ at: new Date().toISOString(), by: me.name, byId: me.id, text: text.slice(0, 300), total: job.total, ok: job.ok, fail: job.fail });
+      db.broadcasts = db.broadcasts.slice(0, 50);
+      addLog('aviso', null, `Mensaje por Telegram a ${job.ok} clientes${job.fail ? ` (${job.fail} no se pudieron enviar)` : ''}: ${text.slice(0, 80)}`, me);
+      saveDb();
+    });
+  })().catch((e) => { job.finished = true; console.error('Envío a clientes:', e.message); });
+  return { ok: true, total: list.length };
+});
 route('GET', '/api/usage', STAFF, ({ req }) => {
   const q = new URL(req.url, 'http://x').searchParams, n = Math.min(120, Math.max(1, Number(q.get('days')) || 30));
   const days = (db.usage && db.usage.days) || {}, from = addDays(today(), -(n - 1));
@@ -3297,6 +3610,7 @@ function markPaid(o, via) {
   const how = o.method === 'stripe' ? 'tarjeta' : 'criptomonedas';
   addLedger(u, o.credits, `Compra online con ${how}${o.pack ? ' (' + o.pack + ')' : ''}: ${o.amount.toFixed(2)} ${o.currency}`, null, 'credito', { amount: o.amount, currency: o.currency, method: o.method, order: o.id });
   addLog('cobro', null, `${u.name} compró ${o.credits} créditos con ${how} por ${o.amount.toFixed(2)} ${o.currency} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
+  db.vpay.unshift({ id: crypto.randomBytes(5).toString('hex'), at: o.paidAt, userId: u.id, user: u.name, credits: o.credits, amount: o.amount, method: o.method === 'stripe' ? 'Tarjeta (online)' : 'Cripto (online)', ref: o.id, status: 'paid', paidAt: o.paidAt, by: 'Compra online', byId: null, online: true });
   notifyStaff('payments', `💰 ${u.name} ha comprado ${o.credits} créditos con ${how}.\nImporte: ${o.amount.toFixed(2)} ${o.currency}\nSaldo nuevo: ${u.credits}\n${whenTxt()}`);
   notifyUser(u, `✅ Pago recibido: se han sumado ${o.credits} créditos a tu cuenta. Saldo: ${u.credits}.`);
   return true;
@@ -3460,6 +3774,7 @@ route('POST', '/api/backup/download', SUPER, ({ me, body }) => {
     const f = path.join(BACKUP_DIR, body.name);
     if (!fs.existsSync(f)) throw new HttpError(404, 'Esa copia ya no existe.');
     json = fs.readFileSync(f, 'utf8');
+    try { const d = JSON.parse(json); openApiKeys(d.servers); json = JSON.stringify(d); } catch { /* se manda tal cual */ }
   } else json = JSON.stringify(db);
   const salt = crypto.randomBytes(16).toString('hex');
   const buf = encryptBackup(json, bkKey(pw, salt), salt);
@@ -3592,8 +3907,9 @@ route('POST', '/api/backup/restore', SUPER, ({ me, body, req }) => lock(async ()
   if (!data || !Array.isArray(data.users) || !Array.isArray(data.clients) || !data.users.some((u) => u.role === 'super')) throw new HttpError(400, 'La copia no tiene datos del panel válidos.');
   // Antes de nada, se guarda lo que hay ahora por si hay que volver atrás
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
-  fs.writeFileSync(path.join(BACKUP_DIR, `antes-de-restaurar-${Date.now()}.json`), JSON.stringify(db));
-  fs.writeFileSync(DB_FILE, JSON.stringify(data));
+  fs.writeFileSync(path.join(BACKUP_DIR, `antes-de-restaurar-${Date.now()}.json`), JSON.stringify(dbForDisk()));
+  openApiKeys(data.servers);
+  db = data; saveDb(); // se escribe ya con las API keys cifradas
   loadDb();
   sessions.clear();
   addLog('seguridad', null, `Panel restaurado desde una copia del ${String(at || '').slice(0, 10)} por ${me.username}`, null);
@@ -3611,7 +3927,7 @@ route('GET', '/api/security', '*', ({ me, req }) => {
   return {
     twoFa: !!(me.totp && me.totp.on), codesLeft: me.totp && me.totp.on ? (me.totp.codes || []).length : 0,
     bot: cfg.token ? cfg.bot || '' : '', tgLinked: !!me.tgChat, tgLink: cfg.token && cfg.bot ? `https://t.me/${cfg.bot}?start=${userTgCode(me)}` : '',
-    alerts: { login: al.login !== false, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
+    alerts: { login: al.login !== false, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
     sessions: list, idleMin: db.settings.security.idleMin,
   };
 });
@@ -3662,7 +3978,7 @@ route('POST', '/api/users/:id/reset2fa', '*', ({ me, params }) => lock(async () 
 }));
 route('PUT', '/api/security/alerts', '*', ({ me, body }) => lock(async () => {
   const al = me.secAlerts || {};
-  for (const k of ['login', 'servers', 'staffLogins', 'backup', 'payments']) if (typeof body[k] === 'boolean') al[k] = body[k];
+  for (const k of ['login', 'servers', 'staffLogins', 'backup', 'payments', 'quality', 'sabotage', 'daily', 'credits']) if (typeof body[k] === 'boolean') al[k] = body[k];
   me.secAlerts = al; saveDb();
   return { ok: true };
 }));
@@ -3697,18 +4013,23 @@ function videoInfo(x) {
   const v = (it.MediaStreams || []).find((m) => m.Type === 'Video') || {};
   const w = v.Width || 0, h = v.Height || 0;
   const res = w >= 3200 || h >= 1800 ? '4K' : w >= 1800 || h >= 1000 ? '1080p' : w >= 1200 || h >= 700 ? '720p' : w || h ? 'SD' : '';
-  let bitrate = 0;
-  if (tr && tr.Bitrate) bitrate = tr.Bitrate;
-  else if (it.Bitrate) bitrate = it.Bitrate;
-  else if (Array.isArray(it.MediaSources) && it.MediaSources[0] && it.MediaSources[0].Bitrate) bitrate = it.MediaSources[0].Bitrate;
-  else bitrate = (it.MediaStreams || []).reduce((n, m) => n + (m.BitRate || 0), 0);
+  // Bitrate del archivo (lo que informa Emby del original) y bitrate PEDIDO al codificador (no es una medida real)
+  let srcBitrate = 0;
+  if (it.Bitrate) srcBitrate = it.Bitrate;
+  else if (Array.isArray(it.MediaSources) && it.MediaSources[0] && it.MediaSources[0].Bitrate) srcBitrate = it.MediaSources[0].Bitrate;
+  else srcBitrate = (it.MediaStreams || []).reduce((n, m) => n + (m.BitRate || 0), 0);
+  const encBitrate = tr && tr.Bitrate ? tr.Bitrate : 0;
+  const bitrate = encBitrate || srcBitrate;
   // Pistas elegidas: audio y subtitulos que se estan usando
   const ps = x.PlayState || {}, streams = it.MediaStreams || [];
   const au = streams.find((m) => m.Type === 'Audio' && m.Index === ps.AudioStreamIndex) || streams.find((m) => m.Type === 'Audio' && m.IsDefault) || streams.find((m) => m.Type === 'Audio') || {};
   const sb = ps.SubtitleStreamIndex != null && ps.SubtitleStreamIndex >= 0 ? streams.find((m) => m.Type === 'Subtitle' && m.Index === ps.SubtitleStreamIndex) || null : null;
   const low = (v) => String(v || '').toLowerCase().slice(0, 20);
+  const reasons = tr && Array.isArray(tr.TranscodeReasons) ? tr.TranscodeReasons.map(String) : [];
+  const vRecoded = !!tr && tr.IsVideoDirect === false;
   return {
-    width: w, height: h, res, codec: low(v.Codec), bitrate,
+    width: w, height: h, res, codec: low(v.Codec), bitrate, srcBitrate, encBitrate,
+    quality: qualityLoss({ vRecoded, reasons, srcBitrate, encBitrate, h, trH: tr ? tr.Height || 0 : 0, vBitrate: v.BitRate || 0 }),
     trCodec: tr ? low(tr.VideoCodec) : '', trWidth: tr ? tr.Width || 0 : 0, trHeight: tr ? tr.Height || 0 : 0,
     trReasons: tr && Array.isArray(tr.TranscodeReasons) ? tr.TranscodeReasons.map((r) => String(r).slice(0, 40)).slice(0, 6) : [],
     // Que se esta convirtiendo de verdad: el video, el audio o solo el formato del archivo
@@ -3717,6 +4038,24 @@ function videoInfo(x) {
     subs: sb ? { codec: low(sb.Codec), text: sb.IsTextSubtitleStream !== false && !/pgs|dvd|vobsub|dvb/.test(low(sb.Codec)) } : null,
   };
 }
+/** Pérdida de calidad del VÍDEO, separada del método de reproducción.
+    Una sesión «Transcode» que solo convierte el audio no pierde calidad de imagen. */
+function qualityLoss({ vRecoded, reasons, srcBitrate, encBitrate, h, trH, vBitrate }) {
+  if (!vRecoded) return { level: 'none', text: 'El vídeo llega sin recodificar' };
+  const why = [];
+  if (reasons.some((r) => /Bitrate/.test(r))) why.push('la app pide menos calidad que la del archivo');
+  const ref = vBitrate || srcBitrate;
+  if (encBitrate && ref && encBitrate < ref * 0.7) why.push('se pide al codificador bastante menos bitrate que el original');
+  if (trH && h && trH < h * 0.9) why.push(`se reduce la resolución (${h}p → ${trH}p)`);
+  if (why.length) return { level: 'likely', text: 'Probable pérdida de calidad: ' + why.join('; ') };
+  return { level: 'possible', text: 'El vídeo se recodifica (por compatibilidad); no tiene por qué verse peor' };
+}
+/** Qué puede hacer el panel con esa reproducción, según lo que declara el aparato */
+function sessionCaps(x) {
+  const cmds = Array.isArray(x.SupportedCommands) ? x.SupportedCommands : null;
+  return { canMsg: cmds ? cmds.includes('DisplayMessage') : true, remote: x.SupportsRemoteControl !== false, cmdsKnown: !!cmds };
+}
+const QUALITY_TEXT = 'Para ver el vídeo con la mejor calidad:\n1. Abre los Ajustes de Emby en este dispositivo.\n2. Busca Calidad de vídeo o Calidad remota.\n3. Elige la calidad máxima: el valor más alto que aparezca.\nDespués, vuelve a reproducir el vídeo.';
 const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
 route('GET', '/api/monitor', '*', async ({ me }) => {
   const vis = visibleOwners(me);
@@ -3747,6 +4086,7 @@ route('GET', '/api/monitor', '*', async ({ me }) => {
           sub: it.Type === 'Episode' ? [ep, it.Name || ''].filter(Boolean).join(' – ') : '',
           year: it.ProductionYear || '',
           poster: posterId && ID_RE.test(String(posterId)) ? String(posterId) : '',
+          itemId: String(it.Id || ''), ...sessionCaps(x),
           paused: !!ps.IsPaused, method: ps.PlayMethod || '', transcode: ps.PlayMethod === 'Transcode' || !!(x.TranscodingInfo && !x.TranscodingInfo.IsVideoDirect),
           position: ps.PositionTicks || 0, duration: it.RunTimeTicks || 0, ...vi,
         });
@@ -3757,7 +4097,8 @@ route('GET', '/api/monitor', '*', async ({ me }) => {
       errors.push(isStaff(me) ? e.message : 'No se pudo consultar un servidor.');
     }
   }));
-  out.sort((a, b) => a.paused - b.paused || a.server.localeCompare(b.server) || a.user.localeCompare(b.user));
+  const nm = (x) => (x.client || x.user || '').toLowerCase();
+  out.sort((a, b) => nm(a).localeCompare(nm(b), 'es') || a.user.localeCompare(b.user, 'es') || a.server.localeCompare(b.server, 'es') || a.device.localeCompare(b.device, 'es') || a.id.localeCompare(b.id));
   servers.sort((a, b) => a.name.localeCompare(b.name));
   return { sessions: out, servers, errors, at: new Date().toISOString() };
 });
@@ -3799,7 +4140,8 @@ async function findSession(me, body) {
   if (!ID_RE.test(sid)) throw new HttpError(400, 'Reproducción no válida.');
   const list = await emby(s, 'GET', '/Sessions');
   const x = (list || []).find((y) => String(y.Id) === sid);
-  if (!x) throw new HttpError(404, 'Esa reproducción ya ha terminado.');
+  if (!x || !x.NowPlayingItem) throw new HttpError(404, 'Esa reproducción ya ha terminado.');
+  if (body.itemId && String(x.NowPlayingItem.Id) !== String(body.itemId)) throw new HttpError(409, 'Ese aparato ya está viendo otra cosa. Actualiza el monitor antes de actuar.');
   const c = db.clients.find((k) => k.serverId === s.id && k.embyId === x.UserId && k.status !== 'trash') || null;
   const vis = visibleOwners(me);
   if (vis && (!c || !vis.has(c.ownerId))) throw new HttpError(403, 'Esa reproducción no es de una cuenta tuya.');
@@ -3808,19 +4150,769 @@ async function findSession(me, body) {
 route('POST', '/api/monitor/stop', '*', async ({ me, body }) => {
   const { s, x, c } = await findSession(me, body);
   const text = str(body.message, 300) || 'Tu reproducción ha sido detenida.';
-  await stopSession(s, x, text);
-  await lock(async () => { addLog('monitor', c, `Reproducción detenida: ${sessionTitle(x)} (${x.DeviceName || 'dispositivo'}, ${s.name})`, me); saveDb(); });
-  return { ok: true };
+  await stopSession(s, x, text); // Emby ha aceptado la orden…
+  // …pero hay que mirar si el aparato la ha cumplido
+  await new Promise((r) => setTimeout(r, Number(process.env.STOP_CHECK_MS) || 4000));
+  let still = null;
+  try { still = ((await emby(s, 'GET', '/Sessions')) || []).find((y) => String(y.Id) === String(x.Id) && y.NowPlayingItem && String(y.NowPlayingItem.Id) === String(x.NowPlayingItem.Id)); } catch { /* no se pudo comprobar */ }
+  const stopped = !still;
+  await lock(async () => { addLog('monitor', c, `${stopped ? 'Reproducción detenida' : 'Orden de detener enviada (el aparato siguió reproduciendo)'}: ${sessionTitle(x)} (${x.DeviceName || 'dispositivo'}, ${s.name})`, me); saveDb(); });
+  return { ok: true, stopped, note: stopped ? 'Emby aceptó la orden y el aparato ha dejado de reproducir.' : `Emby aceptó la orden, pero el aparato sigue reproduciendo.${x.SupportsRemoteControl === false ? ' Este aparato no admite control remoto.' : ' Algunas apps ignoran esta orden.'}` };
 });
 route('POST', '/api/monitor/message', '*', async ({ me, body }) => {
   const { s, x, c } = await findSession(me, body);
   const text = str(body.text, 300);
   if (!text) throw new HttpError(400, 'Escribe el mensaje.');
   const header = str(body.header, 40) || db.settings.brand.name || 'Aviso';
-  await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: header, Text: text, TimeoutMs: 15000 });
+  return sendScreenMsg(me, s, x, c, header, text, 15000);
+});
+/** Manda un mensaje a la pantalla. Se decide por los comandos que declara el aparato (DisplayMessage), no por SupportsRemoteControl */
+async function sendScreenMsg(me, s, x, c, header, text, timeoutMs) {
+  const caps = sessionCaps(x);
+  if (!caps.canMsg) throw new HttpError(400, 'Este aparato no admite mensajes en pantalla (no declara DisplayMessage).');
+  await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: header, Text: text, TimeoutMs: timeoutMs });
   await lock(async () => { addLog('monitor', c, `Mensaje en pantalla (${x.DeviceName || 'dispositivo'}): ${text.slice(0, 120)}`, me); saveDb(); });
+  return { ok: true, note: 'Emby ha aceptado el mensaje. No podemos confirmar que el aparato lo haya mostrado: algunas apps no enseñan mensajes o los quitan antes.' };
+}
+/* Aviso de calidad baja, a mano: 120 segundos en pantalla (algunas apps lo quitan antes) */
+route('POST', '/api/monitor/notice', '*', async ({ me, body }) => {
+  const { s, x, c } = await findSession(me, body);
+  const text = (db.settings.alerts.transcode.tipText || QUALITY_TEXT).slice(0, 400);
+  return sendScreenMsg(me, s, x, c, 'Calidad de vídeo', text, 120000);
+});
+
+
+/* ======================================================================
+   Calidad remota (Emby Quality Guard)
+   Emby 4.9.3 añadió una opción por usuario para fijar su calidad remota automática.
+   El panel solo la toca si el servidor devuelve el campo AutoRemoteQuality en la política del usuario:
+   si no aparece, se informa y no se escribe nada. Unidad: bits por segundo (100 Mbps = 100.000.000).
+   ====================================================================== */
+const QF = 'AutoRemoteQuality';
+const QUALITY_DIR = path.join(DATA_DIR, 'calidad');
+const mbpsToBps = (m) => Math.round(Number(m) * 1e6);
+const bpsToMbps = (b) => Math.round((Number(b) / 1e6) * 100) / 100;
+function qCfg(sid) {
+  const all = db.quality.servers;
+  if (!all[sid]) all[sid] = { mbps: 100, auto: false, exclude: [], known: [] };
+  const c = all[sid];
+  if (!Array.isArray(c.exclude)) c.exclude = [];
+  if (!Array.isArray(c.known)) c.known = [];
+  if (!(c.mbps > 0)) c.mbps = 100;
+  return c;
+}
+/** Limita cuantas tareas van a la vez */
+async function pool(items, n, fn) {
+  const out = new Array(items.length); let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; out[k] = await fn(items[k], k); } }));
+  return out;
+}
+/** Todos los usuarios de un servidor, por páginas. Si la versión de Emby no tiene /Users/Query, se usa /Users */
+async function embyAllUsers(s) {
+  const out = [], seen = new Set(), LIM = 200;
+  let start = 0, paged = true;
+  for (let guard = 0; guard < 500; guard++) {
+    let r;
+    try { r = await emby(s, 'GET', `/Users/Query?StartIndex=${start}&Limit=${LIM}`); }
+    catch (e) { if (e.embyStatus === 404 && start === 0) { paged = false; r = { Items: (await emby(s, 'GET', '/Users')) || [] }; } else throw e; }
+    const items = Array.isArray(r) ? r : (r && Array.isArray(r.Items) ? r.Items : []);
+    for (const u of items) if (u && u.Id && !seen.has(u.Id)) { seen.add(u.Id); out.push(u); }
+    if (!paged) break;
+    const total = r && Number.isFinite(r.TotalRecordCount) ? r.TotalRecordCount : null;
+    start += items.length;
+    if (!items.length || (total != null && start >= total) || (total == null && items.length < LIM)) break;
+  }
+  // Si la lista no trae la política, se pide usuario a usuario (4 a la vez)
+  const noPol = out.filter((u) => !u.Policy);
+  if (noPol.length) await pool(noPol, 4, async (u) => { try { u.Policy = (await emby(s, 'GET', `/Users/${u.Id}`)).Policy || null; } catch { u.Policy = null; } });
+  out.sort((a, b) => String(a.Name || '').localeCompare(String(b.Name || ''), 'es'));
+  return { users: out, paged };
+}
+/** Estado de cada usuario frente al objetivo */
+function qStatus(u, cfg, bps) {
+  const pol = u.Policy || null;
+  if (!pol) return 'error';
+  if (pol.IsAdministrator) return 'admin';
+  if (cfg.exclude.includes(u.Id)) return 'excluido';
+  if (!(QF in pol)) return 'nodisp';
+  return Number(pol[QF]) === bps ? 'correcto' : 'pendiente';
+}
+async function qPreview(s) {
+  const cfg = qCfg(s.id), bps = mbpsToBps(cfg.mbps);
+  const panel = new Map(db.clients.filter((c) => c.serverId === s.id).map((c) => [c.embyId, c]));
+  const { users, paged } = await embyAllUsers(s);
+  const known = new Set(cfg.known);
+  const rows = users.map((u) => {
+    const pol = u.Policy || {}, st = qStatus(u, cfg, bps), has = QF in pol;
+    return { id: u.Id, name: u.Name || '', admin: !!pol.IsAdministrator, panel: panel.has(u.Id) ? panel.get(u.Id).panelName : '',
+      value: has ? Number(pol[QF]) : null, mbps: has ? bpsToMbps(pol[QF]) : null, status: st, isNew: cfg.known.length > 0 && !known.has(u.Id) };
+  });
+  const cnt = (k) => rows.filter((r) => r.status === k).length;
+  return { id: s.id, name: s.name, ok: true, paged, mbps: cfg.mbps, bps, auto: !!cfg.auto, supported: rows.some((r) => r.value !== null),
+    total: rows.length, counts: { pendiente: cnt('pendiente'), correcto: cnt('correcto'), excluido: cnt('excluido'), admin: cnt('admin'), nodisp: cnt('nodisp'), error: cnt('error') },
+    nuevos: rows.filter((r) => r.isNew && r.status === 'pendiente').length, rows };
+}
+const qAllowed = (me) => { needPerm(me, 'servers'); };
+route('GET', '/api/quality', STAFF, async ({ me, req }) => {
+  qAllowed(me);
+  const only = Number(new URL(req.url, 'http://x').searchParams.get('server')) || 0;
+  const list = db.servers.filter((x) => !only || x.id === only);
+  const servers = await Promise.all(list.map(async (x) => {
+    try { return await qPreview(x); }
+    catch (e) { const c = qCfg(x.id); return { id: x.id, name: x.name, ok: false, error: e.message, mbps: c.mbps, bps: mbpsToBps(c.mbps), auto: !!c.auto, rows: [], counts: {}, total: 0 }; }
+  }));
+  return { servers, job: qJobPublic(), guard: qGuard(), reports: db.quality.reports.map(({ rows, ...r }) => r).slice(0, 20) };
+});
+route('PUT', '/api/quality/server/:id', STAFF, ({ me, params, body }) => lock(async () => {
+  qAllowed(me);
+  const x = serverById(params.id), c = qCfg(x.id);
+  if (body.mbps !== undefined) {
+    const m = Number(body.mbps);
+    if (!(m >= 1 && m <= 1000)) throw new HttpError(400, 'El objetivo debe estar entre 1 y 1000 Mbps.');
+    c.mbps = Math.round(m * 100) / 100;
+  }
+  if (body.auto !== undefined) c.auto = !!body.auto;
+  addLog('calidad', null, `Calidad remota de "${x.name}": objetivo ${c.mbps} Mbps${c.auto ? ', se aplica a cada cuenta nueva y renovación' : ''}`, me);
+  saveDb();
+  return { ok: true };
+}));
+route('POST', '/api/quality/exclude', STAFF, ({ me, body }) => lock(async () => {
+  qAllowed(me);
+  const x = serverById(body.serverId), c = qCfg(x.id), uid = String(body.userId || '');
+  if (!ID_RE.test(uid)) throw new HttpError(400, 'Usuario no válido.');
+  c.exclude = c.exclude.filter((v) => v !== uid);
+  if (body.on) c.exclude.push(uid);
+  saveDb();
+  return { ok: true };
+}));
+
+/* Tarea en segundo plano: simular o aplicar */
+let qJob = null; // { id, mode, by, at, total, done, phase, finished, error, reportId }
+const qJobPublic = () => (qJob ? { id: qJob.id, mode: qJob.mode, total: qJob.total, done: qJob.done, phase: qJob.phase, finished: qJob.finished, error: qJob.error || '', reportId: qJob.reportId || null } : null);
+route('GET', '/api/quality/job', STAFF, ({ me }) => { qAllowed(me); return { job: qJobPublic() }; });
+route('POST', '/api/quality/run', STAFF, ({ me, body }) => {
+  qAllowed(me);
+  if (qJob && !qJob.finished) throw new HttpError(409, 'Ya hay una tarea de calidad en marcha. Espera a que termine.');
+  const mode = body.mode === 'apply' ? 'apply' : 'simulate';
+  const only = Number(body.serverId) || 0;
+  const list = db.servers.filter((x) => !only || x.id === only);
+  if (!list.length) throw new HttpError(400, 'No hay servidores que revisar.');
+  qJob = { id: crypto.randomBytes(6).toString('hex'), mode, by: me, at: new Date().toISOString(), total: 0, done: 0, phase: 'Leyendo usuarios…', finished: false };
+  runQualityJob(qJob, list).catch((e) => { qJob.error = e.message; qJob.finished = true; });
+  return { ok: true, job: qJobPublic() };
+});
+const sameJson = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+/** Que campos (aparte de AutoRemoteQuality) han cambiado entre dos politicas */
+function policyDiff(before, after) {
+  const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]);
+  keys.delete(QF);
+  return [...keys].filter((k) => !sameJson((before || {})[k], (after || {})[k]));
+}
+async function runQualityJob(job, list) {
+  const t0 = Date.now();
+  const report = { id: job.id, at: job.at, by: job.by ? job.by.name : 'Revisión diaria automática', mode: job.mode, auto: !job.by, servers: [], rows: [] };
+  const backups = [];
+  // 1) leer todos los servidores (cada uno por su lado: uno caído no para a los demás)
+  const prepared = await Promise.all(list.map(async (x) => {
+    const cfg = qCfg(x.id), bps = mbpsToBps(cfg.mbps);
+    try { const { users } = await embyAllUsers(x); return { x, cfg, bps, users }; }
+    catch (e) { return { x, cfg, bps, error: e.message }; }
+  }));
+  job.total = prepared.reduce((n, p) => n + (p.users ? p.users.length : 0), 0);
+  job.phase = job.mode === 'apply' ? 'Aplicando y comprobando…' : 'Simulando…';
+  for (const p of prepared) {
+    const sum = { id: p.x.id, name: p.x.name, mbps: p.cfg.mbps, bps: p.bps, total: 0, correctos: 0, sinCambios: 0, excluidos: 0, errores: 0, modificados: 0, verificados: 0, simulados: 0, noDisponible: 0, error: p.error || '' };
+    report.servers.push(sum);
+    if (p.error) continue;
+    sum.total = p.users.length;
+    for (const u of p.users) {
+      const row = { server: p.x.name, serverId: p.x.id, userId: u.Id, name: u.Name || '', before: null, after: null, result: '', detail: '' };
+      try {
+        const st = qStatus(u, p.cfg, p.bps);
+        if (st === 'admin' || st === 'excluido') { row.result = 'Excluido'; row.detail = st === 'admin' ? 'Administrador de Emby (protegido)' : 'Excluido a mano'; sum.excluidos++; continue; }
+        if (st === 'nodisp') { row.result = 'Sin cambios'; row.detail = 'Este Emby no tiene el ajuste de calidad remota (hace falta 4.9.3 o superior)'; sum.noDisponible++; sum.sinCambios++; continue; }
+        // Leer-cambiar-escribir-comprobar dentro del cerrojo: nadie mas toca la politica a la vez
+        await lock(async () => {
+          const before = (await emby(p.x, 'GET', `/Users/${u.Id}`)).Policy;
+          if (!before) throw new Error('Emby no ha devuelto la política del usuario.');
+          if (before.IsAdministrator) { row.result = 'Excluido'; row.detail = 'Administrador de Emby (protegido)'; sum.excluidos++; return; }
+          if (!(QF in before)) { row.result = 'Sin cambios'; row.detail = 'Sin ajuste de calidad remota en este Emby'; sum.noDisponible++; sum.sinCambios++; return; }
+          row.before = Number(before[QF]);
+          if (row.before === p.bps) { row.after = row.before; row.result = 'Sin cambios'; row.detail = 'Ya tenía el objetivo'; sum.sinCambios++; return; }
+          if (job.mode === 'simulate') { row.after = p.bps; row.result = 'Simulado'; row.detail = `Se cambiaría de ${bpsToMbps(row.before)} a ${p.cfg.mbps} Mbps`; sum.simulados++; return; }
+          backups.push({ serverId: p.x.id, server: p.x.name, userId: u.Id, name: u.Name || '', policy: JSON.parse(JSON.stringify(before)) });
+          const next = { ...before, [QF]: p.bps }; // solo cambia este campo; el resto (pantallas, bibliotecas…) se manda igual
+          let ambiguous = false;
+          try { await emby(p.x, 'POST', `/Users/${u.Id}/Policy`, next); }
+          catch (e) {
+            if (e.embyStatus === 0 || e.embyStatus >= 500) ambiguous = true; // no sabemos si se guardó: se consulta antes de nada
+            else throw e;
+          }
+          const after = (await emby(p.x, 'GET', `/Users/${u.Id}`)).Policy || {};
+          row.after = QF in after ? Number(after[QF]) : null;
+          if (row.after !== p.bps) throw new Error(ambiguous ? 'Emby no respondió bien y, al consultarlo, el valor no había cambiado. No se ha vuelto a escribir.' : 'Emby respondió OK, pero al leerlo de nuevo el valor no ha cambiado.');
+          sum.modificados++;
+          const changed = policyDiff(before, after);
+          if (changed.length) throw new Error(`El valor se guardó, pero Emby cambió también: ${changed.slice(0, 6).join(', ')}. Revisa la copia de seguridad.`);
+          sum.verificados++; sum.correctos++;
+          row.result = 'Correcto'; row.detail = `Verificado en Emby${ambiguous ? ' (tras una respuesta dudosa)' : ''}: ${bpsToMbps(row.before)} → ${bpsToMbps(row.after)} Mbps; el resto de ajustes intacto`;
+        });
+      } catch (e) {
+        row.result = 'Error'; row.detail = e.message; sum.errores++;
+      } finally {
+        report.rows.push(row);
+        job.done++;
+      }
+    }
+    if (job.mode === 'apply') p.cfg.known = p.users.map((u) => u.Id);
+  }
+  report.ms = Date.now() - t0;
+  if (backups.length) {
+    fs.mkdirSync(QUALITY_DIR, { recursive: true });
+    fs.writeFileSync(path.join(QUALITY_DIR, `copia-${job.id}.json`), JSON.stringify({ at: job.at, reportId: job.id, users: backups }, null, 1), { mode: 0o600 });
+    report.backup = `copia-${job.id}.json`; report.backupUsers = backups.length;
+  }
+  await lock(async () => {
+    db.quality.reports.unshift({ ...report, rows: report.rows.slice(0, 5000) });
+    db.quality.reports = db.quality.reports.slice(0, 20);
+    const tot = report.servers.reduce((a, x) => ({ c: a.c + x.correctos, e: a.e + x.errores, sim: a.sim + x.simulados }), { c: 0, e: 0, sim: 0 });
+    addLog('calidad', null, job.mode === 'apply' ? `Calidad remota aplicada: ${tot.c} correctos, ${tot.e} errores` : `Calidad remota simulada: ${tot.sim} usuarios cambiarían`, job.by);
+    saveDb();
+  });
+  job.reportId = job.id; job.phase = 'Terminado'; job.finished = true;
+  return report;
+}
+/* Deshacer: devuelve la calidad remota al valor que tenía antes de una aplicación.
+   Solo toca ese ajuste (no se restaura la política entera, para no pisar cambios posteriores como pantallas o bibliotecas)
+   y solo si sigue con el valor que puso el panel: si alguien lo cambió después, se respeta. */
+route('POST', '/api/quality/undo', STAFF, ({ me, body }) => {
+  qAllowed(me);
+  const name = String(body.name || '');
+  if (!/^copia-[0-9a-f]{12}\.json$/.test(name)) throw new HttpError(400, 'Copia no válida.');
+  const f = path.join(QUALITY_DIR, name);
+  if (!fs.existsSync(f)) throw new HttpError(404, 'Esa copia ya no existe.');
+  if (qJob && !qJob.finished) throw new HttpError(409, 'Ya hay una tarea de calidad en marcha. Espera a que termine.');
+  const data = JSON.parse(fs.readFileSync(f, 'utf8'));
+  qJob = { id: crypto.randomBytes(6).toString('hex'), mode: 'undo', by: me, at: new Date().toISOString(), total: (data.users || []).length, done: 0, phase: 'Deshaciendo y comprobando…', finished: false };
+  runQualityUndo(qJob, data, name).catch((e) => { qJob.error = e.message; qJob.finished = true; });
+  return { ok: true, job: qJobPublic() };
+});
+async function runQualityUndo(job, data, name) {
+  const src = db.quality.reports.find((r) => r.id === data.reportId);
+  const applied = new Map((src ? src.rows : []).map((r) => [r.serverId + ':' + r.userId, r.after]));
+  const report = { id: job.id, at: job.at, by: job.by.name, mode: 'undo', from: data.reportId, servers: [], rows: [] };
+  const sums = new Map();
+  for (const b of data.users || []) {
+    const x = db.servers.find((v) => v.id === b.serverId);
+    if (!sums.has(b.serverId)) { const sm = { id: b.serverId, name: x ? x.name : b.server, total: 0, correctos: 0, sinCambios: 0, excluidos: 0, errores: 0, modificados: 0, verificados: 0, simulados: 0, error: '' }; sums.set(b.serverId, sm); report.servers.push(sm); }
+    const sum = sums.get(b.serverId);
+    sum.total++;
+    const row = { server: sum.name, serverId: b.serverId, userId: b.userId, name: b.name, before: null, after: null, result: '', detail: '' };
+    try {
+      if (!x) throw new Error('Ese servidor ya no está en el panel.');
+      const want = b.policy && QF in b.policy ? Number(b.policy[QF]) : null;
+      if (want === null) throw new Error('La copia no tiene el valor anterior.');
+      await lock(async () => {
+        const cur = (await emby(x, 'GET', `/Users/${b.userId}`)).Policy || {};
+        if (!(QF in cur)) throw new Error('Este Emby ya no tiene el ajuste de calidad remota.');
+        row.before = Number(cur[QF]);
+        if (row.before === want) { row.after = want; row.result = 'Sin cambios'; row.detail = 'Ya tenía el valor de antes'; sum.sinCambios++; return; }
+        const setBy = applied.get(b.serverId + ':' + b.userId);
+        if (setBy != null && row.before !== setBy) { row.after = row.before; row.result = 'Sin cambios'; row.detail = 'Alguien lo cambió después: no se toca'; sum.sinCambios++; return; }
+        let ambiguous = false;
+        try { await emby(x, 'POST', `/Users/${b.userId}/Policy`, { ...cur, [QF]: want }); }
+        catch (e) { if (e.embyStatus === 0 || e.embyStatus >= 500) ambiguous = true; else throw e; }
+        const after = (await emby(x, 'GET', `/Users/${b.userId}`)).Policy || {};
+        row.after = QF in after ? Number(after[QF]) : null;
+        if (row.after !== want) throw new Error(ambiguous ? 'Emby no respondió bien y el valor no ha vuelto atrás. No se ha reintentado.' : 'Emby respondió OK, pero el valor no ha vuelto atrás.');
+        sum.modificados++;
+        const changed = policyDiff(cur, after);
+        if (changed.length) throw new Error(`Se deshizo, pero Emby cambió también: ${changed.slice(0, 6).join(', ')}.`);
+        sum.verificados++; sum.correctos++;
+        row.result = 'Correcto'; row.detail = `Deshecho y verificado: ${bpsToMbps(row.before)} → ${bpsToMbps(row.after)} Mbps`;
+      });
+    } catch (e) { row.result = 'Error'; row.detail = e.message; sum.errores++; }
+    finally { report.rows.push(row); job.done++; }
+  }
+  await lock(async () => {
+    db.quality.reports.unshift(report); db.quality.reports = db.quality.reports.slice(0, 20);
+    const t = report.servers.reduce((a, v) => ({ c: a.c + v.correctos, e: a.e + v.errores }), { c: 0, e: 0 });
+    addLog('calidad', null, `Calidad remota deshecha (${name}): ${t.c} usuarios devueltos, ${t.e} errores`, job.by);
+    saveDb();
+  });
+  job.reportId = job.id; job.phase = 'Terminado'; job.finished = true;
+}
+
+/* Vigilancia: revisión diaria automática y aviso de saturación */
+const qGuard = () => {
+  const g = db.quality.guard || (db.quality.guard = {});
+  g.daily = { on: false, hour: 5, last: null, ...(g.daily || {}) };
+  g.sat = { on: false, limit: 5, cooldown: 30, ...(g.sat || {}) };
+  return g;
+};
+route('PUT', '/api/quality/guard', STAFF, ({ me, body }) => lock(async () => {
+  qAllowed(me);
+  const g = qGuard();
+  if (body.daily) {
+    g.daily.on = !!body.daily.on;
+    const h = Number(body.daily.hour); if (Number.isInteger(h) && h >= 0 && h <= 23) g.daily.hour = h;
+  }
+  if (body.sat) {
+    g.sat.on = !!body.sat.on;
+    const l = Number(body.sat.limit); if (Number.isInteger(l) && l >= 1 && l <= 200) g.sat.limit = l;
+    const cd = Number(body.sat.cooldown); if (Number.isInteger(cd) && cd >= 5 && cd <= 1440) g.sat.cooldown = cd;
+  }
+  addLog('calidad', null, `Vigilancia de calidad: revisión diaria ${g.daily.on ? 'a las ' + pad(g.daily.hour) + ':00' : 'apagada'}, aviso de saturación ${g.sat.on ? 'con ' + g.sat.limit + ' conversiones de vídeo' : 'apagado'}`, me);
+  saveDb();
+  return { ok: true };
+}));
+async function qualityDaily() {
+  const g = qGuard().daily;
+  if (!g.on || (qJob && !qJob.finished)) return;
+  const localH = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
+  if (!process.env.QDAILY_ANYTIME && localH < g.hour) return;
+  if (g.last && localDate(new Date(g.last)) === today()) return;
+  if (g.lastTry && Date.now() - g.lastTry < 30 * 60000) return;
+  g.lastTry = Date.now();
+  const list = db.servers.filter((x) => !x.keyLost);
+  if (!list.length) return;
+  qJob = { id: crypto.randomBytes(6).toString('hex'), mode: 'apply', by: null, at: new Date().toISOString(), total: 0, done: 0, phase: 'Revisión diaria…', finished: false };
+  let r;
+  try { r = await runQualityJob(qJob, list); } catch (e) { qJob.error = e.message; qJob.finished = true; notifyStaff('quality', `⚠️ La revisión diaria de calidad no pudo terminar: ${e.message}`); return; }
+  g.last = new Date().toISOString();
+  await lock(async () => saveDb());
+  const t = r.servers.reduce((a, v) => ({ c: a.c + v.correctos, e: a.e + v.errores, down: a.down + (v.error ? 1 : 0) }), { c: 0, e: 0, down: 0 });
+  if (t.c || t.e || t.down) {
+    const lines = r.servers.filter((v) => v.error || v.correctos || v.errores).map((v) => v.error ? `• ${v.name}: sin conexión` : `• ${v.name}: ${v.correctos} ${v.correctos === 1 ? 'usuario corregido' : 'usuarios corregidos'}${v.errores ? `, ${v.errores} con error` : ''}`);
+    const rest = r.servers.length - lines.length;
+    if (rest > 0) lines.push(`• ${rest === 1 ? 'El otro servidor estaba' : `Los otros ${rest} servidores estaban`} ya correctos`);
+    notifyStaff('quality', `📺 Revisión diaria de calidad remota\n${lines.join('\n')}\n\nEl informe está en el panel, en Emby › Calidad remota.`);
+  }
+}
+const satState = new Map(); // servidor -> { high, at }
+async function saturationCheck() {
+  const g = qGuard().sat;
+  if (!g.on) return;
+  for (const x of db.servers) {
+    if (x.keyLost) continue;
+    let list;
+    try { list = await emby(x, 'GET', '/Sessions'); } catch { continue; } // si no responde ya avisa la vigilancia de servidores
+    const conv = (list || []).filter((y) => y.NowPlayingItem && y.TranscodingInfo && y.TranscodingInfo.IsVideoDirect === false);
+    const st = satState.get(x.id) || { high: false, at: 0 };
+    if (conv.length >= g.limit) {
+      if (!st.high || Date.now() - st.at >= g.cooldown * 60000) {
+        const who = conv.slice(0, 10).map((y) => { const c = db.clients.find((k) => k.serverId === x.id && k.embyId === y.UserId); return `• ${c ? c.panelName : (y.UserName || '?')} — ${y.DeviceName || 'aparato'} (${sessionTitle(y)})`; });
+        notifyStaff('quality', `🔥 «${x.name}» está convirtiendo ${conv.length} vídeos a la vez (tu límite de aviso es ${g.limit}).\n${who.join('\n')}${conv.length > 10 ? `\n…y ${conv.length - 10} más` : ''}\n\nMíralo en el Monitor del panel.`);
+        await lock(async () => { addLog('calidad', null, `Saturación en "${x.name}": ${conv.length} vídeos convirtiéndose a la vez`, null); saveDb(); });
+        satState.set(x.id, { high: true, at: Date.now() });
+      }
+    } else if (st.high && conv.length < Math.max(1, Math.floor(g.limit / 2))) {
+      notifyStaff('quality', `✅ «${x.name}» ha vuelto a la normalidad: ${conv.length} ${conv.length === 1 ? 'vídeo convirtiéndose' : 'vídeos convirtiéndose'}.`);
+      satState.set(x.id, { high: false, at: Date.now() });
+    }
+  }
+}
+route('GET', '/api/quality/reports/:id', STAFF, ({ me, params }) => {
+  qAllowed(me);
+  const r = db.quality.reports.find((x) => x.id === params.id);
+  if (!r) throw new HttpError(404, 'Ese informe ya no existe.');
+  return { report: r };
+});
+route('GET', '/api/quality/backups', STAFF, ({ me }) => {
+  qAllowed(me);
+  let files = [];
+  try { files = fs.readdirSync(QUALITY_DIR).filter((f) => /^copia-[0-9a-f]{12}\.json$/.test(f)); } catch { /* aun no hay */ }
+  return { backups: files.map((f) => { const st = fs.statSync(path.join(QUALITY_DIR, f)); return { name: f, size: st.size, at: st.mtime.toISOString() }; }).sort((a, b) => b.at.localeCompare(a.at)) };
+});
+route('GET', '/api/quality/backups/:name', STAFF, ({ me, params }) => {
+  qAllowed(me);
+  if (!/^copia-[0-9a-f]{12}\.json$/.test(params.name)) throw new HttpError(400, 'Copia no válida.');
+  const f = path.join(QUALITY_DIR, params.name);
+  if (!fs.existsSync(f)) throw new HttpError(404, 'Esa copia ya no existe.');
+  return { __raw: fs.readFileSync(f), headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="${params.name}"`, 'Cache-Control': 'no-store' } };
+});
+
+
+/* ======================================================================
+   Equipo: anti-sabotaje, accesos sospechosos, vendedores que necesitan atención,
+   tasa de renovación, mensaje a vendedores y resumen diario
+   ====================================================================== */
+function addChurn(ownerId, k) {
+  if (ownerId == null) return;
+  db.churn.push({ t: new Date().toISOString(), o: ownerId, k });
+  const lim = Date.now() - 120 * 86400000;
+  if (db.churn.length > 30000 || Date.parse(db.churn[0].t) < lim) db.churn = db.churn.filter((x) => Date.parse(x.t) >= lim).slice(-30000);
+}
+/** Tasa de renovación de los últimos 90 días: renovaciones / (renovaciones + cuentas perdidas por no renovar) */
+function renewRate(ownerIds) {
+  const set = new Set(ownerIds), lim = Date.now() - 90 * 86400000;
+  let ren = 0, lost = 0;
+  for (const x of db.churn) if (set.has(x.o) && Date.parse(x.t) >= lim) { if (x.k === 'ren') ren++; else lost++; }
+  return ren + lost >= 3 ? { rate: Math.round((ren / (ren + lost)) * 100), ren, lost } : { rate: null, ren, lost };
+}
+
+/* Anti-sabotaje: muchas acciones delicadas seguidas de alguien del equipo */
+const guardHits = new Map(); // userId -> [momentos]
+function riskyAction(type, text) {
+  if (['baja', 'eliminada', 'desactivada', 'transferida'].includes(type)) return true;
+  if (type === 'edicion' && /contraseña/.test(text)) return true;
+  if (type === 'monitor' && /detenida/i.test(text)) return true;
+  if (type === 'usuario' && /^(Desactivado|Usuario eliminado)/.test(text)) return true;
+  if (type === 'servidor' || type === 'calidad') return true;
+  return false;
+}
+function guardTrack(actor, type, text) {
+  const g = db.settings.guard;
+  if (!g || !g.on || !riskyAction(type, text)) return;
+  const now = Date.now(), win = (g.minutes || 10) * 60000;
+  const list = (guardHits.get(actor.id) || []).filter((t) => now - t < win);
+  list.push(now); guardHits.set(actor.id, list);
+  if (list.length < (g.limit || 10)) return;
+  const open = db.incidents.find((x) => x.userId === actor.id && !x.closed && now - Date.parse(x.at) < win);
+  if (open) { open.count = list.length; return; } // ya avisado: solo se actualiza la cuenta
+  const u = db.users.find((x) => x.id === actor.id);
+  const recent = db.log.filter((l) => l.actorId === actor.id && now - Date.parse(l.ts) < win && riskyAction(l.type, l.text)).slice(0, 6).map((l) => `${l.client ? l.client + ' — ' : ''}${l.text}`.slice(0, 110));
+  const inc = { id: crypto.randomBytes(5).toString('hex'), at: new Date().toISOString(), userId: actor.id, name: actor.name, role: actor.role, count: list.length, minutes: g.minutes, sample: recent, blocked: false, closed: false };
+  if (g.block && u && u.role !== 'super') { u.disabled = true; u.offAt = inc.at; dropSessions(u.id); inc.blocked = true; }
+  db.incidents.unshift(inc); db.incidents = db.incidents.slice(0, 200);
+  db.log.unshift({ ts: inc.at, type: 'seguridad', client: '', emby: '', clientId: null, ownerId: null, demo: false, actorId: null, actor: '', text: `Acciones raras: ${actor.name} hizo ${list.length} acciones delicadas en ${g.minutes} minutos${inc.blocked ? '. Acceso bloqueado' : ''}`, auto: true });
+  notifyStaff('sabotage', `🚨 Acciones raras en el panel\n${actor.name} (${ROLE_NAME[actor.role] || actor.role}) ha hecho ${list.length} acciones delicadas en menos de ${g.minutes} minutos:\n${recent.map((t) => '• ' + t).join('\n')}\n\n${inc.blocked ? '🔒 Su acceso se ha bloqueado automáticamente. Revísalo en Vendedores › Atención.' : 'Revísalo en Vendedores › Atención. Si no es normal, desactívalo.'}`);
+}
+
+/* Accesos sospechosos de alguien del equipo (de su historial de accesos) */
+function accessRisk(u) {
+  const lim = Date.now() - 7 * 86400000;
+  const rows = db.access.filter((e) => e.userId === u.id && e.kind === 'entrada' && Date.parse(e.ts) >= lim);
+  const zones = new Set(rows.map((e) => ipZone(e.ip)).filter(Boolean));
+  const fails = db.access.filter((e) => e.userId === u.id && /fallido/.test(e.kind) && Date.parse(e.ts) >= lim).length;
+  let twoAtOnce = false;
+  const sorted = rows.slice().sort((a, b) => a.ts.localeCompare(b.ts));
+  for (let i = 1; i < sorted.length; i++) if (ipZone(sorted[i].ip) !== ipZone(sorted[i - 1].ip) && Date.parse(sorted[i].ts) - Date.parse(sorted[i - 1].ts) < 15 * 60000) { twoAtOnce = true; break; }
+  const reasons = [];
+  if (twoAtOnce) reasons.push('entró desde dos sitios distintos casi a la vez');
+  if (zones.size >= 3) reasons.push(`entró desde ${zones.size} sitios diferentes esta semana`);
+  if (fails >= 5) reasons.push(`${fails} intentos fallidos de contraseña`);
+  return { level: twoAtOnce || reasons.length >= 2 ? 'alto' : reasons.length ? 'medio' : 'no', reasons, zones: zones.size, logins: rows.length, fails, devs: [...new Set(rows.map((e) => e.dev))].slice(0, 4) };
+}
+/* Vendedores que necesitan atención */
+function vendorAttention(u) {
+  const now = Date.now(), day = 86400000, reasons = [];
+  const mine = db.clients.filter((c) => c.ownerId === u.id);
+  let last = 0;
+  for (const c of mine) if (!c.demo) last = Math.max(last, Date.parse(c.createdAt) || 0);
+  for (const x of db.churn) if (x.o === u.id && x.k === 'ren') last = Math.max(last, Date.parse(x.t));
+  const age = now - (Date.parse(u.createdAt) || now);
+  const noSale = Math.floor((now - (last || Date.parse(u.createdAt) || now)) / day);
+  if (age > 14 * day && noSale >= 30) reasons.push({ k: 'ventas', t: last ? `Sin vender desde hace ${noSale} días` : 'Todavía no ha vendido nada' });
+  const seen = Date.parse(u.lastSeen || (u.lastLogin && u.lastLogin.at) || '') || 0;
+  const away = Math.floor((now - (seen || Date.parse(u.createdAt) || now)) / day);
+  if (age > 7 * day && away >= 14) reasons.push({ k: 'acceso', t: seen ? `No entra al panel desde hace ${away} días` : 'Nunca ha entrado al panel' });
+  if (paysCredits(u) && (u.credits || 0) <= 2) reasons.push({ k: 'creditos', t: (u.credits || 0) <= 0 ? 'Se ha quedado sin créditos' : `Le ${u.credits === 1 ? 'queda 1 crédito' : 'quedan ' + u.credits + ' créditos'}` });
+  return { reasons, clients: mine.filter((c) => c.status !== 'trash' && !c.demo).length, credits: u.credits || 0, tgLinked: !!u.tgChat };
+}
+/** A quién del equipo puede ver cada uno en esta pantalla */
+function teamVisible(me) {
+  if (me.role === 'super') return db.users.filter((u) => u.id !== me.id);
+  if (me.role === 'admin') return can(me, 'resellers') ? db.users.filter((u) => u.role === 'reseller' || u.role === 'sub') : [];
+  if (me.role === 'reseller') return db.users.filter((u) => u.parentId === me.id);
+  return [];
+}
+route('GET', '/api/team', ['super', 'admin', 'reseller'], ({ me }) => {
+  const team = teamVisible(me).filter((u) => !u.disabled);
+  const attention = team.filter((u) => u.role !== 'admin').map((u) => ({ id: u.id, name: u.name, username: u.username, role: u.role, ...vendorAttention(u) })).filter((x) => x.reasons.length);
+  const suspicious = team.map((u) => ({ id: u.id, name: u.name, username: u.username, role: u.role, ...accessRisk(u) })).filter((x) => x.level !== 'no');
+  const visIds = new Set(teamVisible(me).map((u) => u.id));
+  const incidents = me.role === 'super' || (me.role === 'admin' && can(me, 'resellers')) ? db.incidents.filter((x) => visIds.has(x.userId)).slice(0, 30) : [];
+  const rates = {};
+  for (const u of teamVisible(me)) if (u.role !== 'admin') rates[u.id] = renewRate([u.id]);
+  return { attention, suspicious, incidents, rates, guard: me.role === 'super' ? db.settings.guard : null };
+});
+function teamCount(me) {
+  if (!['super', 'admin', 'reseller'].includes(me.role)) return 0;
+  const team = teamVisible(me).filter((u) => !u.disabled);
+  const visIds = new Set(teamVisible(me).map((u) => u.id)); // los avisos cuentan aunque ya esté bloqueado
+  return team.filter((u) => u.role !== 'admin' && vendorAttention(u).reasons.length).length
+    + team.filter((u) => accessRisk(u).level !== 'no').length
+    + db.incidents.filter((x) => !x.closed && visIds.has(x.userId)).length;
+}
+route('POST', '/api/incidents/:id', STAFF, ({ me, params, body }) => lock(async () => {
+  const inc = db.incidents.find((x) => x.id === params.id);
+  if (!inc) throw new HttpError(404, 'Ese aviso ya no existe.');
+  const u = db.users.find((x) => x.id === inc.userId);
+  if (u && !canManageUser(me, u)) throw new HttpError(403, 'No puedes cambiar a este usuario.');
+  if (body.unblock && u) { u.disabled = false; delete u.offAt; inc.blocked = false; addLog('usuario', null, `Desbloqueado ${u.name} tras revisar las acciones raras`, me); }
+  inc.closed = true; inc.closedBy = me.name; inc.closedAt = new Date().toISOString();
+  saveDb();
+  return { ok: true };
+}));
+route('PUT', '/api/guard', SUPER, ({ me, body }) => lock(async () => {
+  const g = db.settings.guard;
+  g.on = !!body.on; g.block = !!body.block;
+  const l = Number(body.limit); if (Number.isInteger(l) && l >= 3 && l <= 200) g.limit = l;
+  const m = Number(body.minutes); if (Number.isInteger(m) && m >= 1 && m <= 120) g.minutes = m;
+  addLog('ajustes', null, `Alerta de acciones raras: ${g.on ? `${g.limit} acciones en ${g.minutes} minutos${g.block ? ', con bloqueo automático' : ''}` : 'apagada'}`, me);
+  saveDb();
+  return { ok: true };
+}));
+
+/* Mensaje por Telegram al equipo */
+function vbTargets(me, body) {
+  const who = body.who || 'vendors';
+  return teamVisible(me).filter((u) => !u.disabled && u.tgChat && (who === 'all' || (who === 'admins' ? u.role === 'admin' : u.role === 'reseller' || u.role === 'sub')));
+}
+route('POST', '/api/vbroadcast/preview', ['super', 'admin', 'reseller'], ({ me, body }) => {
+  const team = teamVisible(me).filter((u) => !u.disabled);
+  return { targets: vbTargets(me, body).length, linked: team.filter((u) => u.tgChat).length, total: team.length, bot: !!db.settings.notices.telegram.token };
+});
+let vbJob = null;
+route('GET', '/api/vbroadcast', ['super', 'admin', 'reseller'], ({ me }) => ({ job: vbJob && vbJob.byId === me.id ? { total: vbJob.total, done: vbJob.done, ok: vbJob.ok, fail: vbJob.fail, finished: vbJob.finished } : null,
+  history: (db.vbroadcasts || []).filter((b) => me.role === 'super' || b.byId === me.id).slice(0, 10) }));
+route('POST', '/api/vbroadcast', ['super', 'admin', 'reseller'], ({ me, body }) => {
+  const text = typeof body.text === 'string' ? body.text.trim().slice(0, 2000) : '';
+  if (text.length < 3) throw new HttpError(400, 'Escribe el mensaje.');
+  if (!db.settings.notices.telegram.token) throw new HttpError(400, 'El bot de Telegram no está configurado.');
+  if (vbJob && !vbJob.finished) throw new HttpError(409, 'Ya se está enviando otro mensaje. Espera a que termine.');
+  const list = vbTargets(me, body);
+  if (!list.length) throw new HttpError(400, 'Nadie de ese grupo tiene Telegram enlazado.');
+  vbJob = { byId: me.id, total: list.length, done: 0, ok: 0, fail: 0, finished: false };
+  const job = vbJob;
+  (async () => {
+    for (const u of list) {
+      try { await tg('sendMessage', { chat_id: u.tgChat, text: text.replace(/\{nombre\}/gi, u.name).replace(/\{creditos\}|\{créditos\}/gi, String(u.credits || 0)) }); job.ok++; } catch { job.fail++; }
+      job.done++;
+      await new Promise((r) => setTimeout(r, Number(process.env.BC_DELAY_MS) || 60));
+    }
+    job.finished = true;
+    await lock(async () => {
+      if (!Array.isArray(db.vbroadcasts)) db.vbroadcasts = [];
+      db.vbroadcasts.unshift({ at: new Date().toISOString(), by: me.name, byId: me.id, text: text.slice(0, 300), total: job.total, ok: job.ok, fail: job.fail });
+      db.vbroadcasts = db.vbroadcasts.slice(0, 50);
+      addLog('aviso', null, `Mensaje por Telegram a ${job.ok} del equipo: ${text.slice(0, 80)}`, me);
+      saveDb();
+    });
+  })().catch(() => { job.finished = true; });
+  return { ok: true, total: list.length };
+});
+/* Mensaje a un vendedor concreto (desde Atención) */
+route('POST', '/api/users/:id/message', ['super', 'admin', 'reseller'], async ({ me, params, body }) => {
+  const u = userById(params.id);
+  if (!teamVisible(me).some((x) => x.id === u.id)) throw new HttpError(403, 'No puedes escribir a este usuario.');
+  if (!u.tgChat) throw new HttpError(400, 'No tiene Telegram enlazado. Copia el mensaje y mándaselo por donde habléis.');
+  const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1500) : '';
+  if (!text) throw new HttpError(400, 'Escribe el mensaje.');
+  await tg('sendMessage', { chat_id: u.tgChat, text });
+  await lock(async () => { addLog('aviso', null, `Mensaje por Telegram a ${u.name}: ${text.slice(0, 80)}`, me); saveDb(); });
   return { ok: true };
 });
+
+/* Resumen diario por Telegram (9:00) */
+function dailySummaryText() {
+  const t = today(), y = addDays(t, -1), isY = (ts) => ts && localDate(new Date(ts)) === y;
+  const L = db.log.filter((l) => isY(l.ts));
+  const altas = L.filter((l) => l.type === 'alta').length, demos = L.filter((l) => l.type === 'demo').length;
+  const ren = L.filter((l) => l.type === 'renovacion' && /^Renovada/.test(l.text)).length, conv = L.filter((l) => l.type === 'renovacion' && /^Demo convertida/.test(l.text)).length;
+  const sold = db.ledger.filter((x) => isY(x.ts) && x.kind === 'credito' && x.delta > 0).reduce((n, x) => n + x.delta, 0);
+  const soon = db.clients.filter((c) => !c.demo && c.status === 'active' && diffDays(c.expires, t) >= 0 && diffDays(c.expires, t) <= 7).length;
+  const errs = db.clients.filter((c) => c.lastError && c.status !== 'trash').length;
+  const fu = db.followups.filter((f) => f.status === 'pending').length;
+  const shared = db.clients.filter((c) => c.status !== 'trash' && !c.demo && shareInfo(c).level !== 'no').length;
+  const fails = db.access.filter((e) => isY(e.ts) && /fallido|bloqueado/.test(e.kind)).length;
+  const inc = db.incidents.filter((x) => !x.closed).length;
+  const lines = [`☀️ Buenos días. Así fue ayer en ${db.settings.brand.name || 'tu panel'}:`, '',
+    `🆕 ${altas} ${altas === 1 ? 'alta' : 'altas'} · 🔄 ${ren} ${ren === 1 ? 'renovación' : 'renovaciones'} · 🎬 ${demos} ${demos === 1 ? 'demo' : 'demos'}${conv ? ` (${conv} ${conv === 1 ? 'se convirtió' : 'se convirtieron'})` : ''}`];
+  if (sold) lines.push(`💰 ${sold} ${sold === 1 ? 'crédito vendido' : 'créditos vendidos'}`);
+  const cobrado = db.vpay.filter((x) => x.status === 'paid' && !x.gift && isY(x.paidAt)).reduce((n, x) => n + x.amount, 0);
+  if (cobrado) lines.push(`💶 Cobrado a vendedores: ${money2(cobrado)}`);
+  const deben = db.users.reduce((n, u) => n + (u.role === 'reseller' || u.role === 'sub' ? debtOf(u).amount : 0), 0);
+  if (deben) lines.push(`⏳ Te deben: ${money2(deben)}`);
+  lines.push('', `⏳ Vencen esta semana: ${soon}`);
+  const todo = [];
+  if (fu) todo.push(`• ${fu} ${fu === 1 ? 'demo por escribir' : 'demos por escribir'}`);
+  if (shared) todo.push(`• ${shared} ${shared === 1 ? 'cuenta parece compartida' : 'cuentas parecen compartidas'}`);
+  if (errs) todo.push(`• ${errs} ${errs === 1 ? 'cuenta con error en Emby' : 'cuentas con error en Emby'}`);
+  if (fails) todo.push(`• ${fails} ${fails === 1 ? 'intento fallido' : 'intentos fallidos'} de entrar al panel`);
+  if (inc) todo.push(`• 🚨 ${inc} ${inc === 1 ? 'aviso de acciones raras' : 'avisos de acciones raras'} sin revisar`);
+  lines.push(...(todo.length ? ['', 'Para revisar:', ...todo] : ['', '✅ Nada pendiente de revisar.']));
+  return lines.join('\n');
+}
+let dailyLast = null;
+function dailySummary() {
+  const h = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
+  const t = today();
+  if (!process.env.DAILY_ANYTIME && h < 9) return;
+  if ((db.settings.dailyLast || dailyLast) === t) return;
+  dailyLast = t; db.settings.dailyLast = t;
+  notifyStaff('daily', dailySummaryText());
+  lock(async () => saveDb()).catch(() => {});
+}
+route('POST', '/api/daily/test', SUPER, ({ me }) => { if (!me.tgChat) throw new HttpError(400, 'Enlaza primero tu Telegram en Ajustes › Seguridad.'); notifyUser(me, dailySummaryText()); return { ok: true }; });
+
+
+/* ======================================================================
+   Cobros a vendedores: forma de pago, deudas, recordatorios, justificantes,
+   extracto de cuenta, aviso de créditos regalados e informe de cobros
+   ====================================================================== */
+const PAY_METHODS = ['Bizum', 'Efectivo', 'Transferencia', 'PayPal', 'Cripto', 'Tarjeta', 'Otro', 'Sin cobro'];
+const money2 = (n) => `${(Math.round(n * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${db.settings.currency === 'EUR' || !db.settings.currency ? '€' : db.settings.currency}`;
+function readPayment(body, u, credits) {
+  const p = body.payment;
+  if (!p || typeof p !== 'object') return null;
+  const method = PAY_METHODS.includes(p.method) ? p.method : 'Otro';
+  if (method === 'Sin cobro') return { method, amount: 0, status: 'paid', ref: '', gift: true };
+  const amount = Math.round(Number(p.amount) * 100) / 100;
+  if (!(amount >= 0) || amount > 1e6) throw new HttpError(400, 'Escribe un importe válido.');
+  return { method, amount, status: p.status === 'pending' ? 'pending' : 'paid', ref: str(p.ref, 60) };
+}
+const payText = (p) => (!p ? '' : p.gift ? ' · sin cobro' : ` · ${money2(p.amount)} ${p.method}`); // si está pagada o no se ve en Cobros y deudas (cambia con el tiempo)
+function afterRecharge(me, u, credits, pay) {
+  if (pay) {
+    const rec = { id: crypto.randomBytes(5).toString('hex'), at: new Date().toISOString(), userId: u.id, user: u.name, credits, amount: pay.amount, method: pay.method, ref: pay.ref, status: pay.status, paidAt: pay.status === 'paid' ? new Date().toISOString() : null, by: me.name, byId: me.id, gift: !!pay.gift };
+    // referencia repetida: mismo concepto de Bizum o transferencia ya usado
+    if (rec.ref) { const dup = db.vpay.find((x) => x.ref && x.ref.toLowerCase() === rec.ref.toLowerCase() && x.method === rec.method); if (dup) rec.dupOf = dup.id; }
+    db.vpay.unshift(rec);
+    if (db.vpay.length > 20000) db.vpay.length = 20000;
+    const cfg = db.settings.vpay;
+    if (cfg.receipts !== false && u.tgChat) notifyUser(u, `✅ Recarga de ${plural(credits, 'crédito', 'créditos')}${pay.gift ? '' : ` · ${money2(pay.amount)} por ${pay.method}${pay.status === 'pending' ? ' (pendiente de pago)' : ''}`}\nSaldo: ${plural(u.credits, 'crédito', 'créditos')}${pay.status === 'pending' ? `\nTienes pendiente: ${money2(debtOf(u).amount)}` : ''}`);
+    if (rec.dupOf) notifyStaff('credits', `⚠️ Referencia repetida: la recarga de ${u.name} usa «${rec.ref}» (${rec.method}), que ya se había apuntado antes. Revisa que no sea el mismo pago dos veces.`);
+  }
+  // Aviso de créditos regalados o grandes recargas hechas por otro (no por ti)
+  const cfg = db.settings.vpay;
+  if (me.role !== 'super' && (credits >= (cfg.giftAlert || 50) || (pay && pay.gift) || (!pay && credits > 0 && me.role === 'admin'))) {
+    notifyStaff('credits', `💳 ${me.name} ha cargado ${plural(credits, 'crédito', 'créditos')} a ${u.name}${pay ? (pay.gift ? ' SIN COBRO' : ` · ${money2(pay.amount)} ${pay.method}${pay.status === 'pending' ? ' (pendiente)' : ''}`) : ' sin apuntar el cobro'}.\n${whenTxt()}`);
+  }
+}
+/** Lo que debe un vendedor: recargas pendientes + saldo en negativo */
+function debtOf(u) {
+  const pend = db.vpay.filter((x) => x.userId === u.id && x.status === 'pending');
+  const neg = u.credits < 0 ? Math.round(-u.credits * buyerPrice(u) * 100) / 100 : 0;
+  const amount = Math.round((pend.reduce((n, x) => n + x.amount, 0) + neg) * 100) / 100;
+  const oldest = pend.length ? pend[pend.length - 1].at : null;
+  return { amount, pending: pend.length, neg, negCredits: u.credits < 0 ? -u.credits : 0, oldest, days: oldest ? Math.floor((Date.now() - Date.parse(oldest)) / 86400000) : 0 };
+}
+function debtGate(me) {
+  const cfg = db.settings.vpay;
+  if (!cfg || (!(cfg.limit > 0) && !(cfg.days > 0)) || isStaff(me)) return;
+  const d = debtOf(me);
+  if (!d.amount) return;
+  if ((cfg.limit > 0 && d.amount > cfg.limit) || (cfg.days > 0 && d.days >= cfg.days)) {
+    throw new HttpError(402, `Tienes ${money2(d.amount)} pendientes de pagar${d.days ? ` desde hace ${plural(d.days, 'día', 'días')}` : ''}. Cuando lo pagues podrás seguir dando altas y renovaciones. Habla con quien te recarga los créditos.`);
+  }
+}
+/** Quién puede ver/gestionar los cobros de quién */
+function payVisible(me) {
+  if (me.role === 'super' || (me.role === 'admin' && can(me, 'credits'))) return (x) => true;
+  return (x) => x.byId === me.id;
+}
+const debtorsFor = (me) => db.users.filter((u) => !['super'].includes(u.role) && u.id !== me.id && (me.role === 'super' || (me.role === 'admin' && can(me, 'credits')) || db.vpay.some((x) => x.userId === u.id && x.byId === me.id) || u.parentId === me.id));
+route('GET', '/api/vpay', ['super', 'admin', 'reseller'], ({ me, req }) => {
+  const q = new URL(req.url, 'http://x').searchParams, month = /^\d{4}-\d{2}$/.test(q.get('month') || '') ? q.get('month') : today().slice(0, 7);
+  const vis = payVisible(me), list = db.vpay.filter(vis);
+  const debtors = debtorsFor(me).map((u) => ({ id: u.id, name: u.name, username: u.username, role: u.role, credits: u.credits, price: buyerPrice(u), tgLinked: !!u.tgChat, ...debtOf(u) }))
+    .filter((d) => d.amount > 0 && (me.role === 'super' || (me.role === 'admin' && can(me, 'credits')) || list.some((x) => x.userId === d.id) || db.users.find((u) => u.id === d.id).parentId === me.id))
+    .sort((a, b) => b.amount - a.amount);
+  const inMonth = list.filter((x) => x.status === 'paid' && !x.gift && x.paidAt && x.paidAt.slice(0, 7) === month);
+  const prevM = (() => { const [y, m] = month.split('-').map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`; })();
+  const prevTotal = list.filter((x) => x.status === 'paid' && !x.gift && x.paidAt && x.paidAt.slice(0, 7) === prevM).reduce((n, x) => n + x.amount, 0);
+  const byMethod = {}, byUser = {};
+  for (const x of inMonth) { byMethod[x.method] = (byMethod[x.method] || 0) + x.amount; byUser[x.user] = (byUser[x.user] || 0) + x.amount; }
+  return { month, total: Math.round(inMonth.reduce((n, x) => n + x.amount, 0) * 100) / 100, prevTotal: Math.round(prevTotal * 100) / 100, count: inMonth.length, byMethod, byUser,
+    gifts: list.filter((x) => x.gift && x.at.slice(0, 7) === month).reduce((n, x) => n + x.credits, 0),
+    debt: Math.round(debtors.reduce((n, d) => n + d.amount, 0) * 100) / 100, debtors, recent: list.slice(0, 40), methods: PAY_METHODS, cfg: me.role === 'super' ? db.settings.vpay : null,
+    months: [...new Set(list.filter((x) => x.paidAt).map((x) => x.paidAt.slice(0, 7)).concat([today().slice(0, 7)]))].sort().reverse().slice(0, 18) };
+});
+/* Registrar que ha pagado (todas o algunas recargas pendientes) */
+route('POST', '/api/vpay/settle', ['super', 'admin', 'reseller'], ({ me, body }) => lock(async () => {
+  const u = userById(body.userId), vis = payVisible(me);
+  const ids = Array.isArray(body.ids) ? body.ids.map(String) : null;
+  const method = PAY_METHODS.includes(body.method) ? body.method : null, ref = str(body.ref, 60);
+  const pend = db.vpay.filter((x) => x.userId === u.id && x.status === 'pending' && vis(x) && (!ids || ids.includes(x.id)));
+  if (!pend.length) throw new HttpError(400, 'No hay recargas pendientes que marcar.');
+  const at = new Date().toISOString();
+  for (const x of pend) { x.status = 'paid'; x.paidAt = at; x.settledBy = me.name; if (method) x.method = method; if (ref) x.ref = ref; }
+  const total = pend.reduce((n, x) => n + x.amount, 0);
+  addLog('cobro', null, `Pago registrado de ${u.name}: ${money2(total)}${method ? ' por ' + method : ''} (${plural(pend.length, 'recarga', 'recargas')})`, me);
+  if (db.settings.vpay.receipts !== false && u.tgChat) notifyUser(u, `✅ Pago recibido: ${money2(total)}${method ? ' por ' + method : ''}. ¡Gracias!${debtOf(u).amount ? `\nTe queda pendiente: ${money2(debtOf(u).amount)}` : '\nYa no tienes nada pendiente.'}`);
+  saveDb();
+  return { ok: true, total };
+}));
+/* Recordatorio de pago (a mano) */
+function remindText(u) { const d = debtOf(u); return `Hola ${u.name} 👋\n\nTienes pendiente de pago ${money2(d.amount)}${d.pending ? ` (${plural(d.pending, 'recarga', 'recargas')}${d.days ? `, la más antigua de hace ${plural(d.days, 'día', 'días')}` : ''})` : ''}${d.negCredits ? `${d.pending ? ' y' : ''} ${plural(d.negCredits, 'crédito', 'créditos')} en negativo` : ''}.\n\nCuando puedas, házmelo llegar. ¡Gracias!`; }
+route('POST', '/api/vpay/remind', ['super', 'admin', 'reseller'], async ({ me, body }) => {
+  const u = userById(body.userId);
+  if (!debtorsFor(me).some((x) => x.id === u.id)) throw new HttpError(403, 'No puedes escribir a este usuario.');
+  if (!u.tgChat) throw new HttpError(400, 'No tiene Telegram enlazado. Copia el mensaje y mándaselo.');
+  await tg('sendMessage', { chat_id: u.tgChat, text: typeof body.text === 'string' && body.text.trim() ? body.text.trim().slice(0, 1500) : remindText(u) });
+  await lock(async () => { u.lastRemind = new Date().toISOString(); addLog('aviso', null, `Recordatorio de pago enviado a ${u.name}`, me); saveDb(); });
+  return { ok: true };
+});
+/* Extracto de cuenta de un vendedor */
+function statementOf(u, from, to) {
+  const inR = (ts) => ts >= from && ts < to;
+  const led = db.ledger.filter((x) => x.userId === u.id && inR(x.ts));
+  const pays = db.vpay.filter((x) => x.userId === u.id && inR(x.at));
+  const sum = (arr, f) => arr.reduce((n, x) => n + f(x), 0);
+  return {
+    user: { id: u.id, name: u.name, credits: u.credits, price: buyerPrice(u) }, from, to,
+    loaded: sum(led.filter((x) => x.delta > 0 && x.kind === 'credito'), (x) => x.delta),
+    spent: -sum(led.filter((x) => x.delta < 0 && (x.kind === 'alta' || x.kind === 'renovacion' || x.kind === 'asignacion')), (x) => x.delta),
+    refunds: sum(led.filter((x) => x.kind === 'devolucion'), (x) => x.delta),
+    paid: Math.round(sum(pays.filter((x) => x.status === 'paid' && !x.gift), (x) => x.amount) * 100) / 100,
+    pending: Math.round(sum(pays.filter((x) => x.status === 'pending'), (x) => x.amount) * 100) / 100,
+    debt: debtOf(u),
+    rows: led.slice(0, 300).map((x) => ({ ts: x.ts, text: x.text, delta: x.delta, balance: x.balance, kind: x.kind })),
+  };
+}
+function statementText(st) {
+  const d = (s) => s.slice(0, 10).split('-').reverse().join('/');
+  return `📄 Extracto de ${st.user.name}\n${d(st.from)} – ${d(new Date(Date.parse(st.to) - 1).toISOString())}\n\n` +
+    `➕ Recargas: ${plural(st.loaded, 'crédito', 'créditos')}\n➖ Gastados en altas y renovaciones: ${st.spent}\n${st.refunds ? `↩️ Devueltos: ${st.refunds}\n` : ''}` +
+    `💶 Pagado: ${money2(st.paid)}${st.pending ? `\n⏳ Pendiente de este periodo: ${money2(st.pending)}` : ''}\n\n` +
+    `Saldo actual: ${plural(st.user.credits, 'crédito', 'créditos')}${st.debt.amount ? `\nTotal pendiente de pago: ${money2(st.debt.amount)}` : '\nNo tienes nada pendiente ✅'}`;
+}
+route('GET', '/api/users/:id/statement', ['super', 'admin', 'reseller'], ({ me, params, req }) => {
+  const u = userById(params.id);
+  if (u.id !== me.id && !canManageUser(me, u)) throw new HttpError(403, 'No puedes ver este extracto.');
+  const q = new URL(req.url, 'http://x').searchParams, days = Math.min(365, Math.max(1, Number(q.get('days')) || 30));
+  const to = new Date(Date.now() + 60000).toISOString(), from = new Date(Date.now() - days * 86400000).toISOString();
+  const st = statementOf(u, from, to);
+  return { ...st, text: statementText(st), tgLinked: !!u.tgChat };
+});
+route('POST', '/api/users/:id/statement/send', ['super', 'admin', 'reseller'], async ({ me, params, body }) => {
+  const u = userById(params.id);
+  if (!canManageUser(me, u)) throw new HttpError(403, 'No puedes enviar este extracto.');
+  if (!u.tgChat) throw new HttpError(400, 'No tiene Telegram enlazado. Descárgalo o cópialo y mándaselo.');
+  const days = Math.min(365, Math.max(1, Number(body.days) || 30));
+  await tg('sendMessage', { chat_id: u.tgChat, text: statementText(statementOf(u, new Date(Date.now() - days * 86400000).toISOString(), new Date(Date.now() + 60000).toISOString())) });
+  return { ok: true };
+});
+route('PUT', '/api/vpay/config', SUPER, ({ me, body }) => lock(async () => {
+  const c = db.settings.vpay, num = (v, min, max, d) => { const n = Number(v); return Number.isFinite(n) && n >= min && n <= max ? Math.round(n * 100) / 100 : d; };
+  c.limit = num(body.limit, 0, 1e6, c.limit); c.days = num(body.days, 0, 365, c.days); c.remind = num(body.remind, 0, 60, c.remind);
+  c.giftAlert = num(body.giftAlert, 1, 100000, c.giftAlert); c.receipts = !!body.receipts; c.monthly = !!body.monthly;
+  addLog('ajustes', null, `Cobros a vendedores: límite ${c.limit ? money2(c.limit) : 'sin límite'}, ${c.days ? c.days + ' días' : 'sin plazo'}, recordatorio ${c.remind ? 'cada ' + c.remind + ' días' : 'apagado'}`, me);
+  saveDb();
+  return { ok: true };
+}));
+/* Tareas diarias: recordatorios automáticos y extracto mensual (día 1) */
+let vpayDay = null;
+function vpayDaily() {
+  const t = today(), h = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
+  if ((!process.env.DAILY_ANYTIME && h < 10) || vpayDay === t || db.settings.vpayDay === t) return;
+  vpayDay = t; db.settings.vpayDay = t;
+  const c = db.settings.vpay;
+  if (c.remind > 0) for (const u of db.users) {
+    if (u.disabled || !u.tgChat) continue;
+    const d = debtOf(u);
+    if (!d.amount || d.days < c.remind) continue;
+    if (u.lastRemind && Date.now() - Date.parse(u.lastRemind) < c.remind * 86400000) continue;
+    notifyUser(u, remindText(u)); u.lastRemind = new Date().toISOString();
+  }
+  if (c.monthly && t.slice(8) === '01') {
+    const end = new Date(t + 'T00:00:00').toISOString(), [y, m] = t.split('-').map(Number), start = new Date(`${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, '0')}-01T00:00:00`).toISOString();
+    for (const u of db.users) if (!u.disabled && u.tgChat && (u.role === 'reseller' || u.role === 'sub')) { const st = statementOf(u, start, end); if (st.loaded || st.spent || st.debt.amount) notifyUser(u, statementText(st)); }
+  }
+  lock(async () => saveDb()).catch(() => {});
+}
 
 /* ---------- Servidor HTTP ---------- */
 /** Comprime con gzip lo que pesa, si el navegador lo acepta: la página carga mucho antes en el móvil */
@@ -3859,6 +4951,172 @@ function readBody(req, limit = 1e6) {
   });
 }
 
+/* ---------- Licencias: alquiler del uso del panel por meses ----------
+ * Panel principal (sin LICENSE_TOKEN): el superadministrador apunta a quién alquila, hasta qué día ha pagado, y lo renueva.
+ * Panel alquilado (con LICENSE_SERVER y LICENSE_TOKEN en Coolify): pregunta al principal cada hora si sigue pagado.
+ * Al caducar (más los días de margen) el panel alquilado se pone en pausa; las cuentas Emby de sus clientes NO se tocan. */
+const LIC_SERVER = String(process.env.LICENSE_SERVER || '').trim().replace(/\/+$/, '');
+const LIC_TOKEN = String(process.env.LICENSE_TOKEN || '').trim();
+const LIC_CLIENT = !!(LIC_SERVER && LIC_TOKEN);
+const LIC_GRACE = 3; // días de margen tras el vencimiento
+const licHash = (t) => crypto.createHash('sha256').update('lic:' + String(t)).digest('hex');
+function licDefaults() {
+  if (!Array.isArray(db.licenses)) db.licenses = [];
+  db.settings.licContact = typeof db.settings.licContact === 'string' ? db.settings.licContact : '';
+  if (!db.licState || typeof db.licState !== 'object') db.licState = {};
+}
+function licView(l) {
+  const { tokenHash, ...rest } = l; // la clave nunca sale del panel
+  const left = diffDays(l.until, today());
+  const state = l.blocked ? 'blocked' : left < -LIC_GRACE ? 'locked' : left < 0 ? 'grace' : left <= 7 ? 'soon' : 'ok';
+  return { ...rest, left, state, online: !!l.lastCheck && Date.now() - Date.parse(l.lastCheck) < 3 * 3600e3 };
+}
+function licFind(id) { const l = db.licenses.find((x) => x.id === Number(id)); if (!l) throw new HttpError(404, 'Esa licencia no existe.'); return l; }
+function licGuard() { if (LIC_CLIENT) throw new HttpError(403, 'Este es un panel alquilado: las licencias se llevan desde el panel principal.'); }
+function licToken() { return 'cl_' + crypto.randomBytes(24).toString('base64url'); }
+function licFields(l, body) {
+  if (body.name !== undefined) { const n = str(body.name, 60); if (!n) throw new HttpError(400, 'Pon un nombre.'); l.name = n; }
+  if (body.url !== undefined) { const u = str(body.url, 200).replace(/\/+$/, ''); if (u && !/^https?:\/\/[^\s/]+/i.test(u)) throw new HttpError(400, 'La dirección debe empezar por http:// o https://'); l.url = u; }
+  if (body.contact !== undefined) l.contact = str(body.contact, 80);
+  if (body.notes !== undefined) l.notes = str(body.notes, 300);
+  if (body.price !== undefined) { const p = Math.round(Number(body.price) * 100) / 100; if (!(p >= 0) || p > 100000) throw new HttpError(400, 'El precio no es válido.'); l.price = p; }
+  if (body.until !== undefined) { const d = str(body.until, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new HttpError(400, 'La fecha no es válida.'); l.until = d; }
+}
+route('GET', '/api/licenses', SUPER, () => { licGuard(); return { list: db.licenses.map(licView), contact: db.settings.licContact, grace: LIC_GRACE, today: today() }; });
+route('POST', '/api/licenses', SUPER, ({ me, body }) => lock(async () => {
+  licGuard();
+  const months = Math.round(Number(body.months));
+  if (!(months >= 0 && months <= 36)) throw new HttpError(400, 'Los meses no son válidos.');
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(String(body.start || '')) ? body.start : today();
+  const token = licToken(), id = (db.licenses.reduce((m, x) => Math.max(m, x.id), 0) || 0) + 1;
+  const l = { id, name: '', url: '', contact: '', notes: '', price: 0, start, until: months ? addMonths(start, months) : addDays(start, 0), blocked: false, payments: [], createdAt: new Date().toISOString(), tokenHash: licHash(token) };
+  licFields(l, { ...body, until: undefined });
+  if (months && body.paid !== false) l.payments.push({ at: new Date().toISOString(), months, amount: Math.round((Number(body.amount ?? l.price * months) || 0) * 100) / 100, until: l.until, method: str(body.method, 30) });
+  db.licenses.push(l);
+  addLog('ajustes', null, `Licencia nueva para ${l.name}: pagado hasta el ${l.until}`, me);
+  saveDb();
+  return { ok: true, lic: licView(l), token };
+}));
+route('PUT', '/api/licenses/contact', SUPER, ({ body }) => lock(async () => { licGuard(); db.settings.licContact = str(body.contact, 120); saveDb(); return { ok: true }; }));
+route('PUT', '/api/licenses/:id', SUPER, ({ me, body, params }) => lock(async () => {
+  licGuard(); const l = licFind(params.id), before = l.until;
+  licFields(l, body);
+  if (l.until !== before) { l.warned = {}; addLog('ajustes', null, `Licencia de ${l.name}: fecha cambiada a mano del ${before} al ${l.until}`, me); }
+  saveDb(); return { ok: true, lic: licView(l) };
+}));
+route('POST', '/api/licenses/:id/renew', SUPER, ({ me, body, params }) => lock(async () => {
+  licGuard(); const l = licFind(params.id);
+  const months = Math.round(Number(body.months));
+  if (!(months >= 1 && months <= 36)) throw new HttpError(400, 'Elige cuántos meses.');
+  const base = l.until > today() ? l.until : today(); // si ya había caducado, cuenta desde hoy
+  l.until = addMonths(base, months); l.warned = {};
+  const amount = Math.round((Number(body.amount ?? (l.price || 0) * months) || 0) * 100) / 100;
+  l.payments.push({ at: new Date().toISOString(), months, amount, until: l.until, method: str(body.method, 30) });
+  if (l.payments.length > 200) l.payments.splice(0, l.payments.length - 200);
+  addLog('ajustes', null, `Licencia de ${l.name} renovada ${months} ${months === 1 ? 'mes' : 'meses'}: pagado hasta el ${l.until}`, me);
+  saveDb(); return { ok: true, lic: licView(l) };
+}));
+route('POST', '/api/licenses/:id/block', SUPER, ({ me, body, params }) => lock(async () => {
+  licGuard(); const l = licFind(params.id); l.blocked = !!body.blocked;
+  addLog('ajustes', null, `Licencia de ${l.name} ${l.blocked ? 'bloqueada' : 'desbloqueada'} a mano`, me);
+  saveDb(); return { ok: true, lic: licView(l) };
+}));
+route('POST', '/api/licenses/:id/token', SUPER, ({ me, params }) => lock(async () => {
+  licGuard(); const l = licFind(params.id), token = licToken(); l.tokenHash = licHash(token);
+  addLog('seguridad', null, `Clave de licencia de ${l.name} cambiada`, me);
+  saveDb(); return { ok: true, token };
+}));
+route('DELETE', '/api/licenses/:id', SUPER, ({ me, params }) => lock(async () => {
+  licGuard(); const l = licFind(params.id); db.licenses = db.licenses.filter((x) => x !== l);
+  addLog('ajustes', null, `Licencia de ${l.name} borrada`, me);
+  saveDb(); return { ok: true };
+}));
+/* Lo llaman los paneles alquilados (sin sesión, con su clave) */
+route('POST', '/api/license/check', null, ({ req }) => {
+  const ip = clientIp(req);
+  if (LIC_CLIENT) throw new HttpError(404, 'No encontrado.');
+  if (ipBlocked(ip)) throw new HttpError(429, 'Demasiados intentos. Espera un rato.');
+  const tk = String(req.headers['x-license-token'] || '');
+  const l = tk.length > 10 && tk.length < 100 ? db.licenses.find((x) => x.tokenHash === licHash(tk)) : null;
+  if (!l) { ipFail(ip); throw new HttpError(404, 'Clave de licencia no válida.'); }
+  const first = !l.lastCheck;
+  l.lastCheck = new Date().toISOString(); l.lastIp = ip.slice(0, 45);
+  if (first || !l._saved || Date.now() - l._saved > 3600e3) { l._saved = Date.now(); saveDb(); }
+  return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
+});
+/* Avisos diarios en el panel principal: 7, 3 y 1 día antes, el día que vence y cuando se pausa */
+function licDaily() {
+  if (LIC_CLIENT) return;
+  let changed = false;
+  for (const l of db.licenses) {
+    if (l.blocked) continue;
+    const left = diffDays(l.until, today());
+    const th = left === 7 || left === 3 || left === 1 || left === 0 ? String(left) : left === -LIC_GRACE - 1 ? 'off' : null;
+    if (!th) continue;
+    l.warned = l.warned || {};
+    const k = l.until + ':' + th;
+    if (l.warned[k]) continue;
+    l.warned[k] = 1; changed = true;
+    const txt = th === 'off' ? `⛔ El panel alquilado de ${l.name} se ha puesto en pausa: venció el ${l.until} y no se ha renovado.`
+      : th === '0' ? `📅 Hoy vence la licencia del panel de ${l.name}. Tiene ${LIC_GRACE} días de margen antes de pausarse.`
+      : `📅 La licencia del panel de ${l.name} vence en ${th} ${th === '1' ? 'día' : 'días'} (el ${l.until}).`;
+    notifyStaff('license', txt + (l.price ? `\nPrecio: ${l.price} € al mes.` : ''));
+  }
+  if (changed) saveDb();
+}
+
+/* ---- Lado del panel alquilado ---- */
+function licStatus() {
+  if (!LIC_CLIENT) return null;
+  const st = db.licState || {};
+  const base = { contact: st.contact || '', until: st.until || null, lastOk: st.lastOk || null };
+  if (st.invalid) return { ...base, state: 'locked', reason: 'invalid' };
+  if (!st.until) return { ...base, state: 'pending' };
+  if (st.blocked) return { ...base, state: 'locked', reason: 'blocked' };
+  const left = diffDays(st.until, today()), grace = Number.isFinite(st.grace) ? st.grace : LIC_GRACE;
+  if (left < -grace) return { ...base, state: 'locked', reason: 'expired', left };
+  if (left < 0) return { ...base, state: 'grace', left, lockOn: addDays(st.until, grace + 1) };
+  return { ...base, state: left <= 7 ? 'soon' : 'ok', left };
+}
+const licLocked = () => { const s = licStatus(); return !!s && s.state === 'locked'; };
+let licBusy = false, licTry = 0;
+async function licCheck() {
+  if (!LIC_CLIENT || licBusy) return;
+  licBusy = true; licTry = Date.now();
+  try {
+    const r = await fetch(LIC_SERVER + '/api/license/check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-License-Token': LIC_TOKEN }, body: '{}', signal: AbortSignal.timeout(15000) });
+    const j = await r.json().catch(() => ({}));
+    const before = licStatus();
+    if (r.ok && j.ok && /^\d{4}-\d{2}-\d{2}$/.test(String(j.until))) {
+      db.licState = { ...db.licState, until: j.until, blocked: !!j.blocked, grace: Number(j.grace) || LIC_GRACE, contact: str(j.contact, 120), invalid: false, lastOk: new Date().toISOString(), err: '' };
+    } else if (r.status === 404) { // la clave no existe en el panel principal (borrada o mal copiada)
+      db.licState = { ...db.licState, invalid: true, lastOk: new Date().toISOString(), err: 'clave' };
+    } else db.licState = { ...db.licState, err: 'Respuesta ' + r.status }; // fallo pasajero: se queda con lo último que sabía
+    const now = licStatus();
+    if (before && now && before.state === 'locked' && now.state !== 'locked') addLog('ajustes', null, 'Licencia renovada: el panel vuelve a funcionar', null);
+    licWarn(now);
+    saveDb();
+  } catch (e) { db.licState = { ...db.licState, err: 'Sin conexión con el panel principal' }; }
+  finally { licBusy = false; }
+}
+function licWarn(s) {
+  if (!s || !s.until) return;
+  const th = s.state === 'locked' ? 'off' : s.state === 'grace' ? 'grace' : s.left === 7 || s.left === 3 || s.left === 1 || s.left === 0 ? String(s.left) : null;
+  if (!th) return;
+  const w = db.licState.warned = db.licState.warned || {}, k = s.until + ':' + th + (s.reason ? ':' + s.reason : '');
+  if (w[k]) return; w[k] = 1;
+  const who = s.contact ? `\nPara renovar: ${s.contact}` : '';
+  const txt = th === 'off' ? (s.reason === 'expired' ? `⛔ Tu panel está en pausa porque la suscripción venció el ${s.until}.` : '⛔ Tu panel está en pausa.') + ` Las cuentas de tus clientes siguen funcionando.${who}`
+    : th === 'grace' ? `⚠️ Tu suscripción al panel venció el ${s.until}. El panel se pondrá en pausa el ${s.lockOn} si no la renuevas.${who}`
+    : th === '0' ? `📅 Tu suscripción al panel vence hoy.${who}` : `📅 Tu suscripción al panel vence en ${th} ${th === '1' ? 'día' : 'días'} (el ${s.until}).${who}`;
+  for (const u of db.users) if (u.role === 'super' && !u.disabled) notifyUser(u, txt);
+}
+route('POST', '/api/license/recheck', null, async () => {
+  if (!LIC_CLIENT) throw new HttpError(404, 'No encontrado.');
+  if (Date.now() - licTry > 5000) await licCheck();
+  return { ok: true, license: licStatus() };
+});
+
 const server = http.createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
   try {
@@ -3873,6 +5131,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (!pathname.startsWith('/api/')) return send(res, 404, { error: 'No encontrado.' });
     if (req.method === 'POST' && (pathname === '/api/pay/stripe/webhook' || pathname === '/api/pay/nowpayments/ipn')) return await payWebhook(req, res, pathname);
+    // Panel alquilado en pausa: solo se responde lo justo para mostrar el aviso
+    if (LIC_CLIENT && licLocked() && !['/api/state', '/api/license/recheck', '/api/logout'].includes(pathname)) return send(res, 423, { error: 'El panel está en pausa: la suscripción ha caducado.', licLocked: true });
     for (const r of routes) {
       if (r.method !== req.method) continue;
       const m = r.re.exec(pathname);
@@ -3951,17 +5211,27 @@ server.listen(PORT, HOST, () => {
   console.log(`  Abre en el navegador:  http://localhost:${PORT}`);
   console.log('  Deja esta ventana abierta. Para parar el panel, cierrala.');
   console.log('');
-  runLifecycle();
+  const live = () => !licLocked(); // en pausa el panel no toca nada de Emby: las cuentas se quedan como estaban
+  if (live()) runLifecycle();
   let ticks = 0;
-  setInterval(() => { if (++ticks % 60 === 0) { backupDb(); lock(async () => pruneRecords()).catch(() => {}); } runLifecycle(); }, CHECK_EVERY_MS);
+  setInterval(() => { if (++ticks % 60 === 0) { backupDb(); lock(async () => pruneRecords()).catch(() => {}); } if (live()) runLifecycle(); }, CHECK_EVERY_MS);
+  if (LIC_CLIENT) { const lLoop = () => { licCheck().finally(() => { const s = licStatus(); setTimeout(lLoop, Number(process.env.LICENSE_MS) || (s && s.state !== 'ok' ? 5 * 60000 : 3600e3)); }); }; setTimeout(lLoop, 2000); }
+  // Al apagar (Redeploy en Coolify) se guarda lo pendiente del historial de conexiones
+  for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveConn(true); } catch { /* nada */ } process.exit(0); });
+  const dLoop = () => { try { licDaily(); } catch (e) { console.error('Licencias:', e.message); } if (live()) try { vpayDaily(); } catch (e) { console.error('Cobros:', e.message); } if (live()) try { dailySummary(); } catch (e) { console.error('Resumen diario:', e.message); } setTimeout(dLoop, Number(process.env.DAILY_MS) || 60000); };
+  setTimeout(dLoop, Number(process.env.DAILY_MS) || 30000);
+  const qLoop = () => { (live() ? qualityDaily() : Promise.resolve()).catch((e) => console.error('Revisión de calidad:', e.message)).finally(() => setTimeout(qLoop, Number(process.env.QDAILY_MS) || 60000)); };
+  setTimeout(qLoop, Number(process.env.QDAILY_MS) || 20000);
+  const satLoop = () => { (live() ? saturationCheck() : Promise.resolve()).catch((e) => console.error('Saturación:', e.message)).finally(() => setTimeout(satLoop, Number(process.env.SAT_MS) || 60000)); };
+  setTimeout(satLoop, Number(process.env.SAT_MS) || 15000);
   // vigilancia de transcodificacion y sesiones, cada tantos segundos como diga Ajustes, Tiempos
-  const watch = () => { Promise.resolve(monitor()).catch(() => {}).finally(() => setTimeout(watch, Number(process.env.MONITOR_MS) || (db.settings.monitorSec || 30) * 1000)); };
+  const watch = () => { Promise.resolve(live() && monitor()).catch(() => {}).finally(() => setTimeout(watch, Number(process.env.MONITOR_MS) || (db.settings.monitorSec || 30) * 1000)); };
   setTimeout(watch, 3000);
-  setInterval(screenNotices, Number(process.env.NOTICE_MS) || 60000); // aviso de vencimiento en la pantalla de Emby
+  setInterval(() => live() && screenNotices(), Number(process.env.NOTICE_MS) || 60000); // aviso de vencimiento en la pantalla de Emby
   setInterval(() => { backupJob().catch(() => {}); }, Number(process.env.BACKUP_MS) || 10 * 60000);
-  const usageLoop = () => { recordUsage().catch((e) => console.error('Estadísticas:', e.message)).finally(() => setTimeout(usageLoop, PLAY_MS)); };
+  const usageLoop = () => { (live() ? recordUsage() : Promise.resolve()).catch((e) => console.error('Estadísticas:', e.message)).finally(() => setTimeout(usageLoop, PLAY_MS)); };
   setTimeout(usageLoop, 8000);
-  const watchLoop = () => { watchServers().catch(() => {}).finally(() => setTimeout(watchLoop, Number(process.env.WATCH_MS) || 60000)); };
+  const watchLoop = () => { (live() ? watchServers() : Promise.resolve()).catch(() => {}).finally(() => setTimeout(watchLoop, Number(process.env.WATCH_MS) || 60000)); };
   setTimeout(watchLoop, 5000);
-  setInterval(telegramPoll, Number(process.env.TG_POLL_MS) || 5000); // mensajes que llegan al bot de Telegram
+  setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000); // mensajes que llegan al bot de Telegram
 });
