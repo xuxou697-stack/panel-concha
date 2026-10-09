@@ -2716,16 +2716,27 @@ route('POST', '/api/bulk/trash', '*', ({ me, body }) => lock(async () => bulkEac
 route('POST', '/api/bulk/dates', STAFF, ({ me, body }) => lock(async () => {
   if (isStaff(me) && paysCredits(me)) throw new HttpError(403, 'Tienes el sistema de créditos activado: las fechas se cambian renovando.');
   const list = bulkClients(me, body);
-  const days = Number(body.days);
-  if (!Number.isInteger(days) || days === 0 || Math.abs(days) > 3650) throw new HttpError(400, 'Escribe un número de días distinto de cero (negativo para restar).');
+  // Modo: sumar / restar (días, semanas o meses) o poner una fecha exacta. «days» suelto sigue funcionando como antes
+  const mode = ['add', 'sub', 'set'].includes(body.mode) ? body.mode : 'add';
+  const unit = ['d', 'w', 'm'].includes(body.unit) ? body.unit : 'd';
+  const amount = body.mode ? Number(body.amount) : Number(body.days);
+  const setDate = str(body.date, 10);
+  if (mode === 'set') { if (!/^\d{4}-\d{2}-\d{2}$/.test(setDate)) throw new HttpError(400, 'Elige la fecha nueva.'); }
+  else if (!Number.isInteger(amount) || amount === 0 || Math.abs(amount) > (unit === 'm' ? 120 : unit === 'w' ? 520 : 3650)) throw new HttpError(400, 'Escribe una cantidad distinta de cero.');
+  const sign = mode === 'sub' ? -1 : 1, n = sign * amount;
+  const reason = str(body.reason, 200), onlyFuture = !!body.onlyFuture;
+  const label = mode === 'set' ? `fecha fija ${setDate}` : `${n > 0 ? '+' : ''}${n} ${unit === 'm' ? (Math.abs(n) === 1 ? 'mes' : 'meses') : unit === 'w' ? (Math.abs(n) === 1 ? 'semana' : 'semanas') : (Math.abs(n) === 1 ? 'día' : 'días')}`;
   const t = today();
   const r = await bulkEach(list, async (c) => {
     if (c.demo || c.status === 'trash') return false;
     const before = c.expires;
-    c.expires = addDays(before, days);
+    const next = mode === 'set' ? setDate : unit === 'm' ? addMonths(before, n) : addDays(before, unit === 'w' ? n * 7 : n);
+    if (next === before) return false;
+    if (onlyFuture && diffDays(next, t) < 0) return false; // se queda como estaba
+    c.expires = next;
     try { if (diffDays(c.expires, t) >= 0) { await grantAccess(c); c.status = 'active'; } }
     catch (e) { c.expires = before; throw e; }
-    addLog('edicion', c, `Editada: vencimiento ${before} → ${c.expires} (ajuste de ${days > 0 ? '+' : ''}${days} días)`, me);
+    addLog('edicion', c, `Editada: vencimiento ${before} → ${c.expires} (ajuste ${label})${reason ? ' · Motivo: ' + reason : ''}`, me);
     return true;
   });
   await lifecycle(); // las que queden vencidas pierden las bibliotecas
