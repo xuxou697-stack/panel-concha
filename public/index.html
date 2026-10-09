@@ -950,6 +950,90 @@ table.acc tr.k-fallido td,table.acc tr.k-fallido2fa td,table.acc tr.k-bloqueado 
 .llk-ct{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:14px;background:var(--raised);margin-bottom:16px}.llk-ct small{color:var(--muted)}.llk-ct b{font-size:17px}
 .llk .btn{width:100%;justify-content:center}
 @media (max-width:560px){.vptiles.lict{grid-template-columns:1fr 1fr;gap:10px}.licgrid{grid-template-columns:1fr}.lbig b{font-size:18px}.licnav b{min-width:0}}
+/* Diseños del resumen */
+.dpick{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin:34px 0 8px;padding-top:18px;border-top:1px dashed var(--line);color:var(--muted);font-size:13px}
+.dpick>span{display:inline-flex;align-items:center;gap:6px}.dpick .ic{width:15px;height:15px}
+.dpick-b{display:inline-flex;padding:3px;border-radius:999px;background:var(--surface);border:1px solid var(--line);gap:2px;flex-wrap:wrap;justify-content:center}
+.dpick-b button{border:0;background:none;color:var(--muted);font:inherit;font-weight:600;padding:6px 14px;border-radius:999px;cursor:pointer}
+.dpick-b button[aria-checked=true]{background:var(--brand);color:var(--on-brand)}
+.donut{width:150px;height:150px;flex:none}.donut .dn-n{font-size:28px;font-weight:800;fill:var(--text)}.donut .dn-l{font-size:11px;fill:var(--muted)}
+.dlegs{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.dleg{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;border:0;background:none;color:var(--text);font:inherit;cursor:pointer;text-align:left}
+.dleg:hover{background:var(--raised)}.dleg i{width:10px;height:10px;border-radius:3px;flex:none}.dleg span{flex:1;font-size:14px}.dleg b{font-size:16px}
+.dchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.spark{display:block;width:100%;height:34px;margin-top:8px}
+.dcred{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;background:color-mix(in srgb,var(--brand) 14%,transparent);color:var(--text)}.dcred .ic{width:15px;height:15px;color:var(--brand)}
+.bc-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.bc-h h2{margin:0;font-size:16px}
+.bcount{min-width:24px;height:24px;padding:0 7px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:800;background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.ddue{display:flex;flex-direction:column;gap:2px}.ddr{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:12px}.ddr:hover{background:var(--raised)}
+.dav{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;flex:none;color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}.dav.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,transparent)}
+.ddn{flex:1;min-width:0;display:flex;flex-direction:column}.ddn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.ddn small{color:var(--muted);font-size:12.5px}
+.dmore{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin-top:6px;border:0;background:none;color:var(--brand);font:inherit;font-weight:600;cursor:pointer}.dmore .ic{width:14px;height:14px;transform:rotate(-90deg)}
+.ddue-ok{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:22px 10px;color:var(--muted)}.ddue-ok .ic{width:30px;height:30px;color:var(--ok)}.ddue-ok b{color:var(--text)}
+/* Tarjetas */
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.bento>*{min-width:0;margin:0}.b-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px}
+.b-hero{grid-column:span 8;border-radius:22px;padding:24px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;gap:18px;position:relative;overflow:hidden;background:radial-gradient(120% 140% at 100% 0%,#e2457a 0%,transparent 45%),radial-gradient(120% 140% at 0% 100%,#14a6c9 0%,transparent 55%),linear-gradient(135deg,#3b2a8f,#6a3fd1)}
+.b-hero::after{content:"";position:absolute;right:-60px;bottom:-80px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08)}
+.b-hero h1{margin:0;font-size:clamp(26px,3.6vw,38px);line-height:1.12;font-weight:800}.b-hero h1 span{color:#ffe08a}
+.bh-d{margin:0 0 6px;font-size:13px;opacity:.8}.bh-p{margin:8px 0 0;opacity:.85}
+.bh-a{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:relative;z-index:1}.b-hero .btn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.25);color:#fff}.b-hero .btn.primary{background:#fff;color:#3b2a8f;border-color:#fff}
+.b-hero .dcred{background:rgba(255,255,255,.16);color:#fff}.b-hero .dcred .ic{color:#ffe08a}
+.b-don{grid-column:span 4}.b-don h2{margin:0 0 8px;font-size:16px}.bd-in{display:flex;align-items:center;gap:12px}
+.b-search,.b-full,.b-kpis,.b-chart{grid-column:1/-1}.b-search .dsearch{margin:0}
+.b-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.bk{display:flex;flex-direction:column;gap:2px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;color:var(--text);font:inherit}
+button.bk{cursor:pointer}button.bk:hover{border-color:var(--c)}
+.bk-h{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}.bk-i{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}.bk-i .ic{width:16px;height:16px}
+.bk>b{font-size:30px;font-weight:800;margin-top:6px}.bk>small{color:var(--muted);font-size:12.5px}
+.b-due{grid-column:span 5}.b-log{grid-column:span 7}.b-log .panel{border:0;background:none;padding:0}
+/* Limpio */
+.limpio{max-width:900px}
+.l-h{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:6px 0 22px}
+.l-d{margin:0 0 4px;color:var(--muted);font-size:13px}.l-h h1{margin:0;font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.02em}
+.l-h h1 span{background:linear-gradient(90deg,var(--brand),#a46bff 60%,#e2457a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.l-p{margin:6px 0 0;color:var(--muted)}.l-a{display:flex;gap:8px;flex-wrap:wrap}
+.l-s{margin-top:34px}.l-s h2{margin:0 0 14px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.l-sh{display:flex;justify-content:space-between;align-items:center;gap:10px}.l-sh h2{margin:0 0 14px}
+.l-todo{display:flex;flex-direction:column;gap:8px}
+.lt{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;width:100%}
+.lt:hover{border-color:var(--brand)}.lt-i{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;flex:none}.lt-t{flex:1;font-size:15px}.lt em{font-style:normal;color:var(--brand);font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:2px}.lt em .ic{width:14px;height:14px;transform:rotate(-90deg)}
+.lt.bad .lt-i{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}.lt.warn .lt-i{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+.lt.info .lt-i{color:#8b6cf2;background:color-mix(in srgb,#8b6cf2 14%,transparent)}.lt.ok{cursor:default}.lt.ok .lt-i{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.lbarx{display:flex;height:14px;border-radius:999px;overflow:hidden;gap:3px;background:var(--raised)}.lbarx i{display:block;min-width:6px}
+.lnums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.lnums button{display:flex;flex-direction:column;gap:2px;border:0;background:none;color:var(--text);font:inherit;text-align:left;padding:6px 4px;border-radius:10px;cursor:pointer}.lnums button:hover{background:var(--surface)}
+.lnums b{font-size:28px;font-weight:800}.lnums span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.lnums i{width:8px;height:8px;border-radius:50%}
+.l-big{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.l-big>div,.l-big>button{display:flex;flex-direction:column;border:0;background:none;color:var(--text);font:inherit;text-align:left;padding:0}.l-big>button{cursor:pointer}
+.l-big b{font-size:clamp(30px,5vw,44px);font-weight:800;line-height:1.1}.l-big span{color:var(--muted);font-size:13.5px}
+.limpio .tl{border:0;background:none;padding:0}
+/* Control */
+.c-h{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);margin-bottom:14px}
+.c-hl{display:flex;align-items:center;gap:14px;min-width:0}.c-av{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:22px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--brand),#a46bff 60%,#e2457a);flex:none}
+.c-h h1{margin:0;font-size:22px;font-weight:800}.c-h h1 span{color:var(--brand)}.c-h p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.c-ha{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ctiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ct{--c:var(--ok);display:flex;flex-direction:column;gap:2px;text-align:left;padding:16px;border-radius:18px;border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));color:var(--text);font:inherit;cursor:pointer;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 18%,var(--surface)),var(--surface) 70%)}
+.ct:hover{border-color:var(--c)}.ct-soon{--c:var(--warn)}.ct-expired{--c:var(--bad)}.ct-trash{--c:var(--idle)}
+.ct-h{display:flex;justify-content:space-between;align-items:center}.ct-i{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}.ct-i .ic{width:17px;height:17px}.ct-h em{font-style:normal;font-size:12px;color:var(--muted);font-weight:600}
+.ct>b{font-size:32px;font-weight:800;margin-top:8px;line-height:1.1}.ct>span{color:var(--muted);font-size:13px}
+.ct-bar{display:block;height:5px;border-radius:5px;background:var(--raised);margin-top:10px;overflow:hidden}.ct-bar i{display:block;height:100%;background:var(--c);border-radius:5px}
+.c-s{margin-bottom:0;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 18px;margin-top:14px;min-width:0}.c-s .tl{border:0;background:none;padding:0}
+.cweek{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.cw{display:flex;flex-direction:column;gap:4px;padding:10px 8px;border-radius:14px;background:var(--raised);min-height:110px;min-width:0}
+.cw.now{box-shadow:inset 0 0 0 2px var(--brand)}.cw.has{background:color-mix(in srgb,var(--warn) 10%,var(--raised))}
+.cw-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}.cw-h span{font-size:12px;color:var(--muted);font-weight:600}.cw-h b{font-size:18px}
+.cw button{border:0;border-radius:8px;padding:4px 7px;font:inherit;font-size:12px;text-align:left;cursor:pointer;color:var(--text);background:var(--surface);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:inset 3px 0 0 var(--warn)}
+.cw small{font-size:11.5px;color:var(--muted)}.cw-0{opacity:.5}
+.cks{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.ck{display:flex;flex-direction:column;text-align:left;padding:14px 16px;border-radius:18px;background:var(--surface);border:1px solid var(--line);border-bottom:3px solid var(--c);color:var(--text);font:inherit}
+button.ck{cursor:pointer}.ck>span{font-size:13px;color:var(--muted)}.ck>b{font-size:28px;font-weight:800;margin-top:4px}.ck>small{font-size:12.5px;color:var(--muted)}
+.c-2{display:grid;grid-template-columns:1fr;gap:0}.c-2 .c-s{margin-top:14px}
+@media (max-width:1100px){.b-hero{grid-column:span 7}.b-don{grid-column:span 5}.b-due,.b-log{grid-column:1/-1}.c-2{grid-template-columns:1fr}}
+@media (max-width:860px){.bento{grid-template-columns:1fr}.bento>*{grid-column:1/-1!important}.b-kpis,.cks,.ctiles{grid-template-columns:1fr 1fr}.l-big,.lnums{grid-template-columns:1fr 1fr;row-gap:14px}
+  .cweek{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}.cw{flex:0 0 42%;scroll-snap-align:start}}
+@media (max-width:560px){.b-hero{padding:20px}.bd-in{flex-direction:column}.dlegs{width:100%}.donut{width:140px;height:140px}.bk>b,.ct>b,.ck>b{font-size:26px}.l-a,.c-ha{width:100%}.l-a .btn,.c-ha .btn{flex:1;justify-content:center}}
 /* Cuenta desactivada a mano */
 .pw-chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 7%,transparent);line-height:1.45}.pw-chk input{margin-top:3px;flex:none}
 .offbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,#7d8fa8 60%,transparent);background:color-mix(in srgb,#7d8fa8 12%,transparent);font-size:13px}
@@ -1268,6 +1352,7 @@ function navGroups() {
     { v: 'cuentas', f: 'all', t: 'Lista', i: 'list', n: live().length },
     { v: 'nuevo', t: 'Nuevo', i: 'userplus' },
     { v: 'cuentas', f: 'soon', t: 'Por vencer', i: 'clock', n: cnt.soon },
+    { v: 'calendario', t: 'Calendario', i: 'calendar' },
     { v: 'cuentas', f: 'expired', t: 'Vencidos', i: 'alert', n: cnt.expired, hot: true },
     { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off },
     { v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid },
@@ -1280,14 +1365,14 @@ function navGroups() {
   if (canDo('viewServers')) emby.push({ v: 'servidores', t: 'Servidores', i: 'server' });
   if (canDo('system')) emby.push({ v: 'plantillas', t: 'Plantillas de mensajes', i: 'msg' });
   if (staff() && canDo('servers')) emby.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' });
-  if (!noCli()) emby.push({ v: 'calendario', t: 'Calendario', i: 'calendar' }, { v: 'directo', t: 'En directo', i: 'play' });
+  // «En directo» se quitó del menú: el Monitor muestra lo mismo y más. El Calendario pasó a Clientes.
   let g = [
     { k: 'ini', items: [{ v: 'resumen', t: 'Resumen', i: 'grid' }] },
     { k: 'cli', t: 'Clientes', i: 'users', items: cli },
     { k: 'demo', t: 'Demos', i: 'timer', items: [
       { v: 'demonueva', t: 'Nueva', i: 'plus' }, { v: 'cuentas', f: 'demo', t: 'Activas', i: 'play', n: cnt.demo },
-      { v: 'demosvencidas', t: 'Vencidas', i: 'clock', n: trash().filter((c) => c.demo).length }, { v: 'seguimiento', t: 'Seguimiento', i: 'send', n: S.d.followPending || 0, hot: true }, { v: 'movdemos', t: 'Movimientos', i: 'history' }] },
-    { k: 'emby', t: 'Emby', i: 'server', items: emby },
+      { v: 'demosvencidas', t: 'Vencidas', i: 'clock', n: trash().filter((c) => c.demo).length }, { v: 'seguimiento', t: 'Seguimiento', i: 'send', n: S.d.followPending || 0, hot: true }] },
+    ...(emby.length ? [{ k: 'emby', t: 'Emby', i: 'server', items: emby }] : []),
     ...(noCli() ? [] : [{ k: 'mon', t: 'Monitor', i: 'radio', items: [{ v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'inactivos', t: 'Inactivos', i: 'pause' }, ...(staff() && canDo('reports') ? [{ v: 'uso', t: 'Estadísticas de uso', i: 'chart' }] : [])] }]),
     { k: 'al', t: 'Alertas', i: 'bell', items: [
       { v: 'altrans', t: 'Transcode', i: 'bolt' }, { v: 'alses', t: 'Sesiones excedidas', i: 'screen' }, { v: 'alhist', t: 'Historial de alertas', i: 'history', n: S.d.alertsUnread, hot: true }] },
@@ -1438,6 +1523,9 @@ async function reload() { S.d = await api('GET', '/api/data'); render(); }
 
 /* ---------- Pintado ---------- */
 function render() {
+  // pantallas que se juntaron con otras: los enlaces antiguos siguen funcionando
+  if (S.view === 'directo') S.view = 'monitor';
+  if (S.view === 'movdemos') { S.view = 'movimientos'; S.logF = 'demo'; }
   const d = S.d, items = navItems();
   if (!items.some((x) => x.v === S.view) && !(S.view === 'vendedor' && me().role !== 'sub')) S.view = 'resumen';
   const listF = ['soon', 'expired', 'demo', 'off'].includes(S.filter) ? S.filter : 'all';
@@ -1738,6 +1826,8 @@ function vResumen() {
   const phrase = lines[new Date().getDate() % lines.length];
   const wRaw = String(d.me.username || d.me.name || ''), wName = wRaw.charAt(0).toUpperCase() + wRaw.slice(1);
   const welcome = `<div class="welcome"><p class="wg">${greet} ${hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙'}</p><h1>Bienvenido, <span>${esc(wName)}</span></h1><span class="wrole r-${d.me.role}">${ROLE[d.me.role] || ''}</span><p class="wl">${phrase}</p></div>`;
+  const DS = dashStyle();
+  if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip, dsearch });
   return welcome + licBanner() + secTip + dsearch + hero + quick + review + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
@@ -1753,7 +1843,106 @@ function vResumen() {
   ${urgent.length ? clientTable(urgent, true) : `<div class="panel"><div class="empty">${live().length ? 'Nada pendiente: ninguna cuenta vence en los próximos ' + g.warnDays + ' días.' : 'Todavía no hay cuentas. Crea la primera con «Nueva cuenta».'}</div></div>`}
   </section>
   <section><div class="sec-h"><h2>Últimos movimientos</h2><button class="btn sm" data-view="movimientos">Ver todos</button></div>
-  ${d.log.length ? timeline(d.log.slice(0, 8)) : '<div class="panel"><div class="empty">Todavía no hay movimientos.</div></div>'}</section>`;
+  ${d.log.length ? timeline(d.log.slice(0, 8)) : '<div class="panel"><div class="empty">Todavía no hay movimientos.</div></div>'}</section>` + dashPicker('clasico');
+}
+/* ---------- Diseños del Resumen (se elige abajo del todo; se guarda en este navegador) ---------- */
+const DASH = [['clasico', 'Clásico'], ['tarjetas', 'Tarjetas'], ['limpio', 'Limpio'], ['control', 'Control']];
+function dashStyle() { let v = ''; try { v = localStorage.getItem('resumen') || ''; } catch (e) { /* sin almacenamiento */ } return DASH.some(([k]) => k === v) ? v : (S.dash || 'tarjetas'); }
+function dashPicker(cur) {
+  return `<div class="dpick"><span>${ic('grid')}Diseño del resumen</span><div class="dpick-b" role="radiogroup" aria-label="Diseño del resumen">${DASH.map(([k, t]) => `<button type="button" role="radio" aria-checked="${k === cur}" data-act="dash" data-k="${k}">${t}</button>`).join('')}</div></div>`;
+}
+function dDonut(cnt, total) {
+  const parts = [['active', cnt.active, 'var(--ok)'], ['soon', cnt.soon, 'var(--warn)'], ['expired', cnt.expired, 'var(--bad)'], ['trash', cnt.trash, 'var(--idle)']];
+  const r = 52, C = 2 * Math.PI * r, sum = parts.reduce((n, p) => n + p[1], 0);
+  let off = 0, arcs = '';
+  if (sum) parts.forEach(([, n, col]) => { if (!n) return; const len = (n / sum) * C, gap = parts.filter((p) => p[1]).length > 1 ? 3 : 0; arcs += `<circle r="${r}" cx="64" cy="64" fill="none" stroke="${col}" stroke-width="14" stroke-linecap="butt" stroke-dasharray="${Math.max(0.1, len - gap)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 64 64)"/>`; off += len; });
+  return `<svg class="donut" viewBox="0 0 128 128" role="img" aria-label="${total} cuentas"><circle r="${r}" cx="64" cy="64" fill="none" stroke="var(--raised)" stroke-width="14"/>${arcs}<text x="64" y="62" text-anchor="middle" class="dn-n">${total}</text><text x="64" y="80" text-anchor="middle" class="dn-l">cuentas</text></svg>`;
+}
+function dSpark(days, k, col) {
+  if (!days || !days.length) return '';
+  const v = days.map((x) => x[k] || 0), max = Math.max(1, ...v), W = 120, H = 34;
+  const pts = v.map((n, i) => `${(i / (v.length - 1)) * W},${H - 3 - (n / max) * (H - 8)}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,${H} ${pts} ${W},${H}" fill="${col}" fill-opacity=".14" stroke="none"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+const dLeft = (c) => { const n = diff(c.expires, S.d.today); return n > 1 ? [`en ${n} días`, 'soon'] : n === 1 ? ['mañana', 'soon'] : n === 0 ? ['hoy', 'soon'] : [`hace ${plural(-n, 'día', 'días')}`, 'bad']; };
+function dDue(list, max = 6) {
+  if (!list.length) return `<div class="ddue-ok">${ic('check')}<b>Nada pendiente</b><span>Ninguna cuenta vence en los próximos ${S.d.settings.warnDays} días.</span></div>`;
+  return `<div class="ddue">${list.slice(0, max).map((c) => { const [t, k] = dLeft(c); return `<div class="ddr"><span class="dav ${k}">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="ddn"><b>${esc(c.panelName)}</b><small>${diff(c.expires, S.d.today) < 0 ? 'Caducó' : 'Vence'} ${t}</small></div><button type="button" class="btn sm" data-act="renew" data-id="${c.id}">Renovar</button></div>`; }).join('')}${list.length > max ? `<button type="button" class="dmore" data-act="goto" data-filter="soon">Ver ${plural(list.length - max, 'más', 'más')} ${ic('chev')}</button>` : ''}</div>`;
+}
+function dashNew(style, p) {
+  const { welcome, d, cnt, g, urgent, greet, emoji, wName, phrase, quick, review, secTip, dsearch } = p;
+  const total = cnt.active + cnt.soon + cnt.expired + cnt.trash, st = d.stats, team = d.users.length > 1, mine = (a) => (team ? a[1] : a[1]);
+  const credits = pays() ? `<span class="dcred">${ic('coins')}${plural(d.me.credits, 'crédito', 'créditos')}</span>` : '';
+  const today0 = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }), today = today0.charAt(0).toUpperCase() + today0.slice(1);
+  const playing = `<b id="nowPlaying">${S.live ? S.live.sessions.length : '…'}</b>`;
+  const stLeg = (k, n, label, col) => `<button type="button" class="dleg" data-act="goto" data-filter="${k}"><i style="background:${col}"></i><span>${label}</span><b>${n}</b></button>`;
+  const legend = stLeg('active', cnt.active, 'Activas', 'var(--ok)') + stLeg('soon', cnt.soon, 'Vencen pronto', 'var(--warn)') + stLeg('expired', cnt.expired, 'Caducadas', 'var(--bad)') + stLeg('trash', cnt.trash, 'Papelera', 'var(--idle)');
+  const extra = `<div class="dchips"><button class="chip" data-act="goto" data-filter="demo">${plural(cnt.demo, 'demo en curso', 'demos en curso')}</button>${cnt.off ? `<button class="chip" data-act="goto" data-filter="off">${plural(cnt.off, 'desactivada', 'desactivadas')}</button>` : ''}</div>`;
+  const log = d.log.length ? timeline(d.log.slice(0, 6)) : '<div class="panel"><div class="empty">Todavía no hay movimientos.</div></div>';
+  const top = licBanner() + secTip;
+  const btnNew = `<button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>`;
+
+  if (style === 'tarjetas') {
+    const kpi = (label, val, sub, icon, col, spark = '', attrs = '') => `<${attrs ? 'button type="button" ' + attrs : 'div'} class="bk" style="--c:${col}"><div class="bk-h"><span class="bk-i">${ic(icon)}</span><span>${label}</span></div><b>${val}</b><small>${sub}</small>${spark}</${attrs ? 'button' : 'div'}>`;
+    return welcome + top + `<div class="bento">
+      <section class="b-hero"><div class="bh-t"><p class="bh-d">${esc(today)}</p><h1>¿Qué quieres hacer hoy?</h1><p class="bh-p">Crea una cuenta o una demo en un momento.</p></div>
+        <div class="bh-a">${btnNew}${credits}</div></section>
+      <section class="b-card b-don"><h2>Tus cuentas</h2><div class="bd-in">${dDonut(cnt, total)}<div class="dlegs">${legend}</div></div>${extra}</section>
+      <div class="b-search">${dsearch}</div>
+      ${review ? `<div class="b-full">${review}</div>` : ''}
+      <div class="b-kpis">
+        ${kpi('Cuentas nuevas', mine(st.today.alta), `${mine(st.month.alta)} este mes`, 'userplus', 'var(--s1)', dSpark(st.days, 'alta', 'var(--s1)'))}
+        ${kpi('Renovaciones', mine(st.today.renovacion), `${mine(st.month.renovacion)} este mes`, 'refresh', 'var(--s2)', dSpark(st.days, 'renovacion', 'var(--s2)'))}
+        ${kpi('Demos', mine(st.today.demo), `${mine(st.month.demo)} este mes`, 'timer', '#8b6cf2')}
+        ${kpi('Viendo ahora', playing, 'pulsa para ver quién', 'play', '#2bbf7e', '', 'data-view="directo"')}
+      </div>
+      <section class="b-card b-due"><div class="bc-h"><h2>Pendientes de renovar</h2>${urgent.length ? `<span class="bcount">${urgent.length}</span>` : ''}</div>${dDue(urgent)}</section>
+      <section class="b-card b-log"><div class="bc-h"><h2>Últimos movimientos</h2><button class="btn sm ghost" data-view="movimientos">Ver todos</button></div>${log}</section>
+      <section class="b-card b-chart"><div class="bc-h"><h2>Actividad</h2></div>${activityChart(st.days || [])}</section>
+    </div>` + dashPicker(style);
+  }
+
+  if (style === 'limpio') {
+    const att = [];
+    if (cnt.expired) att.push(['bad', 'alert', `<b>${plural(cnt.expired, 'cuenta caducada', 'cuentas caducadas')}</b> esperando renovación`, 'data-act="goto" data-filter="expired"', 'Ver']);
+    if (cnt.soon) att.push(['warn', 'clock', `<b>${plural(cnt.soon, 'cuenta vence', 'cuentas vencen')}</b> en los próximos ${g.warnDays} días`, 'data-act="goto" data-filter="soon"', 'Ver']);
+    if (d.teamCount) att.push(['bad', 'shield', `<b>${plural(d.teamCount, 'aviso', 'avisos')}</b> de tu equipo`, 'data-view="atencion"', 'Revisar']);
+    if (d.sharedCount) att.push(['warn', 'users', `<b>${plural(d.sharedCount, 'cuenta parece compartida', 'cuentas parecen compartidas')}</b>`, 'data-view="compartidas"', 'Revisar']);
+    if (d.followPending) att.push(['info', 'send', `<b>${plural(d.followPending, 'demo terminó', 'demos terminaron')}</b> sin comprar`, 'data-view="seguimiento"', 'Escribir']);
+    const todo = att.length ? att.map(([k, i, t, a, b]) => `<button type="button" class="lt ${k}" ${a}><span class="lt-i">${ic(i)}</span><span class="lt-t">${t}</span><em>${b} ${ic('chev')}</em></button>`).join('')
+      : `<div class="lt ok"><span class="lt-i">${ic('check')}</span><span class="lt-t"><b>Todo en orden.</b> No hay nada urgente ahora mismo.</span></div>`;
+    const seg = total ? [['active', cnt.active, 'var(--ok)', 'Activas'], ['soon', cnt.soon, 'var(--warn)', 'Vencen pronto'], ['expired', cnt.expired, 'var(--bad)', 'Caducadas'], ['trash', cnt.trash, 'var(--idle)', 'Papelera']] : [];
+    const bar = total ? `<div class="lbarx">${seg.filter((x) => x[1]).map(([, n, col]) => `<i style="flex:${n};background:${col}"></i>`).join('')}</div>` : '';
+    const nums = `<div class="lnums">${seg.map(([k, n, col, t]) => `<button type="button" data-act="goto" data-filter="${k}"><b>${n}</b><span><i style="background:${col}"></i>${t}</span></button>`).join('')}</div>`;
+    const big = (n, t) => `<div><b>${n}</b><span>${t}</span></div>`;
+    return top + `<div class="limpio">
+      <header class="l-h"><div><p class="l-d">${esc(today)}</p><h1>${greet}, <span>${esc(wName)}</span> ${emoji}</h1><p class="l-p">${phrase}</p></div><div class="l-a">${btnNew}</div></header>
+      ${dsearch}
+      <section class="l-s"><h2>Lo que necesita tu atención</h2><div class="l-todo">${todo}</div></section>
+      <section class="l-s"><div class="l-sh"><h2>Tus ${plural(total, 'cuenta', 'cuentas')}</h2>${credits}</div>${bar}${nums}${extra}</section>
+      <section class="l-s"><h2>Hoy</h2><div class="l-big">${big(mine(st.today.alta), 'cuentas nuevas')}${big(mine(st.today.renovacion), 'renovaciones')}${big(mine(st.today.demo), 'demos')}<button type="button" data-view="directo">${playing}<span>viendo ahora</span></button></div></section>
+      <section class="l-s"><h2>Últimos 30 días</h2>${activityChart(st.days || [])}</section>
+      <section class="l-s"><div class="l-sh"><h2>Últimos movimientos</h2><button class="btn sm ghost" data-view="movimientos">Ver todos</button></div>${log}</section>
+    </div>` + dashPicker(style);
+  }
+
+  // Control: centro de mando
+  const tile = (k, n, label, icon) => { const pct = total ? Math.round((n / total) * 100) : 0; return `<button type="button" class="ct ct-${k}" data-act="goto" data-filter="${k}"><div class="ct-h"><span class="ct-i">${ic(icon)}</span><em>${pct}%</em></div><b>${n}</b><span>${label}</span><i class="ct-bar"><i style="width:${pct}%"></i></i></button>`; };
+  const week = []; for (let k = 0; k < 7; k++) week.push(addDays(d.today, k));
+  const byDay = {}; live().filter((c) => !c.demo && !c.off).forEach((c) => { if (c.expires >= d.today && c.expires <= week[6]) (byDay[c.expires] = byDay[c.expires] || []).push(c); });
+  const DOW = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const wk = `<div class="cweek">${week.map((ds, k) => { const L = (byDay[ds] || []).sort(byExpiry), dt = new Date(utc(ds)); return `<div class="cw${k === 0 ? ' now' : ''}${L.length ? ' has' : ''}"><div class="cw-h"><span>${k === 0 ? 'Hoy' : k === 1 ? 'Mañana' : DOW[dt.getUTCDay()]}</span><b>${dt.getUTCDate()}</b></div>${L.slice(0, 4).map((c) => `<button type="button" data-act="renew" data-id="${c.id}" title="Renovar ${esc(c.panelName)}">${esc(c.panelName)}</button>`).join('')}${L.length > 4 ? `<small>+${L.length - 4} más</small>` : ''}${L.length ? '' : '<small class="cw-0">—</small>'}</div>`; }).join('')}</div>`;
+  const ck = (label, val, sub, col, spark = '', attrs = '') => `<${attrs ? 'button type="button" ' + attrs : 'div'} class="ck" style="--c:${col}"><span>${label}</span><b>${val}</b><small>${sub}</small>${spark}</${attrs ? 'button' : 'div'}>`;
+  return top + `<div class="ctrl">
+    <header class="c-h"><div class="c-hl"><span class="c-av">${esc(wName.charAt(0))}</span><div><h1>${greet}, <span>${esc(wName)}</span></h1><p>${esc(today)} · ${ROLE[d.me.role] || ''}</p></div></div><div class="c-ha">${credits}${btnNew}</div></header>
+    ${dsearch}${review}
+    <div class="ctiles">${tile('active', cnt.active, 'Activas', 'check')}${tile('soon', cnt.soon, 'Vencen pronto', 'clock')}${tile('expired', cnt.expired, 'Caducadas', 'alert')}${tile('trash', cnt.trash, 'Papelera', 'trash')}</div>
+    ${extra}
+    <section class="c-s"><div class="bc-h"><h2>Próximos 7 días</h2><small class="muted">pulsa un nombre para renovar</small></div>${wk}</section>
+    <div class="cks">${ck('Cuentas nuevas hoy', mine(st.today.alta), `${mine(st.month.alta)} este mes`, 'var(--s1)', dSpark(st.days, 'alta', 'var(--s1)'))}${ck('Renovaciones hoy', mine(st.today.renovacion), `${mine(st.month.renovacion)} este mes`, 'var(--s2)', dSpark(st.days, 'renovacion', 'var(--s2)'))}${ck('Demos hoy', mine(st.today.demo), `${mine(st.month.demo)} este mes`, '#8b6cf2')}${ck('Viendo ahora', playing, 'ver en directo', '#2bbf7e', '', 'data-view="directo"')}</div>
+    <div class="c-2"><section class="c-s"><div class="bc-h"><h2>Actividad</h2></div>${activityChart(st.days || [])}</section>
+    <section class="c-s"><div class="bc-h"><h2>Movimientos</h2><button class="btn sm ghost" data-view="movimientos">Ver todos</button></div>${log}</section></div>
+  </div>` + dashPicker(style);
 }
 /** Movimientos recientes como linea de tiempo, para el resumen */
 function timeline(rows) {
@@ -3332,11 +3521,11 @@ function logTable(rows) {
       <td class="muted">${l.auto ? 'Automático' : esc(l.actor || '')}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function vMovimientos(demoOnly) {
-  const F = { all: () => true, alta: (l) => l.type === 'alta' || l.type === 'importada', renovacion: (l) => l.type === 'renovacion', baja: (l) => ['baja', 'papelera', 'caducada', 'eliminada'].includes(l.type), cobro: (l) => l.type === 'cobro', auto: (l) => l.auto };
+  const F = { demo: (l) => !!l.demo || l.type === 'demo', all: () => true, alta: (l) => l.type === 'alta' || l.type === 'importada', renovacion: (l) => l.type === 'renovacion', baja: (l) => ['baja', 'papelera', 'caducada', 'eliminada'].includes(l.type), cobro: (l) => l.type === 'cobro', auto: (l) => l.auto };
   const rows = S.d.log.filter((l) => (demoOnly ? (l.demo || l.type === 'demo') : true) && (F[S.logF] || F.all)(l));
   const chip = (k, t) => `<button class="chip" data-act="logf" data-v="${k}" aria-pressed="${S.logF === k}">${t}</button>`;
   const chips = demoOnly ? chip('all', 'Todos') + chip('auto', 'Automáticos')
-    : chip('all', 'Todos') + chip('alta', 'Altas') + chip('renovacion', 'Renovaciones') + chip('baja', 'Bajas y caducidades') + chip('cobro', 'Cobros') + chip('auto', 'Automáticos');
+    : chip('all', 'Todos') + chip('alta', 'Altas') + chip('renovacion', 'Renovaciones') + chip('baja', 'Bajas y caducidades') + chip('demo', 'Demos') + chip('cobro', 'Cobros') + chip('auto', 'Automáticos');
   return head(demoOnly ? 'Movimientos de demos' : 'Movimientos', demoOnly ? 'Demos creadas, terminadas, convertidas en cuenta y eliminadas.' : 'Altas, renovaciones, bajas y todo lo que el panel hace por su cuenta. Se muestran los 500 más recientes.') +
     `<div class="tools"><div class="chips">${chips}</div></div>` + (rows.length ? logTable(rows) : '<div class="panel"><div class="empty">No hay movimientos de este tipo.</div></div>');
 }
@@ -5311,6 +5500,7 @@ document.addEventListener('click', (e) => {
     case 'del-refund': if (c) dDelRefund(c); break;
     case 'delete': if (c) dConfirm(`Eliminar a ${c.panelName}`, `El usuario <b>${esc(c.embyName)}</b> se borra de Emby junto con su historial y su progreso. No se puede deshacer.`,
       'Eliminar para siempre', () => api('DELETE', `/api/clients/${c.id}`), 'Cuenta eliminada'); break;
+    case 'dash': S.dash = el.dataset.k; try { localStorage.setItem('resumen', S.dash); } catch (x) { /* sin almacenamiento */ } render(); window.scrollTo(0, 0); break;
     case 'goto': S.view = el.dataset.filter === 'trash' ? 'papelera' : 'cuentas'; if (el.dataset.filter !== 'trash') S.filter = el.dataset.filter; S.q = ''; render(); break;
     case 'filter': S.filter = el.dataset.filter; S.page = 1; render(); break;
     case 'logf': S.logF = el.dataset.v; render(); break;
