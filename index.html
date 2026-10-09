@@ -1034,6 +1034,30 @@ button.ck{cursor:pointer}.ck>span{font-size:13px;color:var(--muted)}.ck>b{font-s
 @media (max-width:860px){.bento{grid-template-columns:1fr}.bento>*{grid-column:1/-1!important}.b-kpis,.cks,.ctiles{grid-template-columns:1fr 1fr}.l-big,.lnums{grid-template-columns:1fr 1fr;row-gap:14px}
   .cweek{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}.cw{flex:0 0 42%;scroll-snap-align:start}}
 @media (max-width:560px){.b-hero{padding:20px}.bd-in{flex-direction:column}.dlegs{width:100%}.donut{width:140px;height:140px}.bk>b,.ct>b,.ck>b{font-size:26px}.l-a,.c-ha{width:100%}.l-a .btn,.c-ha .btn{flex:1;justify-content:center}}
+/* Ajustar fechas */
+.fx-only{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--brand) 12%,var(--raised))}.fx-only>.ic{color:var(--brand);flex:none}.fx-only span{flex:1}
+.fx{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.fx-s{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;min-width:0;margin:0}
+.fx-s>header{display:flex;gap:12px;align-items:center;margin-bottom:14px}.fx-s h2{margin:0;font-size:17px}.fx-s header small{color:var(--muted);font-size:12.5px}
+.fx-n{width:34px;height:34px;border-radius:11px;flex:none;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--brand),#a46bff 60%,#e2457a)}
+.fx-g{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}.fx-g .f{margin:0 0 8px}
+.fx-more{margin-top:4px}.fx-more summary{cursor:pointer;color:var(--brand);font-weight:600;font-size:14px;margin-bottom:10px}
+.fx-q{margin:2px 0 10px}.fx-mode{margin-bottom:12px}
+.fx>.fx-s:nth-child(1),.fx>.fx-s:nth-child(2){height:100%;margin:0!important}
+#fxPrev{min-width:0}.fx-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.fx-p{display:inline-flex;gap:6px;align-items:baseline;padding:6px 12px;border-radius:999px;background:var(--raised);font-size:13px;color:var(--muted)}.fx-p b{color:var(--text);font-size:15px}
+.fx-p.ok{background:color-mix(in srgb,var(--ok) 15%,transparent)}.fx-p.ok b{color:var(--ok)}.fx-p.warn{background:color-mix(in srgb,var(--warn) 15%,transparent)}.fx-p.warn b{color:var(--warn)}
+.fx-all{padding:0 6px 6px;border-bottom:1px solid var(--line)}
+.fx-list{max-height:460px;overflow:auto;display:flex;flex-direction:column}
+.fx-r{display:flex;align-items:center;gap:12px;padding:10px 6px;border-bottom:1px solid var(--line);cursor:pointer}.fx-r:hover{background:var(--raised)}
+.fx-r input{width:18px;height:18px;flex:none}.fx-r.skip{opacity:.55;cursor:default}
+.fx-who{flex:1;min-width:0;display:flex;flex-direction:column}.fx-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fx-who small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx-d{display:flex;align-items:center;gap:6px;font-size:13.5px;white-space:nowrap}.fx-d span{color:var(--muted)}.fx-d b{color:var(--ok)}.fx-d b.bad{color:var(--bad)}.fx-d em{font-style:normal;color:var(--warn);font-size:12.5px}
+.fx-ar{width:14px;height:14px;transform:rotate(-90deg);color:var(--muted)}
+.fx-go{display:flex;justify-content:flex-end;margin-top:14px}.fx-go .btn{min-height:46px;padding:0 20px;font-size:15px}
+section.fx-s:last-child{margin-top:14px}
+@media (max-width:900px){.fx{grid-template-columns:1fr}}
+@media (max-width:560px){.fx-g{grid-template-columns:1fr}.fx-g.fx-g2{grid-template-columns:1fr 1fr}.fx-d{flex-direction:column;align-items:flex-end;gap:0}.fx-ar{display:none}.fx-go .btn{width:100%;justify-content:center}}
 /* Cuenta desactivada a mano */
 .pw-chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 7%,transparent);line-height:1.45}.pw-chk input{margin-top:3px;flex:none}
 .offbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,#7d8fa8 60%,transparent);background:color-mix(in srgb,#7d8fa8 12%,transparent);font-size:13px}
@@ -1359,6 +1383,7 @@ function navGroups() {
     { v: 'compartidas', t: 'Cuentas compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true },
     { v: 'mensajecli', t: 'Mensaje a clientes', i: 'send' },
     { v: 'avisos', t: 'Avisos de vencimiento', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length }];
+  if (staff() && !pays()) cli.push({ v: 'fechas', t: 'Ajustar fechas', i: 'calendar' });
   if (staff() && canDo('reports')) cli.push({ v: 'auditoria', t: 'Auditoría', i: 'check' });
   cli.push({ v: 'movimientos', t: 'Movimientos', i: 'history' }, { v: 'papelera', t: 'Papelera', i: 'trash', n: trash().length });
   const emby = [];
@@ -1547,7 +1572,7 @@ function render() {
   applyBrand(d.settings.brand); applyTheme();
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -1580,6 +1605,7 @@ function render() {
   if (S.view === 'atencion' && !S.tm.busy && (!S.tm.data || Date.now() - S.tm.at > 30000)) loadTeam();
   if (S.view === 'mensajeeq') vbRefresh();
   if (S.view === 'cobrosven' && !S.vp.busy && (!S.vp.data || Date.now() - S.vp.at > 20000)) loadVpay();
+  if (S.view === 'fechas') fxWire();
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
@@ -1827,7 +1853,7 @@ function vResumen() {
   const wRaw = String(d.me.username || d.me.name || ''), wName = wRaw.charAt(0).toUpperCase() + wRaw.slice(1);
   const welcome = `<div class="welcome"><p class="wg">${greet} ${hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙'}</p><h1>Bienvenido, <span>${esc(wName)}</span></h1><span class="wrole r-${d.me.role}">${ROLE[d.me.role] || ''}</span><p class="wl">${phrase}</p></div>`;
   const DS = dashStyle();
-  if (DS !== 'clasico') return dashNew(DS, { d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip, dsearch });
+  if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip, dsearch });
   return welcome + licBanner() + secTip + dsearch + hero + quick + review + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
@@ -1870,7 +1896,7 @@ function dDue(list, max = 6) {
   return `<div class="ddue">${list.slice(0, max).map((c) => { const [t, k] = dLeft(c); return `<div class="ddr"><span class="dav ${k}">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="ddn"><b>${esc(c.panelName)}</b><small>${diff(c.expires, S.d.today) < 0 ? 'Caducó' : 'Vence'} ${t}</small></div><button type="button" class="btn sm" data-act="renew" data-id="${c.id}">Renovar</button></div>`; }).join('')}${list.length > max ? `<button type="button" class="dmore" data-act="goto" data-filter="soon">Ver ${plural(list.length - max, 'más', 'más')} ${ic('chev')}</button>` : ''}</div>`;
 }
 function dashNew(style, p) {
-  const { d, cnt, g, urgent, greet, emoji, wName, phrase, quick, review, secTip, dsearch } = p;
+  const { welcome, d, cnt, g, urgent, greet, emoji, wName, phrase, quick, review, secTip, dsearch } = p;
   const total = cnt.active + cnt.soon + cnt.expired + cnt.trash, st = d.stats, team = d.users.length > 1, mine = (a) => (team ? a[1] : a[1]);
   const credits = pays() ? `<span class="dcred">${ic('coins')}${plural(d.me.credits, 'crédito', 'créditos')}</span>` : '';
   const today0 = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }), today = today0.charAt(0).toUpperCase() + today0.slice(1);
@@ -1884,8 +1910,8 @@ function dashNew(style, p) {
 
   if (style === 'tarjetas') {
     const kpi = (label, val, sub, icon, col, spark = '', attrs = '') => `<${attrs ? 'button type="button" ' + attrs : 'div'} class="bk" style="--c:${col}"><div class="bk-h"><span class="bk-i">${ic(icon)}</span><span>${label}</span></div><b>${val}</b><small>${sub}</small>${spark}</${attrs ? 'button' : 'div'}>`;
-    return top + `<div class="bento">
-      <section class="b-hero"><div class="bh-t"><p class="bh-d">${esc(today)}</p><h1>${greet} ${emoji}<br><span>${esc(wName)}</span></h1><p class="bh-p">${phrase}</p></div>
+    return welcome + top + `<div class="bento">
+      <section class="b-hero"><div class="bh-t"><p class="bh-d">${esc(today)}</p><h1>¿Qué quieres hacer hoy?</h1><p class="bh-p">Crea una cuenta o una demo en un momento.</p></div>
         <div class="bh-a">${btnNew}${credits}</div></section>
       <section class="b-card b-don"><h2>Tus cuentas</h2><div class="bd-in">${dDonut(cnt, total)}<div class="dlegs">${legend}</div></div>${extra}</section>
       <div class="b-search">${dsearch}</div>
@@ -4796,14 +4822,125 @@ function dBulkRepair() {
   });
 }
 function dBulkDates() {
-  const ids = bulkIds();
-  openDlg({
-    title: 'Ajustar fechas de renovación', submit: 'Ajustar fechas',
-    body: `<p class="preview">Afecta a <b>${bulkScope(ids)}</b>.</p>
-      <label class="f">Días que se suman al vencimiento (número negativo para restar)<input type="number" name="days" required min="-3650" max="3650" step="1" placeholder="Por ejemplo 3, o -2"></label>
-      <p class="muted small">Sirve para compensar una caída del servicio. No descuenta créditos. No se tocan las demos ni las cuentas de la papelera. Las vencidas que vuelvan a estar en plazo recuperan sus bibliotecas; las que queden vencidas las pierden.</p>`,
-    onSubmit: async (fd) => bulkResult(await bulkCall('/api/bulk/dates', ids, { days: +fd.get('days') }), 'Ajustar fechas', 'fecha ajustada', 'fechas ajustadas', 'sin tocar (demos o papelera)'),
+  // Abre la pantalla de 3 pasos. Si había cuentas marcadas en la lista, solo con esas
+  const f = fxState();
+  f.only = new Set(bulkIds()); f.onlyTxt = S.sel.size ? 'que marcaste' : 'de la lista'; f.excl.clear();
+  if (dlg.open) dlg.close();
+  S.view = 'fechas'; render(); window.scrollTo(0, 0);
+}
+function fxState() {
+  if (!S.fx) S.fx = { owner: 0, server: 0, st: new Set(['active', 'soon']), q: 'all', from: '', to: '', within: '', search: '', exOff: false, mode: 'add', amount: 1, unit: 'd', date: '', onlyFuture: true, reason: '', excl: new Set() };
+  return S.fx;
+}
+function fxNew(c, f) {
+  if (f.mode === 'set') return f.date || c.expires;
+  const n = (f.mode === 'sub' ? -1 : 1) * (Math.abs(parseInt(f.amount, 10)) || 0);
+  if (!n) return c.expires;
+  return f.unit === 'm' ? addMonths(c.expires, n) : addDays(c.expires, f.unit === 'w' ? n * 7 : n);
+}
+function fxRows() {
+  const f = fxState(), t = S.d.today, q = f.search.trim().toLowerCase();
+  return S.d.clients.filter((c) => {
+    if (c.demo || c.status === 'trash') return false;
+    if (f.only) return f.only.has(c.id); // cuentas marcadas en la lista
+    const st = stage(c);
+    if (!f.st.has(st)) return false;
+    if (f.exOff && c.off) return false;
+    if (f.owner && c.ownerId !== f.owner) return false;
+    if (f.server && c.serverId !== f.server) return false;
+    if (f.q !== 'all' && c.quality !== f.q) return false;
+    if (f.from && c.expires < f.from) return false;
+    if (f.to && c.expires > f.to) return false;
+    if (f.within !== '' && !(diff(c.expires, t) < +f.within)) return false;
+    if (q && ![c.panelName, c.embyName, c.email, c.whatsapp].some((v) => String(v || '').toLowerCase().includes(q))) return false;
+    return true;
+  }).sort(byExpiry).map((c) => {
+    const next = fxNew(c, f), skip = next === c.expires ? 'igual' : (f.onlyFuture && diff(next, t) < 0 ? 'pasada' : '');
+    return { c, next, skip, on: !skip && !f.excl.has(c.id) };
   });
+}
+function vFechas() {
+  const f = fxState(), d = S.d;
+  const stc = (k, t) => `<label><input type="checkbox" name="st" value="${k}"${f.st.has(k) ? ' checked' : ''}><span>${t}</span></label>`;
+  const owners = d.users.filter((u) => u.role !== 'super' || u.id === me().id);
+  const step = (n, title, hint, body) => `<section class="fx-s"><header><span class="fx-n">${n}</span><div><h2>${title}</h2>${hint ? `<small>${hint}</small>` : ''}</div></header>${body}</section>`;
+  const s1 = f.only ? step(1, '¿Qué cuentas?', 'Las demos y la papelera no se tocan nunca.', `<div class="fx-only">${ic('check')}<span>Solo las <b>${plural(f.only.size, 'cuenta ' + (f.onlyTxt || 'que marcaste'), 'cuentas ' + (f.onlyTxt || 'que marcaste'))}</b>.</span><button type="button" class="btn sm ghost" data-act="fx-all">Usar filtros</button></div>`) : step(1, '¿Qué cuentas?', 'Las demos y la papelera no se tocan nunca.', `
+    <div class="pmeth fx-st">${stc('active', 'Activas')}${stc('soon', 'Vencen pronto')}${stc('expired', 'Caducadas')}${stc('off', 'Desactivadas')}</div>
+    <div class="fx-g">
+      ${d.users.length > 1 ? `<label class="f">Vendedor<select name="owner"><option value="0">Todos (${owners.length})</option>${owners.map((u) => `<option value="${u.id}"${f.owner === u.id ? ' selected' : ''}>${esc(u.name)}</option>`).join('')}</select></label>` : ''}
+      ${d.servers.length > 1 ? `<label class="f">Servidor<select name="server"><option value="0">Todos (${d.servers.length})</option>${d.servers.map((s) => `<option value="${s.id}"${f.server === s.id ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>` : ''}
+      <label class="f">Contenido<select name="q">${options([['all', 'Todos'], ['basico', 'Básico'], ['k4', '4K']], f.q)}</select></label>
+      <label class="f">Buscar<input type="search" name="search" value="${esc(f.search)}" placeholder="Nombre, usuario, email…"></label>
+    </div>
+    <details class="fx-more"${f.from || f.to || f.within !== '' || f.exOff ? ' open' : ''}><summary>Más filtros</summary><div class="fx-g">
+      <label class="f">Vencen desde<input type="date" name="from" value="${f.from}"></label>
+      <label class="f">Vencen hasta<input type="date" name="to" value="${f.to}"></label>
+      <label class="f">Vencen en menos de (días)<input type="number" name="within" min="0" max="3650" value="${f.within}" placeholder="Por ejemplo 7"></label>
+      <label class="check" style="align-self:end"><input type="checkbox" name="exOff"${f.exOff ? ' checked' : ''}> Sin las desactivadas a mano</label>
+    </div><button type="button" class="btn sm ghost" data-act="fx-clear">${ic('refresh')}Quitar filtros</button></details>`);
+  const seg = (k, t) => `<label><input type="radio" name="mode" value="${k}"${f.mode === k ? ' checked' : ''}><span>${t}</span></label>`;
+  const quick = [['1', 'd', '+1 día'], ['3', 'd', '+3 días'], ['7', 'd', '+7 días'], ['1', 'm', '+1 mes']];
+  const s2 = step(2, '¿Qué cambio?', 'No gasta créditos ni cuenta como renovación.', `
+    <div class="pmeth fx-mode">${seg('add', 'Sumar')}${seg('sub', 'Restar')}${seg('set', 'Poner una fecha')}</div>
+    <div class="fx-amt"${f.mode === 'set' ? ' hidden' : ''}>
+      <div class="fx-g fx-g2"><label class="f">Cantidad<input type="number" name="amount" min="1" max="3650" value="${esc(f.amount)}"></label>
+      <label class="f">Unidad<select name="unit">${options([['d', 'Días'], ['w', 'Semanas'], ['m', 'Meses']], f.unit)}</select></label></div>
+      <div class="chips fx-q">${quick.map(([a, u, t]) => `<button type="button" class="chip" data-act="fx-quick" data-a="${a}" data-u="${u}">${t}</button>`).join('')}</div>
+    </div>
+    <div class="fx-date"${f.mode === 'set' ? '' : ' hidden'}><label class="f">Nueva fecha de vencimiento<input type="date" name="date" value="${f.date}"></label></div>
+    <label class="check"><input type="checkbox" name="onlyFuture"${f.onlyFuture ? ' checked' : ''}> No tocar las que quedarían ya vencidas</label>
+    <label class="f" style="margin-top:10px">Motivo (opcional, queda en Movimientos)<input name="reason" maxlength="200" value="${esc(f.reason)}" placeholder="Por ejemplo: caída del servidor"></label>
+    <div class="chips fx-q">${['Caída del servidor', 'Regalo o compensación', 'Corrección de fecha'].map((t) => `<button type="button" class="chip" data-act="fx-reason" data-t="${t}">${t}</button>`).join('')}</div>`);
+  const s3 = step(3, 'Revisa y confirma', 'Quita la marca a las que no quieras cambiar.', '<div id="fxPrev"></div>');
+  return head('Ajustar fechas de renovación', 'Cambia de golpe el vencimiento de muchas cuentas, por ejemplo para compensar una caída.') + `<form id="fxForm" class="fx" onsubmit="return false">${s1}${s2}</form>${s3}`;
+}
+function fxPaint() {
+  const box = $('#fxPrev'); if (!box) return;
+  const f = fxState(), rows = fxRows(), on = rows.filter((r) => r.on), skip = rows.filter((r) => r.skip);
+  const lbl = f.mode === 'set' ? (f.date ? `a ${fmt(f.date)}` : '') : `${f.mode === 'sub' ? '−' : '+'}${Math.abs(parseInt(f.amount, 10)) || 0} ${f.unit === 'm' ? 'mes(es)' : f.unit === 'w' ? 'semana(s)' : 'día(s)'}`;
+  const pill = (n, t, cls = '') => `<span class="fx-p ${cls}"><b>${n}</b>${t}</span>`;
+  const MAX = 150, team = S.d.users.length > 1;
+  const row = (r) => { const c = r.c, k = diff(r.next, S.d.today) < 0 ? 'bad' : ''; return `<label class="fx-r${r.skip ? ' skip' : ''}"><input type="checkbox" data-fx="${c.id}"${r.on ? ' checked' : ''}${r.skip ? ' disabled' : ''}>
+    <div class="fx-who"><b>${esc(c.panelName)}</b><small>${esc(c.embyName)}${team ? ' · ' + esc(userName(c.ownerId)) : ''}</small></div>
+    <div class="fx-d"><span>${fmt(c.expires)}</span>${r.skip ? `<em>${r.skip === 'igual' ? 'sin cambio' : 'se queda igual'}</em>` : `${ic('chev').replace('class="ic"', 'class="ic fx-ar"')}<b class="${k}">${fmt(r.next)}</b>`}</div></label>`; };
+  box.innerHTML = `<div class="fx-pills">${pill(rows.length, 'encontradas')}${pill(on.length, 'se cambiarán', 'ok')}${skip.length ? pill(skip.length, 'se saltan', 'warn') : ''}</div>
+    ${rows.length ? `<div class="fx-all"><label class="check"><input type="checkbox" id="fxAll"${on.length && on.length === rows.length - skip.length ? ' checked' : ''}> Marcar todas</label></div><div class="fx-list">${rows.slice(0, MAX).map(row).join('')}</div>${rows.length > MAX ? `<p class="muted small" style="margin:8px 4px 0">Y ${rows.length - MAX} más (también se cambiarán si están marcadas).</p>` : ''}`
+      : '<div class="empty" style="padding:22px 0">Ninguna cuenta cumple estos filtros.</div>'}
+    <div class="fx-go"><button type="button" class="btn primary" data-act="fx-apply"${on.length && (f.mode !== 'set' || f.date) ? '' : ' disabled'}>${ic('calendar')}Aplicar ${lbl} a ${plural(on.length, 'cuenta', 'cuentas')}</button></div>`;
+}
+function fxRead() {
+  const fm = $('#fxForm'); if (!fm) return;
+  const f = fxState(), E = fm.elements, before = JSON.stringify([f.mode]);
+  if (!f.only) {
+    f.st = new Set([...fm.querySelectorAll('[name=st]:checked')].map((x) => x.value));
+    f.owner = E.owner ? +E.owner.value : 0; f.server = E.server ? +E.server.value : 0; f.q = E.q.value; f.search = E.search.value;
+    f.from = E.from.value; f.to = E.to.value; f.within = E.within.value; f.exOff = E.exOff.checked;
+  }
+  f.mode = (fm.querySelector('[name=mode]:checked') || {}).value || 'add'; f.amount = E.amount.value; f.unit = E.unit.value; f.date = E.date.value;
+  f.onlyFuture = E.onlyFuture.checked; f.reason = E.reason.value;
+  $('.fx-amt').hidden = f.mode === 'set'; $('.fx-date').hidden = f.mode !== 'set';
+  if (before !== JSON.stringify([f.mode])) f.excl.clear();
+  fxPaint();
+}
+function fxWire() {
+  const fm = $('#fxForm'); if (!fm) return;
+  fm.oninput = fxRead; fm.onchange = fxRead;
+  $('#fxPrev').onchange = (e) => {
+    const f = fxState();
+    if (e.target.id === 'fxAll') { if (e.target.checked) f.excl.clear(); else fxRows().forEach((r) => f.excl.add(r.c.id)); fxPaint(); return; }
+    const id = +e.target.dataset.fx; if (!id) return;
+    if (e.target.checked) f.excl.delete(id); else f.excl.add(id);
+    fxPaint();
+  };
+  fxPaint();
+}
+function fxApply() {
+  const f = fxState(), on = fxRows().filter((r) => r.on), ids = on.map((r) => r.c.id);
+  if (!ids.length) return;
+  const what = f.mode === 'set' ? `poner como vencimiento el <b>${fmt(f.date)}</b>` : `${f.mode === 'sub' ? 'restar' : 'sumar'} <b>${Math.abs(parseInt(f.amount, 10))} ${f.unit === 'm' ? 'mes(es)' : f.unit === 'w' ? 'semana(s)' : 'día(s)'}</b>`;
+  openDlg({ title: 'Confirmar el ajuste', submit: `Cambiar ${plural(ids.length, 'cuenta', 'cuentas')}`,
+    body: `<p class="preview">Vas a ${what} a <b>${plural(ids.length, 'cuenta', 'cuentas')}</b>.</p><p class="muted small">Las que vuelvan a estar en plazo recuperan sus bibliotecas; las que queden vencidas las pierden. No gasta créditos.${f.reason ? `<br>Motivo: «${esc(f.reason)}»` : ''}</p>`,
+    onSubmit: async () => { const msg = bulkResult(await bulkCall('/api/bulk/dates', ids, { mode: f.mode, amount: Math.abs(parseInt(f.amount, 10)) || 0, unit: f.unit, date: f.date, onlyFuture: f.onlyFuture, reason: f.reason }), 'Ajustar fechas', 'fecha ajustada', 'fechas ajustadas', 'sin cambio'); f.excl.clear(); return msg; } });
 }
 function dBulkTrash() {
   const ids = bulkIds();
@@ -5264,6 +5401,7 @@ document.addEventListener('click', (e) => {
     S.view = nav.dataset.view;
     if (nav.dataset.filter) { S.filter = nav.dataset.filter; S.q = ''; S.fOwner = 0; S.fServer = 0; S.page = 1; }
     if (/^mov/.test(S.view)) S.logF = 'all';
+    if (S.view === 'fechas' && S.fx) S.fx.only = null;
     if (AL[S.view]) { Object.assign(S.al, { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 }); }
     if (S.view === 'auditoria') S.audit = null;
     if (S.view === 'monitor') S.mon.data = null;
@@ -5345,6 +5483,11 @@ document.addEventListener('click', (e) => {
   if (a === 'mon-msg') { monMsg(el); return; }
   if (a === 'mon-notice') { monNotice(el); return; }
   if (a === 'guide-tg') { el.disabled = true; api('POST', `/api/clients/${id}/guide`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Guía enviada por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
+  if (a === 'fx-apply') { fxApply(); return; }
+  if (a === 'fx-all') { fxState().only = null; render(); return; }
+  if (a === 'fx-clear') { const f = fxState(); Object.assign(f, { owner: 0, server: 0, st: new Set(['active', 'soon']), q: 'all', from: '', to: '', within: '', search: '', exOff: false }); f.excl.clear(); render(); return; }
+  if (a === 'fx-quick') { const f = fxState(); f.mode = 'add'; f.amount = el.dataset.a; f.unit = el.dataset.u; render(); return; }
+  if (a === 'fx-reason') { const r = $('#fxForm').elements.reason; r.value = el.dataset.t; fxRead(); return; }
   if (a === 'lic-new') { licNew(); return; }
   if (a === 'lic-renew') { licRenew(id); return; }
   if (a === 'lic-edit') { licEdit(id); return; }
