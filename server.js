@@ -5130,6 +5130,7 @@ route('POST', '/api/license/recheck', null, async () => {
 
 const server = http.createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
+  const t0 = Date.now(); res.on('finish', () => { const ms = Date.now() - t0; if (ms > 3000 && pathname.startsWith('/api/')) console.warn(`Petición lenta: ${req.method} ${pathname} tardó ${ms} ms`); });
   try {
     if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
       const f = indexFile(), gz = wantsGzip(res);

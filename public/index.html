@@ -1058,6 +1058,10 @@ button.ck{cursor:pointer}.ck>span{font-size:13px;color:var(--muted)}.ck>b{font-s
 section.fx-s:last-child{margin-top:14px}
 @media (max-width:900px){.fx{grid-template-columns:1fr}}
 @media (max-width:560px){.fx-g{grid-template-columns:1fr}.fx-g.fx-g2{grid-template-columns:1fr 1fr}.fx-d{flex-direction:column;align-items:flex-end;gap:0}.fx-ar{display:none}.fx-go .btn{width:100%;justify-content:center}}
+#bootLd{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:var(--bg)}
+#bootLd .bl-in{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;color:var(--text);padding:16px}#bootLd small{color:var(--muted);min-height:1.2em}
+#bootLd .bl-sp{width:42px;height:42px;border-radius:50%;border:4px solid color-mix(in srgb,var(--brand) 25%,transparent);border-top-color:var(--brand);animation:blsp .8s linear infinite}
+@keyframes blsp{to{transform:rotate(360deg)}}
 /* Cuenta desactivada a mano */
 .pw-chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 7%,transparent);line-height:1.45}.pw-chk input{margin-top:3px;flex:none}
 .offbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,#7d8fa8 60%,transparent);background:color-mix(in srgb,#7d8fa8 12%,transparent);font-size:13px}
@@ -1277,8 +1281,11 @@ const Q = { basico: 'Básico', k4: '4K' };
 const ROLE = { super: 'Superadministrador', admin: 'Administrador', reseller: 'Reseller', sub: 'Subreseller' };
 const RANK = { super: 0, admin: 1, reseller: 2, sub: 3 };
 
-async function api(method, url, body) {
-  const r = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+async function api(method, url, body, opt) {
+  // opt.timeout: al arrancar no se espera para siempre (si el servidor no contesta, se avisa y se reintenta)
+  let r;
+  try { r = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', ...(opt && opt.timeout ? { signal: AbortSignal.timeout(opt.timeout) } : {}) }); }
+  catch (e) { throw new Error(e && (e.name === 'TimeoutError' || e.name === 'AbortError') ? 'El servidor tarda demasiado en responder.' : 'No hay conexión con el panel. Revisa tu internet.'); }
   const j = await r.json().catch(() => ({}));
   if (r.status === 401 && !url.startsWith('/api/login')) { showGate(false); throw new Error('La sesión ha caducado. Vuelve a entrar.'); }
   if (r.status === 423 && j.licLocked) { api('GET', '/api/state').then((st) => st.license && showLock(st.license)).catch(() => {}); throw new Error(j.error); }
@@ -1469,6 +1476,7 @@ function canManage(u) {
 /* ---------- Arranque y acceso ---------- */
 let gateMode = 'login';
 function showGate(setup) {
+  bootLoading(false);
   gateMode = setup ? 'setup' : 'login';
   $('#app').hidden = true; $('#gate').hidden = false;
   $('#gateText').textContent = setup
@@ -1536,14 +1544,30 @@ $('#gateForm').addEventListener('submit', async (e) => {
   btn.disabled = false;
 });
 async function boot() {
-  const st = await api('GET', '/api/state');
+  bootLoading(true);
+  const st = await api('GET', '/api/state', null, { timeout: 15000 });
   applyBrand(st.brand); applyTheme(); SUPPORT = st.support || null;
   if (st.license && st.license.state === 'locked') return showLock(st.license);
   if (st.needsSetup) return showGate(true);
   if (!st.authed) return showGate(false);
   await start();
 }
-async function start() { $('#gate').hidden = true; $('#app').hidden = false; navFromHash(); await reload(); payReturn(); }
+async function start() {
+  bootLoading(true);
+  try { S.d = await api('GET', '/api/data', null, { timeout: 30000 }); } // primera carga: con límite de tiempo
+  finally { bootLoading(false); }
+  $('#gate').hidden = true; $('#app').hidden = false; navFromHash(); render(); payReturn();
+}
+/** Pantalla de «Cargando…» mientras arranca, para que nunca se quede en negro */
+function bootLoading(on) {
+  let el = document.getElementById('bootLd');
+  if (!on) { if (el) el.remove(); return; }
+  if (el) return;
+  el = document.createElement('div'); el.id = 'bootLd';
+  el.innerHTML = '<div class="bl-in"><span class="bl-sp"></span><b>Cargando el panel…</b><small id="bootLdTxt"></small></div>';
+  document.body.appendChild(el);
+  setTimeout(() => { const t = document.getElementById('bootLdTxt'); if (t) t.textContent = 'Está tardando más de lo normal. Espera un momento…'; }, 6000);
+}
 async function reload() { S.d = await api('GET', '/api/data'); render(); }
 
 /* ---------- Pintado ---------- */
@@ -4204,6 +4228,7 @@ function licMore(id) {
 }
 /* Panel alquilado en pausa: pantalla de aviso */
 function showLock(lic) {
+  bootLoading(false);
   $('#app').hidden = true; $('#gate').hidden = true;
   let box = $('#licLock');
   if (!box) { document.body.insertAdjacentHTML('beforeend', '<div id="licLock" role="alert"></div>'); box = $('#licLock'); }
@@ -5879,6 +5904,7 @@ document.addEventListener('visibilitychange', () => { if (idle()) reload().catch
 setInterval(() => { if (idle()) reload().catch(() => {}); }, 60000);
 
 function bootFail(e) {
+  bootLoading(false);
   document.body.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#061a2e;color:#eaf6fb;font:16px system-ui,sans-serif">
     <div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px">No se pudo cargar el panel</h1>
     <p style="color:#fda4af;margin:0 0 14px">${esc(e && e.message)}</p>
