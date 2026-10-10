@@ -1098,6 +1098,9 @@ section.fx-s:last-child{margin-top:14px}
 .ag-wait{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--raised);margin-top:12px;font-size:14px}.ag-wait .bl-sp{width:20px;height:20px;border-radius:50%;border:3px solid color-mix(in srgb,var(--brand) 25%,transparent);border-top-color:var(--brand);animation:blsp .8s linear infinite;flex:none}.ag-wait.done{color:var(--ok)}
 @media (max-width:860px){.ag-rings{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ag-charts{grid-template-columns:1fr}}
 @media (max-width:560px){.ag-disks>div{grid-template-columns:80px 1fr}.ag-disks em{grid-column:1/-1}}
+.qs-flash{animation:qsflash 2.2s ease-out;border-radius:14px}
+@keyframes qsflash{0%,35%{box-shadow:0 0 0 3px var(--brand),0 0 24px color-mix(in srgb,var(--brand) 45%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
+.qs-i.k-ajuste{--c:#e2a93b}
 /* Cuenta desactivada a mano */
 .pw-chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 7%,transparent);line-height:1.45}.pw-chk input{margin-top:3px;flex:none}
 .offbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,#7d8fa8 60%,transparent);background:color-mix(in srgb,#7d8fa8 12%,transparent);font-size:13px}
@@ -3070,13 +3073,52 @@ const QS_KEYS = {
   copias: 'copias seguridad backup restaurar descargar guardar datos google drive comprobar', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
   apariencia: 'apariencia colores logo marca tema nombre panel', notifs: 'notificaciones telegram bot avisos pantalla', importar: 'importar csv excel emby subir lista', logs: 'logs actividad registro accesos entradas',
   guia: 'guia ayuda tutorial como empezar',
+  licencias: 'licencias alquilar alquiler panel vender uso suscripcion renovar licencia calendario', fechas: 'ajustar fechas compensar caida sumar restar dias vencimiento masivo',
+  estado: 'estado servidor vps cpu procesador memoria ram disco internet agente reiniciar apagar rescate', calidad: 'calidad remota bitrate mbps imagen resolucion quality guard',
+  compartidas: 'compartidas compartir cuenta varias ip dispositivos', seguimiento: 'seguimiento demos terminadas no compraron escribir', mensajecli: 'mensaje clientes difusion telegram whatsapp masivo',
+  mensajeeq: 'mensaje equipo vendedores resellers difusion', atencion: 'atencion avisos equipo sospechoso accesos raros', cobrosven: 'cobros deudas vendedores pagos pendientes extracto', accesos: 'historial accesos entradas ip dispositivo login',
 };
+/* Ajustes concretos dentro de cada pantalla: el buscador lleva directo y lo resalta */
+const QS_SET = [
+  ['Cambiar mi contraseña', 'perfil', 'contraseña clave password cambiar', 'Seguridad'],
+  ['Contacto de soporte (pantalla de entrada)', 'perfil', 'soporte whatsapp telegram ayuda contacto olvidado', 'soporte', 'system'],
+  ['Verificación en dos pasos', 'seguridad', '2fa doble factor authenticator codigo movil', 'dos pasos'],
+  ['Cerrar sesión por inactividad', 'seguridad', 'inactividad tiempo sesion caduca cerrar automatico', 'Cerrar la sesión'],
+  ['Sesiones abiertas', 'seguridad', 'sesiones dispositivos cerrar todas', 'Sesiones'],
+  ['Avisos de seguridad por Telegram', 'seguridad', 'alertas telegram seguridad avisos entrada', 'Telegram'],
+  ['Bot de Telegram (token)', 'notifs', 'bot telegram token botfather enlazar', 'Token del bot'],
+  ['Avisos de vencimiento a clientes', 'notifs', 'aviso vencimiento caduca recordatorio pantalla chat cliente', 'Avisos'],
+  ['Logo, colores y nombre del panel', 'apariencia', 'logo color marca nombre panel serviparte imagen', 'Marca'],
+  ['Diseño del resumen', 'resumen', 'diseño resumen tarjetas clasico limpio control dashboard aspecto', 'Diseño del resumen'],
+  ['Precios de altas y renovaciones', 'ajustes', 'precio coste creditos mes pantallas tarifa', 'Precios'],
+  ['Paquetes de créditos', 'ajustes', 'paquetes creditos packs venta', 'Paquetes de créditos'],
+  ['Días de gracia y papelera', 'tiempos', 'gracia papelera dias borrar caducada suspension', 'gracia'],
+  ['Horas de las demos', 'tiempos', 'demo horas duracion prueba', 'demo'],
+  ['Vigilancia de sesiones y monitor', 'tiempos', 'vigilancia intervalo segundos monitor sesiones excedidas', 'Vigilancia'],
+  ['Copia diaria a Google Drive', 'copias', 'google drive copia diaria buzon apps script', 'Google Drive'],
+  ['Copia por Telegram', 'copias', 'copia telegram backup automatica', 'Telegram'],
+  ['Restaurar una copia', 'copias', 'restaurar recuperar volver copia backup', 'Restaurar'],
+  ['Calidad remota de los usuarios', 'calidad', 'calidad mbps bitrate 100 autoremotequality', ''],
+  ['Alerta de transcodificación', 'altrans', 'transcode convertir alerta detener', ''],
+  ['Límite de sesiones / pantallas', 'alses', 'sesiones excedidas pantallas limite compartir', ''],
+  ['Límite de deuda de vendedores', 'cobrosven', 'deuda limite maximo pagar recordar extracto', 'Ajustes de cobros'],
+  ['Alerta de acciones raras', 'atencion', 'acciones raras bloqueo automatico sabotaje', 'acciones raras'],
+  ['Plantillas de mensajes (alta, demo, renovación)', 'plantillas', 'plantilla texto mensaje alta bienvenida demo renovacion guia calidad', ''],
+  ['Reiniciar Emby o el VPS', 'estado', 'reiniciar reboot restart emby vps apagar programar', ''],
+  ['Rescate automático de Emby', 'estado', 'rescate automatico colgado emby reinicio solo', 'Rescate'],
+  ['Instalar el agente del servidor', 'estado', 'agente instalar orden vps monitorizar', ''],
+  ['Pagos online (Stripe / cripto)', 'pagos', 'stripe nowpayments tarjeta cripto bitcoin pasarela', ''],
+  ['Contacto para renovar licencias', 'licencias', 'contacto renovar licencia alquiler', 'contacto'],
+  ['Retención de datos', 'retencion', 'retencion borrar antiguos limpiar registros', ''],
+];
 const QS_FILTER = { all: 'clientes lista cuentas todos', soon: 'por vencer caducan pronto renovar', expired: 'vencidos caducados renovar', demo: 'demos activas' };
 const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 let QS = { items: [], sel: 0 };
 function qsIndex() {
   const out = [];
   navGroups().forEach((g) => g.items.forEach((x) => out.push({ kind: 'Sección', icon: x.i, label: x.t, sub: g.t || '', key: `${x.t} ${g.t || ''} ${QS_KEYS[x.v] || ''} ${x.f ? QS_FILTER[x.f] || '' : ''}`, view: x.v, filter: x.f })));
+  const can = new Set(navItems().map((x) => x.v).concat('resumen'));
+  QS_SET.forEach(([label, view, k, find, perm]) => { if (can.has(view) && (!perm || canDo(perm))) { const it = navItems().find((x) => x.v === view); out.push({ kind: 'Ajuste', icon: 'sliders', label, sub: 'en ' + (view === 'resumen' ? 'Resumen' : (it ? it.t : view)), key: `${label} ${k}`, view, find }); } });
   const acts = [];
   if (!noCli()) acts.push(['new', 'userplus', 'Crear cuenta nueva', 'alta nuevo cliente'], ['demo', 'timer', 'Crear demo', 'prueba test']);
   if (staff() && !noCli() && !me().useCredits) acts.push(['import', 'download', 'Importar cuentas de Emby', 'importar']);
@@ -3089,8 +3131,9 @@ function qsResults(q) {
   const n = norm(q).trim(), words = n.split(/\s+/).filter(Boolean);
   const idx = qsIndex();
   if (!words.length) return idx.filter((x) => x.kind === 'Acción' || ['resumen', 'cuentas', 'monitor', 'seguridad'].includes(x.view)).slice(0, 10);
-  const score = (x) => { const lab = norm(x.label), key = norm(x.key); if (!words.every((w) => key.includes(w))) return 0; return (lab.startsWith(words[0]) ? 3 : lab.includes(words[0]) ? 2 : 1) + (x.kind === 'Sección' ? 0.5 : 0); };
-  const opts = idx.map((x) => [x, score(x)]).filter(([, sc]) => sc).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([x]) => x);
+  const score = (x) => { const lab = norm(x.label), key = norm(x.key); if (!words.every((w) => key.includes(w))) return 0; return (lab.startsWith(words[0]) ? 3 : lab.includes(words[0]) ? 2 : 1) + (x.kind === 'Sección' ? 0.5 : x.kind === 'Ajuste' ? 0.3 : 0); };
+  const opts = idx.map((x) => [x, score(x)]).filter(([, sc]) => sc).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([x]) => x);
+  const order = []; opts.forEach((x) => { if (!order.includes(x.kind)) order.push(x.kind); }); opts.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind)); // sin títulos repetidos
   // Clientes y vendedores por nombre, usuario, correo o teléfono
   const cl = noCli() ? [] : S.d.clients.filter((c) => words.every((w) => norm(`${c.panelName} ${c.embyName} ${c.email || ''} ${c.whatsapp || ''} ${c.telegram || ''}`).includes(w))).slice(0, 6)
     .map((c) => ({ kind: 'Cliente', icon: c.demo ? 'timer' : 'user', label: c.panelName, sub: `${c.embyName} · ${STAGE[stage(c)]}${S.d.servers.length > 1 ? ' · ' + serverName(c.serverId) : ''}`, client: c.id }));
@@ -3103,7 +3146,7 @@ function qsPaint() {
   QS.items = qsResults(q);
   if (QS.sel >= QS.items.length) QS.sel = 0;
   let last = '';
-  box.innerHTML = QS.items.length ? QS.items.map((x, i) => { const h = x.kind !== last ? `<div class="qs-g">${!q.trim() && i === 0 ? 'Accesos rápidos' : x.kind === 'Sección' ? 'Secciones' : x.kind === 'Acción' ? 'Acciones' : x.kind === 'Cliente' ? 'Clientes' : 'Vendedores'}</div>` : ''; last = x.kind;
+  box.innerHTML = QS.items.length ? QS.items.map((x, i) => { const h = x.kind !== last ? `<div class="qs-g">${!q.trim() && i === 0 ? 'Accesos rápidos' : x.kind === 'Sección' ? 'Secciones' : x.kind === 'Acción' ? 'Acciones' : x.kind === 'Ajuste' ? 'Ajustes' : x.kind === 'Cliente' ? 'Clientes' : 'Vendedores'}</div>` : ''; last = x.kind;
     return `${h}<button type="button" class="qs-it${i === QS.sel ? ' on' : ''}" role="option" aria-selected="${i === QS.sel}" data-act="qs-go" data-i="${i}"><span class="qs-i k-${norm(x.kind)}">${ic(x.icon)}</span><span class="qs-t"><b>${esc(x.label)}</b>${x.sub ? `<small>${esc(x.sub)}</small>` : ''}</span><span class="qs-k">${x.kind}</span></button>`; }).join('')
     : `<div class="qs-none">No encuentro «${esc(q)}». Prueba con otra palabra: renovar, Telegram, copia, precios…</div>`;
   const on = $('.qs-it.on', box); if (on) on.scrollIntoView({ block: 'nearest' });
@@ -3117,10 +3160,19 @@ function qsOpen() {
 }
 /** Pulsa por dentro un boton con data-view o data-act: asi se reutiliza todo lo que ya hace el menu */
 function fakeClick(attrs) { const b = document.createElement('button'); b.type = 'button'; b.hidden = true; Object.entries(attrs).forEach(([k, v]) => { if (v != null) b.dataset[k] = v; }); document.body.appendChild(b); b.click(); b.remove(); }
+/** Lleva a la parte de la pantalla donde está el ajuste y la resalta un momento */
+function qsFind(t) {
+  const n = norm(t), els = [...document.querySelectorAll('#main h2, #main h3, #main summary, #main label, #main .dpick')];
+  const el = els.find((e) => norm(e.textContent).includes(n)); if (!el) return;
+  const box = el.closest('section, details, .panel, .seccard, .dpick, label') || el;
+  if (box.tagName === 'DETAILS') box.open = true;
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  box.classList.remove('qs-flash'); void box.offsetWidth; box.classList.add('qs-flash');
+}
 function qsGo(i) {
   const x = QS.items[i]; if (!x) return;
   $('#qs').close();
-  if (x.view) { const g = navGroups().find((gr) => gr.items.some((it) => it.v === x.view)); if (g && g.k) NAV_OPEN.add(g.k); fakeClick({ view: x.view, filter: x.filter }); return; }
+  if (x.view) { const g = navGroups().find((gr) => gr.items.some((it) => it.v === x.view)); if (g && g.k) NAV_OPEN.add(g.k); fakeClick({ view: x.view, filter: x.filter }); if (x.find) setTimeout(() => qsFind(x.find), 350); else if (x.kind === 'Ajuste') window.scrollTo(0, 0); return; }
   if (x.act === 'qs-bcast') { fakeClick({ view: 'monitor' }); setTimeout(dBroadcast, 50); return; }
   if (x.act) { fakeClick({ act: x.act }); return; }
   if (x.client) { const c = S.d.clients.find((k) => k.id === x.client); if (c) { if (c.status === 'trash') { fakeClick({ view: 'papelera' }); return; } dEdit(c); } return; }
