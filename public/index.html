@@ -1867,7 +1867,7 @@ function clientCard(c) {
       <span class="tag left ${st}" title="Tiempo restante">${ic('clock')}${leftText(c)}</span>
     </div>
     ${leftBar(c)}
-    <div class="cline"><span data-live="${c.id}">${liveOf(c) || `${ic('signal')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span>`}</span></div>
+    ${open && !liveOf(c) ? '' : `<div class="cline"><span data-live="${c.id}">${liveOf(c) || `${ic('signal')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span>`}</span></div>`}
     ${flags ? `<div class="flags">${flags}</div>` : ''}
     ${note}
     ${c.off ? `<div class="offbar">${ic('pause')}<span>Desactivada${c.off.length > 9 ? ' el ' + fmt(c.off.slice(0, 10)) : ''}: no puede ver nada en Emby. No se borra ni pasa a la papelera.</span><button type="button" class="btn sm primary" data-act="c-on" data-id="${c.id}">${ic('play')}Activar</button></div>` : ''}
