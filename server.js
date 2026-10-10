@@ -436,6 +436,8 @@ const PERM_RULES = [
   ['GET', /^\/api\/(audit|logs|usage|income)$/, 'reports'],
   ['GET', /^\/api\/servers\/\d+\/test$/, 'viewServers'],
   ['GET', /^\/api\/agent\/status$/, 'viewServers'],
+  ['GET', /^\/api\/servers\/\d+\/(details|reimport)$/, 'viewServers'],
+  ['POST', /^\/api\/servers\/\d+\/(scan|pause|reimport)$/, 'servers'],
   ['POST', /^\/api\/servers\/\d+\/agent\/(link|remove)$/, 'servers'],
   ['PUT', /^\/api\/servers\/\d+\/packages$/, 'packages'],
   ['POST', /^\/api\/servers$/, 'servers'],
@@ -1639,7 +1641,7 @@ function readAdminOptions(me, body, u) {
 }
 /** Servidores en los que un usuario puede crear cuentas: lista vacia = todos */
 function serverAllowed(u, s) { return isStaff(u) || !u.serverIds || !u.serverIds.length || u.serverIds.includes(s.id); }
-function assertServerAllowed(u, s) { if (!serverAllowed(u, s)) throw new HttpError(403, `No tienes permiso para crear cuentas en "${s.name}".`); }
+function assertServerAllowed(u, s) { if (s.off) throw new HttpError(400, `El servidor "${s.name}" está pausado: no admite cuentas nuevas ahora mismo.`); if (!serverAllowed(u, s)) throw new HttpError(403, `No tienes permiso para crear cuentas en "${s.name}".`); }
 /** Opciones del vendedor que solo fijan los administradores */
 function readVendorOptions(me, body, u) {
   if (!isStaff(me)) return;
@@ -1706,8 +1708,8 @@ function publicData(me) {
     license: me.role === 'super' ? licStatus() : null,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } } },
     servers: db.servers.map((s) => (seeServers
-      ? { id: s.id, name: s.name, usable: true, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } }
-      : { id: s.id, name: s.name, usable: serverAllowed(me, s), publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } })),
+      ? { id: s.id, name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } }
+      : { id: s.id, name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
     clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId))).map((c) => ({ ...c, tgChat: undefined, tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
     log: db.log.filter((l) => l.type !== 'login' && seeClients && (!vis ? true : (l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)).slice(0, 500),
@@ -2209,6 +2211,90 @@ route('PUT', '/api/servers/:id/packages', SUPER, ({ me, params, body }) => lock(
   saveDb();
   return { ok: true, failed };
 }));
+
+/* Ficha de un servidor: datos de Emby, bibliotecas con cuántos títulos tienen, escaneo y cuentas */
+route('GET', '/api/servers/:id/details', STAFF, async ({ params }) => {
+  const s = serverById(params.id), t0 = Date.now();
+  const out = { id: s.id, name: s.name, off: !!s.off, online: false, ms: 0, info: null, libraries: [], scan: null, emby: null, error: '' };
+  try {
+    const info = await emby(s, 'GET', '/System/Info');
+    out.online = true; out.ms = Date.now() - t0;
+    out.info = { name: info.ServerName || '', version: info.Version || '', os: info.OperatingSystemDisplayName || info.OperatingSystem || '', update: !!info.HasUpdateAvailable, pendingRestart: !!info.HasPendingRestart };
+  } catch (e) { out.error = e.message; return out; }
+  const pk = s.packages || {}, inPk = (k, id) => !!pk[k] && (pk[k].all || (pk[k].folders || []).includes(id));
+  const [vf, tasks, users] = await Promise.all([
+    emby(s, 'GET', '/Library/VirtualFolders').catch(() => null),
+    emby(s, 'GET', '/ScheduledTasks?IsHidden=false').catch(() => null),
+    emby(s, 'GET', '/Users').catch(() => null),
+  ]);
+  const libs = Array.isArray(vf) ? vf.map((f) => ({ id: String(f.Guid || f.ItemId || f.Id || ''), item: String(f.ItemId || f.Id || ''), name: f.Name, type: f.CollectionType || '', paths: (f.Locations || []).length, refreshing: f.RefreshStatus === 'Active', progress: f.RefreshProgress != null ? Math.round(f.RefreshProgress) : null }))
+    : (await embyLibraries(s).catch(() => [])).map((l) => ({ ...l, item: l.id, type: '', paths: 0 }));
+  await Promise.all(libs.map(async (l) => {
+    l.basico = inPk('basico', l.id); l.k4 = inPk('k4', l.id);
+    if (!l.item) return;
+    try { const r = await emby(s, 'GET', `/Items?ParentId=${encodeURIComponent(l.item)}&Recursive=true&IncludeItemTypes=Movie,Series,MusicAlbum,Audio,Video&Limit=0`); l.count = r && typeof r.TotalRecordCount === 'number' ? r.TotalRecordCount : null; } catch { l.count = null; }
+  }));
+  out.libraries = libs;
+  const task = Array.isArray(tasks) ? tasks.find((x) => x.Key === 'RefreshLibrary') || tasks.find((x) => /scan media library|escanear/i.test(x.Name || '')) : null;
+  if (task) {
+    const last = task.LastExecutionResult || {};
+    out.scan = { running: task.State === 'Running', progress: task.CurrentProgressPercentage != null ? Math.round(task.CurrentProgressPercentage) : null, last: last.EndTimeUtc || null, status: last.Status || '' };
+  }
+  if (Array.isArray(users)) {
+    const known = new Set(db.clients.filter((c) => c.serverId === s.id).map((c) => c.embyId));
+    const normal = users.filter((u) => !(u.Policy && u.Policy.IsAdministrator));
+    out.emby = { users: normal.length, admins: users.length - normal.length, notInPanel: normal.filter((u) => !known.has(u.Id)).length };
+  }
+  return out;
+});
+/* Escanear bibliotecas: todas, o solo una */
+route('POST', '/api/servers/:id/scan', STAFF, async ({ me, params, body }) => {
+  const s = serverById(params.id), lib = str(body.item, 80);
+  if (lib) {
+    if (!/^[\w-]+$/.test(lib)) throw new HttpError(400, 'Biblioteca no válida.');
+    await emby(s, 'POST', `/Items/${lib}/Refresh?Recursive=true&MetadataRefreshMode=Default&ImageRefreshMode=Default&ReplaceAllMetadata=false&ReplaceAllImages=false`);
+  } else await emby(s, 'POST', '/Library/Refresh');
+  await lock(async () => { addLog('servidor', null, `Escaneo de ${lib ? 'la biblioteca «' + str(body.name, 60) + '»' : 'todas las bibliotecas'} en "${s.name}"`, me); saveDb(); });
+  return { ok: true };
+});
+/* Pausar un servidor: sigue funcionando para quien ya tiene cuenta, pero no se crean cuentas nuevas en él */
+route('POST', '/api/servers/:id/pause', STAFF, ({ me, params, body }) => lock(async () => {
+  const s = serverById(params.id), off = !!body.off;
+  if (!!s.off === off) return { ok: true };
+  if (off) s.off = new Date().toISOString(); else delete s.off;
+  addLog('servidor', null, off ? `Servidor "${s.name}" pausado: no se crean cuentas nuevas en él` : `Servidor "${s.name}" activo otra vez para cuentas nuevas`, me);
+  saveDb();
+  return { ok: true };
+}));
+/* Volver a crear en Emby las cuentas del panel (tras reinstalar el servidor o cambiar la API key). Va por detrás, cuenta a cuenta */
+const reimports = new Map();
+route('GET', '/api/servers/:id/reimport', STAFF, ({ params }) => ({ job: reimports.get(serverById(params.id).id) || null }));
+route('POST', '/api/servers/:id/reimport', STAFF, async ({ me, params, body }) => {
+  const s = serverById(params.id);
+  if (!checkPassword(me, String(body.password || ''))) throw new HttpError(403, 'La contraseña no es correcta.');
+  const cur = reimports.get(s.id);
+  if (cur && !cur.done) throw new HttpError(409, 'Ya se está haciendo. Espera a que termine.');
+  await emby(s, 'GET', '/System/Info');
+  const ids = db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash').map((c) => c.id);
+  const job = { total: ids.length, n: 0, ok: 0, recreated: 0, failed: 0, errors: [], done: false, at: new Date().toISOString(), by: me.name };
+  reimports.set(s.id, job);
+  (async () => {
+    for (const id of ids) {
+      await lock(async () => {
+        const c = db.clients.find((x) => x.id === id);
+        if (!c || c.serverId !== s.id || c.status === 'trash') return;
+        try { const r = await repairClient(me, c); job.ok++; if (r.recreated) job.recreated++; }
+        catch (e) { job.failed++; if (job.errors.length < 30) job.errors.push(`${c.embyName}: ${e.message}`); }
+        saveDb();
+      }).catch(() => {});
+      job.n++;
+    }
+    job.done = true;
+    await lock(async () => { addLog('servidor', null, `Re-importación en "${s.name}": ${job.ok} correctas (${job.recreated} creadas de nuevo), ${job.failed} con error`, me); saveDb(); }).catch(() => {});
+    notifyStaff('servers', `🔁 Re-importación en ${s.name} terminada: ${job.ok} bien, ${job.recreated} creadas de nuevo, ${job.failed} con error.`);
+  })();
+  return { ok: true, total: ids.length };
+});
 
 /* Importar usuarios que ya existen en Emby (administradores) */
 route('GET', '/api/servers/:id/emby-users', STAFF, async ({ params }) => {
@@ -3291,7 +3377,8 @@ async function watchServers() {
   for (const s of db.servers) {
     const h = health.get(s.id) || { fails: 0, down: false, since: null, checked: null, ok: true };
     let ok = true, why = '';
-    try { await emby(s, 'GET', '/System/Info'); } catch (e) { ok = false; why = e.message; }
+    const t0 = Date.now();
+    try { const inf = await emby(s, 'GET', '/System/Info'); if (inf && inf.Version) h.version = String(inf.Version).slice(0, 20); h.ms = Date.now() - t0; } catch (e) { ok = false; why = e.message; }
     h.checked = new Date().toISOString(); h.ok = ok;
     const P = power.get(s.id), planned = P && Date.now() - P.at < 10 * 60000;
     if (P && !planned) power.delete(s.id);
@@ -3320,7 +3407,7 @@ async function watchServers() {
     health.set(s.id, h);
   }
 }
-route('GET', '/api/health', '*', () => ({ servers: db.servers.map((s) => { const h = health.get(s.id); return { id: s.id, name: s.name, ok: h ? !h.down : null, since: h && h.down ? h.since : null, checked: h ? h.checked : null }; }) }));
+route('GET', '/api/health', '*', () => ({ servers: db.servers.map((s) => { const h = health.get(s.id); return { id: s.id, name: s.name, ok: h ? !h.down : null, since: h && h.down ? h.since : null, checked: h ? h.checked : null, version: h ? h.version || '' : '', ms: h ? h.ms || 0 : 0 }; }) }));
 
 /* ---------- Estadísticas de uso: el panel apunta cada minuto lo que se está viendo ---------- */
 const PLAY_MS = Number(process.env.PLAY_MS) || 60000;

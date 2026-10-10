@@ -431,6 +431,62 @@ button.brand:hover .logo{box-shadow:0 0 0 2px var(--brand)}
 .klist .k{display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-top:1px solid var(--line)} .klist .k:first-child{border-top:0}
 .klist .k>.ic{margin-top:2px;flex-shrink:0;color:var(--muted)} .klist .k.ok>.ic{color:var(--ok)} .klist .k.todo>.ic{color:var(--warn)}
 .klist .k div{flex:1;min-width:0} .klist .k small{display:block;color:var(--muted);font-size:13px}
+.sv-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.sv-t{--c:var(--brand);position:relative;background:color-mix(in srgb,var(--c) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 32%,var(--line));border-radius:var(--r);padding:12px 14px 12px 50px;min-height:64px}
+.sv-t .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:24px;height:24px;color:var(--c)}
+.sv-t b{display:block;font-size:22px;line-height:1.1}.sv-t b small{font-size:14px;color:var(--muted);font-weight:600}.sv-t span{font-size:12px;color:var(--muted)}
+.sv-t.blue,.sv-c.blue{--c:#4f9cf5}.sv-t.green{--c:#10b981}.sv-t.violet,.sv-c.violet{--c:#a77bf3}.sv-t.amber,.sv-c.amber{--c:#f5a524}.sv-t.teal,.sv-c.teal{--c:#14b8a6}.sv-c.indigo{--c:#6d7cf5}
+.sv-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin:0 2px 12px}
+.sv-legend span{display:inline-flex;align-items:center;gap:5px}.sv-legend .ic{width:14px;height:14px}
+.sv-list{display:flex;flex-direction:column;gap:10px}
+.sv-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.sv-card.paused{opacity:.82;border-style:dashed}.sv-card.down{border-color:color-mix(in srgb,var(--bad) 55%,var(--line))}
+.sv-id{min-width:0}.sv-name{font-size:17px;margin-right:8px}
+.sv-url{font-size:12.5px;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-on{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok);vertical-align:2px;margin-right:6px}
+.sv-on i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 25%,transparent)}
+.sv-on.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}.sv-on.wait{background:var(--raised);color:var(--muted)}
+.sv-chips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.sv-c{--c:var(--brand);background:color-mix(in srgb,var(--c) 11%,transparent);border:1px solid color-mix(in srgb,var(--c) 30%,transparent);border-radius:9px;padding:6px 4px;text-align:center;min-width:0}
+.sv-c span{display:flex;align-items:center;justify-content:center;gap:4px;font-size:11.5px;font-weight:600;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-c .ic{width:12px;height:12px;flex:none}.sv-c b{display:block;font-size:18px;margin-top:2px}
+.sv-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.sv-tg{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px;cursor:pointer;border:1px solid var(--line);background:var(--raised);color:var(--muted)}
+.sv-tg.on{background:color-mix(in srgb,var(--brand) 18%,transparent);border-color:color-mix(in srgb,var(--brand) 45%,transparent);color:var(--brand)}
+.sv-tg .ic{width:14px;height:14px}
+.sv-ibs{display:flex;gap:2px}
+.sv-ib{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;border:0;background:none;color:var(--muted);cursor:pointer}
+.sv-ib .ic{width:17px;height:17px;margin:0}.sv-ib:hover{background:var(--raised);color:var(--text)}.sv-ib:disabled{opacity:.35;cursor:not-allowed}
+.sv-ib.warn{color:var(--warn)}.sv-ib.bad{color:var(--bad)}.sv-ib.ok{color:var(--ok)}
+@media (max-width:1100px){.sv-card{grid-template-columns:minmax(0,1fr)}.sv-acts{justify-content:flex-start}}
+@media (max-width:560px){.sv-chips{grid-template-columns:repeat(3,minmax(0,1fr))}.sv-c b{font-size:16px}.sv-t{padding-left:44px}.sv-t .ic{left:12px;width:20px;height:20px}}
+.sf-top{margin-bottom:6px}
+.sf-link{background:none;border:0;padding:0;font:inherit;font-weight:600;color:inherit;cursor:pointer;text-align:left}
+.sf-link:hover{color:var(--brand);text-decoration:underline}
+.head h1 .pillst{vertical-align:middle;margin-left:6px;font-size:12px}
+.tabs .n{font-size:11px;font-weight:700;background:var(--brand);color:var(--on-brand);border-radius:999px;padding:1px 7px;margin-left:4px}
+.sf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px 20px}
+.sf-kv{min-width:0}.sf-kv small{display:block;color:var(--muted);font-size:12px;margin-bottom:3px}.sf-kv b{font-weight:600;word-break:break-word}
+.sf-note{margin-top:14px;padding:9px 12px;border-radius:8px;background:color-mix(in srgb,var(--warn) 14%,transparent);font-size:13px}
+.sf-note.ok{background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.sf-state{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.sf-state p{margin-top:2px}
+.sf-re{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;border:1px solid color-mix(in srgb,var(--brand) 45%,var(--line))}
+.sf-re b .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}.sf-re p{margin-top:4px;max-width:640px}
+.sf-prog{position:relative;display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;padding-bottom:8px}
+.sf-prog i{position:absolute;left:0;bottom:0;height:3px;width:var(--p);background:var(--brand);border-radius:2px;transition:width .4s}
+.sf-err{margin-top:8px;font-size:13px}.sf-err ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+.sf-scan-h{display:flex;justify-content:space-between;align-items:center;gap:16px}.sf-scan-h p{margin-top:4px}
+.sf-scan{margin-bottom:14px}
+.sf-bar{height:6px;border-radius:4px;background:var(--raised);margin-top:12px;overflow:hidden}.sf-bar i{display:block;height:100%;background:var(--brand);transition:width .5s}
+.sf-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+.sf-t{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}.sf-t b{display:block;font-size:22px}.sf-t span{font-size:12px;color:var(--muted)}
+.sf-t.ok b{color:var(--ok)}.sf-t.warn b{color:var(--warn)}.sf-t.muted b{color:var(--muted)}
+.sf-nr{display:flex;flex-wrap:wrap;gap:6px}
+.sf-chip{background:var(--raised);border-radius:999px;padding:4px 11px;font-size:13px}.sf-chip.off{opacity:.65}.sf-chip small{color:var(--muted)}
+.sf-pks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.sf-pk{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}.sf-pk h3{font-size:15px;margin:0 0 8px}
+@media (max-width:640px){.sf-re,.sf-scan-h,.sf-state{flex-direction:column;align-items:stretch}.sf-re .btn,.sf-scan-h .btn{width:100%}}
 .infobox{background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:6px;padding:12px 14px;font-size:14px;margin-top:14px}
 .infobox b{display:block;margin-bottom:4px} .infobox ul{margin:0;padding-left:18px;color:var(--muted)} .infobox li{margin:2px 0}
 .warnbox{background:var(--surface);border:1px solid var(--warn);border-radius:var(--r);padding:12px 14px;margin-bottom:14px} .warnbox b{color:var(--warn)}
@@ -1342,7 +1398,7 @@ function toast(msg, bad) {
 const IC = {
   key: 'M15.5 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM13 11l-9 9M6 18l2 2M9 15l2 2',
   send: 'M21 3 10 14M21 3l-7 18-4-7-7-4z', radio: 'M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8', film: 'M4 4h16v16H4zM8 4v16M16 4v16M4 8h4M4 12h4M4 16h4M16 8h4M16 12h4M16 16h4', tv: 'M3 7h18v12H3zM8 3l4 4 4-4', pause: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10 9v6M14 9v6', wifi: 'M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a14.5 14.5 0 0 1 20 0M12 19.5h.01', xc: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6', refresh: 'M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4',
-  grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', server: 'M4 5h16v6H4zM4 13h16v6H4zM7.5 8h.01M7.5 16h.01', msg: 'M4 5h16v11H9l-5 4z',
+  upload: 'M12 16V4M7 9l5-5 5 5M4 20h16', info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01', grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', server: 'M4 5h16v6H4zM4 13h16v6H4zM7.5 8h.01M7.5 16h.01', msg: 'M4 5h16v11H9l-5 4z',
   users: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.8c2.1.7 3.5 2.6 3.5 5.2',
   user: 'M12 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5', userplus: 'M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5M19 5v6M16 8h6',
   list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01', clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2', alert: 'M12 4 2.5 20h19zM12 10v4M12 17h.01',
@@ -1402,7 +1458,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN; try { NAV_OPEN = new Set(JSON.parse(localStorage.getItem('menu') || '["cli"]')); } catch (e) { NAV_OPEN = new Set(['cli']); }
 
 /* ---------- Estado ---------- */
-const S = { ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -1615,7 +1671,7 @@ function render() {
   if (S.view === 'directo') S.view = 'monitor';
   if (S.view === 'movdemos') { S.view = 'movimientos'; S.logF = 'demo'; }
   const d = S.d, items = navItems();
-  if (!items.some((x) => x.v === S.view) && !(S.view === 'vendedor' && me().role !== 'sub')) S.view = 'resumen';
+  if (!items.some((x) => x.v === S.view) && !(S.view === 'vendedor' && me().role !== 'sub') && !(S.view === 'srvficha' && canDo('viewServers') && S.d.servers.some((x) => x.id === S.sf.id))) S.view = S.view === 'srvficha' && canDo('viewServers') ? 'servidores' : 'resumen';
   const listF = ['soon', 'expired', 'demo', 'off'].includes(S.filter) ? S.filter : 'all';
   const navTop = $('#nav').scrollTop;
   const item = (x) => {
@@ -1635,7 +1691,7 @@ function render() {
   applyBrand(d.settings.brand); applyTheme();
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, estado: vEstado, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, estado: vEstado, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -1648,6 +1704,7 @@ function render() {
   if (S.view === 'copias' && !S.bk && !S.bkBusy) loadBk();
   if (S.view === 'uso' && !S.uso && !S.usoBusy) loadUso();
   if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
+  if (S.view === 'srvficha') sfAfterRender();
   if (S.view === 'ingresos' && !S.ing && !S.ingBusy) loadIng();
   if (S.view === 'inactivos' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
@@ -1678,8 +1735,8 @@ function render() {
    Cada pantalla queda guardada en el historial (#/cuentas/soon…), así «Atrás» vuelve a la anterior en vez de salir del panel.
    Una ventana abierta (Más, Editar…) también ocupa un paso: «Atrás» la cierra. */
 const NAV = { skip: false, fromPop: false, closing: false };
-const navKey = () => S.view + (S.view === 'cuentas' ? '/' + (S.filter || 'all') : S.view === 'vendedor' ? '/' + (S.vendorId || 0) : '');
-const navState = (extra) => ({ k: navKey(), v: S.view, f: S.filter, vid: S.vendorId, ...extra });
+const navKey = () => S.view + (S.view === 'cuentas' ? '/' + (S.filter || 'all') : S.view === 'vendedor' ? '/' + (S.vendorId || 0) : S.view === 'srvficha' ? '/' + (S.sf.id || 0) : '');
+const navState = (extra) => ({ k: navKey(), v: S.view, f: S.filter, vid: S.vendorId, sid: S.sf.id, ...extra });
 function navSync() {
   if (NAV.fromPop) { NAV.fromPop = false; return; }
   const st = history.state || {}, k = navKey();
@@ -1707,7 +1764,7 @@ window.addEventListener('popstate', (e) => {
   const st = e.state;
   if (!st || !st.v || $('#app').hidden || !S.d) return;
   if (st.k === navKey()) return;
-  S.view = st.v; if (st.f) S.filter = st.f; if (st.vid != null) S.vendorId = st.vid; S.page = 1;
+  S.view = st.v; if (st.f) S.filter = st.f; if (st.vid != null) S.vendorId = st.vid; if (st.sid != null && st.sid !== S.sf.id) sfReset(st.sid); S.page = 1;
   NAV.fromPop = true; render(); window.scrollTo(0, 0);
 });
 /** Al entrar o recargar (F5) se abre la pantalla que había en la dirección */
@@ -1717,6 +1774,7 @@ function navFromHash() {
   S.view = m[1];
   if (m[1] === 'cuentas' && m[2]) S.filter = m[2];
   if (m[1] === 'vendedor') S.vendorId = Number(m[2]) || 0;
+  if (m[1] === 'srvficha') sfReset(Number(m[2]) || 0);
 }
 const head = (title, sub, acts = '') => `<div class="head"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="acts">${acts}</div></div>`;
 const newBtns = () => `${staff() ? `<button class="btn" data-act="import">${ic('download')}Importar de Emby</button>` : ''}<button class="btn" data-act="demo">${ic('timer')}Nueva demo</button><button class="btn primary" data-act="new">${ic('plus')}Nueva cuenta</button>`;
@@ -3672,11 +3730,204 @@ function vMovimientos(demoOnly) {
 /** Resumen de lo que incluye un paquete en un servidor */
 const pkgText = (s, k) => { const p = (s.packages || {})[k] || {}; return p.all ? '<b>todas las bibliotecas</b>' : plural((p.folders || []).length, 'biblioteca', 'bibliotecas'); };
 function vServidores() {
-  const d = S.d;
-  return head('Servidores Emby', 'En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', d.servers.length && canDo('servers') ? '<button class="btn primary" data-act="server-new">Conectar otro servidor</button>' : '') + (d.servers.length ? `<div class="panel"><table><thead><tr><th>Nombre</th><th>Dirección</th><th>Contenido</th><th class="r">Acciones</th></tr></thead><tbody>${d.servers.map((s) => `<tr>
-      <td class="name">${esc(s.name)}${s.keyLost ? '<div class="err" style="max-width:none;margin-top:4px">Falta su API key: pulsa Editar y vuelve a pegarla.</div>' : ''}</td><td>${esc(s.url)}</td>
-      <td>${s.ready.basico && s.ready.k4 ? `Básico: ${pkgText(s, 'basico')}<br>4K: ${pkgText(s, 'k4')}${(s.packages.basico || {}).all ? '<br><span class="err" style="max-width:none">Básico da acceso a todo, también al 4K</span>' : ''}` : `<span class="err">Falta elegir bibliotecas de ${[!s.ready.basico && 'Básico', !s.ready.k4 && '4K'].filter(Boolean).join(' y ')}</span>`}</td>
-      <td class="r"><div class="acts">${canDo('packages') ? `<button class="btn sm primary" data-act="server-pkg" data-id="${s.id}">Contenido</button>` : ''}<button class="btn sm" data-act="server-test" data-id="${s.id}">Probar conexión</button>${canDo('servers') ? `<button class="btn sm" data-act="server-edit" data-id="${s.id}">Editar</button><button class="btn sm ghost" data-act="server-del" data-id="${s.id}">Quitar</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>` : noServer());
+  const d = S.d, can = canDo('servers'), sup = isSuper();
+  if (!d.servers.length) return head('Servidores Emby', 'Conecta tu servidor Emby para empezar.') + noServer();
+  if (!S.hl || Date.now() - S.hl.at > 30000) srvHealth();
+  if (sup && !S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 60000)) loadAgents();
+  const hl = (S.hl && S.hl.map) || {}, ag = new Map(((S.ag.data && S.ag.data.servers) || []).map((x) => [x.id, x]));
+  const t = S.d.today, all = d.clients.filter((c) => c.status !== 'trash');
+  const per = (sid) => {
+    const m = all.filter((c) => c.serverId === sid), act = m.filter((c) => !c.demo && !c.off && stage(c) !== 'expired');
+    return { cli: m.filter((c) => !c.demo).length, scr: act.reduce((a, c) => a + (c.screens || 0), 0), demos: m.filter((c) => c.demo && stage(c) === 'demo').length, nuevos: m.filter((c) => c.createdAt === t).length };
+  };
+  const rows = d.servers.map((s) => ({ s, n: per(s.id), h: hl[s.id], a: ag.get(s.id) }));
+  const sum = (k) => rows.reduce((x, r) => x + r.n[k], 0), online = rows.filter((r) => r.h && r.h.ok !== false).length;
+  const tile = (icon, n, t2, cls, sub) => `<div class="sv-t ${cls}">${ic(icon)}<b>${n}${sub != null ? `<small> / ${sub}</small>` : ''}</b><span>${t2}</span></div>`;
+  const tiles = `<div class="sv-tiles">${tile('server', S.hl ? online : '…', 'Servidores en línea', 'blue', d.servers.length)}${tile('users', sum('cli'), 'Cuentas', 'green')}${tile('screen', sum('scr'), 'Pantallas', 'violet')}${tile('timer', sum('demos'), 'Demos activas', 'amber')}${tile('userplus', sum('nuevos'), 'Nuevas hoy', 'teal')}</div>`;
+  const chip = (icon, label, n, cls) => `<div class="sv-c ${cls}"><span>${ic(icon)}${label}</span><b>${n}</b></div>`;
+  const ib = (act, icon, title, extra = '', cls = '') => `<button type="button" class="sv-ib ${cls}" data-act="${act}" title="${title}" aria-label="${title}" ${extra}>${ic(icon)}</button>`;
+  const card = ({ s, n, h, a }) => {
+    const down = h && h.ok === false;
+    const st = !h ? '<span class="sv-on wait"><i></i>Comprobando</span>' : down ? `<span class="sv-on bad"><i></i>Sin conexión</span>` : `<span class="sv-on"><i></i>ON${h.version ? ' · v' + esc(h.version) : ''}</span>`;
+    const pk = ['basico', 'k4'].filter((k) => s.ready[k]).length;
+    return `<div class="sv-card${s.off ? ' paused' : ''}${down ? ' down' : ''}">
+      <div class="sv-id"><button type="button" class="sf-link sv-name" data-act="srv-open" data-id="${s.id}">${esc(s.name)}</button>${st}${s.off ? '<span class="pillst mid">Pausado</span>' : ''}
+        <div class="sv-url" title="${esc(s.url || '')}">${esc(s.url || '')}</div>${s.keyLost ? '<div class="err" style="max-width:none;margin-top:4px">Falta su API key: pulsa Editar y vuelve a pegarla.</div>' : ''}
+        ${pk < 2 ? `<div class="err" style="max-width:none;margin-top:4px">Falta elegir bibliotecas de ${[!s.ready.basico && 'Básico', !s.ready.k4 && '4K'].filter(Boolean).join(' y ')}</div>` : ''}</div>
+      <div class="sv-chips">${chip('users', 'Cuentas', n.cli, 'blue')}${chip('screen', 'Pantallas', n.scr, 'violet')}${chip('box', 'Paquetes', pk, 'indigo')}${chip('userplus', 'Nuevas', n.nuevos, 'teal')}${chip('timer', 'Demos', n.demos, 'amber')}</div>
+      <div class="sv-acts">
+        ${can ? `<button type="button" class="sv-tg${s.off ? '' : ' on'}" data-act="sv-pause" data-id="${s.id}" title="${s.off ? 'Pausado: no admite cuentas nuevas. Pulsa para activarlo' : 'Activo para cuentas nuevas. Pulsa para pausarlo'}">${ic('power')}${s.off ? 'OFF' : 'ON'}</button>` : ''}
+        ${canDo('packages') ? `<button class="btn sm primary" data-act="server-pkg" data-id="${s.id}">Contenido</button>` : ''}
+        <div class="sv-ibs">
+          ${ib('sv-check', 'refresh', 'Comprobar conexión', `data-id="${s.id}"`)}
+          ${sup ? ib('sv-restart', 'bolt', 'Reiniciar Emby', `data-id="${s.id}"`, 'warn') : ''}
+          ${sup && a && a.installed ? ib('sv-reboot', 'power', a.online ? 'Reiniciar el VPS' : 'Reiniciar el VPS (el agente no está conectado)', `data-id="${s.id}"${a.online ? '' : ' disabled'}`, 'bad') : ''}
+          ${ib('srv-open', 'info', 'Detalles', `data-id="${s.id}"`, 'ok')}
+          ${can ? ib('server-edit', 'edit', 'Editar', `data-id="${s.id}"`) : ''}
+          ${can ? ib('server-del', 'trash', 'Quitar del panel', `data-id="${s.id}"`, 'bad') : ''}
+        </div>
+      </div>
+    </div>`;
+  };
+  const legend = `<div class="sv-legend"><span>${ic('power')}ON/OFF: admite cuentas nuevas o está pausado</span><span>${ic('refresh')}Comprobar</span>${sup ? `<span>${ic('bolt')}Reiniciar Emby</span><span>${ic('power')}Reiniciar VPS (con agente)</span>` : ''}<span>${ic('info')}Detalles</span>${can ? `<span>${ic('trash')}Quitar</span>` : ''}</div>`;
+  return head('Servidores Emby', 'Tus servidores de un vistazo. En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', can ? `<button class="btn primary" data-act="server-new">${ic('plus')}Conectar otro servidor</button>` : '') + tiles + legend + `<div class="sv-list">${rows.map(card).join('')}</div>`;
+}
+async function srvHealth() {
+  if (S.hlBusy) return; S.hlBusy = true;
+  try { const r = await api('GET', '/api/health'); S.hl = { at: Date.now(), map: Object.fromEntries(r.servers.map((x) => [x.id, x])) }; }
+  catch { S.hl = { at: Date.now(), map: {} }; }
+  S.hlBusy = false;
+  if (S.view === 'servidores' && !dlg.open) { const y = window.scrollY; render(); window.scrollTo(0, y); }
+}
+/* ---------- Ficha de un servidor (Servidores › Detalles) ---------- */
+function sfReset(id) { clearTimeout(S.sf.timer); S.sf = { id, tab: S.sf.id === id ? S.sf.tab : 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }; }
+async function sfLoad(quiet) {
+  const f = S.sf, id = f.id;
+  if (f.busy) return;
+  f.busy = true; if (!quiet) { f.data = null; if (S.view === 'srvficha') render(); }
+  try {
+    const [det, job] = await Promise.all([api('GET', `/api/servers/${id}/details`, null, { timeout: 40000 }), api('GET', `/api/servers/${id}/reimport`).catch(() => ({ job: null }))]);
+    if (S.sf.id !== id) return;
+    f.data = det; f.job = job.job; f.at = Date.now();
+  } catch (e) { if (S.sf.id === id) f.data = { error: e.message, libraries: [] }; }
+  finally { f.busy = false; }
+  if (S.view === 'srvficha' && S.sf.id === id) { const y = window.scrollY; render(); window.scrollTo(0, y); }
+}
+async function sfLoadUsers() {
+  const f = S.sf, id = f.id;
+  f.users = 'busy'; render();
+  try { const r = await api('GET', `/api/servers/${id}/emby-users`); if (S.sf.id === id) f.users = r.users; }
+  catch (e) { if (S.sf.id === id) f.users = { error: e.message }; }
+  if (S.view === 'srvficha') render();
+}
+function sfAfterRender() {
+  const f = S.sf;
+  clearTimeout(f.timer);
+  if (!f.data && !f.busy) { sfLoad(true); return; }
+  if (f.tab === 'nr' && f.users == null) sfLoadUsers();
+  const d = f.data || {}, scanning = d.scan && d.scan.running || (d.libraries || []).some((l) => l.refreshing);
+  const jobOn = f.job && !f.job.done;
+  if (scanning || jobOn) f.timer = setTimeout(() => { if (S.view === 'srvficha' && !dlg.open) sfLoad(true); else sfAfterRender(); }, jobOn ? 3000 : 6000);
+}
+const SF_TYPES = { movies: 'Películas', tvshows: 'Series', music: 'Música', homevideos: 'Vídeos', boxsets: 'Colecciones', livetv: 'TV en directo', musicvideos: 'Vídeos musicales', books: 'Libros', photos: 'Fotos', playlists: 'Listas', mixed: 'Mixta' };
+function vSrvFicha() {
+  const f = S.sf, s = S.d.servers.find((x) => x.id === f.id), d = f.data, can = canDo('servers');
+  if (!s) return head('Servidor', '') + '<div class="panel"><div class="empty">Ese servidor ya no existe.</div></div>';
+  const st = !d ? '<span class="pillst">Comprobando…</span>' : d.error && !d.online ? '<span class="pillst off">Sin conexión</span>' : s.off ? '<span class="pillst mid">Pausado</span>' : '<span class="pillst on">En línea</span>';
+  const tabs = [['cfg', 'Configuración'], ['lib', 'Bibliotecas'], ['scan', 'Escaneo'], ['acc', 'Cuentas del panel'], ['nr', 'No registrados'], ['pkg', 'Paquetes']];
+  const top = `<div class="sf-top"><button class="btn sm ghost" data-view="servidores">← Servidores</button></div>` +
+    head(`${esc(s.name)} ${st}`, d && d.online ? `${esc(d.info.name || 'Emby')} · Emby ${esc(d.info.version)} · responde en ${d.ms} ms` : 'Todo lo de este servidor en un sitio.',
+      `<button class="btn" data-act="sf-refresh"${f.busy ? ' disabled' : ''}>${ic('refresh')}Refrescar</button>${can ? `<button class="btn" data-act="server-edit" data-id="${s.id}">Editar</button>` : ''}`) +
+    `<div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" data-act="sf-tab" data-k="${k}" aria-selected="${f.tab === k}">${t}${k === 'nr' && d && d.emby && d.emby.notInPanel ? ` <span class="n">${d.emby.notInPanel}</span>` : ''}</button>`).join('')}</div>`;
+  const wait = '<div class="panel"><div class="empty">Consultando a Emby…</div></div>';
+  const fail = d && d.error && !d.online ? `<div class="panel pad"><p class="err" style="max-width:none">${esc(d.error)}</p><p class="muted small" style="margin-top:8px">Mira «Estado del servidor» o pulsa Editar si cambiaste la dirección o la API key.</p></div>` : '';
+  let body = '';
+  if (f.tab === 'cfg') body = sfCfg(s, d);
+  else if (f.tab === 'acc') body = sfAcc(s);
+  else if (f.tab === 'pkg') body = sfPkg(s, d);
+  else if (f.tab === 'nr') body = sfNr(s);
+  else if (!d) body = wait;
+  else if (fail) body = fail;
+  else body = f.tab === 'lib' ? sfLib(d) : sfScan(d);
+  return top + body;
+}
+function sfCfg(s, d) {
+  const can = canDo('servers'), job = S.sf.job;
+  const row = (k, v) => `<div class="sf-kv"><small>${k}</small><b>${v}</b></div>`;
+  const warn = d && d.online && (d.info.update || d.info.pendingRestart) ? `<p class="sf-note">${d.info.update ? 'Hay una versión nueva de Emby disponible. ' : ''}${d.info.pendingRestart ? 'Emby pide reiniciarse para terminar de aplicar cambios.' : ''}</p>` : '';
+  const conn = !d ? 'Comprobando…' : d.online ? `En línea · ${d.ms} ms` : `<span class="err" style="max-width:none">${esc(d.error || 'Sin conexión')}</span>`;
+  const jobBox = job ? (job.done
+    ? `<p class="sf-note ok">Re-importación terminada (${fmtTs(job.at)}): ${job.ok} correctas, ${job.recreated} creadas de nuevo${job.failed ? `, <b>${job.failed} con error</b>` : ''}.</p>${job.errors.length ? `<details class="sf-err"><summary>Ver errores</summary><ul>${job.errors.map((e) => `<li>${esc(e)}</li>`).join('')}</ul></details>` : ''}`
+    : `<div class="sf-prog"><span class="bl-sp"></span><span>Re-importando cuentas: ${job.n} de ${job.total}…</span><i style="--p:${job.total ? Math.round((job.n / job.total) * 100) : 0}%"></i></div>`) : '';
+  return `<div class="panel pad">
+    <div class="sf-grid">
+      ${row('Nombre en el panel', esc(s.name))}
+      ${row('Conexión', conn)}
+      ${row('Emby', d && d.online ? `${esc(d.info.name || '—')} · versión ${esc(d.info.version)}` : '—')}
+      ${row('Sistema', d && d.online ? esc(d.info.os || '—') : '—')}
+      ${row('Dirección para el panel', esc(s.url || '—'))}
+      ${row('Dirección que das a los clientes', esc(s.publicUrl || '—'))}
+      ${row('API key', s.keyLost ? '<span class="err" style="max-width:none">Falta: pulsa Editar y pégala</span>' : 'Guardada · oculta por seguridad')}
+      ${row('Usuarios en Emby', d && d.emby ? `${d.emby.users} <span class="muted small">(${plural(d.emby.admins, 'administrador', 'administradores')} aparte)</span>` : '—')}
+    </div>${warn}
+    <div class="sf-state">
+      <div><b>Estado para cuentas nuevas</b><p class="muted small">${s.off ? 'Pausado: nadie puede crear cuentas ni demos en este servidor. Las cuentas que ya tiene siguen funcionando.' : 'Activo: se pueden crear cuentas y demos en este servidor.'}</p></div>
+      ${can ? `<button class="btn${s.off ? ' primary' : ''}" data-act="sf-pause" data-k="${s.off ? 'on' : 'off'}">${s.off ? 'Activar' : 'Pausar'}</button>` : `<span class="pillst ${s.off ? 'mid' : 'on'}">${s.off ? 'Pausado' : 'Activo'}</span>`}
+    </div>
+    <div class="acts" style="margin-top:14px"><button class="btn sm" data-act="server-test" data-id="${s.id}">Probar conexión</button><button class="btn sm" data-view="estado">${ic('chart')}Estado del servidor</button>${can ? `<button class="btn sm ghost" data-act="server-del" data-id="${s.id}">Quitar del panel</button>` : ''}</div>
+  </div>
+  ${can ? `<div class="panel pad sf-re">
+    <div><b>${ic('upload')}¿Reinstalaste el servidor o cambiaste la API key?</b>
+    <p class="muted small">1. Pulsa <b>Editar</b> y pega la dirección o la API key nueva. 2. Pulsa <b>Re-importar cuentas</b>: el panel vuelve a crear en Emby las cuentas que falten, con su contraseña, pantallas y paquete, y deja bien las que ya estaban. Las de la papelera no se tocan.</p>${jobBox}</div>
+    <button class="btn primary" data-act="sf-reimport"${job && !job.done ? ' disabled' : ''}>${ic('upload')}Re-importar cuentas</button>
+  </div>` : ''}`;
+}
+function sfLib(d) {
+  if (!d.libraries.length) return '<div class="panel"><div class="empty">Este servidor no tiene bibliotecas.</div></div>';
+  const tot = d.libraries.reduce((a, l) => a + (l.count || 0), 0);
+  return `<div class="panel"><table><thead><tr><th>Biblioteca</th><th>Tipo</th><th class="r">Títulos</th><th>Paquete</th><th>Estado</th></tr></thead><tbody>${d.libraries.map((l) => `<tr>
+    <td class="name">${esc(l.name)}</td><td class="muted">${esc(SF_TYPES[l.type] || (l.type ? l.type : '—'))}</td><td class="r">${l.count == null ? '—' : l.count.toLocaleString('es-ES')}</td>
+    <td>${l.basico ? '<span class="pillst on">Básico</span> ' : ''}${l.k4 ? '<span class="pillst on">4K</span>' : ''}${!l.basico && !l.k4 ? '<span class="muted small">En ninguno</span>' : ''}</td>
+    <td>${l.refreshing ? `<span class="pillst mid">Escaneando${l.progress != null ? ' ' + l.progress + '%' : '…'}</span>` : '<span class="muted small">Al día</span>'}</td></tr>`).join('')}</tbody></table>
+    <p class="muted small" style="padding:10px 14px">${plural(d.libraries.length, 'biblioteca', 'bibliotecas')} · ${tot.toLocaleString('es-ES')} títulos (películas, series y vídeos). Lo que va en cada paquete se cambia en la pestaña Paquetes.</p></div>`;
+}
+function sfScan(d) {
+  const sc = d.scan, can = canDo('servers'), running = sc && sc.running;
+  const stTxt = sc ? (sc.status === 'Completed' ? 'terminó bien' : sc.status === 'Failed' ? 'terminó con errores' : sc.status === 'Cancelled' || sc.status === 'Aborted' ? 'se canceló' : '') : '';
+  return `<div class="panel pad sf-scan">
+    <div class="sf-scan-h"><div><b>${running ? `Escaneando bibliotecas${sc.progress != null ? ' · ' + sc.progress + '%' : '…'}` : 'Escaneo de bibliotecas'}</b>
+      <p class="muted small">${sc && sc.last ? `Último escaneo completo: ${fmtTs(sc.last)}${stTxt ? ', ' + stTxt : ''}.` : 'Emby no ha dicho cuándo fue el último escaneo.'} Escanea cuando hayas subido películas o series nuevas para que aparezcan a los clientes.</p></div>
+      ${can ? `<button class="btn primary" data-act="sf-scan"${running ? ' disabled' : ''}>${ic('refresh')}Escanear todas</button>` : ''}</div>
+    ${running && sc.progress != null ? `<div class="sf-bar"><i style="width:${sc.progress}%"></i></div>` : ''}
+  </div>
+  <div class="panel"><table><thead><tr><th>Biblioteca</th><th>Estado</th><th class="r"></th></tr></thead><tbody>${d.libraries.map((l) => `<tr><td class="name">${esc(l.name)}</td>
+    <td>${l.refreshing ? `<span class="pillst mid">Escaneando${l.progress != null ? ' ' + l.progress + '%' : '…'}</span>` : '<span class="muted small">Al día</span>'}</td>
+    <td class="r">${can && l.item ? `<button class="btn sm" data-act="sf-scan" data-item="${esc(l.item)}" data-name="${esc(l.name)}"${l.refreshing ? ' disabled' : ''}>Escanear</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function sfAcc(s) {
+  const mine = S.d.clients.filter((c) => c.serverId === s.id);
+  if (!mine.length) return '<div class="panel"><div class="empty">Todavía no hay cuentas del panel en este servidor.</div></div>';
+  const by = new Map(), tot = { active: 0, demo: 0, expired: 0, off: 0, trash: 0 };
+  for (const c of mine) {
+    let k = stage(c); if (k === 'soon') k = 'active';
+    tot[k]++;
+    const r = by.get(c.ownerId) || { active: 0, demo: 0, expired: 0, off: 0, trash: 0, all: 0 };
+    r[k]++; r.all++; by.set(c.ownerId, r);
+  }
+  const rows = [...by.entries()].sort((a, b) => b[1].all - a[1].all);
+  const tile = (n, t, cls) => `<div class="sf-t ${cls}"><b>${n}</b><span>${t}</span></div>`;
+  return `<div class="sf-tiles">${tile(tot.active, 'Activas', 'ok')}${tile(tot.demo, 'Demos', '')}${tile(tot.expired, 'Caducadas', 'warn')}${tile(tot.off, 'Desactivadas', '')}${tile(tot.trash, 'En papelera', 'muted')}</div>
+  <div class="panel"><table><thead><tr><th>Vendedor</th><th class="r">Activas</th><th class="r">Demos</th><th class="r">Caducadas</th><th class="r">Total</th></tr></thead><tbody>${rows.map(([uid, r]) => `<tr><td class="name">${esc(userName(uid) || '—')}</td><td class="r">${r.active}</td><td class="r">${r.demo}</td><td class="r">${r.expired}</td><td class="r"><b>${r.all}</b></td></tr>`).join('')}</tbody></table>
+  <div style="padding:10px 14px"><button class="btn sm" data-act="sf-clients">Ver estas cuentas en Clientes</button></div></div>`;
+}
+function sfNr(s) {
+  const u = S.sf.users;
+  const intro = '<p class="muted small" style="margin-bottom:10px">Usuarios que existen en Emby pero no están en el panel: los creaste a mano en Emby o vienen de otro panel. Puedes traerlos al panel sin gastar créditos.</p>';
+  if (u == null || u === 'busy') return `<div class="panel pad">${intro}<p class="muted">Consultando Emby…</p></div>`;
+  if (u.error) return `<div class="panel pad">${intro}<p class="err" style="max-width:none">${esc(u.error)}</p></div>`;
+  const list = u.filter((x) => !x.admin);
+  const adm = u.length - list.length;
+  return `<div class="panel pad">${intro}${list.length ? `<div class="sf-nr">${list.map((x) => `<span class="sf-chip${x.disabled ? ' off' : ''}">${esc(x.name)}${x.disabled ? ' <small>desactivado</small>' : ''}</span>`).join('')}</div>` : '<p class="muted">Todos los usuarios de Emby ya están en el panel. 👍</p>'}
+    ${adm ? `<p class="muted small" style="margin-top:10px">${plural(adm, 'administrador de Emby no se muestra', 'administradores de Emby no se muestran')}: el panel nunca los gestiona.</p>` : ''}
+    <div class="acts" style="margin-top:14px">${list.length && staff() && !pays() && canDo('clients') ? `<button class="btn primary" data-act="sf-import">${ic('download')}Importar al panel</button>` : ''}<button class="btn" data-act="sf-nr-reload">${ic('refresh')}Volver a mirar</button></div></div>`;
+}
+function sfPkg(s, d) {
+  const libs = d && d.libraries ? d.libraries : [];
+  const names = (k) => { const p = (s.packages || {})[k]; if (!p) return null; if (p.all) return ['Todas las bibliotecas']; return libs.length ? libs.filter((l) => l[k]).map((l) => l.name) : null; };
+  const card = (k, t) => { const n = names(k), ready = s.ready[k]; return `<div class="sf-pk"><h3>${t}</h3>${!ready ? '<p class="err" style="max-width:none">Sin configurar: no se pueden crear cuentas con este contenido.</p>' : n ? `<div class="sf-nr">${n.map((x) => `<span class="sf-chip">${esc(x)}</span>`).join('')}</div>` : `<p class="muted small">${esc(pkgText(s, k))}</p>`}</div>`; };
+  return `<div class="panel pad"><p class="muted small" style="margin-bottom:12px">Qué bibliotecas ve una cuenta Básica y una 4K en este servidor. Al cambiarlo se aplica al momento a las cuentas activas.</p>
+    <div class="sf-pks">${card('basico', 'Básico')}${card('k4', '4K')}</div>
+    ${canDo('packages') ? `<button class="btn primary" style="margin-top:14px" data-act="server-pkg" data-id="${s.id}">Cambiar contenido</button>` : ''}</div>`;
+}
+function dSfReimport(s) {
+  const n = S.d.clients.filter((c) => c.serverId === s.id && c.status !== 'trash').length;
+  openDlg({
+    title: `Re-importar cuentas en ${s.name}`, submit: 'Re-importar',
+    body: `<p style="margin-bottom:10px">Se revisan <b>${plural(n, 'cuenta', 'cuentas')}</b> una a una. Las que no existan en Emby se crean de nuevo con su contraseña, pantallas y paquete. Las que ya estén se dejan como dice el panel.</p>
+      <p class="muted small" style="margin-bottom:12px">Tarda un poco si hay muchas; puedes seguir usando el panel mientras. Te aviso por Telegram al terminar.</p>
+      <label class="f">Tu contraseña del panel<input type="password" name="password" required autocomplete="current-password"></label>`,
+    onSubmit: async (fd) => { await api('POST', `/api/servers/${s.id}/reimport`, { password: fd.get('password') }); setTimeout(() => sfLoad(true), 800); return 'Re-importación en marcha'; },
+  });
 }
 /** Bloques de ajustes que se reparten por las páginas del grupo Ajustes */
 function ajSections() {
@@ -4207,7 +4458,7 @@ async function loadAgents() {
   S.ag.busy = true;
   try { S.ag.data = await api('GET', '/api/agent/status'); S.ag.at = Date.now(); } catch (e) { S.ag.data = { servers: [], error: e.message }; }
   S.ag.busy = false;
-  if (S.view === 'estado') { const y = window.scrollY; render(); window.scrollTo(0, y); }
+  if (S.view === 'estado' || (S.view === 'servidores' && !dlg.open)) { const y = window.scrollY; render(); window.scrollTo(0, y); }
 }
 const agLvl = (v, warn = 70, bad = 90) => (v >= bad ? 'bad' : v >= warn ? 'warn' : 'ok');
 const agBytes = (b) => { const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0; while (b >= 1024 && i < 4) { b /= 1024; i++; } return `${b >= 100 || i === 0 ? Math.round(b) : Math.round(b * 10) / 10} ${u[i]}`; };
@@ -4264,7 +4515,7 @@ function vEstado() {
 }
 /* Reiniciar Emby o el VPS (solo superadministrador) */
 async function agPower(id, kind) {
-  const s = S.ag.data.servers.find((x) => x.id === id);
+  const s = (S.ag.data && S.ag.data.servers.find((x) => x.id === id)) || S.d.servers.find((x) => x.id === id);
   let p; try { p = await api('GET', `/api/servers/${id}/power`); } catch (e) { return toast(e.message, true); }
   const vps = kind === 'vps';
   const who = p.viewers == null ? '' : p.viewers ? `<div class="pw-warn">${ic('play')}<span>Ahora mismo hay <b>${plural(p.viewers, 'persona viendo', 'personas viendo')}</b>.</span></div>` : `<div class="pw-ok">${ic('check')}<span>Ahora mismo no hay nadie viendo.</span></div>`;
@@ -4735,8 +4986,8 @@ function openDlg({ title, body, submit, danger, onSubmit, onOpen, after }) {
   dlg.showModal(); navDlgOpened();
   if (onOpen) onOpen();
 }
-const serverSelect = () => (S.d.servers.length > 1
-  ? `<label class="f">Servidor<select name="serverId">${S.d.servers.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>`
+const serverSelect = (sel) => (S.d.servers.length > 1
+  ? `<label class="f">Servidor<select name="serverId">${S.d.servers.map((s) => `<option value="${s.id}"${s.id === sel ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>`
   : `<input type="hidden" name="serverId" value="${S.d.servers[0].id}">`);
 const ownerSelect = (sel) => (staff() && S.d.users.length > 1
   ? `<label class="f">Pertenece a<select name="ownerId">${[...S.d.users].sort((a, b) => RANK[a.role] - RANK[b.role] || a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${u.id === sel ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')}</select></label>` : '');
@@ -5432,8 +5683,8 @@ function dPackages(s) {
   });
 }
 
-function dImport() {
-  const first = S.d.servers[0].id;
+function dImport(sid) {
+  const first = typeof sid === 'number' && S.d.servers.some((x) => x.id === sid) ? sid : S.d.servers[0].id;
   const load = async (serverId) => {
     const box = $('#impList');
     box.innerHTML = '<span class="muted small">Consultando Emby…</span>';
@@ -5445,7 +5696,7 @@ function dImport() {
   };
   openDlg({
     title: 'Importar usuarios de Emby', submit: 'Importar marcados',
-    body: `${serverSelect()}
+    body: `${serverSelect(first)}
       <fieldset><legend>Usuarios que aún no están en el panel</legend><div class="liblist" id="impList" style="border-top:0;margin-top:0;max-height:220px"></div></fieldset>
       <label class="f">Vencimiento para todos los marcados<input type="date" name="expires" required value="${addMonths(S.d.today, 1)}"></label>
       ${ownerSelect(me().id)}
@@ -5693,6 +5944,13 @@ document.addEventListener('click', (e) => {
   if (a === 'guide-tg') { el.disabled = true; api('POST', `/api/clients/${id}/guide`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Guía enviada por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
   if (a === 'ag-reload') { loadAgents(); return; }
   if (a === 'ag-pw') { agPower(id, el.dataset.k); return; }
+  if (a === 'sv-restart') { agPower(id, 'emby'); return; }
+  if (a === 'sv-reboot') { agPower(id, 'vps'); return; }
+  if (a === 'sv-check') { el.disabled = true; api('GET', `/api/servers/${id}/test`).then((r) => { toast(`Conectado a ${r.name} (Emby ${r.version})`); S.hl = null; render(); }).catch((x) => toast(x.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'sv-pause') { const s2 = S.d.servers.find((x) => x.id === id); if (!s2) return;
+    if (!s2.off) dConfirm(`Pausar ${s2.name}`, 'Nadie podrá crear cuentas ni demos nuevas en este servidor. Las cuentas que ya tiene siguen funcionando con normalidad.', 'Pausar', () => api('POST', `/api/servers/${id}/pause`, { off: true }), 'Servidor pausado');
+    else api('POST', `/api/servers/${id}/pause`, { off: false }).then(() => { toast('Servidor activo para cuentas nuevas'); return reload(); }).catch((x) => toast(x.message, true));
+    return; }
   if (a === 'ag-cancel') { api('POST', `/api/servers/${id}/power-cancel`, {}).then(() => { toast('Reinicio programado cancelado'); S.ag.data = null; loadAgents(); }, (x) => toast(x.message, true)); return; }
   if (a === 'ag-rescue') { const on = el.checked; api('POST', `/api/servers/${id}/rescue`, { on }).then(() => toast(on ? 'Rescate automático activado' : 'Rescate automático desactivado'), (x) => { el.checked = !on; toast(x.message, true); }); return; }
   if (a === 'ag-link') { agLink(id); return; }
@@ -5868,6 +6126,20 @@ document.addEventListener('click', (e) => {
     case 'server-new': dServer(); break;
     case 'server-edit': if (srv) dServer(srv); break;
     case 'server-pkg': if (srv) dPackages(srv); break;
+    case 'srv-open': if (srv) { if (dlg.open) dlg.close(); sfReset(srv.id); S.view = 'srvficha'; render(); window.scrollTo(0, 0); } break;
+    case 'sf-tab': S.sf.tab = el.dataset.k; render(); break;
+    case 'sf-refresh': S.sf.users = null; sfLoad(false); break;
+    case 'sf-nr-reload': sfLoadUsers(); break;
+    case 'sf-import': dImport(S.sf.id); break;
+    case 'sf-clients': S.fServer = S.sf.id; S.filter = 'all'; S.view = 'cuentas'; S.page = 1; render(); window.scrollTo(0, 0); break;
+    case 'sf-reimport': { const s2 = S.d.servers.find((x) => x.id === S.sf.id); if (s2) dSfReimport(s2); break; }
+    case 'sf-pause': { const s2 = S.d.servers.find((x) => x.id === S.sf.id); if (!s2) break; const off = el.dataset.k === 'off';
+      if (off) dConfirm(`Pausar ${s2.name}`, 'Nadie podrá crear cuentas ni demos nuevas en este servidor. Las cuentas que ya tiene siguen funcionando con normalidad.', 'Pausar', () => api('POST', `/api/servers/${s2.id}/pause`, { off: true }), 'Servidor pausado');
+      else api('POST', `/api/servers/${s2.id}/pause`, { off: false }).then(() => { toast('Servidor activo para cuentas nuevas'); return reload(); }).catch((x) => toast(x.message, true));
+      break; }
+    case 'sf-scan': { const it = el.dataset.item || '', nm = el.dataset.name || ''; el.disabled = true;
+      api('POST', `/api/servers/${S.sf.id}/scan`, { item: it, name: nm }).then(() => { toast(it ? `Escaneando «${nm}»` : 'Escaneo de todas las bibliotecas en marcha'); setTimeout(() => sfLoad(true), 1500); }).catch((x) => { el.disabled = false; toast(x.message, true); });
+      break; }
     case 'server-test': if (srv) api('GET', `/api/servers/${srv.id}/test`).then((r) => toast(`Conectado a ${r.name} (Emby ${r.version})`)).catch((x) => toast(x.message, true)); break;
     case 'server-del': if (srv) dConfirm(`Quitar ${srv.name}`, 'El servidor se quita del panel. En Emby no se toca nada.', 'Quitar servidor', () => api('DELETE', `/api/servers/${srv.id}`), 'Servidor quitado'); break;
     case 'user-new': if (dlg.open) dlg.close(); S.vendorId = 0; S.view = 'vendedor'; render(); window.scrollTo(0, 0); break;
