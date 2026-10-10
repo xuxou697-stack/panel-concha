@@ -65,7 +65,7 @@ function isDate(s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(
 /* ---------- Base de datos ---------- */
 const DEFAULT_PRICES = {
   1: { 1: 1, 2: 1, 4: 2 },
-  3: { 1: 3, 2: 3, 4: 4 },
+  3: { 1: 3, 2: 3, 4: 6 },
   6: { 1: 6, 2: 6, 4: 12 },
   12: { 1: 12, 2: 12, 4: 24 },
 };
@@ -2334,6 +2334,18 @@ route('POST', '/api/import', STAFF, ({ me, body }) => lock(async () => {
 }));
 
 /* Importador universal: filas ya leidas de un CSV, Excel, TXT o SQL. Enlaza con el usuario de Emby que ya existe o lo crea */
+/* Recuerda cómo se tradujeron los códigos de otro panel (servidor, paquete, vendedor) */
+route('PUT', '/api/import/map', STAFF, ({ body }) => lock(async () => {
+  const cur = db.settings.importMap || {};
+  for (const k of ['server', 'package', 'owner']) {
+    if (!body[k] || typeof body[k] !== 'object') continue;
+    cur[k] = cur[k] || {};
+    for (const [v, to] of Object.entries(body[k]).slice(0, 300)) { const key = str(v, 120); if (key) cur[k][key] = str(String(to), 20); }
+    const ks = Object.keys(cur[k]); if (ks.length > 500) for (const x of ks.slice(0, ks.length - 500)) delete cur[k][x];
+  }
+  db.settings.importMap = cur; saveDb();
+  return { ok: true };
+}));
 route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
   if (isStaff(me) && paysCredits(me)) throw new HttpError(403, 'Tienes el sistema de créditos activado: la importación la hace el superadministrador.');
   const rows = Array.isArray(body.rows) ? body.rows : [];
@@ -2375,14 +2387,20 @@ route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
       const eu = users.get(embyName.toLowerCase());
       const have = db.clients.find((c) => c.serverId === s.id && ((eu && c.embyId === eu.Id) || c.embyName.toLowerCase() === embyName.toLowerCase()));
       if (have) {
-        if (fixOwner && namedOwner && have.ownerId !== namedOwner.id) {
-          const was = (db.users.find((u) => u.id === have.ownerId) || {}).name || '?';
-          if (dry) { res.status = 'ok'; res.text = `Ya está en el panel: pasará de ${was} a ${namedOwner.name}`; continue; }
-          have.ownerId = namedOwner.id;
-          addLog('edicion', have, `Vendedor corregido al importar: de ${was} a ${namedOwner.name}`, me);
-          res.status = 'ok'; res.text = `Vendedor corregido: de ${was} a ${namedOwner.name}`; done++; continue;
-        }
-        res.status = 'skip'; res.text = fixOwner && namedOwner ? `Ya está en el panel y ya es de ${namedOwner.name}` : 'Ya está en el panel'; continue;
+        if (!fixOwner) { res.status = 'skip'; res.text = 'Ya está en el panel'; continue; }
+        const fx = [];
+        const wantQ = String(r.package || '').trim() ? quality : null, wantS = r.scrSet ? screens : null;
+        if (namedOwner && have.ownerId !== namedOwner.id) fx.push(['owner', `vendedor ${(db.users.find((u) => u.id === have.ownerId) || {}).name || '?'} → ${namedOwner.name}`]);
+        if (wantQ && have.quality !== wantQ) fx.push(['q', `paquete ${have.quality ? QUALITIES[have.quality] : 'propio'} → ${QUALITIES[wantQ]}`]);
+        if (wantS && have.screens !== wantS) fx.push(['s', `pantallas ${have.screens || '?'} → ${wantS}`]);
+        if (!fx.length) { res.status = 'skip'; res.text = 'Ya está en el panel y ya coincide con el archivo'; continue; }
+        const txt = fx.map((x) => x[1]).join(', ');
+        if (dry) { res.status = 'ok'; res.text = `Ya está en el panel: se corregirá ${txt}`; continue; }
+        const before = { ownerId: have.ownerId, quality: have.quality, screens: have.screens };
+        for (const [k] of fx) { if (k === 'owner') have.ownerId = namedOwner.id; if (k === 'q') have.quality = wantQ; if (k === 's') have.screens = wantS; }
+        if (fx.some((x) => x[0] !== 'owner')) { try { await applyState(have); } catch (e) { Object.assign(have, before); throw e; } }
+        addLog('edicion', have, `Corregida al importar: ${txt}`, me);
+        res.status = 'ok'; res.text = `Corregida: ${txt}`; done++; continue;
       }
       if (eu && eu.Policy && eu.Policy.IsAdministrator) { res.status = 'skip'; res.text = 'Es un administrador de Emby: no se gestiona'; continue; }
       const expired = diffDays(r.expires, today()) < 0;
@@ -2566,6 +2584,39 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   addLog('renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
   saveDb();
   return { ok: true, expires: c.expires };
+}));
+
+/* Cambiar pantallas. Quien paga créditos paga la diferencia de precio para el tiempo que le queda; bajar no devuelve nada */
+function screensCost(c, n) {
+  const old = c.screens || 1;
+  if (n <= old) return 0;
+  const days = Math.max(1, diffDays(c.expires, today()) + 1);
+  const cols = Object.keys(db.settings.prices).map(Number).filter((m) => m > 0).sort((a, b) => a - b);
+  const col = cols.find((m) => m * 30 >= days) || cols[cols.length - 1];
+  return Math.max(0, price(col, n) - price(col, old));
+}
+route('POST', '/api/clients/:id/screens', '*', ({ me, params, body }) => lock(async () => {
+  const c = clientFor(me, params.id);
+  const n = Number(body.screens);
+  if (!SCREENS.includes(n)) throw new HttpError(400, 'Elige 1, 2 o 4 pantallas.');
+  if (c.status === 'trash') throw new HttpError(400, 'Está en la papelera: restáurala o renuévala antes.');
+  if (c.demo) throw new HttpError(400, 'Es una demo: conviértela en cuenta para elegir sus pantallas.');
+  if (n === c.screens) return { ok: true, cost: 0 };
+  const pays = paysCredits(me), valid = diffDays(c.expires, today()) >= 0;
+  if (pays && !valid) throw new HttpError(400, 'Está caducada: al renovarla eliges las pantallas.');
+  const cost = pays ? screensCost(c, n) : 0;
+  if (body.preview) return { ok: true, cost };
+  if (body.expect !== undefined && Number(body.expect) !== cost) throw new HttpError(409, `El precio ha cambiado: ahora son ${cost} ${cost === 1 ? 'crédito' : 'créditos'}. Vuelve a intentarlo.`);
+  ensureCredits(me, cost);
+  const old = c.screens || 1;
+  c.screens = n;
+  if (c.status === 'active' && valid && !c.off) { try { await grantAccess(c); } catch (e) { c.screens = old; throw e; } }
+  const what = `${old} → ${n} ${n === 1 ? 'pantalla' : 'pantallas'}`;
+  spend(me, cost, `Pantallas de ${c.embyName} (${what})`);
+  if (cost > 0) c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: me.id, credits: cost, from: today(), to: c.expires, kind: 'pantallas' }].slice(-24);
+  addLog('edicion', c, `Pantallas cambiadas: ${what}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
+  saveDb();
+  return { ok: true, cost };
 }));
 
 route('POST', '/api/clients/:id/trash', '*', ({ me, params }) => lock(async () => {

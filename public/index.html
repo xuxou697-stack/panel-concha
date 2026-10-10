@@ -431,6 +431,10 @@ button.brand:hover .logo{box-shadow:0 0 0 2px var(--brand)}
 .klist .k{display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-top:1px solid var(--line)} .klist .k:first-child{border-top:0}
 .klist .k>.ic{margin-top:2px;flex-shrink:0;color:var(--muted)} .klist .k.ok>.ic{color:var(--ok)} .klist .k.todo>.ic{color:var(--warn)}
 .klist .k div{flex:1;min-width:0} .klist .k small{display:block;color:var(--muted);font-size:13px}
+.impmap.todo{border-color:color-mix(in srgb,var(--warn) 60%,var(--line))}
+.impmap-r.need select{border-color:var(--warn);box-shadow:0 0 0 2px color-mix(in srgb,var(--warn) 25%,transparent)}
+.impmap-how{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);border-radius:999px;padding:1px 8px}
+.impmap-miss{display:flex;align-items:center;gap:6px;margin:12px 0 0;color:var(--warn);font-size:13px;font-weight:600}.impmap-miss .ic{width:15px;height:15px}
 .impmap{border:1px solid color-mix(in srgb,var(--brand) 45%,var(--line));border-radius:var(--r);padding:14px 16px;margin:0 0 14px;background:color-mix(in srgb,var(--brand) 5%,transparent)}
 .impmap h3{font-size:15px;margin:0 0 4px;display:flex;align-items:center;gap:6px}.impmap h3 .ic{width:16px;height:16px;color:var(--brand)}
 .impmap-g{margin-top:12px}.impmap-g>b{display:block;font-size:13px;margin-bottom:6px}
@@ -4288,41 +4292,67 @@ function impKnown(k, v) {
   return /^(4k|uhd|2160p?|basico|básico|basic|hd|1080p?|normal|estandar|estándar|standard)$/i.test(n);
 }
 function impMapBuild(rows) {
-  const out = {};
+  const out = {}, saved = (S.d.settings.importMap || {});
+  const byUser = new Map(S.d.clients.filter((c) => c.status !== 'trash').map((c) => [String(c.embyName).toLowerCase(), c]));
   for (const k of ['server', 'package', 'owner']) {
     const vals = new Map();
-    for (const r of rows) { const v = String(r[k] || '').trim(); if (!v || v === '-' || impKnown(k, v)) continue; const e = vals.get(v) || { n: 0, ex: [] }; e.n++; if (e.ex.length < 4) e.ex.push(r.username); vals.set(v, e); }
-    if (vals.size) out[k] = [...vals.entries()].sort((a, b) => b[1].n - a[1].n).map(([v, e]) => ({ v, n: e.n, ex: e.ex, to: k === 'package' ? (/4k|uhd|2160/i.test(v) ? 'k4' : '') : '' }));
+    for (const r of rows) {
+      const v = String(r[k] || '').trim(); if (!v || v === '-' || impKnown(k, v)) continue;
+      const e = vals.get(v) || { n: 0, ex: [], votes: new Map() }; e.n++; if (e.ex.length < 4) e.ex.push(r.username);
+      const c = byUser.get(String(r.username).toLowerCase()); // ya está en el panel: aprende de cómo la tienes
+      if (c) { const g = k === 'owner' ? String(c.ownerId) : k === 'server' ? String(c.serverId) : `${c.quality || 'basico'}|${c.screens || 1}`; e.votes.set(g, (e.votes.get(g) || 0) + 1); }
+      vals.set(v, e);
+    }
+    if (!vals.size) continue;
+    out[k] = [...vals.entries()].sort((a, b) => b[1].n - a[1].n).map(([v, e]) => {
+      let to = '', how = '';
+      const sv = (saved[k] || {})[v];
+      const ok = (x) => (k === 'owner' ? S.d.users.some((u) => String(u.id) === String(x)) : k === 'server' ? S.d.servers.some((u) => String(u.id) === String(x)) : /^(basico|k4)\|[124]?$/.test(x));
+      if (sv && ok(sv)) { to = String(sv); how = 'Como la última vez'; }
+      else if (e.votes.size && k !== 'server') { const best = [...e.votes.entries()].sort((a, b) => b[1] - a[1])[0]; if (ok(best[0])) { to = best[0]; how = 'Según las cuentas que ya tienes'; } }
+      if (!to && k === 'package') { const sc = (/(\d)\s*(cx|conex|pant|screen|disp)/i.exec(v) || [])[1]; if (/4k|uhd|2160/i.test(v) || sc) { to = `${/4k|uhd|2160/i.test(v) ? 'k4' : 'basico'}|${['1', '2', '4'].includes(sc) ? sc : ''}`; how = 'Por el nombre'; } }
+      return { v, n: e.n, ex: e.ex, to, how };
+    });
   }
   return out;
 }
 function impMapRow(r) {
   const m = S.imp.map || {}, o = { ...r };
+  if (String(o.screens || '').trim()) o.scrSet = 1;
   for (const k of ['server', 'package', 'owner']) {
     const v = String(o[k] || '').trim();
     if (v === '-') { o[k] = ''; continue; }
     const hit = (m[k] || []).find((x) => x.v === v);
     if (!hit) continue;
     if (k === 'server') { const sv = S.d.servers.find((x) => x.id === +hit.to); o.server = sv ? sv.name : ''; }
-    else if (k === 'owner') { const u = S.d.users.find((x) => x.id === +hit.to); o.owner = u ? u.username : ''; }
-    else o.package = hit.to === 'k4' ? '4K' : 'Basico';
+    else if (k === 'owner') { const u = hit.to === 'me' ? me() : S.d.users.find((x) => x.id === +hit.to); o.owner = u ? u.username : ''; }
+    else { const [q, sc] = String(hit.to).split('|'); o.package = q === 'k4' ? '4K' : 'Basico'; if (sc) { o.screens = sc; o.scrSet = 1; } }
   }
   for (const k of ['whatsapp', 'telegram', 'signal', 'email', 'notes']) if (String(o[k] || '').trim() === '-') o[k] = '';
   if (!o.screens && S.imp.screens) o.screens = String(S.imp.screens);
   return o;
 }
+const impMissing = () => Object.values(S.imp.map || {}).flat().filter((x) => !x.to).length;
 function impMapBox() {
   const m = S.imp.map || {}, keys = Object.keys(m);
   if (!keys.length) return '';
-  const T = { server: ['Servidor', 'el servidor que elegiste antes'], package: ['Paquete', 'Básico'], owner: ['Vendedor', 'el vendedor que elegiste antes'] };
-  const opts = (k, to) => k === 'server' ? `<option value="">(${T.server[1]})</option>${S.d.servers.map((x) => `<option value="${x.id}"${+to === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}`
-    : k === 'owner' ? `<option value="">(${T.owner[1]})</option>${[...S.d.users].sort((a, b) => RANK[a.role] - RANK[b.role] || a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${+to === u.id ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')}`
-    : `<option value=""${to !== 'k4' ? ' selected' : ''}>Básico</option><option value="k4"${to === 'k4' ? ' selected' : ''}>4K</option>`;
+  const T = { server: 'Servidor', package: 'Paquete (contenido y pantallas)', owner: 'Vendedor' };
+  const pick = '<option value="">— Elige —</option>';
+  const opts = (k, to) => k === 'server' ? pick + S.d.servers.map((x) => `<option value="${x.id}"${String(to) === String(x.id) ? ' selected' : ''}>${esc(x.name)}</option>`).join('')
+    : k === 'owner' ? pick + [...S.d.users].sort((a, b) => RANK[a.role] - RANK[b.role] || a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${String(to) === String(u.id) ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')
+    : pick + [['basico', 'Básico'], ['k4', '4K']].map(([q, qt]) => `<optgroup label="${qt}">${[['', 'pantallas por defecto'], ['1', '1 pantalla'], ['2', '2 pantallas'], ['4', '4 pantallas']].map(([sc, st]) => `<option value="${q}|${sc}"${to === `${q}|${sc}` ? ' selected' : ''}>${qt} · ${st}</option>`).join('')}</optgroup>`).join('');
   const short = (v) => (v.length > 22 ? v.slice(0, 8) + '…' + v.slice(-4) : v);
-  return `<div class="impmap"><h3>${ic('sliders')}Traduce los datos del otro panel</h3>
-    <p class="muted small">Tu archivo trae códigos internos del otro panel que este no conoce. Dile a qué equivale cada uno: los ejemplos te ayudan a reconocerlos.</p>
-    ${keys.map((k) => `<div class="impmap-g"><b>${T[k][0]}</b>${m[k].map((x, i) => `<div class="impmap-r"><div class="impmap-v"><code title="${esc(x.v)}">${esc(short(x.v))}</code><small>${plural(x.n, 'cuenta', 'cuentas')}: ${x.ex.map(esc).join(', ')}${x.n > x.ex.length ? '…' : ''}</small></div><span class="impmap-a">→</span><select class="impmap-s" data-k="${k}" data-i="${i}" aria-label="${T[k][0]} para ${esc(short(x.v))}">${opts(k, x.to)}</select></div>`).join('')}</div>`).join('')}
+  const miss = impMissing();
+  return `<div class="impmap${miss ? ' todo' : ''}"><h3>${ic('sliders')}Traduce los datos del otro panel</h3>
+    <p class="muted small">Tu archivo trae códigos del otro panel. Dile a qué equivale cada uno: los usuarios de ejemplo te ayudan a reconocerlos. Lo que elijas se recuerda para la próxima vez, y si alguna de esas cuentas ya está en tu panel, se propone sola.</p>
+    ${keys.map((k) => `<div class="impmap-g"><b>${T[k]}</b>${m[k].map((x, i) => `<div class="impmap-r${x.to ? '' : ' need'}"><div class="impmap-v"><code title="${esc(x.v)}">${esc(short(x.v))}</code>${x.how && x.to ? `<span class="impmap-how">${esc(x.how)}</span>` : ''}<small>${plural(x.n, 'cuenta', 'cuentas')}: ${x.ex.map(esc).join(', ')}${x.n > x.ex.length ? '…' : ''}</small></div><span class="impmap-a">→</span><select class="impmap-s" data-k="${k}" data-i="${i}" aria-label="${T[k]} para ${esc(short(x.v))}">${opts(k, x.to)}</select></div>`).join('')}</div>`).join('')}
+    <p class="impmap-miss" id="impMiss"${miss ? '' : ' hidden'}>${ic('alert')}Te ${miss === 1 ? 'falta 1 valor' : `faltan ${miss} valores`} por elegir. Hasta entonces no se puede importar.</p>
   </div>`;
+}
+function impMapSave() {
+  const m = S.imp.map || {}, out = {};
+  for (const k of Object.keys(m)) for (const x of m[k]) if (x.to) (out[k] = out[k] || {})[x.v] = x.to;
+  if (Object.keys(out).length) api('PUT', '/api/import/map', out).catch(() => {});
 }
 async function impParse() {
   const f = $('#impForm'), file = f.elements.file.files[0], imp = S.imp;
@@ -4344,7 +4374,7 @@ async function impParse() {
     if (!keys.includes('username')) throw new Error('Falta la columna del usuario de Emby. Llámala «username» o «usuario». Columnas encontradas: ' + table[0].join(', '));
     if (!keys.includes('expires')) throw new Error('Falta la columna de vencimiento. Llámala «expiration» o «vencimiento». Columnas encontradas: ' + table[0].join(', '));
     const rows = table.slice(1).map((r) => { const o = {}; keys.forEach((k, i) => { if (k && o[k] === undefined) o[k] = String(r[i] ?? '').trim(); }); o.rawExpires = o.expires; o.expires = impDate(o.expires); o.start = impDate(o.start); return o; }).filter((o) => o.username);
-    if (rows.length > 2000) throw new Error(`Son ${rows.length} filas. Importa como mucho 2000 cada vez: separa el archivo por vendedor.`);
+    if (rows.length > 5000) throw new Error(`Son ${rows.length} filas. Importa como mucho 5000 cada vez: separa el archivo por vendedor.`);
     imp.rows = rows; imp.map = impMapBuild(rows); imp.cols = [...new Set(keys.filter(Boolean))]; imp.unknown = table[0].filter((h, i) => !keys[i] && String(h).trim()); imp.results = null; imp.dry = null; imp.progress = null;
     render(); window.scrollTo(0, 0);
   } catch (x) { toast(x.message, true); }
@@ -4352,6 +4382,9 @@ async function impParse() {
 async function impRun(dry) {
   const imp = S.imp;
   if (imp.busy) return;
+  const miss = impMissing();
+  if (miss) { toast(`Te ${miss === 1 ? 'falta 1 valor' : `faltan ${miss} valores`} por elegir en «Traduce los datos del otro panel».`, true); const b = document.querySelector('.impmap-r.need select'); if (b) { b.scrollIntoView({ block: 'center' }); b.focus(); } return; }
+  if (!dry) impMapSave();
   imp.busy = true; imp.results = []; imp.dry = dry; imp.progress = 0; render();
   try {
     for (let i = 0; i < imp.rows.length; i += 25) {
@@ -4399,7 +4432,7 @@ function vImportar() {
       ${d.users.length > 1 ? `<label class="f">Vendedor para las filas que no lo indiquen<select name="ownerId">${[...d.users].sort((a, b) => a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${u.id === me().id ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')}</select></label>` : ''}
     </div>
     <label class="f" style="max-width:340px">Pantallas para las filas que no lo indiquen<select name="screens"><option value="1">1 pantalla</option><option value="2">2 pantallas</option><option value="4">4 pantallas</option></select></label>
-    <label class="check"><input type="checkbox" name="fixOwner"> Si la cuenta ya está en el panel, corregir su vendedor según el archivo</label>
+    <label class="check"><input type="checkbox" name="fixOwner"> Si la cuenta ya está en el panel, corregir su vendedor, paquete y pantallas según el archivo</label>
     <label class="check"><input type="checkbox" name="create"> Crear en Emby las cuentas que no existan todavía (hace falta la contraseña en el archivo)</label>
     <div class="infobox"><b>Qué hace con cada fila</b><ul>
       <li>Si el usuario ya existe en Emby, lo enlaza y le pone las bibliotecas de su paquete, sus pantallas, sin transcodificación y sin permisos de administrador. No le cambia la contraseña.</li>
@@ -5281,7 +5314,7 @@ function dMore(c) {
   const grp = (title, items, cls = '') => { const html = items.filter(Boolean).join(''); return html ? `<div class="mgrp ${cls}"><h4>${title}</h4><div class="mgrid2">${html}</div></div>` : ''; };
   showDlg(c.panelName, `<div class="mlist2">
     ${grp('Enviar al cliente', [it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
-    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), staff() ? it('m-screens', 'Pantallas') : '', it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', staff() && others ? it('m-move', 'Servidor') : ''])}
+    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', staff() && others ? it('m-move', 'Servidor') : ''])}
     ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
     ${grp('Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
       it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'A la papelera'),
@@ -5331,10 +5364,30 @@ function dQuality(c) {
   });
 }
 function dScreens(c) {
+  const payer = pays();
+  let cost = 0;
   openDlg({
     title: `Pantallas de ${c.panelName}`, submit: 'Guardar pantallas',
-    body: `<label class="f">Reproducciones a la vez<select name="screens">${options(SCREEN_OPTS, c.screens || 1)}</select></label><p class="muted small">Cambio manual de administrador: no descuenta créditos.</p>`,
-    onSubmit: async (fd) => { await putClient(c, { screens: +fd.get('screens') }); return 'Pantallas cambiadas'; },
+    body: `<label class="f">Reproducciones a la vez<select name="screens">${options(SCREEN_OPTS, c.screens || 1)}</select></label>
+      <div class="preview" id="scCost">${payer ? 'Elige las pantallas para ver lo que cuesta.' : 'Cambio de administrador: no descuenta créditos.'}</div>
+      ${payer ? `<p class="muted small">Subir pantallas cuesta la diferencia de precio para el tiempo que le queda (hasta el ${fmt(c.expires)}). Bajar pantallas no cuesta nada, pero tampoco devuelve créditos.</p>` : ''}`,
+    onOpen: () => {
+      if (!payer) return;
+      const sel = dlgForm.elements.screens, box = $('#scCost');
+      const upd = async () => {
+        const n = +sel.value;
+        if (n === (c.screens || 1)) { cost = 0; box.innerHTML = 'Es lo que ya tiene.'; return; }
+        box.textContent = 'Calculando…';
+        try { const r = await api('POST', `/api/clients/${c.id}/screens`, { screens: n, preview: true }); cost = r.cost;
+          box.innerHTML = cost ? `Cuesta <b>${plural(cost, 'crédito', 'créditos')}</b>. Te quedarán ${me().credits - cost}.` : '<b>Sin coste.</b>'; }
+        catch (e) { box.innerHTML = `<span class="err" style="max-width:none">${esc(e.message)}</span>`; }
+      };
+      sel.onchange = upd; upd();
+    },
+    onSubmit: async (fd) => {
+      const r = await api('POST', `/api/clients/${c.id}/screens`, { screens: +fd.get('screens'), ...(payer ? { expect: cost } : {}) });
+      return r.cost ? `Pantallas cambiadas: ${plural(r.cost, 'crédito', 'créditos')}` : 'Pantallas cambiadas';
+    },
   });
 }
 function dOwner(c) {
@@ -5921,7 +5974,7 @@ async function act(fn, okMsg) { try { await fn(); await reload(); if (okMsg) toa
 const needServer = (fn) => { if (S.d.servers.length) fn(); else if (canDo('servers')) dServer(); else toast('Todavía no hay ningún servidor Emby conectado.', true); };
 function closeMenu() { $('.side').classList.remove('open'); $('#shade').classList.remove('open'); }
 document.addEventListener('change', (e) => {
-  if (e.target.classList && e.target.classList.contains('impmap-s')) { const x = ((S.imp.map || {})[e.target.dataset.k] || [])[+e.target.dataset.i]; if (x) { x.to = e.target.value; S.imp.results = null; S.imp.dry = null; } return; }
+  if (e.target.classList && e.target.classList.contains('impmap-s')) { const x = ((S.imp.map || {})[e.target.dataset.k] || [])[+e.target.dataset.i]; if (x) { x.to = e.target.value; x.how = ''; S.imp.results = null; S.imp.dry = null; e.target.closest('.impmap-r').classList.toggle('need', !x.to); const n = impMissing(), mm = $('#impMiss'); if (mm) { mm.hidden = !n; mm.lastChild.textContent = `Te ${n === 1 ? 'falta 1 valor' : `faltan ${n} valores`} por elegir. Hasta entonces no se puede importar.`; } $('.impmap').classList.toggle('todo', !!n); } return; }
   if (e.target.id === 'lgWhen') { S.lg.when = e.target.value; S.lg.n = 200; render(); }
   if (e.target.id === 'lgKind') { S.lg.kind = e.target.value; S.lg.n = 200; render(); }
   if (e.target.id === 'vpMonth') { S.vp.month = e.target.value; S.vp.data = null; loadVpay(); }
