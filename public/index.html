@@ -1063,6 +1063,10 @@ section.fx-s:last-child{margin-top:14px}
 #bootLd .bl-sp{width:42px;height:42px;border-radius:50%;border:4px solid color-mix(in srgb,var(--brand) 25%,transparent);border-top-color:var(--brand);animation:blsp .8s linear infinite}
 @keyframes blsp{to{transform:rotate(360deg)}}
 /* Estado del servidor */
+.pw-btns{display:flex;gap:8px;flex-wrap:wrap}.pw-sp{flex:1}
+.pw-busy{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--warn) 12%,var(--raised));color:var(--text);font-size:14px}.pw-busy small{color:var(--muted)}
+.pw-busy .bl-sp{width:20px;height:20px;border-radius:50%;border:3px solid color-mix(in srgb,var(--warn) 25%,transparent);border-top-color:var(--warn);animation:blsp .8s linear infinite;flex:none}
+.pw-warn,.pw-ok{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;margin:0 0 12px;font-size:14px}.pw-warn{background:color-mix(in srgb,var(--warn) 14%,var(--raised))}.pw-warn .ic{color:var(--warn);flex:none}.pw-ok{background:color-mix(in srgb,var(--ok) 12%,var(--raised))}.pw-ok .ic{color:var(--ok);flex:none}
 .aggrid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.agcard{min-width:0}.agcard *{min-width:0}
 .agcard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:16px;border-top:3px solid var(--ok)}
 .agcard.stale{border-top-color:var(--bad)}.agcard.none{border-top-color:var(--line)}
@@ -1653,7 +1657,7 @@ function render() {
   if (S.view === 'mensajeeq') vbRefresh();
   if (S.view === 'cobrosven' && !S.vp.busy && (!S.vp.data || Date.now() - S.vp.at > 20000)) loadVpay();
   if (S.view === 'fechas') fxWire();
-  if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open) loadAgents(); }, 60000); }
+  if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power)))) loadAgents(); }, 10000); }
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
@@ -4168,9 +4172,11 @@ function vEstado() {
   if (!d.servers.length) return head('Estado del servidor', sub) + noServer();
   const card = (s) => {
     const L = s.last, can = canDo('servers');
+    const pwBtns = isSuper() ? `<div class="pw-btns"><button class="btn sm" data-act="ag-pw" data-k="emby" data-id="${s.id}">${ic('refresh')}Reiniciar Emby</button>${s.installed ? `<button class="btn sm" data-act="ag-pw" data-k="vps" data-id="${s.id}"${s.online ? '' : ' disabled title="El agente no está conectado"'}>${ic('power')}Reiniciar VPS</button>` : ''}</div>` : '';
+    const busy = s.power ? `<div class="pw-busy"><span class="bl-sp"></span><span>${s.power.kind === 'vps' ? (s.power.sent ? 'El VPS se está reiniciando…' : 'Orden de reinicio enviada: el VPS la recibirá en menos de un minuto…') : 'Emby se está reiniciando…'} <small>desde ${fmtTs(s.power.at)}</small></span></div>` : '';
     if (!s.installed) return `<article class="agcard none"><header><span class="ag-ic">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${s.pending ? 'Orden de instalación creada: falta ejecutarla en el VPS' : 'Sin agente instalado'}</small></div><span class="lpill ${s.pending ? 'soon' : 'off'}">${s.pending ? 'Esperando' : 'Sin datos'}</span></header>
       <p class="ag-why">Instala el agente en el VPS de este Emby para ver aquí su procesador, memoria, disco e internet, y recibir avisos si algo va mal. Solo lee datos de la máquina: no toca Emby ni tus cuentas.</p>
-      ${can ? `<div class="acts"><button class="btn primary" data-act="ag-link" data-id="${s.id}">${ic('download')}${s.pending ? 'Ver la orden otra vez' : 'Instalar agente'}</button></div>` : '<p class="muted small">Pide al superadministrador que lo instale.</p>'}</article>`;
+      ${busy}${can ? `<div class="acts"><button class="btn primary" data-act="ag-link" data-id="${s.id}">${ic('download')}${s.pending ? 'Ver la orden otra vez' : 'Instalar agente'}</button>${pwBtns}</div>` : '<p class="muted small">Pide al superadministrador que lo instale.</p>'}</article>`;
     const on = s.online;
     const disk = (L.disks || []).slice().sort((a, b) => b.used / b.size - a.used / a.size);
     return `<article class="agcard ${on ? '' : 'stale'}"><header><span class="ag-ic ${on ? 'on' : ''}">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${esc(L.host || '')}${L.os ? ' · ' + esc(L.os) : ''}</small></div><span class="lpill ${on ? 'ok' : 'off'}">${on ? 'Conectado' : 'Sin datos ' + agAgo(L.at)}</span></header>
@@ -4186,11 +4192,23 @@ function vEstado() {
         ${agChart(s.hist, [['cpu', '#3fa9f5', 'Procesador'], ['mem', '#a46bff', 'Memoria']], 'Procesador y memoria', '%', 100)}
         ${agChart(s.hist, [['up', '#e2457a', 'Subida'], ['down', '#2bbf7e', 'Bajada']], 'Internet', ' Mbit/s')}
       </div></details>
-      ${can ? `<div class="acts"><button class="btn sm ghost" data-act="ag-link" data-id="${s.id}">${ic('refresh')}Reinstalar</button><button class="btn sm ghost" data-act="ag-del" data-id="${s.id}">${ic('trash')}Quitar agente</button></div>` : ''}
+      ${busy}${can ? `<div class="acts">${pwBtns}<span class="pw-sp"></span><button class="btn sm ghost" data-act="ag-link" data-id="${s.id}">${ic('download')}Reinstalar</button><button class="btn sm ghost" data-act="ag-del" data-id="${s.id}">${ic('trash')}Quitar agente</button></div>` : ''}
     </article>`;
   };
   return head('Estado del servidor', sub, `<button class="btn" data-act="ag-reload">${ic('refresh')}Actualizar</button>`) + `<div class="aggrid">${d.servers.map(card).join('')}</div>
     <p class="muted small" style="margin-top:14px">Avisos por Telegram: disco por encima del 90%, procesador o memoria saturados 5 minutos seguidos, Emby parado o el agente sin mandar datos más de 5 minutos.</p>`;
+}
+/* Reiniciar Emby o el VPS (solo superadministrador) */
+async function agPower(id, kind) {
+  const s = S.ag.data.servers.find((x) => x.id === id);
+  let p; try { p = await api('GET', `/api/servers/${id}/power`); } catch (e) { return toast(e.message, true); }
+  const vps = kind === 'vps';
+  const who = p.viewers == null ? '' : p.viewers ? `<div class="pw-warn">${ic('play')}<span>Ahora mismo hay <b>${plural(p.viewers, 'persona viendo', 'personas viendo')}</b> en este servidor. Se les cortará.</span></div>` : `<div class="pw-ok">${ic('check')}<span>Ahora mismo no hay nadie viendo.</span></div>`;
+  openDlg({ title: (vps ? 'Reiniciar el VPS de ' : 'Reiniciar Emby en ') + s.name, submit: vps ? 'Reiniciar VPS' : 'Reiniciar Emby', danger: true,
+    body: `<p class="preview">${vps ? 'Se reinicia <b>la máquina entera</b>. Tarda unos minutos: durante ese tiempo nadie podrá ver nada.' : 'Se reinicia <b>solo el programa Emby</b>. Vuelve en uno o dos minutos.'}</p>${who}
+      <label class="f">Tu contraseña del panel<input type="password" name="pw" required autocomplete="current-password"></label>
+      <p class="muted small">Te avisaremos por Telegram cuando vuelva a estar en marcha.</p>`,
+    onSubmit: async (fd) => { await api('POST', `/api/servers/${id}/${vps ? 'reboot-vps' : 'restart-emby'}`, { password: fd.get('pw') }); S.ag.data = null; loadAgents(); return vps ? 'Orden enviada: el VPS se reinicia en menos de un minuto' : 'Emby se está reiniciando'; } });
 }
 async function agLink(id) {
   const s = S.ag.data.servers.find((x) => x.id === id);
@@ -5605,6 +5623,7 @@ document.addEventListener('click', (e) => {
   if (a === 'mon-notice') { monNotice(el); return; }
   if (a === 'guide-tg') { el.disabled = true; api('POST', `/api/clients/${id}/guide`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Guía enviada por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
   if (a === 'ag-reload') { loadAgents(); return; }
+  if (a === 'ag-pw') { agPower(id, el.dataset.k); return; }
   if (a === 'ag-link') { agLink(id); return; }
   if (a === 'ag-copy') { copyText($('#agCmd').textContent, $('#agCmd')).then(() => toast('Orden copiada')); return; }
   if (a === 'ag-del') { const s = S.ag.data.servers.find((x) => x.id === id); dConfirm('Quitar el agente de ' + s.name, 'El panel dejará de aceptar sus datos y se borra lo guardado. Para quitarlo también del VPS, ejecuta allí:<br><code style="font-size:12px;word-break:break-all">sudo systemctl disable --now panel-agente && sudo rm -rf /opt/panel-agente /etc/panel-agente.conf /etc/systemd/system/panel-agente.service</code>', 'Quitar', async () => { await api('POST', `/api/servers/${id}/agent/remove`, {}); S.ag.data = null; loadAgents(); }, 'Agente quitado'); return; }
