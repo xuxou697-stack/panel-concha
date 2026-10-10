@@ -2869,6 +2869,26 @@ route('POST', '/api/bulk/move', STAFF, ({ me, body }) => lock(async () => {
   return { ok: true, moved, skipped, failed };
 }));
 
+/* Traspaso entre servicios: pasa las cuentas a Básico o a 4K y lo aplica en Emby */
+route('POST', '/api/bulk/package', STAFF, ({ me, body }) => lock(async () => {
+  const list = bulkClients(me, body);
+  const q = body.quality === 'k4' ? 'k4' : body.quality === 'basico' ? 'basico' : null;
+  if (!q) throw new HttpError(400, 'Elige Básico o 4K.');
+  let moved = 0, skipped = 0;
+  const failed = [];
+  for (const c of list) {
+    if (c.quality === q || c.status === 'trash') { skipped++; continue; }
+    const s = serverOf(c);
+    if (!packageReady(s, q)) { failed.push({ name: c.panelName, emby: c.embyName, error: `El contenido ${QUALITIES[q]} no está configurado en ${s.name}` }); continue; }
+    const was = c.quality, wasAccess = c.access;
+    c.quality = q;
+    try { await applyState(c); moved++; addLog('edicion', c, `Servicio cambiado en bloque: ${was ? QUALITIES[was] : 'bibliotecas propias'} → ${QUALITIES[q]}`, me); }
+    catch (e) { c.quality = was; if (wasAccess) c.access = wasAccess; failed.push({ name: c.panelName, emby: c.embyName, error: e.message }); }
+    saveDb();
+  }
+  return { ok: true, moved, skipped, failed };
+}));
+
 /* Cobros: marca que el cliente final ya ha pagado */
 route('POST', '/api/clients/:id/paid', '*', ({ me, params }) => lock(async () => {
   const c = clientFor(me, params.id);
