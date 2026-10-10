@@ -1005,6 +1005,7 @@ table.acc tr.k-fallido td,table.acc tr.k-fallido2fa td,table.acc tr.k-bloqueado 
 .licban{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;margin-bottom:14px;border:1px solid}.licban>div{display:flex;flex-direction:column;gap:2px}.licban span{font-size:13.5px;color:var(--muted)}
 .licban.soon{border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 10%,var(--surface))}.licban.soon>.ic{color:var(--warn)}
 .licban.grace{border-color:color-mix(in srgb,var(--bad) 45%,transparent);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}.licban.grace>.ic{color:var(--bad)}
+#mustPw{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:radial-gradient(1200px 600px at 50% -10%,color-mix(in srgb,var(--brand) 22%,var(--bg)),var(--bg));overflow:auto;z-index:50}
 #licLock{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:radial-gradient(1200px 600px at 50% -10%,color-mix(in srgb,var(--brand) 22%,var(--bg)),var(--bg));overflow:auto;z-index:50}
 .llk{max-width:440px;width:100%;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:30px 24px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .llk-ic{width:64px;height:64px;margin:0 auto 14px;border-radius:20px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--brand),#a46bff 60%,#e2457a)}.llk-ic .ic{width:30px;height:30px}
@@ -1204,7 +1205,7 @@ section.fx-s:last-child{margin-top:14px}
 .nt:hover,.nt.on{box-shadow:0 0 22px -2px color-mix(in srgb,var(--c) 75%,transparent),inset 0 0 22px -8px var(--c)}
 .nt.on{border-width:2px}
 .cl-tools{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:stretch}
-.cl-tools>*{min-width:0} .cl-search input{width:100%} .cl-own{overflow:hidden}
+.cl-tools>*{min-width:0} .cl-search input{width:100%} .cl-own{overflow:visible;position:relative} .cl-own .combo-btn span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .clv>.head{flex-wrap:nowrap;align-items:center} .clv>.head>div:first-child{min-width:0;flex:1}
 .clv .ccard .foot .badge{display:none}
 .cl-tools select,.cl-search,.cl-own{min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:15px}
@@ -1267,7 +1268,7 @@ section.fx-s:last-child{margin-top:14px}
 .nt-bar{display:block;width:100%;height:4px;border-radius:3px;margin-top:8px;background:color-mix(in srgb,var(--c) 15%,transparent);overflow:hidden} .nt-bar i{display:block;height:100%;border-radius:3px;background:var(--c)}
 .nt:hover{transform:translateY(-2px);box-shadow:0 16px 30px -18px var(--c)} .nt{transition:transform .15s,box-shadow .15s}
 .nt.on{border-width:1px;box-shadow:0 0 0 2px var(--c),0 16px 30px -18px var(--c)}
-.cl-tools{padding:12px;border-radius:20px;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);backdrop-filter:blur(6px)}
+.cl-tools{position:relative;z-index:6;padding:12px;border-radius:20px;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);backdrop-filter:blur(6px)}
 .cl-tools select,.cl-search,.cl-own,.cl-pg{border-radius:999px;background:var(--bg)}
 .cl-tools select{padding:0 16px}
 .cl-search{border-width:1px;border-color:var(--line);padding:0 16px}
@@ -1390,6 +1391,7 @@ async function api(method, url, body, opt) {
   catch (e) { throw new Error(e && (e.name === 'TimeoutError' || e.name === 'AbortError') ? 'El servidor tarda demasiado en responder.' : 'No hay conexión con el panel. Revisa tu internet.'); }
   const j = await r.json().catch(() => ({}));
   if (r.status === 401 && !url.startsWith('/api/login')) { showGate(false); throw new Error('La sesión ha caducado. Vuelve a entrar.'); }
+  if (r.status === 403 && j.mustPw && S.d && !document.getElementById('mustPw')) { S.d.me.mustPw = true; showMustPw(); }
   if (r.status === 423 && j.licLocked) { api('GET', '/api/state').then((st) => st.license && showLock(st.license)).catch(() => {}); throw new Error(j.error); }
   if (!r.ok) { const e = new Error(j.error || 'Algo ha fallado.'); e.status = r.status; throw e; }
   return j;
@@ -1658,7 +1660,37 @@ async function start() {
   bootLoading(true);
   try { S.d = await api('GET', '/api/data', null, { timeout: 30000 }); } // primera carga: con límite de tiempo
   finally { bootLoading(false); }
+  if (S.d.me.mustPw) return showMustPw();
   $('#gate').hidden = true; $('#app').hidden = false; navFromHash(); render(); payReturn();
+}
+/** Primera entrada (o contraseña puesta por otro): hay que elegir una propia antes de usar el panel */
+function showMustPw() {
+  $('#app').hidden = true; $('#gate').hidden = true;
+  let box = $('#mustPw');
+  if (!box) { document.body.insertAdjacentHTML('beforeend', '<div id="mustPw" class="lockwrap" role="dialog" aria-modal="true" aria-labelledby="mpT"></div>'); box = $('#mustPw'); }
+  const nm = S.d.me.name || S.d.me.username;
+  box.innerHTML = `<form class="llk" id="mpForm" autocomplete="on"><div class="llk-ic">${ic('lock')}</div><h1 id="mpT">Elige tu contraseña</h1>
+    <p>Hola, <b>${esc(nm)}</b>. Es tu primera vez en el panel (o te han puesto una contraseña nueva). Por seguridad, cámbiala por una que solo sepas tú.</p>
+    <input type="text" name="username" value="${esc(S.d.me.username)}" autocomplete="username" hidden>
+    <label class="f" style="text-align:left">Contraseña que te dieron<input type="password" name="current" required autocomplete="current-password"></label>
+    <label class="f" style="text-align:left">Contraseña nueva (mínimo 8 caracteres)<input type="password" name="next" required minlength="8" autocomplete="new-password"></label>
+    <label class="f" style="text-align:left">Repite la contraseña nueva<input type="password" name="next2" required minlength="8" autocomplete="new-password"></label>
+    <p class="err" id="mpErr" style="max-width:none;min-height:1em;margin:0 0 10px"></p>
+    <button class="btn primary" type="submit" style="width:100%">Guardar y entrar</button>
+    <button class="btn ghost" type="button" id="mpOut" style="width:100%;margin-top:8px">Salir</button></form>`;
+  box.hidden = false;
+  const f = $('#mpForm');
+  f.elements.current.focus();
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(f), err = $('#mpErr'), b = f.querySelector('button[type=submit]');
+    err.textContent = '';
+    if (fd.get('next') !== fd.get('next2')) { err.textContent = 'Las dos contraseñas nuevas no coinciden.'; return; }
+    b.disabled = true;
+    try { await api('POST', '/api/my-password', { current: fd.get('current'), next: fd.get('next') }); box.remove(); toast('Contraseña guardada. ¡Bienvenido!'); await start(); }
+    catch (x) { err.textContent = x.message; b.disabled = false; }
+  };
+  $('#mpOut').onclick = async () => { try { await api('POST', '/api/logout', {}); } catch {} location.reload(); };
 }
 /** Pantalla de «Cargando…» mientras arranca, para que nunca se quede en negro */
 function bootLoading(on) {
@@ -4272,7 +4304,7 @@ function impMapBox() {
 }
 async function impParse() {
   const f = $('#impForm'), file = f.elements.file.files[0], imp = S.imp;
-  imp.serverId = +f.elements.serverId.value || 0; imp.ownerId = +(f.elements.ownerId ? f.elements.ownerId.value : 0) || 0; imp.create = f.elements.create.checked; imp.screens = +(f.elements.screens ? f.elements.screens.value : 1) || 1;
+  imp.serverId = +f.elements.serverId.value || 0; imp.ownerId = +(f.elements.ownerId ? f.elements.ownerId.value : 0) || 0; imp.create = f.elements.create.checked; imp.fixOwner = !!(f.elements.fixOwner && f.elements.fixOwner.checked); imp.screens = +(f.elements.screens ? f.elements.screens.value : 1) || 1;
   try {
     let table;
     if (file) {
@@ -4302,7 +4334,7 @@ async function impRun(dry) {
   try {
     for (let i = 0; i < imp.rows.length; i += 25) {
       const part = imp.rows.slice(i, i + 25).map(({ rawExpires, ...r }) => impMapRow(r));
-      const r = await api('POST', '/api/import/rows', { rows: part, serverId: imp.serverId || undefined, ownerId: imp.ownerId || undefined, create: imp.create, dry });
+      const r = await api('POST', '/api/import/rows', { rows: part, serverId: imp.serverId || undefined, ownerId: imp.ownerId || undefined, create: imp.create, fixOwner: imp.fixOwner, dry });
       r.results.forEach((x) => imp.results.push({ ...x, i: x.i + i }));
       imp.progress = Math.min(imp.rows.length, i + 25);
       if (S.view === 'importar') render();
@@ -4345,6 +4377,7 @@ function vImportar() {
       ${d.users.length > 1 ? `<label class="f">Vendedor para las filas que no lo indiquen<select name="ownerId">${[...d.users].sort((a, b) => a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${u.id === me().id ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')}</select></label>` : ''}
     </div>
     <label class="f" style="max-width:340px">Pantallas para las filas que no lo indiquen<select name="screens"><option value="1">1 pantalla</option><option value="2">2 pantallas</option><option value="4">4 pantallas</option></select></label>
+    <label class="check"><input type="checkbox" name="fixOwner"> Si la cuenta ya está en el panel, corregir su vendedor según el archivo</label>
     <label class="check"><input type="checkbox" name="create"> Crear en Emby las cuentas que no existan todavía (hace falta la contraseña en el archivo)</label>
     <div class="infobox"><b>Qué hace con cada fila</b><ul>
       <li>Si el usuario ya existe en Emby, lo enlaza y le pone las bibliotecas de su paquete, sus pantallas, sin transcodificación y sin permisos de administrador. No le cambia la contraseña.</li>

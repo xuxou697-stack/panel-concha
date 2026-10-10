@@ -77,7 +77,7 @@ const DEFAULT_TEMPLATES = {
   expiring: 'Hola {nombre} 👋\n\nTu cuenta Emby ({usuario}) vence el {vence}.\nAvísame si quieres renovarla para no quedarte sin servicio.',
   quality: '📺 Para ver Emby con la mejor calidad y sin cortes:\n1. Abre Emby en tu aparato y entra en Ajustes.\n2. Busca «Reproducción», «Calidad de vídeo» o «Calidad remota».\n3. Elige la calidad máxima: el valor más alto que aparezca (por ejemplo 1000 Mbps o «Máxima»).\nDespués, vuelve a reproducir el vídeo. Hazlo en cada aparato donde uses Emby.',
   followup: 'Hola {nombre} 👋\n\n¿Qué tal la prueba de Emby? Si te ha gustado, te la dejo hoy mismo como cuenta fija con todo el contenido.\n\n¿Te la activo?',
-  vendor: 'Hola {nombre} 👋\n\nYa tienes acceso al panel {panel}:\n\nDirección: {direccion}\nUsuario: {usuario}\nContraseña: {contraseña}\nTipo de cuenta: {tipo}\nCréditos: {creditos}\n\nCambia la contraseña al entrar, en Panel, Mi contraseña.',
+  vendor: 'Hola {nombre} 👋\n\nYa tienes acceso al panel {panel}:\n\nDirección: {direccion}\nUsuario: {usuario}\nContraseña: {contraseña}\nTipo de cuenta: {tipo}\nCréditos: {creditos}\n\nLa primera vez que entres, el panel te pedirá elegir una contraseña nueva que solo sepas tú.',
 };
 const DEFAULT_SETTINGS = { graceDays: 5, purgeDays: 30, demoPurgeDays: 1, warnDays: 7, demoMax: 3, demoHours: [2, 4, 12], monitorSec: 30, liveSec: 15, currency: 'EUR', creditPrice: 0,
   support: { text: '', whatsapp: '', telegram: '', email: '' }, retention: { logDays: 0, ledgerDays: 0, backups: 14 }, prices: DEFAULT_PRICES, templates: DEFAULT_TEMPLATES, brand: { name: 'Concha', color: '', logo: '' },
@@ -108,6 +108,7 @@ function loadDb() {
   if (!Array.isArray(db.licenses)) db.licenses = [];
   if (typeof db.settings.licContact !== 'string') db.settings.licContact = '';
   if (!db.licState || typeof db.licState !== 'object') db.licState = {};
+  if (!db.mustPwMig) { for (const u of db.users) if (u.role !== 'super' && !u.lastLogin) u.mustPw = true; db.mustPwMig = true; } // quien aún no ha entrado nunca: cambiará la contraseña al entrar
   db.settings.vpay = { limit: 0, days: 0, remind: 3, receipts: true, monthly: false, giftAlert: 50, ...(db.settings.vpay || {}) };
   db.settings.guard = { on: true, limit: 10, minutes: 10, block: false, ...(db.settings.guard || {}) };
   if (!Array.isArray(db.churn)) { // renovaciones y bajas por vendedor; la primera vez se rellena con el registro
@@ -1600,7 +1601,7 @@ function assertEmbyNameFree(server, embyName) {
   }
 }
 const pubUser = (u) => ({
-  id: u.id, username: u.username, name: u.name, role: u.role, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, offBy: u.offBy || null, offAt: u.offAt || null, createdAt: u.createdAt,
+  id: u.id, username: u.username, name: u.name, role: u.role, mustPw: !!u.mustPw, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, offBy: u.offBy || null, offAt: u.offAt || null, createdAt: u.createdAt,
   lastLogin: u.lastLogin || null, lastSeen: u.lastSeen || null, renew: u.role === 'reseller' || u.role === 'sub' ? renewRate([u.id]) : null, debt: u.role === 'reseller' || u.role === 'sub' ? debtOf(u).amount : 0,
   creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [],
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
@@ -1889,7 +1890,9 @@ route('POST', '/api/logout', null, ({ req, res }) => {
 
 route('POST', '/api/my-password', '*', ({ me, body, req }) => {
   if (!checkPassword(me, typeof body.current === 'string' ? body.current : '')) throw new HttpError(400, 'La contraseña actual no es correcta.');
+  if (typeof body.next === 'string' && body.next === body.current) throw new HttpError(400, 'La contraseña nueva tiene que ser distinta de la que te dieron.');
   setPassword(me, readNewPassword(body.next));
+  delete me.mustPw;
   dropSessions(me.id, sessionToken(req)); // con la contraseña nueva se cierran las demás sesiones
   addLog('seguridad', null, `${me.username} cambió su contraseña (se cerraron sus otras sesiones)`, me);
   saveDb();
@@ -2336,7 +2339,7 @@ route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
   const rows = Array.isArray(body.rows) ? body.rows : [];
   if (!rows.length) throw new HttpError(400, 'No hay filas que importar.');
   if (rows.length > 100) throw new HttpError(400, 'Envía como mucho 100 filas cada vez.');
-  const dry = !!body.dry, create = !!body.create;
+  const dry = !!body.dry, create = !!body.create, fixOwner = !!body.fixOwner;
   const defServer = body.serverId ? serverById(body.serverId) : null;
   const defOwner = body.ownerId ? userById(body.ownerId) : me;
   const norm = (v) => str(String(v == null ? '' : v), 300).toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/\/emby$/, '');
@@ -2370,7 +2373,17 @@ route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
       if (!packageReady(s, quality)) throw new HttpError(400, `El contenido ${QUALITIES[quality]} aún no está configurado en ${s.name}.`);
       const users = await embyUsers(s);
       const eu = users.get(embyName.toLowerCase());
-      if (db.clients.some((c) => c.serverId === s.id && ((eu && c.embyId === eu.Id) || c.embyName.toLowerCase() === embyName.toLowerCase()))) { res.status = 'skip'; res.text = 'Ya está en el panel'; continue; }
+      const have = db.clients.find((c) => c.serverId === s.id && ((eu && c.embyId === eu.Id) || c.embyName.toLowerCase() === embyName.toLowerCase()));
+      if (have) {
+        if (fixOwner && namedOwner && have.ownerId !== namedOwner.id) {
+          const was = (db.users.find((u) => u.id === have.ownerId) || {}).name || '?';
+          if (dry) { res.status = 'ok'; res.text = `Ya está en el panel: pasará de ${was} a ${namedOwner.name}`; continue; }
+          have.ownerId = namedOwner.id;
+          addLog('edicion', have, `Vendedor corregido al importar: de ${was} a ${namedOwner.name}`, me);
+          res.status = 'ok'; res.text = `Vendedor corregido: de ${was} a ${namedOwner.name}`; done++; continue;
+        }
+        res.status = 'skip'; res.text = fixOwner && namedOwner ? `Ya está en el panel y ya es de ${namedOwner.name}` : 'Ya está en el panel'; continue;
+      }
       if (eu && eu.Policy && eu.Policy.IsAdministrator) { res.status = 'skip'; res.text = 'Es un administrador de Emby: no se gestiona'; continue; }
       const expired = diffDays(r.expires, today()) < 0;
       const password = typeof r.password === 'string' ? r.password : r.password == null ? '' : String(r.password);
@@ -2983,7 +2996,7 @@ route('POST', '/api/users', ['super', 'admin', 'reseller'], ({ me, body }) => lo
     if (parent.role !== 'reseller') throw new HttpError(400, 'Elige el reseller del que depende este subreseller.');
     parentId = parent.id;
   }
-  const u = { id: newId(), username, name: str(body.name, 60) || username, role, parentId, credits: 0, disabled: false, createdAt: today() };
+  const u = { id: newId(), username, name: str(body.name, 60) || username, role, parentId, credits: 0, disabled: false, createdAt: today(), mustPw: true };
   setPassword(u, readNewPassword(body.password));
   readVendorOptions(me, body, u);
   if (role === 'admin') {
@@ -3004,7 +3017,7 @@ route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, bo
   needPerm(me, u.role === 'admin' ? 'admins' : 'resellers');
   const name = str(body.name, 60);
   if (name) u.name = name;
-  if (typeof body.password === 'string' && body.password) { setPassword(u, readNewPassword(body.password)); dropSessions(u.id); }
+  if (typeof body.password === 'string' && body.password) { setPassword(u, readNewPassword(body.password)); u.mustPw = true; dropSessions(u.id); }
   if (body.disabled !== undefined) { u.disabled = !!body.disabled; if (u.disabled) dropSessions(u.id); else { delete u.offBy; delete u.offAt; } }
   if (isStaff(me) && u.role === 'sub' && body.parentId !== undefined && Number(body.parentId) !== u.parentId) {
     const parent = userById(body.parentId);
@@ -5582,6 +5595,7 @@ const server = http.createServer(async (req, res) => {
         const need = me.role === 'admin' ? permFor(req.method, pathname) : null;
         if (need && !can(me, need)) return send(res, 403, { error: 'Tu usuario de administrador no tiene este permiso. Pídeselo al superadministrador.' });
         if (r.roles !== '*' && !r.roles.includes(me.role) && !need) return send(res, 403, { error: 'Tu nivel de usuario no permite hacer esto.' });
+        if (me.mustPw && !['/api/my-password', '/api/data', '/api/logout'].includes(pathname)) return send(res, 403, { error: 'Antes de seguir, cambia la contraseña que te dieron.', mustPw: true });
       }
       let body = {};
       if (req.method !== 'GET') {
