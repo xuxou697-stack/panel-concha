@@ -431,6 +431,22 @@ button.brand:hover .logo{box-shadow:0 0 0 2px var(--brand)}
 .klist .k{display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-top:1px solid var(--line)} .klist .k:first-child{border-top:0}
 .klist .k>.ic{margin-top:2px;flex-shrink:0;color:var(--muted)} .klist .k.ok>.ic{color:var(--ok)} .klist .k.todo>.ic{color:var(--warn)}
 .klist .k div{flex:1;min-width:0} .klist .k small{display:block;color:var(--muted);font-size:13px}
+.tv-use{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px;margin-bottom:16px}
+.tv-opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.tv-opt:has(input:checked){border-color:var(--brand);background:color-mix(in srgb,var(--brand) 8%,transparent)}
+.tv-opt input{margin-top:3px}.tv-opt span{display:flex;flex-direction:column;gap:3px}.tv-opt small{color:var(--muted);font-size:12.5px}
+.tv-form{border:0;padding:0;margin:0;min-width:0}.tv-form[disabled]{opacity:.5}
+.tv-form h3{font-size:15px;margin:18px 0 2px}
+.tv-sw{display:flex;align-items:center;gap:10px;cursor:pointer}.tv-sw input{position:absolute;opacity:0}
+.tv-sw .sw{width:40px;height:22px;border-radius:999px;background:var(--raised);position:relative;flex:none;transition:.2s}
+.tv-sw .sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.tv-sw input:checked+.sw{background:var(--brand)}.tv-sw input:checked+.sw::after{left:21px}.tv-sw input:focus-visible+.sw{outline:2px solid var(--brand);outline-offset:2px}
+.tv-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tv-day input{position:absolute;opacity:0}.tv-day span{display:inline-block;padding:7px 13px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;cursor:pointer;user-select:none}
+.tv-day input:checked+span{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600}.tv-day input:focus-visible+span{outline:2px solid var(--brand);outline-offset:2px}
+.tv-prev{margin-top:14px}.tv-screen{position:relative;aspect-ratio:16/7;border-radius:12px;background:linear-gradient(135deg,#1c2a3a,#0b1118 60%,#24170f);overflow:hidden;margin-bottom:6px;border:1px solid var(--line)}
+.tv-toast{position:absolute;left:50%;bottom:14%;transform:translateX(-50%);max-width:80%;background:rgba(20,20,20,.88);color:#fff;border-radius:10px;padding:10px 16px;display:flex;flex-direction:column;gap:3px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.tv-toast b{font-size:13px;color:#9fd8ee}
 .mytpl{margin-bottom:6px}.mytpl textarea::placeholder{color:color-mix(in srgb,var(--muted) 70%,transparent)}
 .mytpl-own{font-size:11px;font-weight:700;color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);border-radius:999px;padding:1px 8px;margin-left:4px}
 .mytpl-acts{display:flex;justify-content:flex-end;gap:6px;margin:-8px 0 8px}
@@ -1545,6 +1561,7 @@ function navGroups() {
   g.push({ k: 'aj', t: 'Ajustes', i: 'sliders', items: [
     { v: 'perfil', t: 'Perfil', i: 'user' },
     ...(!canDo('system') ? [{ v: 'plantillas', t: 'Mis mensajes', i: 'msg' }] : []),
+    ...(!noCli() ? [{ v: 'avisotv', t: 'Aviso en la tele', i: 'tv' }] : []),
     { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
     ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
     ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
@@ -1750,7 +1767,7 @@ function render() {
   applyBrand(d.settings.brand); applyTheme();
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, estado: vEstado, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -1764,6 +1781,7 @@ function render() {
   if (S.view === 'uso' && !S.uso && !S.usoBusy) loadUso();
   if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
   if (S.view === 'srvficha') sfAfterRender();
+  if (S.view === 'avisotv') { tvPreview(); const f = $('#tvForm'); if (f) { f.oninput = tvPreview; f.onchange = (e) => { if (e.target.name === 'use') { S.tv.own = e.target.value === 'mine'; f.querySelector('.tv-form').disabled = !S.tv.own; } }; } }
   if (S.view === 'ingresos' && !S.ing && !S.ingBusy) loadIng();
   if (S.view === 'inactivos' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
@@ -4032,6 +4050,7 @@ function ajSections() {
       <label class="f" style="max-width:300px;margin-top:10px">Desde cuántos días antes de caducar<input type="number" name="screenDays" min="1" max="30" value="${g.notices.screen.days}" required></label>
       <label class="f">Mensaje que ve en pantalla<textarea name="screenMsg" rows="2" maxlength="300">${esc(g.notices.screen.message)}</textarea></label>
       <p class="muted small" style="margin:-6px 0 4px">Puedes usar {nombre}, {cuando} (hoy, mañana, en 3 días), {dias} y {vence}. Lo muestran las apps oficiales de Emby; alguna tele o reproductor puede no enseñarlo.</p>
+      <p class="small" style="margin:4px 0 0"><button type="button" class="linkbtn" data-view="avisotv">Más opciones: qué días exactos y cada cuánto avisar →</button></p>
       <h2 class="sep" style="font-size:16px">Por Telegram y WhatsApp</h2>
       <label class="f" style="max-width:300px">Días antes de caducar para avisar<input type="number" name="chatDays" min="1" max="30" value="${g.notices.chat.days}" required></label>
       <label class="check"><input type="checkbox" name="tgOn"${g.notices.telegram.on ? ' checked' : ''}> Enviar el aviso solo por Telegram a los clientes enlazados</label>
@@ -5799,6 +5818,44 @@ function dGuide(c) {
     onOpen: () => { const f = dlgForm; f.elements.msg.oninput = () => { const a = $('#guideWa', f); if (a) a.href = `https://wa.me/${wa}?text=${encodeURIComponent(f.elements.msg.value)}`; }; },
     onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Guía copiada: pégala en el chat'; } });
 }
+/* ---------- Aviso en la tele (mensaje en la pantalla de Emby cuando la cuenta va a caducar) ---------- */
+const TV_DAYS = [30, 20, 15, 10, 7, 6, 5, 4, 3, 2, 1, 0];
+const TV_EVERY_OPTS = [[24, 'Una vez al día'], [12, 'Cada 12 horas'], [6, 'Cada 6 horas'], [3, 'Cada 3 horas'], [2, 'Cada 2 horas'], [1, 'Cada hora']];
+const tvDayTxt = (d) => (d === 0 ? 'El mismo día' : d === 1 ? '1 día' : `${d} días`);
+function tvPanelCfg() { const sc = S.d.settings.notices.screen; return { on: sc.on, list: sc.list && sc.list.length ? sc.list : Array.from({ length: (sc.days || 5) + 1 }, (_, i) => i), every: sc.every || 24, message: sc.message }; }
+function vAvisoTv() {
+  const sys = canDo('system');
+  if (!S.tv) S.tv = { scope: sys ? 'panel' : 'mine' };
+  const inherited = S.d.tvParent ? { ...S.d.tvParent, from: 'de tu reseller' } : { ...tvPanelCfg(), from: 'del panel' };
+  const mine = S.d.tvMine, own = sys && S.tv.scope === 'panel' ? true : S.tv.own != null ? S.tv.own : !!mine;
+  const cfg = sys && S.tv.scope === 'panel' ? tvPanelCfg() : mine || inherited;
+  const sum = (c) => !c.on ? 'Desactivado' : `${(c.list || []).slice().sort((a, b) => b - a).map(tvDayTxt).join(', ')} antes de caducar · ${(TV_EVERY_OPTS.find((x) => x[0] === (c.every || 24)) || TV_EVERY_OPTS[0])[1].toLowerCase()}`;
+  const scopeTabs = sys ? `<div class="tabs" role="tablist"><button role="tab" data-act="tv-scope" data-k="panel" aria-selected="${S.tv.scope === 'panel'}">Aviso del panel (para todos)</button><button role="tab" data-act="tv-scope" data-k="mine" aria-selected="${S.tv.scope === 'mine'}">Solo mis cuentas</button></div>` : '';
+  const useBox = sys && S.tv.scope === 'panel' ? '' : `<div class="tv-use">
+      <label class="tv-opt"><input type="radio" name="use" value="panel"${own ? '' : ' checked'}><span><b>Usar el aviso ${inherited.from}</b><small>${esc(sum(inherited))}</small></span></label>
+      <label class="tv-opt"><input type="radio" name="use" value="mine"${own ? ' checked' : ''}><span><b>Usar mi propio aviso</b><small>Eliges los días, cada cuánto y el mensaje</small></span></label></div>`;
+  const listSet = new Set(cfg.list || []);
+  const form = `<fieldset class="tv-form"${own ? '' : ' disabled'}>
+      <label class="tv-sw"><input type="checkbox" name="on"${cfg.on ? ' checked' : ''}><span class="sw"></span><b>Avisar en la tele cuando la cuenta va a caducar</b></label>
+      <h3>¿Qué días avisar?</h3><p class="muted small">Días antes del vencimiento. Toca para marcar o quitar.</p>
+      <div class="tv-days">${TV_DAYS.map((d) => `<label class="tv-day"><input type="checkbox" name="day" value="${d}"${listSet.has(d) ? ' checked' : ''}><span>${tvDayTxt(d)}</span></label>`).join('')}</div>
+      <h3>¿Cada cuánto, esos días?</h3><p class="muted small">Solo sale mientras el cliente está viendo algo en Emby.</p>
+      <label class="f" style="max-width:320px"><select name="every">${options(TV_EVERY_OPTS, cfg.every || 24)}</select></label>
+      <h3>Mensaje</h3>
+      <label class="f"><textarea name="message" rows="3" maxlength="300">${esc(cfg.message || '')}</textarea></label>
+      <p class="muted small" style="margin-top:-6px">Puedes usar {nombre}, {cuando} (hoy, mañana, en 3 días), {dias} y {vence}.</p>
+      <div class="tv-prev"><div class="tv-screen"><div class="tv-toast"><b>${esc(S.d.settings.brand.name || 'Aviso')}</b><span id="tvPrev"></span></div></div><small class="muted">Así lo verá el cliente en la tele (aparece unos segundos y se va solo; la película sigue).</small></div>
+    </fieldset>`;
+  return head('Aviso en la tele', 'Un mensaje que aparece en la pantalla del cliente mientras ve Emby, para recordarle que su cuenta va a caducar. Muy útil con los clientes que no usan Telegram.') + scopeTabs + `
+  <form id="tvForm" class="panel pad formpage" style="max-width:760px">${useBox}${form}
+    <div class="dfoot"><button type="submit" class="btn primary">Guardar aviso</button></div></form>
+  <div class="infobox" style="max-width:760px"><b>Bueno saberlo</b><ul><li>Lo muestran las apps oficiales de Emby (tele, Android TV, móvil, navegador). Algún reproductor de otras marcas no lo enseña.</li><li>No interrumpe: sale un recuadro unos segundos y desaparece.</li>${sys ? '' : '<li>Tu aviso vale para tus cuentas y las de tus subresellers que no tengan el suyo.</li>'}</ul></div>`;
+}
+function tvPreview() {
+  const f = $('#tvForm'); if (!f) return;
+  const msg = f.elements.message.value || '', n = 'Laura';
+  $('#tvPrev').textContent = msg.replace(/\{nombre\}/gi, n).replace(/\{cuando\}/gi, 'en 3 días').replace(/\{dias\}/gi, '3').replace(/\{vence\}/gi, fmt(addDays(S.d.today, 3)));
+}
 function vMisPlantillas() {
   const mine = S.d.myTemplates || {}, base = (k) => (S.d.parentTemplates || {})[k] || (S.d.settings.templates || {})[k] || '';
   const keys = TPL_ALL.filter(([k]) => k !== 'vendor' || me().role === 'reseller' || staff());
@@ -6354,6 +6411,7 @@ document.addEventListener('click', (e) => {
     case 'lg-reload': S.logs = null; render(); break;
     case 'lg-more': S.lg.n += 300; render(); break;
     case 'imp-tab': S.imp.tab = el.dataset.k; render(); break;
+    case 'tv-scope': S.tv.scope = el.dataset.k; S.tv.own = null; render(); break;
     case 'tpl-copy': { const ta = $(`#myTpls [name=${el.dataset.k}]`); if (ta) { ta.value = ta.placeholder; ta.focus(); el.remove(); } break; }
     case 'tpl-reset': { const ta = $(`#myTpls [name=${el.dataset.k}]`); if (ta) { ta.value = ''; ta.focus(); } toast('Pulsa «Guardar mis mensajes» para volver al texto del panel'); break; }
     case 'imp-parse': impParse(); break;
@@ -6551,6 +6609,14 @@ document.addEventListener('submit', (e) => {
       S.logs = null;
     }, 'Retención guardada');
   }
+  if (e.target.id === 'tvForm') {
+    e.preventDefault();
+    const fd = new FormData(e.target), panel = canDo('system') && S.tv.scope === 'panel';
+    const body = { on: fd.get('on') === 'on', list: fd.getAll('day').map(Number), every: +fd.get('every'), message: fd.get('message') || '' };
+    if (panel) body.scope = 'panel'; else if (fd.get('use') === 'panel') body.use = 'panel';
+    if (e.target.querySelector('.tv-form').disabled && !panel) { act(() => api('PUT', '/api/tv-notice', { use: 'panel' }), 'Usarás el aviso general'); S.tv.own = null; return; }
+    act(() => api('PUT', '/api/tv-notice', body), 'Aviso guardado'); S.tv.own = null;
+  }
   if (e.target.id === 'myTpls') {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -6563,7 +6629,7 @@ document.addEventListener('submit', (e) => {
   }
 });
 // Refresca los datos cada minuto y al volver a la pestaña, salvo si estás escribiendo
-const idle = () => S.d && !$('.combo-pop:not([hidden])') && !dlg.open && !document.hidden && !$('#app').hidden && !['ajustes', 'perfil', 'tiempos', 'retencion', 'apariencia', 'notifs', 'importar'].includes(S.view) && S.view !== 'nuevo' && S.view !== 'demonueva' && S.view !== 'plantillas' && S.view !== 'vendedor' && !(AL[S.view] && S.al.tab === 'cfg') && !['INPUT', 'SELECT', 'TEXTAREA'].includes((document.activeElement || {}).tagName);
+const idle = () => S.d && !$('.combo-pop:not([hidden])') && !dlg.open && !document.hidden && !$('#app').hidden && !['ajustes', 'perfil', 'tiempos', 'retencion', 'apariencia', 'notifs', 'importar', 'avisotv', 'plantillas'].includes(S.view) && S.view !== 'nuevo' && S.view !== 'demonueva' && S.view !== 'plantillas' && S.view !== 'vendedor' && !(AL[S.view] && S.al.tab === 'cfg') && !['INPUT', 'SELECT', 'TEXTAREA'].includes((document.activeElement || {}).tagName);
 document.addEventListener('visibilitychange', () => { if (idle()) reload().catch(() => {}); });
 setInterval(() => { if (idle()) reload().catch(() => {}); }, 60000);
 

@@ -1705,6 +1705,8 @@ function publicData(me) {
     today: today(), now: new Date().toISOString(),
     me: pubUser(me),
     myTemplates: me.templates || {},
+    tvMine: me.tvNotice || null,
+    tvParent: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.tvNotice) || null; })(),
     parentTemplates: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
     licMaster: me.role === 'super' && !LIC_CLIENT,
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
@@ -2007,13 +2009,31 @@ function fillText(text, c) {
   return String(text || '').replace(/\{([a-záéíóúñ_]+)\}/gi, (m, k) => { k = k.toLowerCase(); if (k === 'contrasena') k = 'contraseña'; if (k === 'dirección') k = 'direccion'; return vars[k] !== undefined ? vars[k] : m; });
 }
 const dueSoon = (c, days, t) => { if (c.demo || c.status !== 'active') return false; const left = diffDays(c.expires, t); return left >= 0 && left <= days; };
-/* 1) Mensaje en la pantalla de Emby: una vez al dia, cuando el cliente esta conectado */
+/* 1) Mensaje en la pantalla de Emby, cuando el cliente esta viendo.
+ * Cada vendedor puede tener su propio aviso (dias, cada cuanto y texto); si no, el de su reseller; si no, el del panel */
+const TV_EVERY = [1, 2, 3, 6, 12, 24];
+function tvCfgFor(ownerId) {
+  let u = db.users.find((x) => x.id === ownerId), hops = 0;
+  while (u && hops++ < 3) { if (u.tvNotice) return u.tvNotice; u = u.parentId ? db.users.find((x) => x.id === u.parentId) : null; }
+  return db.settings.notices.screen;
+}
+function tvDue(c, cfg, t) {
+  if (!cfg || !cfg.on || c.demo || c.status !== 'active' || c.off) return false;
+  const left = diffDays(c.expires, t);
+  if (left < 0) return false;
+  if (Array.isArray(cfg.list) && cfg.list.length) { if (!cfg.list.includes(left)) return false; }
+  else if (left > (cfg.days || 5)) return false;
+  const every = TV_EVERY.includes(cfg.every) ? cfg.every : 24;
+  if (every >= 24) return c.screenNotice !== t; // una vez al dia
+  return !c.screenNoticeAt || Date.now() - Date.parse(c.screenNoticeAt) >= every * 3600e3 - 60e3;
+}
 let noticing = false;
 async function screenNotices() {
-  const cfg = db.settings.notices.screen;
-  if (!cfg.on || noticing) return;
+  if (noticing) return;
   const t = today();
-  const due = db.clients.filter((c) => dueSoon(c, cfg.days, t) && c.screenNotice !== t);
+  const cfgs = new Map();
+  const cfgOf = (c) => { if (!cfgs.has(c.ownerId)) cfgs.set(c.ownerId, tvCfgFor(c.ownerId)); return cfgs.get(c.ownerId); };
+  const due = db.clients.filter((c) => tvDue(c, cfgOf(c), t));
   if (!due.length) return;
   noticing = true;
   try {
@@ -2025,10 +2045,10 @@ async function screenNotices() {
       try { list = await emby(s, 'GET', '/Sessions?ActiveWithinSeconds=180'); } catch { continue; }
       for (const x of list || []) {
         const c = mine.get(x.UserId);
-        if (!c || c.screenNotice === t || x.SupportsRemoteControl === false) continue;
+        if (!c || !tvDue(c, cfgOf(c), t) || x.SupportsRemoteControl === false) continue;
         try {
-          await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: db.settings.brand.name || 'Aviso', Text: fillText(cfg.message, c), TimeoutMs: 12000 });
-          c.screenNotice = t; sent++;
+          await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: db.settings.brand.name || 'Aviso', Text: fillText(cfgOf(c).message || DEFAULT_NOTICES.screen.message, c), TimeoutMs: 12000 });
+          c.screenNotice = t; c.screenNoticeAt = new Date().toISOString(); sent++;
         } catch (e) { /* esa app no admite mensajes: se probara en otra sesion */ }
       }
     }
@@ -2036,6 +2056,26 @@ async function screenNotices() {
   } catch (e) { console.error('Error en los avisos en pantalla:', e.message); }
   finally { noticing = false; }
 }
+/* Aviso en la tele: el del panel (quien tiene el permiso de sistema) o el propio de cada vendedor */
+function readTvCfg(body) {
+  const list = Array.isArray(body.list) ? [...new Set(body.list.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 60))].sort((a, b) => b - a).slice(0, 20) : [];
+  const every = TV_EVERY.includes(Number(body.every)) ? Number(body.every) : 24;
+  const message = str(body.message, 300);
+  if (body.on && !list.length) throw new HttpError(400, 'Elige al menos un día para avisar.');
+  if (body.on && !message) throw new HttpError(400, 'Escribe el mensaje que verá el cliente en la tele.');
+  return { on: !!body.on, list, every, message: message || DEFAULT_NOTICES.screen.message };
+}
+route('PUT', '/api/tv-notice', '*', ({ me, body }) => lock(async () => {
+  if (body.scope === 'panel') {
+    if (!can(me, 'system')) throw new HttpError(403, 'Solo quien gestiona el panel puede cambiar el aviso general.');
+    const cur = db.settings.notices.screen, n = readTvCfg(body);
+    Object.assign(cur, n); cur.days = Math.max(1, Math.min(30, n.list[0] || cur.days || 5));
+    addLog('ajustes', null, 'Aviso en la tele del panel cambiado', me);
+  } else if (body.use === 'panel') { delete me.tvNotice; addLog('ajustes', null, `${me.username} usa el aviso en la tele del panel`, me); }
+  else { me.tvNotice = readTvCfg(body); addLog('ajustes', null, `${me.username} cambió su aviso en la tele`, me); }
+  saveDb();
+  return { ok: true };
+}));
 /* 2) Telegram: un bot propio. Cada cliente se enlaza abriendo su enlace personal */
 async function tg(method, body, token) {
   const tk = token || db.settings.notices.telegram.token;
@@ -2115,7 +2155,9 @@ route('PUT', '/api/notices', SUPER, ({ me, body }) => lock(async () => {
   const int = (v, min, max, d) => { const n = Number(v); return Number.isInteger(n) && n >= min && n <= max ? n : d; };
   if (body.screen && typeof body.screen === 'object') {
     cur.screen.on = !!body.screen.on;
-    cur.screen.days = int(body.screen.days, 1, 30, cur.screen.days);
+    const nd = int(body.screen.days, 1, 30, cur.screen.days);
+    if (nd !== cur.screen.days) delete cur.screen.list; // con «desde X días» vuelve a avisar todos los días hasta el vencimiento
+    cur.screen.days = nd;
     if (typeof body.screen.message === 'string' && body.screen.message.trim()) cur.screen.message = body.screen.message.trim().slice(0, 300);
   }
   if (body.chat && typeof body.chat === 'object') cur.chat.days = int(body.chat.days, 1, 30, cur.chat.days);
