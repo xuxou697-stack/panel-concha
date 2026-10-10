@@ -438,6 +438,14 @@ button.brand:hover .logo{box-shadow:0 0 0 2px var(--brand)}
 .impmap-v{min-width:0}.impmap-v code{font-size:12.5px;background:var(--raised);padding:2px 7px;border-radius:5px}.impmap-v small{display:block;color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .impmap-a{color:var(--muted)}.impmap-s{width:100%}
 @media (max-width:640px){.impmap-r{grid-template-columns:minmax(0,1fr)}.impmap-a{display:none}}
+.whobar{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--surface);border:1px solid var(--line);margin:2px 0 8px;max-width:100%;overflow-x:auto}
+.whobar button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;padding:6px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.whobar button em{font-style:normal;font-size:11.5px;font-weight:700;background:var(--raised);color:var(--text);border-radius:999px;padding:1px 7px}
+.whobar button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand);font-weight:600}.whobar button[aria-pressed="true"] em{background:color-mix(in srgb,#fff 30%,transparent);color:inherit}
+.cown{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:2px 9px 2px 7px;border-radius:999px;background:color-mix(in srgb,#a77bf3 20%,transparent);color:#b794f6;vertical-align:1px;white-space:nowrap}
+.cown .ic{width:12px;height:12px}
+:root[data-theme="light"] .cown{color:#7c4dd6}
+.ccards .ccard.notmine,.ccard.notmine{background:linear-gradient(135deg,color-mix(in srgb,#a77bf3 13%,var(--surface)),var(--surface) 60%);border-top-color:color-mix(in srgb,#a77bf3 45%,var(--line));border-right-color:color-mix(in srgb,#a77bf3 45%,var(--line));border-bottom-color:color-mix(in srgb,#a77bf3 45%,var(--line))}
 .cl-mass{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:999px;border:1px solid color-mix(in srgb,var(--brand) 50%,var(--line));background:color-mix(in srgb,var(--brand) 12%,var(--bg));color:var(--text);font:inherit;font-weight:600;cursor:pointer;flex:none;white-space:nowrap}
 .cl-mass .ic{width:17px;height:17px;color:var(--brand)}.cl-mass:hover{background:color-mix(in srgb,var(--brand) 20%,var(--bg))}
 .cl-mass em{font-style:normal;font-size:12px;font-weight:700;background:var(--brand);color:var(--on-brand);border-radius:999px;padding:1px 8px}
@@ -1471,7 +1479,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN; try { NAV_OPEN = new Set(JSON.parse(localStorage.getItem('menu') || '["cli"]')); } catch (e) { NAV_OPEN = new Set(['cli']); }
 
 /* ---------- Estado ---------- */
-const S = { sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -1930,6 +1938,14 @@ function leftBar(c) {
   const cls = d < 0 ? 'bad' : d <= (S.d.settings.warnDays || 7) ? 'warn' : d <= 30 ? 'mid' : 'ok';
   return `<div class="lbar ${cls}" title="Quedan ${Math.max(0, d)} días"><i style="width:${pct}%"></i></div>`;
 }
+/** Mías / De mis subresellers: para distinguir de un vistazo */
+function whoBar() {
+  const meId = me().id, all = live(), mine = all.filter((c) => c.ownerId === meId).length, other = all.length - mine;
+  if (!other || S.fOwner) return '';
+  const lbl = staff() ? 'De mis vendedores' : 'De mis subresellers';
+  const b = (k, t, n) => `<button type="button" data-act="who" data-k="${k}" aria-pressed="${S.fWho === k}">${t}<em>${n}</em></button>`;
+  return `<div class="whobar" role="group" aria-label="De quién son las cuentas">${b('all', 'Todas', all.length)}${b('mine', 'Mías', mine)}${b('subs', lbl, other)}</div>`;
+}
 function clientCard(c) {
   const st = stage(c), open = S.open.has(c.id), shown = S.pw.has(c.id);
   const mine = c.ownerId === me().id, ren = (S.d.renewals || {})[c.id] || 0;
@@ -1954,17 +1970,17 @@ function clientCard(c) {
   const picked = S.sel.has(c.id);
   const ib = (act, icon, label, cls = '') => `<button type="button" class="ib ${cls}" data-act="${act}" data-id="${c.id}" title="${label}" aria-label="${label}: ${esc(c.panelName)}">${ic(icon)}</button>`;
   const renewLabel = c.demo ? 'Convertir en cuenta' : 'Extender';
-  return `<article class="ccard ${st}${picked ? ' picked' : ''}">
+  return `<article class="ccard ${st}${picked ? ' picked' : ''}${mine || S.d.users.length < 2 ? '' : ' notmine'}">
     <header>
       ${staff() ? `<input type="checkbox" class="pick" data-sel="${c.id}"${picked ? ' checked' : ''} aria-label="Seleccionar a ${esc(c.panelName)}">` : ''}
       <span class="cav st-${st}" aria-hidden="true">${esc((c.panelName || c.embyName || '?').trim().charAt(0).toUpperCase())}</span>
-      <div class="who" style="flex:1"><div class="name">${esc(c.panelName)}</div><div class="small muted">@${esc(c.embyName)} <span class="cst st-${st}">${STAGE_SHORT[st] || STAGE[st]}</span></div></div>
+      <div class="who" style="flex:1"><div class="name">${esc(c.panelName)}</div><div class="small muted">@${esc(c.embyName)} <span class="cst st-${st}">${STAGE_SHORT[st] || STAGE[st]}</span>${mine ? '' : ` <span class="cown" title="Cuenta de ${esc(userName(c.ownerId) || '—')}">${ic('user')}${esc(userName(c.ownerId) || '—')}</span>`}</div></div>
       <div class="hd">${ib('edit', 'edit', 'Editar')}${ib('renew', 'clock', renewLabel, 'pri')}${ib('more', 'more', 'Más opciones')}<button type="button" class="ib plain" data-act="toggle" data-id="${c.id}" aria-expanded="${open}" aria-label="${open ? 'Ocultar detalles' : 'Ver detalles'}" title="${open ? 'Ocultar detalles' : 'Ver detalles'}">${ic('chev')}</button></div>
     </header>
     <div class="kv">${ic('mail')}<em>Email:</em><span>${c.email ? esc(c.email) : '—'}</span></div>
     <div class="kv">${ic('lock')}<em>Pass:</em><span>${c.password ? (shown ? esc(c.password) : '••••••••') : 'Contraseña no guardada'}</span>${c.password ? `<button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}" title="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}">${ic('eye')}</button>` : ''}</div>
     <div class="foot">
-      <div class="tags"><span class="tag">${ic('server')}${esc(serverName(c.serverId))}</span><span class="tag q">${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}</span><span class="tag">${ic('screen')}${c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite'}</span>${mine ? '' : `<span class="tag">${ic('user')}${esc(userName(c.ownerId) || '—')}</span>`}</div>
+      <div class="tags"><span class="tag">${ic('server')}${esc(serverName(c.serverId))}</span><span class="tag q">${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}</span><span class="tag">${ic('screen')}${c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite'}</span></div>
       <span class="tag left ${st}" title="Tiempo restante">${ic('clock')}${leftText(c)}</span>
     </div>
     ${leftBar(c)}
@@ -2231,7 +2247,7 @@ function closeCombo() { document.querySelectorAll('.combo-pop:not([hidden])').fo
 function vCuentas() {
   if (!S.d.servers.length) return head('Cuentas') + noServer();
   const q = S.q.trim().toLowerCase(), loose = q ? new Set(dqMatches(q).map((c) => c.id)) : null; // tambien sin tildes, signos ni espacios
-  const rows = live().filter((c) => (S.filter === 'all' || stage(c) === S.filter) && (!S.fOwner || c.ownerId === S.fOwner) && (!S.fServer || c.serverId === S.fServer) &&
+  const rows = live().filter((c) => (S.filter === 'all' || stage(c) === S.filter) && (!S.fOwner || c.ownerId === S.fOwner) && (S.fWho === 'all' || (S.fWho === 'mine') === (c.ownerId === me().id)) && (!S.fServer || c.serverId === S.fServer) &&
     (!q || loose.has(c.id) || [c.panelName, c.embyName, c.note, c.email, c.telegram, c.whatsapp, c.signal, userName(c.ownerId)].join(' ').toLowerCase().includes(q))).sort(clientSorter());
   S.rowIds = rows.map((c) => c.id);
   const alive = new Set(S.d.clients.map((c) => c.id));
@@ -2281,6 +2297,7 @@ function vCuentas() {
       <button type="button" class="cl-mass" data-act="list-more" title="Acciones masivas: traspasos, reparar, fechas…">${ic('sliders')}<span>Acciones masivas</span>${S.sel.size ? `<em>${S.sel.size}</em>` : ''}</button>
     </div>
   </div>
+  ${whoBar()}
   <p class="cl-count">Mostrando ${shown.length} de ${plural(rows.length, 'cliente', 'clientes')}</p>
   ${selBar}
   ${rows.length ? `<div class="ccards">${shown.map(clientCard).join('')}</div>` + (pages > 1 ? pager : '') : `<div class="panel"><div class="empty">${emptyMsg}</div></div>`}</div>`;
@@ -6228,6 +6245,7 @@ document.addEventListener('click', (e) => {
     case 'filter': S.filter = el.dataset.filter; S.page = 1; render(); break;
     case 'logf': S.logF = el.dataset.v; render(); break;
     case 'mine': S.filter = 'all'; S.fOwner = me().id; S.page = 1; render(); break;
+    case 'who': S.fWho = el.dataset.k; S.page = 1; render(); break;
     case 'cal': { const step = +el.dataset.step; S.cal = step === 0 ? S.d.today.slice(0, 7) : addMonths(S.cal + '-01', step).slice(0, 7); render(); break; }
     case 'run': act(() => api('POST', '/api/run', {}), 'Revisión hecha'); break;
     case 'server-new': dServer(); break;
