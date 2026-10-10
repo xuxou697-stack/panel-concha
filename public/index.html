@@ -431,6 +431,13 @@ button.brand:hover .logo{box-shadow:0 0 0 2px var(--brand)}
 .klist .k{display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-top:1px solid var(--line)} .klist .k:first-child{border-top:0}
 .klist .k>.ic{margin-top:2px;flex-shrink:0;color:var(--muted)} .klist .k.ok>.ic{color:var(--ok)} .klist .k.todo>.ic{color:var(--warn)}
 .klist .k div{flex:1;min-width:0} .klist .k small{display:block;color:var(--muted);font-size:13px}
+.impmap{border:1px solid color-mix(in srgb,var(--brand) 45%,var(--line));border-radius:var(--r);padding:14px 16px;margin:0 0 14px;background:color-mix(in srgb,var(--brand) 5%,transparent)}
+.impmap h3{font-size:15px;margin:0 0 4px;display:flex;align-items:center;gap:6px}.impmap h3 .ic{width:16px;height:16px;color:var(--brand)}
+.impmap-g{margin-top:12px}.impmap-g>b{display:block;font-size:13px;margin-bottom:6px}
+.impmap-r{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,260px);gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.impmap-v{min-width:0}.impmap-v code{font-size:12.5px;background:var(--raised);padding:2px 7px;border-radius:5px}.impmap-v small{display:block;color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.impmap-a{color:var(--muted)}.impmap-s{width:100%}
+@media (max-width:640px){.impmap-r{grid-template-columns:minmax(0,1fr)}.impmap-a{display:none}}
 .sv-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
 .sv-t{--c:var(--brand);position:relative;background:color-mix(in srgb,var(--c) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 32%,var(--line));border-radius:var(--r);padding:12px 14px 12px 50px;min-height:64px}
 .sv-t .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:24px;height:24px;color:var(--c)}
@@ -4121,8 +4128,8 @@ function vNotifs() {
   </div></div></section>` + ajSections().notices;
 }
 /* ---------- Ajustes: Importar ---------- */
-const IMP_COLS = { username: ['username', 'user', 'usuario', 'login', 'cuenta', 'emby', 'nombre_de_usuario', 'user_name'], password: ['password', 'pass', 'contrasena', 'clave', 'pwd'], server: ['server', 'servidor', 'host', 'url', 'server_url'],
-  expires: ['expiration', 'expires', 'expire', 'expiry', 'exp_date', 'expiration_date', 'vencimiento', 'vence', 'caducidad', 'fecha_fin', 'end_date', 'fecha_vencimiento'], start: ['start_date', 'inicio', 'fecha_inicio', 'created', 'created_at', 'alta'],
+const IMP_COLS = { username: ['username', 'user', 'usuario', 'login', 'cuenta', 'emby', 'nombre_de_usuario', 'user_name', 'usuario_emby', 'usuario_de_emby', 'emby_user', 'emby_username', 'username_emby', 'user_emby', 'emby_name'], password: ['password', 'pass', 'contrasena', 'clave', 'pwd'], server: ['server', 'servidor', 'host', 'url', 'server_url'],
+  expires: ['expiration', 'expires', 'expire', 'expiry', 'exp_date', 'expiration_date', 'vencimiento', 'vence', 'caducidad', 'fecha_fin', 'end_date', 'fecha_vencimiento', 'fin_suscripcion', 'fin_de_suscripcion', 'fin_de_la_suscripcion', 'suscripcion_hasta', 'valido_hasta', 'expiration_at', 'expires_at', 'expire_at'], start: ['start_date', 'inicio', 'fecha_inicio', 'created', 'created_at', 'alta'],
   notes: ['notes', 'note', 'nota', 'notas', 'comentario', 'comentarios'], whatsapp: ['whatsapp', 'telefono', 'phone', 'movil'], telegram: ['telegram'], signal: ['signal'], email: ['email', 'correo', 'mail'],
   package: ['package', 'paquete', 'contenido', 'plan', 'calidad', 'quality'], screens: ['streams', 'pantallas', 'screens', 'conexiones', 'max_connections', 'max_streams'], owner: ['vendedor', 'reseller', 'owner', 'seller', 'revendedor', 'vendor'], name: ['nombre', 'cliente', 'full_name', 'name'] };
 const IMP_LABEL = { username: 'Usuario', password: 'Contraseña', server: 'Servidor', expires: 'Vence', start: 'Inicio', notes: 'Notas', whatsapp: 'WhatsApp', telegram: 'Telegram', signal: 'Signal', email: 'Email', package: 'Paquete', screens: 'Pantallas', owner: 'Vendedor', name: 'Nombre' };
@@ -4217,9 +4224,55 @@ async function impXlsx(buf) {
   }
   return rows;
 }
+/* Traducir valores de otro panel (ids raros en servidor, paquete o vendedor) a los de este panel */
+const impN = (v) => String(v || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/\/emby$/, '');
+function impKnown(k, v) {
+  const n = impN(v);
+  if (!n) return true;
+  if (k === 'server') return S.d.servers.some((x) => [x.name, x.url, x.publicUrl].some((y) => y && impN(y) === n));
+  if (k === 'owner') return S.d.users.some((u) => u.username.toLowerCase() === n || u.name.toLowerCase() === n);
+  return /^(4k|uhd|2160p?|basico|básico|basic|hd|1080p?|normal|estandar|estándar|standard)$/i.test(n);
+}
+function impMapBuild(rows) {
+  const out = {};
+  for (const k of ['server', 'package', 'owner']) {
+    const vals = new Map();
+    for (const r of rows) { const v = String(r[k] || '').trim(); if (!v || v === '-' || impKnown(k, v)) continue; const e = vals.get(v) || { n: 0, ex: [] }; e.n++; if (e.ex.length < 4) e.ex.push(r.username); vals.set(v, e); }
+    if (vals.size) out[k] = [...vals.entries()].sort((a, b) => b[1].n - a[1].n).map(([v, e]) => ({ v, n: e.n, ex: e.ex, to: k === 'package' ? (/4k|uhd|2160/i.test(v) ? 'k4' : '') : '' }));
+  }
+  return out;
+}
+function impMapRow(r) {
+  const m = S.imp.map || {}, o = { ...r };
+  for (const k of ['server', 'package', 'owner']) {
+    const v = String(o[k] || '').trim();
+    if (v === '-') { o[k] = ''; continue; }
+    const hit = (m[k] || []).find((x) => x.v === v);
+    if (!hit) continue;
+    if (k === 'server') { const sv = S.d.servers.find((x) => x.id === +hit.to); o.server = sv ? sv.name : ''; }
+    else if (k === 'owner') { const u = S.d.users.find((x) => x.id === +hit.to); o.owner = u ? u.username : ''; }
+    else o.package = hit.to === 'k4' ? '4K' : 'Basico';
+  }
+  for (const k of ['whatsapp', 'telegram', 'signal', 'email', 'notes']) if (String(o[k] || '').trim() === '-') o[k] = '';
+  if (!o.screens && S.imp.screens) o.screens = String(S.imp.screens);
+  return o;
+}
+function impMapBox() {
+  const m = S.imp.map || {}, keys = Object.keys(m);
+  if (!keys.length) return '';
+  const T = { server: ['Servidor', 'el servidor que elegiste antes'], package: ['Paquete', 'Básico'], owner: ['Vendedor', 'el vendedor que elegiste antes'] };
+  const opts = (k, to) => k === 'server' ? `<option value="">(${T.server[1]})</option>${S.d.servers.map((x) => `<option value="${x.id}"${+to === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}`
+    : k === 'owner' ? `<option value="">(${T.owner[1]})</option>${[...S.d.users].sort((a, b) => RANK[a.role] - RANK[b.role] || a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${+to === u.id ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')}`
+    : `<option value=""${to !== 'k4' ? ' selected' : ''}>Básico</option><option value="k4"${to === 'k4' ? ' selected' : ''}>4K</option>`;
+  const short = (v) => (v.length > 22 ? v.slice(0, 8) + '…' + v.slice(-4) : v);
+  return `<div class="impmap"><h3>${ic('sliders')}Traduce los datos del otro panel</h3>
+    <p class="muted small">Tu archivo trae códigos internos del otro panel que este no conoce. Dile a qué equivale cada uno: los ejemplos te ayudan a reconocerlos.</p>
+    ${keys.map((k) => `<div class="impmap-g"><b>${T[k][0]}</b>${m[k].map((x, i) => `<div class="impmap-r"><div class="impmap-v"><code title="${esc(x.v)}">${esc(short(x.v))}</code><small>${plural(x.n, 'cuenta', 'cuentas')}: ${x.ex.map(esc).join(', ')}${x.n > x.ex.length ? '…' : ''}</small></div><span class="impmap-a">→</span><select class="impmap-s" data-k="${k}" data-i="${i}" aria-label="${T[k][0]} para ${esc(short(x.v))}">${opts(k, x.to)}</select></div>`).join('')}</div>`).join('')}
+  </div>`;
+}
 async function impParse() {
   const f = $('#impForm'), file = f.elements.file.files[0], imp = S.imp;
-  imp.serverId = +f.elements.serverId.value || 0; imp.ownerId = +(f.elements.ownerId ? f.elements.ownerId.value : 0) || 0; imp.create = f.elements.create.checked;
+  imp.serverId = +f.elements.serverId.value || 0; imp.ownerId = +(f.elements.ownerId ? f.elements.ownerId.value : 0) || 0; imp.create = f.elements.create.checked; imp.screens = +(f.elements.screens ? f.elements.screens.value : 1) || 1;
   try {
     let table;
     if (file) {
@@ -4238,7 +4291,7 @@ async function impParse() {
     if (!keys.includes('expires')) throw new Error('Falta la columna de vencimiento. Llámala «expiration» o «vencimiento». Columnas encontradas: ' + table[0].join(', '));
     const rows = table.slice(1).map((r) => { const o = {}; keys.forEach((k, i) => { if (k && o[k] === undefined) o[k] = String(r[i] ?? '').trim(); }); o.rawExpires = o.expires; o.expires = impDate(o.expires); o.start = impDate(o.start); return o; }).filter((o) => o.username);
     if (rows.length > 2000) throw new Error(`Son ${rows.length} filas. Importa como mucho 2000 cada vez: separa el archivo por vendedor.`);
-    imp.rows = rows; imp.cols = [...new Set(keys.filter(Boolean))]; imp.unknown = table[0].filter((h, i) => !keys[i] && String(h).trim()); imp.results = null; imp.dry = null; imp.progress = null;
+    imp.rows = rows; imp.map = impMapBuild(rows); imp.cols = [...new Set(keys.filter(Boolean))]; imp.unknown = table[0].filter((h, i) => !keys[i] && String(h).trim()); imp.results = null; imp.dry = null; imp.progress = null;
     render(); window.scrollTo(0, 0);
   } catch (x) { toast(x.message, true); }
 }
@@ -4248,7 +4301,7 @@ async function impRun(dry) {
   imp.busy = true; imp.results = []; imp.dry = dry; imp.progress = 0; render();
   try {
     for (let i = 0; i < imp.rows.length; i += 25) {
-      const part = imp.rows.slice(i, i + 25).map(({ rawExpires, ...r }) => r);
+      const part = imp.rows.slice(i, i + 25).map(({ rawExpires, ...r }) => impMapRow(r));
       const r = await api('POST', '/api/import/rows', { rows: part, serverId: imp.serverId || undefined, ownerId: imp.ownerId || undefined, create: imp.create, dry });
       r.results.forEach((x) => imp.results.push({ ...x, i: x.i + i }));
       imp.progress = Math.min(imp.rows.length, i + 25);
@@ -4291,6 +4344,7 @@ function vImportar() {
       <label class="f">Servidor para las filas que no lo indiquen<select name="serverId">${d.servers.map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></label>
       ${d.users.length > 1 ? `<label class="f">Vendedor para las filas que no lo indiquen<select name="ownerId">${[...d.users].sort((a, b) => a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${u.id === me().id ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')}</select></label>` : ''}
     </div>
+    <label class="f" style="max-width:340px">Pantallas para las filas que no lo indiquen<select name="screens"><option value="1">1 pantalla</option><option value="2">2 pantallas</option><option value="4">4 pantallas</option></select></label>
     <label class="check"><input type="checkbox" name="create"> Crear en Emby las cuentas que no existan todavía (hace falta la contraseña en el archivo)</label>
     <div class="infobox"><b>Qué hace con cada fila</b><ul>
       <li>Si el usuario ya existe en Emby, lo enlaza y le pone las bibliotecas de su paquete, sus pantallas, sin transcodificación y sin permisos de administrador. No le cambia la contraseña.</li>
@@ -4308,6 +4362,7 @@ function vImportar() {
   return hd + tabs + `<div class="panel pad">
     <h2>${done ? 'Importación terminada' : 'Paso 2: revisar e importar'}</h2>
     <p class="muted" style="margin:6px 0 12px">${plural(imp.rows.length, 'fila leída', 'filas leídas')}. Columnas reconocidas: ${imp.cols.map((c) => IMP_LABEL[c]).join(', ')}.${imp.unknown.length ? ` Se ignoran: ${imp.unknown.map(esc).join(', ')}.` : ''}${imp.cols.includes('password') ? ' Las contraseñas no se muestran aquí.' : ''}</p>
+    ${done ? '' : impMapBox()}
     ${bad ? `<p class="err" style="max-width:none;margin-bottom:10px">${plural(bad, 'fila tiene', 'filas tienen')} una fecha de vencimiento que no se entiende: no se importarán.</p>` : ''}
     ${cnt ? `<div class="tiles" style="margin-bottom:12px"><div class="tile active"><b>${cnt.ok}</b><span>${imp.dry ? 'Se pueden importar' : 'Importadas'}</span></div><div class="tile soon"><b>${cnt.skip}</b><span>Saltadas</span></div><div class="tile expired"><b>${cnt.error}</b><span>Con error</span></div></div>` : ''}
     ${imp.busy ? `<p class="preview">${imp.dry ? 'Comprobando' : 'Importando'}… ${imp.progress} de ${imp.rows.length}. No cierres esta página.</p>` : ''}
@@ -4317,7 +4372,7 @@ function vImportar() {
     </div>
     <div class="imptable"><table><thead><tr><th>#</th>${res ? '<th>Resultado</th>' : ''}${cols.map((c) => `<th>${IMP_LABEL[c]}</th>`).join('')}</tr></thead><tbody>${order.slice(0, 300).map((i) => { const r = imp.rows[i], x = byI.get(i); return `<tr><td class="muted">${i + 1}</td>
       ${res ? `<td class="wrap">${x ? `<span class="badge b-${x.status === 'ok' ? 'new' : x.status === 'skip' ? 'warn' : 'del'}">${x.status === 'ok' ? (imp.dry ? 'Correcta' : 'Importada') : x.status === 'skip' ? 'Saltada' : 'Error'}</span> <span class="small">${esc(x.text)}</span>` : '<span class="muted small">Pendiente</span>'}</td>` : ''}
-      ${cols.map((c) => `<td>${c === 'expires' ? (r.expires ? fmt(r.expires) : `<span class="err">${esc(r.rawExpires || 'vacía')}</span>`) : c === 'start' ? (r.start ? fmt(r.start) : '') : esc(String(r[c] || '').slice(0, 60))}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>
+      ${cols.map((c) => `<td>${c === 'expires' ? (r.expires ? fmt(r.expires) : `<span class="err">${esc(r.rawExpires || 'vacía')}</span>`) : c === 'start' ? (r.start ? fmt(r.start) : '') : esc((v => /^[0-9a-f]{8}-[0-9a-f-]{20,}$/i.test(v) ? v.slice(0, 8) + '…' : v)(String(r[c] || '')).slice(0, 60))}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>
     ${imp.rows.length > 300 ? `<p class="muted small" style="margin-top:8px">Se muestran 300 filas de ${imp.rows.length}${res ? ', primero las que tienen errores' : ''}.</p>` : ''}
   </div>`;
 }
@@ -5799,6 +5854,7 @@ async function act(fn, okMsg) { try { await fn(); await reload(); if (okMsg) toa
 const needServer = (fn) => { if (S.d.servers.length) fn(); else if (canDo('servers')) dServer(); else toast('Todavía no hay ningún servidor Emby conectado.', true); };
 function closeMenu() { $('.side').classList.remove('open'); $('#shade').classList.remove('open'); }
 document.addEventListener('change', (e) => {
+  if (e.target.classList && e.target.classList.contains('impmap-s')) { const x = ((S.imp.map || {})[e.target.dataset.k] || [])[+e.target.dataset.i]; if (x) { x.to = e.target.value; S.imp.results = null; S.imp.dry = null; } return; }
   if (e.target.id === 'lgWhen') { S.lg.when = e.target.value; S.lg.n = 200; render(); }
   if (e.target.id === 'lgKind') { S.lg.kind = e.target.value; S.lg.n = 200; render(); }
   if (e.target.id === 'vpMonth') { S.vp.month = e.target.value; S.vp.data = null; loadVpay(); }
