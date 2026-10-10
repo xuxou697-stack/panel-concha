@@ -1062,6 +1062,29 @@ section.fx-s:last-child{margin-top:14px}
 #bootLd .bl-in{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;color:var(--text);padding:16px}#bootLd small{color:var(--muted);min-height:1.2em}
 #bootLd .bl-sp{width:42px;height:42px;border-radius:50%;border:4px solid color-mix(in srgb,var(--brand) 25%,transparent);border-top-color:var(--brand);animation:blsp .8s linear infinite}
 @keyframes blsp{to{transform:rotate(360deg)}}
+/* Estado del servidor */
+.aggrid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.agcard{min-width:0}.agcard *{min-width:0}
+.agcard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:16px;border-top:3px solid var(--ok)}
+.agcard.stale{border-top-color:var(--bad)}.agcard.none{border-top-color:var(--line)}
+.agcard>header{display:flex;align-items:center;gap:12px}.ag-t{flex:1;min-width:0;display:flex;flex-direction:column}.ag-t b{font-size:17px}.ag-t small{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag-ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;background:var(--raised);color:var(--muted)}.ag-ic.on{color:#fff;background:linear-gradient(135deg,var(--brand),#a46bff)}
+.ag-why{margin:0;color:var(--muted);line-height:1.5}
+.ag-rings{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.agg{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 8px;border-radius:16px;background:var(--raised);color:var(--ok)}
+.agg.warn{color:var(--warn)}.agg.bad{color:var(--bad)}.agg.net{color:var(--brand);justify-content:center}
+.agg svg{width:96px;max-width:100%;height:96px}.agg>b{position:absolute;top:44px;left:0;right:0;font-size:24px;font-weight:800;color:var(--text)}.agg>b small{font-size:13px;color:var(--muted)}
+.agg>span{margin-top:6px;font-weight:700;color:var(--text);font-size:14px}.agg>em{font-style:normal;font-size:12px;color:var(--muted)}
+.ag-net{display:flex;flex-direction:column;gap:8px;min-height:96px;justify-content:center}.ag-net span{display:flex;align-items:baseline;gap:6px;justify-content:center}.ag-net .ic{width:16px;height:16px;align-self:center}.ag-net b{font-size:22px;color:var(--text)}.ag-net small{color:var(--muted);font-size:12px}.ag-net .upl{color:#e2457a}
+.ag-facts{display:flex;flex-wrap:wrap;gap:8px}.ag-facts span{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--raised);font-size:13px;color:var(--muted)}.ag-facts .ic{width:15px;height:15px}
+.ag-facts .okf{color:var(--ok)}.ag-facts .badf{color:var(--bad)}
+.ag-disks{display:flex;flex-direction:column;gap:8px}.ag-disks>div{display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:center;font-size:13px}.ag-disks span{color:var(--muted);overflow:hidden;text-overflow:ellipsis}.ag-disks i{height:8px;border-radius:8px;background:var(--raised);overflow:hidden}.ag-disks b{display:block;height:100%;background:var(--ok)}.ag-disks b.warn{background:var(--warn)}.ag-disks b.bad{background:var(--bad)}.ag-disks em{font-style:normal;color:var(--muted);white-space:nowrap}
+.ag-more summary{cursor:pointer;color:var(--brand);font-weight:600}.ag-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.agc{background:var(--raised);border-radius:14px;padding:12px 14px;min-width:0}.agc h4{margin:0;font-size:14px}.agc-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}.agc .legend{margin:0;font-size:12px}
+.agsvg{width:100%;height:120px;display:block}.agsvg .grid{stroke:var(--line);stroke-dasharray:3 4}.agc-x{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:4px}
+.agcard .acts{display:flex;flex-wrap:wrap;gap:8px}
+.ag-wait{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--raised);margin-top:12px;font-size:14px}.ag-wait .bl-sp{width:20px;height:20px;border-radius:50%;border:3px solid color-mix(in srgb,var(--brand) 25%,transparent);border-top-color:var(--brand);animation:blsp .8s linear infinite;flex:none}.ag-wait.done{color:var(--ok)}
+@media (max-width:860px){.ag-rings{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ag-charts{grid-template-columns:1fr}}
+@media (max-width:560px){.ag-disks>div{grid-template-columns:80px 1fr}.ag-disks em{grid-column:1/-1}}
 /* Cuenta desactivada a mano */
 .pw-chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--brand) 7%,transparent);line-height:1.45}.pw-chk input{margin-top:3px;flex:none}
 .offbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;border-radius:12px;border:1px dashed color-mix(in srgb,#7d8fa8 60%,transparent);background:color-mix(in srgb,#7d8fa8 12%,transparent);font-size:13px}
@@ -1363,7 +1386,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN; try { NAV_OPEN = new Set(JSON.parse(localStorage.getItem('menu') || '["cli"]')); } catch (e) { NAV_OPEN = new Set(['cli']); }
 
 /* ---------- Estado ---------- */
-const S = { lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -1394,7 +1417,7 @@ function navGroups() {
   if (staff() && canDo('reports')) cli.push({ v: 'auditoria', t: 'Auditoría', i: 'check' });
   cli.push({ v: 'movimientos', t: 'Movimientos', i: 'history' }, { v: 'papelera', t: 'Papelera', i: 'trash', n: trash().length });
   const emby = [];
-  if (canDo('viewServers')) emby.push({ v: 'servidores', t: 'Servidores', i: 'server' });
+  if (canDo('viewServers')) emby.push({ v: 'servidores', t: 'Servidores', i: 'server' }, { v: 'estado', t: 'Estado del servidor', i: 'chart' });
   if (canDo('system')) emby.push({ v: 'plantillas', t: 'Plantillas de mensajes', i: 'msg' });
   if (staff() && canDo('servers')) emby.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' });
   // «En directo» se quitó del menú: el Monitor muestra lo mismo y más. El Calendario pasó a Clientes.
@@ -1596,7 +1619,7 @@ function render() {
   applyBrand(d.settings.brand); applyTheme();
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, estado: vEstado, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -1630,6 +1653,7 @@ function render() {
   if (S.view === 'mensajeeq') vbRefresh();
   if (S.view === 'cobrosven' && !S.vp.busy && (!S.vp.data || Date.now() - S.vp.at > 20000)) loadVpay();
   if (S.view === 'fechas') fxWire();
+  if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open) loadAgents(); }, 60000); }
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
@@ -4113,6 +4137,77 @@ function vMensajeCli() {
 
 
 
+/* ---------- Estado del servidor (agente en el VPS de Emby) ---------- */
+async function loadAgents() {
+  S.ag.busy = true;
+  try { S.ag.data = await api('GET', '/api/agent/status'); S.ag.at = Date.now(); } catch (e) { S.ag.data = { servers: [], error: e.message }; }
+  S.ag.busy = false;
+  if (S.view === 'estado') { const y = window.scrollY; render(); window.scrollTo(0, y); }
+}
+const agLvl = (v, warn = 70, bad = 90) => (v >= bad ? 'bad' : v >= warn ? 'warn' : 'ok');
+const agBytes = (b) => { const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0; while (b >= 1024 && i < 4) { b /= 1024; i++; } return `${b >= 100 || i === 0 ? Math.round(b) : Math.round(b * 10) / 10} ${u[i]}`; };
+const agAgo = (iso) => { const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? 'hace un momento' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} días`; };
+const agUptime = (s) => { const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600); return d ? `${plural(d, 'día', 'días')}${h ? ' y ' + plural(h, 'hora', 'horas') : ''}` : plural(h, 'hora', 'horas'); };
+function agRing(v, label, sub, lvl) {
+  const r = 34, C = 2 * Math.PI * r, p = Math.max(0, Math.min(100, v));
+  return `<div class="agg ${lvl}"><svg viewBox="0 0 84 84" aria-hidden="true"><circle r="${r}" cx="42" cy="42" fill="none" stroke="var(--raised)" stroke-width="9"/><circle r="${r}" cx="42" cy="42" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(p / 100) * C} ${C}" transform="rotate(-90 42 42)"/></svg><b>${Math.round(p)}<small>%</small></b><span>${label}</span><em>${sub}</em></div>`;
+}
+function agChart(hist, keys, title, unit, max) {
+  if (hist.length < 2) return `<div class="agc"><h4>${title}</h4><p class="muted small">Las gráficas aparecen cuando haya datos de un rato.</p></div>`;
+  const W = 520, H = 120, top = max || Math.max(1, ...hist.flatMap((h) => keys.map(([k]) => h[k] || 0))) * 1.15;
+  const x = (i) => (i / (hist.length - 1)) * W, y = (v) => H - 4 - (Math.min(v, top) / top) * (H - 10);
+  const lines = keys.map(([k, col]) => `<polyline points="${hist.map((h, i) => `${x(i).toFixed(1)},${y(h[k] || 0).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
+  const t0 = new Date(hist[0].at), t1 = new Date(hist[hist.length - 1].at), hh = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `<div class="agc"><div class="agc-h"><h4>${title}</h4><div class="legend">${keys.map(([k, col, t]) => `<span><i style="background:${col}"></i>${t}</span>`).join('')}</div></div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="agsvg" role="img" aria-label="${title}"><line x1="0" x2="${W}" y1="${y(top / 2)}" y2="${y(top / 2)}" class="grid"/>${lines}</svg>
+    <div class="agc-x"><span>${hh(t0)}</span><span>máx. ${Math.round(top / 1.15 * 10) / 10}${unit}</span><span>${hh(t1)}</span></div></div>`;
+}
+function vEstado() {
+  const d = S.ag.data, sub = 'Cómo va la máquina donde está Emby: procesador, memoria, disco e internet. Se actualiza solo cada minuto.';
+  if (!d) return head('Estado del servidor', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d.servers.length) return head('Estado del servidor', sub) + noServer();
+  const card = (s) => {
+    const L = s.last, can = canDo('servers');
+    if (!s.installed) return `<article class="agcard none"><header><span class="ag-ic">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${s.pending ? 'Orden de instalación creada: falta ejecutarla en el VPS' : 'Sin agente instalado'}</small></div><span class="lpill ${s.pending ? 'soon' : 'off'}">${s.pending ? 'Esperando' : 'Sin datos'}</span></header>
+      <p class="ag-why">Instala el agente en el VPS de este Emby para ver aquí su procesador, memoria, disco e internet, y recibir avisos si algo va mal. Solo lee datos de la máquina: no toca Emby ni tus cuentas.</p>
+      ${can ? `<div class="acts"><button class="btn primary" data-act="ag-link" data-id="${s.id}">${ic('download')}${s.pending ? 'Ver la orden otra vez' : 'Instalar agente'}</button></div>` : '<p class="muted small">Pide al superadministrador que lo instale.</p>'}</article>`;
+    const on = s.online;
+    const disk = (L.disks || []).slice().sort((a, b) => b.used / b.size - a.used / a.size);
+    return `<article class="agcard ${on ? '' : 'stale'}"><header><span class="ag-ic ${on ? 'on' : ''}">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${esc(L.host || '')}${L.os ? ' · ' + esc(L.os) : ''}</small></div><span class="lpill ${on ? 'ok' : 'off'}">${on ? 'Conectado' : 'Sin datos ' + agAgo(L.at)}</span></header>
+      <div class="ag-rings">
+        ${agRing(L.cpu, 'Procesador', `${plural(L.cores || 1, 'núcleo', 'núcleos')} · carga ${L.load}`, agLvl(L.cpu))}
+        ${agRing(L.mem, 'Memoria', L.memTotal ? 'de ' + agBytes(L.memTotal) : '', agLvl(L.mem, 80, 92))}
+        ${agRing(L.disk, 'Disco', disk[0] ? `${agBytes(disk[0].size - disk[0].used)} libres` : '', agLvl(L.disk, 80, 90))}
+        <div class="agg net"><div class="ag-net"><span>${ic('download')}<b>${L.down}</b><small>Mbit/s</small></span><span class="upl">${ic('send')}<b>${L.up}</b><small>Mbit/s</small></span></div><span>Internet</span><em>bajada · subida</em></div>
+      </div>
+      <div class="ag-facts"><span class="${L.emby ? 'okf' : 'badf'}">${ic(L.emby ? 'check' : 'alert')}${L.emby ? 'Emby en marcha' : 'Emby no encontrado'}</span><span>${ic('clock')}Encendido ${agUptime(L.uptime)}</span><span>${ic('refresh')}Último dato ${agAgo(L.at)}</span></div>
+      ${disk.length > 1 ? `<div class="ag-disks">${disk.map((x) => { const p = Math.round((x.used / x.size) * 100); return `<div><span>${esc(x.mount)}</span><i><b class="${agLvl(p, 80, 90)}" style="width:${p}%"></b></i><em>${p}% · ${agBytes(x.size - x.used)} libres de ${agBytes(x.size)}</em></div>`; }).join('')}</div>` : ''}
+      <details class="ag-more"><summary>Gráficas de las últimas 24 horas</summary><div class="ag-charts">
+        ${agChart(s.hist, [['cpu', '#3fa9f5', 'Procesador'], ['mem', '#a46bff', 'Memoria']], 'Procesador y memoria', '%', 100)}
+        ${agChart(s.hist, [['up', '#e2457a', 'Subida'], ['down', '#2bbf7e', 'Bajada']], 'Internet', ' Mbit/s')}
+      </div></details>
+      ${can ? `<div class="acts"><button class="btn sm ghost" data-act="ag-link" data-id="${s.id}">${ic('refresh')}Reinstalar</button><button class="btn sm ghost" data-act="ag-del" data-id="${s.id}">${ic('trash')}Quitar agente</button></div>` : ''}
+    </article>`;
+  };
+  return head('Estado del servidor', sub, `<button class="btn" data-act="ag-reload">${ic('refresh')}Actualizar</button>`) + `<div class="aggrid">${d.servers.map(card).join('')}</div>
+    <p class="muted small" style="margin-top:14px">Avisos por Telegram: disco por encima del 90%, procesador o memoria saturados 5 minutos seguidos, Emby parado o el agente sin mandar datos más de 5 minutos.</p>`;
+}
+async function agLink(id) {
+  const s = S.ag.data.servers.find((x) => x.id === id);
+  let r; try { r = await api('POST', `/api/servers/${id}/agent/link`, {}); } catch (e) { return toast(e.message, true); }
+  showDlg('Instalar el agente en ' + s.name, `<ol class="lsteps">
+      <li>Entra en el <b>VPS donde está este Emby</b> (por SSH o la consola de tu proveedor). Debe ser Ubuntu o Debian.</li>
+      <li>Copia esta orden, pégala y pulsa Enter. Te pedirá la contraseña de sudo si hace falta.</li></ol>
+    <div class="ltok"><code id="agCmd">${esc(r.command)}</code><button type="button" class="btn sm primary" data-act="ag-copy">${ic('copy')}Copiar</button></div>
+    <p class="small muted">Es <b>de un solo uso</b> y caduca el ${fmtTs(r.expires, true)}. Es privada: no la compartas.</p>
+    <div class="ag-wait" id="agWait"><span class="bl-sp"></span><span>Esperando a que el agente se conecte…</span></div>`);
+  clearInterval(S.ag.wait);
+  S.ag.wait = setInterval(async () => {
+    if (!dlg.open) { clearInterval(S.ag.wait); return; }
+    try { const d = await api('GET', '/api/agent/status'); const x = d.servers.find((v) => v.id === id); if (x && x.online) { clearInterval(S.ag.wait); S.ag.data = d; const w = $('#agWait'); if (w) w.innerHTML = `${ic('check')}<b>¡Conectado!</b> Ya llegan los datos de ${esc(s.name)}.`; w && w.classList.add('done'); setTimeout(() => { if (dlg.open) dlg.close(); render(); }, 1800); } } catch (e) { /* se reintenta */ }
+  }, 5000);
+}
+
 /* ---------- Licencias: alquiler del panel ---------- */
 const LIC_ST = { ok: ['Al día', 'ok'], soon: ['Vence pronto', 'soon'], grace: ['En margen', 'grace'], locked: ['En pausa', 'off'], blocked: ['Bloqueada', 'off'] };
 async function loadLic() {
@@ -5509,6 +5604,10 @@ document.addEventListener('click', (e) => {
   if (a === 'mon-msg') { monMsg(el); return; }
   if (a === 'mon-notice') { monNotice(el); return; }
   if (a === 'guide-tg') { el.disabled = true; api('POST', `/api/clients/${id}/guide`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Guía enviada por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
+  if (a === 'ag-reload') { loadAgents(); return; }
+  if (a === 'ag-link') { agLink(id); return; }
+  if (a === 'ag-copy') { copyText($('#agCmd').textContent, $('#agCmd')).then(() => toast('Orden copiada')); return; }
+  if (a === 'ag-del') { const s = S.ag.data.servers.find((x) => x.id === id); dConfirm('Quitar el agente de ' + s.name, 'El panel dejará de aceptar sus datos y se borra lo guardado. Para quitarlo también del VPS, ejecuta allí:<br><code style="font-size:12px;word-break:break-all">sudo systemctl disable --now panel-agente && sudo rm -rf /opt/panel-agente /etc/panel-agente.conf /etc/systemd/system/panel-agente.service</code>', 'Quitar', async () => { await api('POST', `/api/servers/${id}/agent/remove`, {}); S.ag.data = null; loadAgents(); }, 'Agente quitado'); return; }
   if (a === 'fx-apply') { fxApply(); return; }
   if (a === 'fx-all') { fxState().only = null; render(); return; }
   if (a === 'fx-clear') { const f = fxState(); Object.assign(f, { owner: 0, server: 0, st: new Set(['active', 'soon']), q: 'all', from: '', to: '', within: '', search: '', exOff: false }); f.excl.clear(); render(); return; }

@@ -435,6 +435,8 @@ const PERM_RULES = [
   ['POST', /^\/api\/users\/\d+\/credits$/, 'credits'],
   ['GET', /^\/api\/(audit|logs|usage|income)$/, 'reports'],
   ['GET', /^\/api\/servers\/\d+\/test$/, 'viewServers'],
+  ['GET', /^\/api\/agent\/status$/, 'viewServers'],
+  ['POST', /^\/api\/servers\/\d+\/agent\/(link|remove)$/, 'servers'],
   ['PUT', /^\/api\/servers\/\d+\/packages$/, 'packages'],
   ['POST', /^\/api\/servers$/, 'servers'],
   ['PUT', /^\/api\/servers\/\d+$/, 'servers'],
@@ -4962,6 +4964,196 @@ function readBody(req, limit = 1e6) {
   });
 }
 
+/* ---------- Estado del servidor: un agente pequeño en el VPS de Emby manda cada minuto CPU, memoria, disco e internet ----------
+ * Instalación: el panel da una orden de un solo uso (caduca a las 48 h). Al ejecutarla, el VPS descarga el instalador,
+ * que lleva dentro una clave propia del agente (en el panel solo se guarda su huella). Los datos van solo a este panel. */
+const AGENT_FILE = path.join(DATA_DIR, 'estado-servidores.json');
+const AGENT_KEEP = 24 * 60; // 24 h de muestras de 1 minuto por servidor
+let agentData = {}; // sid -> { samples: [...], last, alerts: {} }
+try { agentData = JSON.parse(fs.readFileSync(AGENT_FILE, 'utf8')) || {}; } catch { agentData = {}; }
+let agentDirty = false;
+function saveAgents(force) {
+  if (!agentDirty && !force) return;
+  agentDirty = false;
+  try { fs.writeFileSync(AGENT_FILE + '.tmp', JSON.stringify(agentData)); fs.renameSync(AGENT_FILE + '.tmp', AGENT_FILE); } catch (e) { console.error('Estado servidores:', e.message); }
+}
+setInterval(() => saveAgents(), 5 * 60000).unref();
+const agentHash = (t) => crypto.createHash('sha256').update('agente:' + String(t)).digest('hex');
+function panelBase(req) {
+  const b = db.settings.brand && db.settings.brand.url;
+  if (b && /^https?:\/\//.test(b)) return b.replace(/\/+$/, '');
+  const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() || 'http';
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+  return `${proto}://${host}`;
+}
+const agNum = (v, max = 1e15) => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n <= max ? n : null; };
+function agentView(s) {
+  const a = s.agent || {}, d = agentData[s.id] || {}, last = d.last || null;
+  const online = !!(last && Date.now() - Date.parse(last.at) < 3 * 60000);
+  // historia de 24 h resumida a puntos de 10 minutos para las gráficas
+  const hist = [];
+  const src = d.samples || [];
+  for (let i = 0; i < src.length; i += 10) {
+    const g = src.slice(i, i + 10), avg = (k) => Math.round(g.reduce((n, x) => n + (x[k] || 0), 0) / g.length * 10) / 10;
+    hist.push({ at: g[g.length - 1].at, cpu: avg('cpu'), mem: avg('mem'), up: avg('up'), down: avg('down') });
+  }
+  return { id: s.id, name: s.name, installed: !!a.tokenHash, pending: !!(a.oneHash && a.oneExp > Date.now()) && !a.tokenHash, online, last, hist, since: a.since || null };
+}
+route('GET', '/api/agent/status', SUPER, () => ({ servers: db.servers.map(agentView) }));
+route('POST', '/api/servers/:id/agent/link', SUPER, ({ req, me, params }) => lock(async () => {
+  const s = serverById(params.id);
+  const one = crypto.randomBytes(24).toString('base64url');
+  s.agent = { ...(s.agent || {}), oneHash: agentHash(one), oneExp: Date.now() + 48 * 3600e3 };
+  addLog('servidor', null, `Orden de instalación del agente creada para ${s.name}`, me);
+  saveDb();
+  const url = `${panelBase(req)}/api/agent/install/${one}`;
+  return { ok: true, command: `curl -fsSL "${url}" | sudo bash`, expires: new Date(s.agent.oneExp).toISOString() };
+}));
+route('POST', '/api/servers/:id/agent/remove', SUPER, ({ me, params }) => lock(async () => {
+  const s = serverById(params.id);
+  delete s.agent; delete agentData[s.id]; agentDirty = true; saveAgents(true);
+  addLog('servidor', null, `Agente de ${s.name} quitado del panel`, me);
+  saveDb(); return { ok: true };
+}));
+/* El VPS descarga el instalador con la orden de un solo uso */
+route('GET', '/api/agent/install/:one', null, ({ req, params }) => lock(async () => {
+  const ip = clientIp(req);
+  if (ipBlocked(ip)) throw new HttpError(429, 'Demasiados intentos.');
+  const h = agentHash(params.one);
+  const s = db.servers.find((x) => x.agent && x.agent.oneHash === h);
+  if (!s || !(s.agent.oneExp > Date.now())) { ipFail(ip); return { __raw: 'echo "La orden de instalación no es válida o ya se usó. Crea una nueva en el panel." >&2; exit 1\n', headers: { 'Content-Type': 'text/plain; charset=utf-8' } }; }
+  const token = crypto.randomBytes(32).toString('hex');
+  s.agent = { tokenHash: agentHash(token), since: new Date().toISOString() }; // la orden ya no sirve más
+  addLog('servidor', null, `Agente instalado en ${s.name} (desde ${ip})`, null);
+  saveDb();
+  return { __raw: agentInstaller(panelBase(req), token, s.name), headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } };
+}));
+/* El agente informa cada minuto */
+route('POST', '/api/agent/report', null, ({ req, body }) => {
+  const ip = clientIp(req);
+  if (ipBlocked(ip)) throw new HttpError(429, 'Demasiados intentos.');
+  const tk = String(req.headers['x-agent-token'] || '');
+  const s = /^[a-f0-9]{64}$/.test(tk) ? db.servers.find((x) => x.agent && x.agent.tokenHash === agentHash(tk)) : null;
+  if (!s) { ipFail(ip); throw new HttpError(403, 'Agente no reconocido.'); }
+  const disks = Array.isArray(body.disks) ? body.disks.slice(0, 8).map((x) => ({ mount: str(x.mount, 80), size: agNum(x.size) || 0, used: agNum(x.used) || 0 })).filter((x) => x.size > 0) : [];
+  const smp = {
+    at: new Date().toISOString(),
+    cpu: Math.min(100, agNum(body.cpu, 100) || 0), mem: Math.min(100, agNum(body.mem, 100) || 0),
+    memTotal: agNum(body.memTotal) || 0, load: agNum(body.load, 1e4) || 0, cores: agNum(body.cores, 4096) || 0,
+    up: agNum(body.up, 1e7) || 0, down: agNum(body.down, 1e7) || 0, // Mbit/s
+    disk: disks.reduce((m, x) => Math.max(m, Math.round((x.used / x.size) * 1000) / 10), 0), disks,
+    emby: body.emby === true, uptime: agNum(body.uptime, 1e10) || 0, host: str(body.host, 60), os: str(body.os, 80), ver: str(body.ver, 20),
+  };
+  const d = agentData[s.id] = agentData[s.id] || { samples: [], alerts: {} };
+  d.samples.push({ at: smp.at, cpu: smp.cpu, mem: smp.mem, up: smp.up, down: smp.down });
+  if (d.samples.length > AGENT_KEEP) d.samples.splice(0, d.samples.length - AGENT_KEEP);
+  const wasOff = d.last && Date.now() - Date.parse(d.last.at) > 5 * 60000;
+  d.last = smp; agentDirty = true;
+  if (wasOff) agentAlert(s, d, 'back', `🟢 El agente de «${s.name}» vuelve a mandar datos.`, 0);
+  agentCheck(s, d);
+  return { ok: true, every: 60 };
+});
+/** Avisos: cada tipo como mucho una vez por hora */
+function agentAlert(s, d, kind, text, gap = 3600e3) {
+  d.alerts = d.alerts || {};
+  if (gap && d.alerts[kind] && Date.now() - d.alerts[kind] < gap) return;
+  d.alerts[kind] = Date.now();
+  notifyStaff('servers', `${text}\n${whenTxt()}`);
+}
+function agentCheck(s, d) {
+  const L = d.last, recent = d.samples.slice(-5);
+  if (L.disk >= 90) agentAlert(s, d, 'disk', `💾 El disco del servidor «${s.name}» está al ${L.disk}%. Si se llena, Emby puede dejar de funcionar.`, 6 * 3600e3);
+  if (recent.length === 5 && recent.every((x) => x.cpu >= 90)) agentAlert(s, d, 'cpu', `🔥 El procesador de «${s.name}» lleva 5 minutos por encima del 90%. Puede que haya demasiadas conversiones de vídeo a la vez.`);
+  if (recent.length === 5 && recent.every((x) => x.mem >= 92)) agentAlert(s, d, 'mem', `🧠 La memoria de «${s.name}» lleva 5 minutos por encima del 92%.`);
+  if (!L.emby && d.prevEmby !== false) agentAlert(s, d, 'emby', `⚠️ En «${s.name}» no se encuentra Emby funcionando. Revisa el servidor.`, 3600e3);
+  d.prevEmby = L.emby;
+}
+/* Si un agente deja de informar más de 5 minutos, aviso (una vez) */
+setInterval(() => {
+  for (const s of db.servers) {
+    const d = agentData[s.id];
+    if (!s.agent || !s.agent.tokenHash || !d || !d.last) continue;
+    const mins = (Date.now() - Date.parse(d.last.at)) / 60000;
+    if (mins > 5 && !(d.alerts && d.alerts.off > Date.parse(d.last.at))) agentAlert(s, d, 'off', `📡 El agente de «${s.name}» no manda datos desde hace ${Math.round(mins)} minutos. El VPS puede estar apagado o sin internet.`, 0);
+  }
+}, 60000).unref();
+
+/** Instalador para Ubuntu/Debian (también otras distros con systemd). Solo lee /proc y df; no toca Emby. */
+function agentInstaller(base, token, name) {
+  const agent = String.raw`#!/bin/bash
+# Agente de estado del panel. Solo lee datos de la máquina y los manda al panel cada minuto.
+. /etc/panel-agente.conf
+read_cpu() { awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8, $5+$6}' /proc/stat; }
+read_net() { awk -F'[: ]+' 'NR>2 && $2!="lo" && $2!~/^(docker|veth|br-|virbr|tun|tap)/ {rx+=$3; tx+=$11} END{print rx+0, tx+0}' /proc/net/dev; }
+CORES=$(nproc 2>/dev/null || echo 1)
+HOST=$(hostname 2>/dev/null)
+OS=$( (. /etc/os-release 2>/dev/null; echo "$PRETTY_NAME") | tr -d '"\\' )
+set -- $(read_cpu); C1=$1; I1=$2
+set -- $(read_net); R1=$1; T1=$2; S1=$(date +%s)
+while true; do
+  sleep 60
+  set -- $(read_cpu); C2=$1; I2=$2
+  set -- $(read_net); R2=$1; T2=$2; S2=$(date +%s)
+  DT=$((S2-S1)); [ "$DT" -le 0 ] && DT=60
+  CPU=$(awk -v a=$((C2-C1)) -v b=$((I2-I1)) 'BEGIN{ if (a>0) printf "%.1f", (a-b)*100/a; else print 0 }')
+  DOWN=$(awk -v d=$((R2-R1)) -v t=$DT 'BEGIN{ if (d<0) d=0; printf "%.2f", d*8/t/1000000 }')
+  UP=$(awk -v d=$((T2-T1)) -v t=$DT 'BEGIN{ if (d<0) d=0; printf "%.2f", d*8/t/1000000 }')
+  C1=$C2; I1=$I2; R1=$R2; T1=$T2; S1=$S2
+  MEM=$(awk '/^MemTotal/{t=$2} /^MemAvailable/{a=$2} END{ if (t>0) printf "%.1f %d", (t-a)*100/t, t*1024; else print "0 0" }' /proc/meminfo)
+  LOAD=$(cut -d' ' -f1 /proc/loadavg)
+  UPT=$(cut -d. -f1 /proc/uptime)
+  DISKS=$(df -P -B1 -x tmpfs -x devtmpfs -x overlay -x squashfs -x efivarfs 2>/dev/null | awk 'NR>1 && $2>1000000000 {printf "%s{\"mount\":\"%s\",\"size\":%s,\"used\":%s}", (n++?",":""), $6, $2, $3}')
+  if pgrep -f -i 'EmbyServer|emby-server|embyserver' >/dev/null 2>&1; then EMBY=true; else EMBY=false; fi
+  set -- $MEM
+  JSON="{\"cpu\":$CPU,\"mem\":$1,\"memTotal\":$2,\"load\":$LOAD,\"cores\":$CORES,\"up\":$UP,\"down\":$DOWN,\"uptime\":$UPT,\"emby\":$EMBY,\"disks\":[$DISKS],\"host\":\"$HOST\",\"os\":\"$OS\",\"ver\":\"1\"}"
+  curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -H "X-Agent-Token: $TOKEN" --data "$JSON" "$PANEL/api/agent/report" >/dev/null 2>&1 || true
+done
+`;
+  const esc1 = (v) => String(v).replace(/'/g, '');
+  return `#!/bin/bash
+# Instalador del agente «Estado del servidor» para ${esc1(name).replace(/[\r\n]/g, ' ')}
+set -e
+if [ "$(id -u)" != "0" ]; then echo "Ejecuta la orden con sudo."; exit 1; fi
+command -v curl >/dev/null || { echo "Falta curl: instálalo con  apt install -y curl"; exit 1; }
+command -v systemctl >/dev/null || { echo "Este sistema no usa systemd: no se puede instalar el agente."; exit 1; }
+mkdir -p /opt/panel-agente
+cat > /opt/panel-agente/agente.sh <<'AGENTE_EOF'
+${agent}AGENTE_EOF
+chmod 755 /opt/panel-agente/agente.sh
+umask 077
+cat > /etc/panel-agente.conf <<'CONF_EOF'
+PANEL='${esc1(base)}'
+TOKEN='${token}'
+CONF_EOF
+chmod 600 /etc/panel-agente.conf
+cat > /etc/systemd/system/panel-agente.service <<'UNIT_EOF'
+[Unit]
+Description=Agente de estado del panel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/opt/panel-agente/agente.sh
+Restart=always
+RestartSec=30
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
+UNIT_EOF
+systemctl daemon-reload
+systemctl enable --now panel-agente >/dev/null 2>&1
+systemctl restart panel-agente
+echo ""
+echo "  Agente instalado y en marcha."
+echo "  En 1 o 2 minutos verás los datos en el panel, en Emby > Estado del servidor."
+echo ""
+echo "  Para quitarlo algún día:"
+echo "  sudo systemctl disable --now panel-agente && sudo rm -rf /opt/panel-agente /etc/panel-agente.conf /etc/systemd/system/panel-agente.service"
+echo ""
+`;
+}
+
 /* ---------- Licencias: alquiler del uso del panel por meses ----------
  * Panel principal (sin LICENSE_TOKEN): el superadministrador apunta a quién alquila, hasta qué día ha pagado, y lo renueva.
  * Panel alquilado (con LICENSE_SERVER y LICENSE_TOKEN en Coolify): pregunta al principal cada hora si sigue pagado.
@@ -5144,7 +5336,7 @@ const server = http.createServer(async (req, res) => {
     if (!pathname.startsWith('/api/')) return send(res, 404, { error: 'No encontrado.' });
     if (req.method === 'POST' && (pathname === '/api/pay/stripe/webhook' || pathname === '/api/pay/nowpayments/ipn')) return await payWebhook(req, res, pathname);
     // Panel alquilado en pausa: solo se responde lo justo para mostrar el aviso
-    if (LIC_CLIENT && licLocked() && !['/api/state', '/api/license/recheck', '/api/logout'].includes(pathname)) return send(res, 423, { error: 'El panel está en pausa: la suscripción ha caducado.', licLocked: true });
+    if (LIC_CLIENT && licLocked() && !['/api/state', '/api/license/recheck', '/api/logout', '/api/agent/report'].includes(pathname)) return send(res, 423, { error: 'El panel está en pausa: la suscripción ha caducado.', licLocked: true });
     for (const r of routes) {
       if (r.method !== req.method) continue;
       const m = r.re.exec(pathname);
@@ -5229,7 +5421,7 @@ server.listen(PORT, HOST, () => {
   setInterval(() => { if (++ticks % 60 === 0) { backupDb(); lock(async () => pruneRecords()).catch(() => {}); } if (live()) runLifecycle(); }, CHECK_EVERY_MS);
   if (LIC_CLIENT) { const lLoop = () => { licCheck().finally(() => { const s = licStatus(); setTimeout(lLoop, Number(process.env.LICENSE_MS) || (s && s.state !== 'ok' ? 5 * 60000 : 3600e3)); }); }; setTimeout(lLoop, 2000); }
   // Al apagar (Redeploy en Coolify) se guarda lo pendiente del historial de conexiones
-  for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveConn(true); } catch { /* nada */ } process.exit(0); });
+  for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveConn(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } process.exit(0); });
   const dLoop = () => { try { licDaily(); } catch (e) { console.error('Licencias:', e.message); } if (live()) try { vpayDaily(); } catch (e) { console.error('Cobros:', e.message); } if (live()) try { dailySummary(); } catch (e) { console.error('Resumen diario:', e.message); } setTimeout(dLoop, Number(process.env.DAILY_MS) || 60000); };
   setTimeout(dLoop, Number(process.env.DAILY_MS) || 30000);
   const qLoop = () => { (live() ? qualityDaily() : Promise.resolve()).catch((e) => console.error('Revisión de calidad:', e.message)).finally(() => setTimeout(qLoop, Number(process.env.QDAILY_MS) || 60000)); };
