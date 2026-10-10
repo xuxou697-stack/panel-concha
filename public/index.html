@@ -1063,6 +1063,15 @@ section.fx-s:last-child{margin-top:14px}
 #bootLd .bl-sp{width:42px;height:42px;border-radius:50%;border:4px solid color-mix(in srgb,var(--brand) 25%,transparent);border-top-color:var(--brand);animation:blsp .8s linear infinite}
 @keyframes blsp{to{transform:rotate(360deg)}}
 /* Estado del servidor */
+.pw-plan{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--brand) 10%,var(--raised));font-size:14px}.pw-plan>.ic{color:var(--brand);flex:none}.pw-plan>span{flex:1}
+.pw-resc{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none;padding:0 4px}.pw-resc .ic{width:15px;height:15px}.pw-resc small{font-size:11.5px}
+.pw-resc input{position:absolute;opacity:0;pointer-events:none}.pw-resc .sw{width:30px;height:17px;border-radius:999px;background:var(--line);position:relative;transition:.2s;flex:none}.pw-resc .sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:.2s}
+.pw-resc input:checked+.sw{background:var(--ok)}.pw-resc input:checked+.sw::after{left:15px}.pw-resc input:checked~.ic{color:var(--ok)}.pw-resc input:focus-visible+.sw{outline:2px solid var(--brand)}.pw-resc input:disabled+.sw{opacity:.5}
+.pw-when{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.pw-when label{cursor:pointer}.pw-when input{position:absolute;opacity:0;pointer-events:none}
+.pw-when span{display:flex;flex-direction:column;gap:2px;height:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--raised);font-size:13.5px}.pw-when small{color:var(--muted);font-size:12px}
+.pw-when input:checked+span{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--raised))}.pw-when input:focus-visible+span{outline:2px solid var(--brand)}
+.ag-fc{color:var(--warn)}
+@media (max-width:560px){.pw-when{grid-template-columns:1fr}}
 .pw-btns{display:flex;gap:8px;flex-wrap:wrap}.pw-sp{flex:1}
 .pw-busy{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--warn) 12%,var(--raised));color:var(--text);font-size:14px}.pw-busy small{color:var(--muted)}
 .pw-busy .bl-sp{width:20px;height:20px;border-radius:50%;border:3px solid color-mix(in srgb,var(--warn) 25%,transparent);border-top-color:var(--warn);animation:blsp .8s linear infinite;flex:none}
@@ -1657,7 +1666,7 @@ function render() {
   if (S.view === 'mensajeeq') vbRefresh();
   if (S.view === 'cobrosven' && !S.vp.busy && (!S.vp.data || Date.now() - S.vp.at > 20000)) loadVpay();
   if (S.view === 'fechas') fxWire();
-  if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power)))) loadAgents(); }, 10000); }
+  if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power || x.plan)))) loadAgents(); }, 10000); }
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
@@ -4173,7 +4182,10 @@ function vEstado() {
   const card = (s) => {
     const L = s.last, can = canDo('servers');
     const pwBtns = isSuper() ? `<div class="pw-btns"><button class="btn sm" data-act="ag-pw" data-k="emby" data-id="${s.id}">${ic('refresh')}Reiniciar Emby</button>${s.installed ? `<button class="btn sm" data-act="ag-pw" data-k="vps" data-id="${s.id}"${s.online ? '' : ' disabled title="El agente no está conectado"'}>${ic('power')}Reiniciar VPS</button>` : ''}</div>` : '';
-    const busy = s.power ? `<div class="pw-busy"><span class="bl-sp"></span><span>${s.power.kind === 'vps' ? (s.power.sent ? 'El VPS se está reiniciando…' : 'Orden de reinicio enviada: el VPS la recibirá en menos de un minuto…') : 'Emby se está reiniciando…'} <small>desde ${fmtTs(s.power.at)}</small></span></div>` : '';
+    const what = (k) => (k === 'vps' ? 'el VPS' : 'Emby');
+    const busy = s.power ? `<div class="pw-busy"><span class="bl-sp"></span><span>${s.power.waitUntil ? `Avisando en pantalla: ${what(s.power.kind)} se reinicia a las ${fmtTs(s.power.waitUntil).split(', ').pop()}…` : s.power.kind === 'vps' ? (s.power.sent ? 'El VPS se está reiniciando…' : 'Orden enviada: el VPS la recibirá en menos de un minuto…') : 'Emby se está reiniciando…'}</span></div>`
+      : s.plan ? `<div class="pw-plan">${ic('clock')}<span>Reinicio ${s.plan.kind === 'vps' ? 'del VPS' : 'de Emby'} ${s.plan.when === 'idle' ? '<b>cuando nadie esté viendo</b>' : `programado a las <b>${fmtTs(s.plan.at).split(', ').pop()}</b>`}</span>${isSuper() ? `<button class="btn sm ghost" data-act="ag-cancel" data-id="${s.id}">Cancelar</button>` : ''}</div>` : '';
+    const rescue = isSuper() && s.installed ? `<label class="pw-resc" title="Si Emby deja de responder unos minutos pero el VPS está bien, el agente lo reinicia solo (como mucho una vez por hora)"><input type="checkbox" data-act="ag-rescue" data-id="${s.id}"${s.rescue ? ' checked' : ''}${s.agentVer && s.agentVer < 3 ? ' disabled' : ''}><span class="sw"></span>${ic('shield')}Rescate automático${s.agentVer && s.agentVer < 3 ? ' <small>(reinstala el agente)</small>' : ''}</label>` : '';
     if (!s.installed) return `<article class="agcard none"><header><span class="ag-ic">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${s.pending ? 'Orden de instalación creada: falta ejecutarla en el VPS' : 'Sin agente instalado'}</small></div><span class="lpill ${s.pending ? 'soon' : 'off'}">${s.pending ? 'Esperando' : 'Sin datos'}</span></header>
       <p class="ag-why">Instala el agente en el VPS de este Emby para ver aquí su procesador, memoria, disco e internet, y recibir avisos si algo va mal. Solo lee datos de la máquina: no toca Emby ni tus cuentas.</p>
       ${busy}${can ? `<div class="acts"><button class="btn primary" data-act="ag-link" data-id="${s.id}">${ic('download')}${s.pending ? 'Ver la orden otra vez' : 'Instalar agente'}</button>${pwBtns}</div>` : '<p class="muted small">Pide al superadministrador que lo instale.</p>'}</article>`;
@@ -4183,7 +4195,7 @@ function vEstado() {
       <div class="ag-rings">
         ${agRing(L.cpu, 'Procesador', `${plural(L.cores || 1, 'núcleo', 'núcleos')} · carga ${L.load}`, agLvl(L.cpu))}
         ${agRing(L.mem, 'Memoria', L.memTotal ? 'de ' + agBytes(L.memTotal) : '', agLvl(L.mem, 80, 92))}
-        ${agRing(L.disk, 'Disco', disk[0] ? `${agBytes(disk[0].size - disk[0].used)} libres` : '', agLvl(L.disk, 80, 90))}
+        ${agRing(L.disk, 'Disco', (disk[0] ? `${agBytes(disk[0].size - disk[0].used)} libres` : '') + (s.diskDays != null && s.diskDays < 90 ? `<br><span class="ag-fc">se llena en ~${plural(s.diskDays, 'día', 'días')}</span>` : ''), agLvl(L.disk, 80, 90))}
         <div class="agg net"><div class="ag-net"><span>${ic('download')}<b>${L.down}</b><small>Mbit/s</small></span><span class="upl">${ic('send')}<b>${L.up}</b><small>Mbit/s</small></span></div><span>Internet</span><em>bajada · subida</em></div>
       </div>
       <div class="ag-facts"><span class="${L.emby ? 'okf' : 'badf'}">${ic(L.emby ? 'check' : 'alert')}${L.emby ? 'Emby en marcha' : 'Emby no encontrado'}</span><span>${ic('clock')}Encendido ${agUptime(L.uptime)}</span><span>${ic('refresh')}Último dato ${agAgo(L.at)}</span></div>
@@ -4192,7 +4204,7 @@ function vEstado() {
         ${agChart(s.hist, [['cpu', '#3fa9f5', 'Procesador'], ['mem', '#a46bff', 'Memoria']], 'Procesador y memoria', '%', 100)}
         ${agChart(s.hist, [['up', '#e2457a', 'Subida'], ['down', '#2bbf7e', 'Bajada']], 'Internet', ' Mbit/s')}
       </div></details>
-      ${busy}${can ? `<div class="acts">${pwBtns}<span class="pw-sp"></span><button class="btn sm ghost" data-act="ag-link" data-id="${s.id}">${ic('download')}Reinstalar</button><button class="btn sm ghost" data-act="ag-del" data-id="${s.id}">${ic('trash')}Quitar agente</button></div>` : ''}
+      ${busy}${can ? `<div class="acts">${pwBtns}${rescue}<span class="pw-sp"></span><button class="btn sm ghost" data-act="ag-link" data-id="${s.id}">${ic('download')}Reinstalar</button><button class="btn sm ghost" data-act="ag-del" data-id="${s.id}">${ic('trash')}Quitar agente</button></div>` : ''}
     </article>`;
   };
   return head('Estado del servidor', sub, `<button class="btn" data-act="ag-reload">${ic('refresh')}Actualizar</button>`) + `<div class="aggrid">${d.servers.map(card).join('')}</div>
@@ -4203,12 +4215,17 @@ async function agPower(id, kind) {
   const s = S.ag.data.servers.find((x) => x.id === id);
   let p; try { p = await api('GET', `/api/servers/${id}/power`); } catch (e) { return toast(e.message, true); }
   const vps = kind === 'vps';
-  const who = p.viewers == null ? '' : p.viewers ? `<div class="pw-warn">${ic('play')}<span>Ahora mismo hay <b>${plural(p.viewers, 'persona viendo', 'personas viendo')}</b> en este servidor. Se les cortará.</span></div>` : `<div class="pw-ok">${ic('check')}<span>Ahora mismo no hay nadie viendo.</span></div>`;
+  const who = p.viewers == null ? '' : p.viewers ? `<div class="pw-warn">${ic('play')}<span>Ahora mismo hay <b>${plural(p.viewers, 'persona viendo', 'personas viendo')}</b>.</span></div>` : `<div class="pw-ok">${ic('check')}<span>Ahora mismo no hay nadie viendo.</span></div>`;
+  const opt = (v, t, sub, on) => `<label><input type="radio" name="when" value="${v}"${on ? ' checked' : ''}><span><b>${t}</b><small>${sub}</small></span></label>`;
   openDlg({ title: (vps ? 'Reiniciar el VPS de ' : 'Reiniciar Emby en ') + s.name, submit: vps ? 'Reiniciar VPS' : 'Reiniciar Emby', danger: true,
-    body: `<p class="preview">${vps ? 'Se reinicia <b>la máquina entera</b>. Tarda unos minutos: durante ese tiempo nadie podrá ver nada.' : 'Se reinicia <b>solo el programa Emby</b>. Vuelve en uno o dos minutos.'}</p>${who}
-      <label class="f">Tu contraseña del panel<input type="password" name="pw" required autocomplete="current-password"></label>
-      <p class="muted small">Te avisaremos por Telegram cuando vuelva a estar en marcha.</p>`,
-    onSubmit: async (fd) => { await api('POST', `/api/servers/${id}/${vps ? 'reboot-vps' : 'restart-emby'}`, { password: fd.get('pw') }); S.ag.data = null; loadAgents(); return vps ? 'Orden enviada: el VPS se reinicia en menos de un minuto' : 'Emby se está reiniciando'; } });
+    body: `<p class="preview">${vps ? 'Se reinicia <b>la máquina entera</b>. Tarda unos minutos y durante ese tiempo nadie podrá ver nada.' : 'Se reinicia <b>solo el programa Emby</b>. Vuelve en uno o dos minutos.'}</p>${who}
+      <div class="pw-when">${opt('now', 'Ahora', 'en cuanto confirmes', !p.viewers)}${opt('idle', 'Cuando nadie esté viendo', 'el panel espera solo', !!p.viewers)}${opt('at', 'A una hora', 'por ejemplo de madrugada', false)}</div>
+      <label class="f pw-time" hidden>Hora<input type="time" name="time" value="05:00"></label>
+      <label class="check pw-warnbox"${p.viewers ? '' : ' hidden'}><input type="checkbox" name="warn" checked> Avisar en pantalla 2 minutos antes a quien esté viendo</label>
+      <label class="f">Tu contraseña del panel<input type="password" name="pw" required autocomplete="current-password"></label>`,
+    onOpen: () => { const f = dlgForm, upd = () => { const w = f.querySelector('[name=when]:checked').value; $('.pw-time', f).hidden = w !== 'at'; $('.pw-warnbox', f).hidden = w === 'idle' || (w === 'now' && !p.viewers); }; f.onchange = upd; upd(); },
+    onSubmit: async (fd) => { const when = fd.get('when'); await api('POST', `/api/servers/${id}/power-plan`, { kind, when, time: fd.get('time'), warn: !!fd.get('warn'), password: fd.get('pw') }); S.ag.data = null; loadAgents();
+      return when === 'idle' ? 'Hecho: se reiniciará en cuanto no haya nadie viendo' : when === 'at' ? `Reinicio programado a las ${fd.get('time')}` : fd.get('warn') && p.viewers ? 'Aviso enviado: se reinicia en 2 minutos' : (vps ? 'Orden enviada: el VPS se reinicia en menos de un minuto' : 'Emby se está reiniciando'); } });
 }
 async function agLink(id) {
   const s = S.ag.data.servers.find((x) => x.id === id);
@@ -5624,6 +5641,8 @@ document.addEventListener('click', (e) => {
   if (a === 'guide-tg') { el.disabled = true; api('POST', `/api/clients/${id}/guide`, { text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Guía enviada por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
   if (a === 'ag-reload') { loadAgents(); return; }
   if (a === 'ag-pw') { agPower(id, el.dataset.k); return; }
+  if (a === 'ag-cancel') { api('POST', `/api/servers/${id}/power-cancel`, {}).then(() => { toast('Reinicio programado cancelado'); S.ag.data = null; loadAgents(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'ag-rescue') { const on = el.checked; api('POST', `/api/servers/${id}/rescue`, { on }).then(() => toast(on ? 'Rescate automático activado' : 'Rescate automático desactivado'), (x) => { el.checked = !on; toast(x.message, true); }); return; }
   if (a === 'ag-link') { agLink(id); return; }
   if (a === 'ag-copy') { copyText($('#agCmd').textContent, $('#agCmd')).then(() => toast('Orden copiada')); return; }
   if (a === 'ag-del') { const s = S.ag.data.servers.find((x) => x.id === id); dConfirm('Quitar el agente de ' + s.name, 'El panel dejará de aceptar sus datos y se borra lo guardado. Para quitarlo también del VPS, ejecuta allí:<br><code style="font-size:12px;word-break:break-all">sudo systemctl disable --now panel-agente && sudo rm -rf /opt/panel-agente /etc/panel-agente.conf /etc/systemd/system/panel-agente.service</code>', 'Quitar', async () => { await api('POST', `/api/servers/${id}/agent/remove`, {}); S.ag.data = null; loadAgents(); }, 'Agente quitado'); return; }

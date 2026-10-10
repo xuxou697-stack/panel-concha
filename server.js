@@ -5006,7 +5006,11 @@ function agentView(s) {
     hist.push({ at: g[g.length - 1].at, cpu: avg('cpu'), mem: avg('mem'), up: avg('up'), down: avg('down') });
   }
   const pw = power.get(s.id);
-  return { power: pw ? { kind: pw.kind, at: new Date(pw.at).toISOString(), sent: !!pw.sent } : null, id: s.id, name: s.name, installed: !!a.tokenHash, pending: !!(a.oneHash && a.oneExp > Date.now()) && !a.tokenHash, online, last, hist, since: a.since || null };
+  // previsión del disco: lo que ha crecido en las últimas horas
+  let diskDays = null;
+  const ds = src.filter((x) => x.disk != null);
+  if (ds.length >= 360 && last) { const a = ds[0], b = ds[ds.length - 1], hrs = (Date.parse(b.at) - Date.parse(a.at)) / 3600e3, perDay = ((b.disk - a.disk) / hrs) * 24; if (perDay > 0.05) diskDays = Math.round((100 - b.disk) / perDay); }
+  return { diskDays, plan: s.powerPlan || null, rescue: !!s.autoRescue, agentVer: last ? Number(last.ver) || 1 : 0, power: pw ? { kind: pw.kind, at: new Date(pw.at).toISOString(), sent: !!pw.sent, waitUntil: pw.waitUntil && pw.waitUntil > Date.now() ? new Date(pw.waitUntil).toISOString() : null } : null, id: s.id, name: s.name, installed: !!a.tokenHash, pending: !!(a.oneHash && a.oneExp > Date.now()) && !a.tokenHash, online, last, hist, since: a.since || null };
 }
 route('GET', '/api/agent/status', SUPER, () => ({ servers: db.servers.map(agentView) }));
 route('POST', '/api/servers/:id/agent/link', SUPER, ({ req, me, params }) => lock(async () => {
@@ -5054,7 +5058,7 @@ route('POST', '/api/agent/report', null, ({ req, body }) => {
     emby: body.emby === true, uptime: agNum(body.uptime, 1e10) || 0, host: str(body.host, 60), os: str(body.os, 80), ver: str(body.ver, 20),
   };
   const d = agentData[s.id] = agentData[s.id] || { samples: [], alerts: {} };
-  d.samples.push({ at: smp.at, cpu: smp.cpu, mem: smp.mem, up: smp.up, down: smp.down });
+  d.samples.push({ at: smp.at, cpu: smp.cpu, mem: smp.mem, up: smp.up, down: smp.down, disk: smp.disk });
   if (d.samples.length > AGENT_KEEP) d.samples.splice(0, d.samples.length - AGENT_KEEP);
   const wasOff = d.last && Date.now() - Date.parse(d.last.at) > 5 * 60000;
   d.last = smp; agentDirty = true;
@@ -5071,7 +5075,7 @@ route('POST', '/api/agent/report', null, ({ req, body }) => {
   if (s.agent.cmd && s.agent.cmd.exp > Date.now()) {
     const cmd = s.agent.cmd; delete s.agent.cmd;
     const pw = power.get(s.id); if (pw) pw.sent = Date.now();
-    lock(async () => { addLog('servidor', null, `Orden de reinicio entregada al VPS de ${s.name}`, null); saveDb(); }).catch(() => {});
+    lock(async () => { addLog('servidor', null, `Orden «${cmd.cmd === 'reboot' ? 'reiniciar VPS' : 'reiniciar Emby'}» entregada al agente de ${s.name}`, null); saveDb(); }).catch(() => {});
     return { ok: true, every: 60, cmd: cmd.cmd };
   }
   return { ok: true, every: 60 };
@@ -5087,34 +5091,105 @@ route('GET', '/api/servers/:id/power', SUPER, async ({ params }) => {
   const s = serverById(params.id), d = agentData[s.id], last = d && d.last;
   return { viewers: await viewersOn(s), agent: !!(s.agent && s.agent.tokenHash), agentOnline: !!(last && Date.now() - Date.parse(last.at) < 3 * 60000), agentVer: last ? Number(last.ver) || 1 : 0, busy: power.get(s.id) || null };
 });
-route('POST', '/api/servers/:id/restart-emby', SUPER, async ({ me, params, body }) => {
+/* Comprueba si se puede hacer ahora mismo; si no, explica por qué */
+async function powerReady(s, kind) {
+  const d = agentData[s.id], last = d && d.last, agentOn = !!(s.agent && s.agent.tokenHash && last && Date.now() - Date.parse(last.at) < 3 * 60000), ver = last ? Number(last.ver) || 1 : 0;
+  if (kind === 'vps') {
+    if (!s.agent || !s.agent.tokenHash) throw new Error('Para reiniciar el VPS hace falta instalar el agente de «Estado del servidor».');
+    if (!agentOn) throw new Error('El agente no está conectado ahora mismo: no puede recibir la orden.');
+    if (ver < 2) throw new Error('Tu agente es antiguo. Pulsa «Reinstalar» en este servidor y ejecuta la orden nueva en el VPS.');
+    return 'agent';
+  }
+  // Emby: primero por su API; si Emby está colgado y el agente es nuevo, el agente reinicia el servicio
+  try {
+    const info = await emby(s, 'GET', '/System/Info');
+    if (info && info.CanSelfRestart === false) { if (agentOn && ver >= 3) return 'agent'; throw new Error('Este Emby no puede reiniciarse solo. Usa «Reiniciar VPS», o reinstala el agente para que pueda reiniciarlo él.'); }
+    return 'api';
+  } catch (e) {
+    if (agentOn && ver >= 3) return 'agent';
+    throw new Error(e.message.startsWith('Este Emby') ? e.message : 'Emby no responde y el agente no está conectado (o es antiguo): no se le puede reiniciar desde aquí. Prueba con «Reiniciar VPS».');
+  }
+}
+/** Hace el reinicio. warn: avisa antes en pantalla a quien esté viendo y espera 2 minutos */
+async function powerRun(s, kind, by, warn) {
+  const how = await powerReady(s, kind);
+  let viewers = 0;
+  try {
+    const list = (await emby(s, 'GET', '/Sessions')) || [];
+    const watching = list.filter((x) => x.NowPlayingItem);
+    viewers = watching.length;
+    if (warn && viewers) {
+      const txt = kind === 'vps' ? 'El servicio se va a reiniciar en 2 minutos para mejorar su funcionamiento. Volverá en unos minutos. Disculpa las molestias.' : 'El servicio se va a reiniciar en 2 minutos. Volverá en un momento. Disculpa las molestias.';
+      for (const x of watching) await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: db.settings.brand.name || 'Aviso', Text: txt, TimeoutMs: 30000 }).catch(() => {});
+      power.set(s.id, { kind, at: Date.now(), by, waitUntil: Date.now() + 120000 });
+      await new Promise((r) => setTimeout(r, Number(process.env.POWER_WARN_MS) || 120000));
+    }
+  } catch { /* si no se puede leer quién ve, se sigue */ }
+  if (how === 'api') await emby(s, 'POST', '/System/Restart');
+  else s.agent.cmd = { cmd: kind === 'vps' ? 'reboot' : 'restart-emby', exp: Date.now() + 5 * 60000 };
+  power.set(s.id, { kind, at: Date.now(), by });
+  const what = kind === 'vps' ? 'el VPS' : 'Emby';
+  await lock(async () => { addLog('servidor', null, `Reinicio de ${what} en ${s.name}${by ? ' pedido por ' + by : ' (automático)'}${viewers ? ` · había ${viewers} viendo` : ''}`, null); saveDb(); });
+  notifyStaff('servers', `🔄 ${by ? by + ' ha reiniciado' : 'Se ha reiniciado'} ${what} en «${s.name}». ${kind === 'vps' ? 'Vuelve en unos minutos.' : 'Vuelve en uno o dos minutos.'}\n${whenTxt()}`);
+}
+/** Plan: ahora, cuando nadie vea, o a una hora. Se guarda para que sobreviva a un reinicio del panel */
+route('POST', '/api/servers/:id/power-plan', SUPER, async ({ me, params, body }) => {
   powerCheck(me, body);
-  const s = serverById(params.id);
-  let info; try { info = await emby(s, 'GET', '/System/Info'); } catch (e) { throw new HttpError(502, 'Emby no responde: no se le puede pedir que se reinicie. Prueba con «Reiniciar VPS».'); }
-  if (info && info.CanSelfRestart === false) throw new HttpError(400, 'Este Emby no puede reiniciarse solo (así está instalado). Usa «Reiniciar VPS».');
-  const viewers = await viewersOn(s);
-  try { await emby(s, 'POST', '/System/Restart'); } catch (e) { throw new HttpError(502, 'Emby no ha aceptado el reinicio: ' + e.message); }
-  power.set(s.id, { kind: 'emby', at: Date.now(), by: me.name });
-  await lock(async () => { addLog('servidor', null, `Emby de ${s.name} reiniciado desde el panel${viewers ? ` (había ${viewers} viendo)` : ''}`, me); saveDb(); });
-  notifyStaff('servers', `🔄 ${me.name} ha reiniciado Emby en «${s.name}». Vuelve en uno o dos minutos.\n${whenTxt()}`);
+  const s = serverById(params.id), kind = body.kind === 'vps' ? 'vps' : 'emby', when = ['now', 'idle', 'at'].includes(body.when) ? body.when : 'now';
+  try { await powerReady(s, kind); } catch (e) { throw new HttpError(400, e.message); }
+  if (power.get(s.id) && !power.get(s.id).plan) throw new HttpError(409, 'Ya hay un reinicio en marcha en este servidor.');
+  if (when === 'now') { powerRun(s, kind, me.name, !!body.warn).catch((e) => { power.delete(s.id); notifyStaff('servers', `❌ No se pudo reiniciar en «${s.name}»: ${e.message}`); }); power.set(s.id, { kind, at: Date.now(), by: me.name, waitUntil: body.warn ? Date.now() + 120000 : 0 }); return { ok: true }; }
+  let at = null;
+  if (when === 'at') {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(body.time || ''));
+    if (!m || +m[1] > 23 || +m[2] > 59) throw new HttpError(400, 'Elige la hora.');
+    const now = new Date(), t = new Date(now); t.setHours(+m[1], +m[2], 0, 0); if (t <= now) t.setDate(t.getDate() + 1);
+    at = t.toISOString();
+  }
+  await lock(async () => { s.powerPlan = { kind, when, at, warn: !!body.warn, by: me.name, created: new Date().toISOString() }; addLog('servidor', null, `Reinicio de ${kind === 'vps' ? 'VPS' : 'Emby'} en ${s.name} programado (${when === 'idle' ? 'cuando nadie esté viendo' : 'a las ' + body.time})`, me); saveDb(); });
   return { ok: true };
 });
-route('POST', '/api/servers/:id/reboot-vps', SUPER, async ({ me, params, body }) => {
-  powerCheck(me, body);
-  const s = serverById(params.id), d = agentData[s.id], last = d && d.last;
-  if (!s.agent || !s.agent.tokenHash) throw new HttpError(400, 'Para reiniciar el VPS hace falta instalar el agente de «Estado del servidor».');
-  if (!last || Date.now() - Date.parse(last.at) > 3 * 60000) throw new HttpError(400, 'El agente no está conectado ahora mismo: no puede recibir la orden.');
-  if ((Number(last.ver) || 1) < 2) throw new HttpError(400, 'Tu agente es antiguo. Pulsa «Reinstalar» en este servidor y ejecuta la orden nueva en el VPS.');
-  const viewers = await viewersOn(s);
-  await lock(async () => {
-    s.agent.cmd = { cmd: 'reboot', exp: Date.now() + 5 * 60000 };
-    addLog('servidor', null, `Reinicio del VPS de ${s.name} pedido desde el panel${viewers ? ` (había ${viewers} viendo)` : ''}`, me);
-    saveDb();
-  });
-  power.set(s.id, { kind: 'vps', at: Date.now(), by: me.name });
-  notifyStaff('servers', `🔄 ${me.name} ha pedido reiniciar el VPS de «${s.name}». Se reinicia en menos de un minuto y vuelve en unos minutos.\n${whenTxt()}`);
-  return { ok: true };
-});
+route('POST', '/api/servers/:id/power-cancel', SUPER, ({ me, params }) => lock(async () => {
+  const s = serverById(params.id); if (!s.powerPlan) return { ok: true };
+  delete s.powerPlan; addLog('servidor', null, `Reinicio programado de ${s.name} cancelado`, me); saveDb(); return { ok: true };
+}));
+route('POST', '/api/servers/:id/rescue', SUPER, ({ me, params, body }) => lock(async () => {
+  const s = serverById(params.id); s.autoRescue = !!body.on;
+  addLog('servidor', null, `Rescate automático de Emby ${s.autoRescue ? 'activado' : 'desactivado'} en ${s.name}`, me); saveDb(); return { ok: true };
+}));
+/* Cada minuto: planes pendientes y rescate automático */
+let planBusy = false;
+async function powerLoop() {
+  if (planBusy) return; planBusy = true;
+  try {
+    for (const s of db.servers) {
+      const P = s.powerPlan;
+      if (P && !power.get(s.id)) {
+        let go = false;
+        if (P.when === 'at') go = Date.now() >= Date.parse(P.at);
+        else if (Date.now() - Date.parse(P.created) > 24 * 3600e3) { await lock(async () => { delete s.powerPlan; saveDb(); }); notifyStaff('servers', `⏹ El reinicio de «${s.name}» «cuando nadie esté viendo» se canceló: en 24 horas siempre había alguien viendo.`); continue; }
+        else { try { go = !((await emby(s, 'GET', '/Sessions')) || []).some((x) => x.NowPlayingItem); } catch { go = false; } }
+        if (go) {
+          await lock(async () => { delete s.powerPlan; saveDb(); });
+          await powerRun(s, P.kind, P.by, P.when === 'at' && P.warn).catch((e) => { power.delete(s.id); notifyStaff('servers', `❌ No se pudo hacer el reinicio programado en «${s.name}»: ${e.message}`); });
+        }
+      }
+      // Rescate: Emby no contesta varios minutos, pero el VPS sí manda datos -> el agente reinicia Emby (máx. 1 vez por hora)
+      const h = health.get(s.id), d = agentData[s.id], last = d && d.last;
+      if (s.autoRescue && h && h.fails >= 4 && !power.get(s.id) && last && Date.now() - Date.parse(last.at) < 3 * 60000 && (Number(last.ver) || 1) >= 3 && !(s.rescueAt && Date.now() - s.rescueAt < 3600e3)) {
+        s.rescueAt = Date.now();
+        s.agent.cmd = { cmd: 'restart-emby', exp: Date.now() + 5 * 60000 };
+        power.set(s.id, { kind: 'emby', at: Date.now(), by: '' });
+        await lock(async () => { addLog('servidor', null, `Rescate automático: Emby de ${s.name} no respondía y se ha reiniciado`, null); saveDb(); });
+        notifyStaff('servers', `🛟 Emby de «${s.name}» llevaba unos minutos sin responder, pero el VPS está bien. Lo he reiniciado automáticamente.\n${whenTxt()}`);
+      }
+    }
+  } finally { planBusy = false; }
+}
+setInterval(() => { powerLoop().catch((e) => console.error('Reinicios:', e.message)); }, Number(process.env.POWER_MS) || 60000).unref();
+// Las rutas anteriores siguen funcionando (reinicio inmediato)
+route('POST', '/api/servers/:id/restart-emby', SUPER, async ({ me, params, body }) => { powerCheck(me, body); const s = serverById(params.id); try { await powerReady(s, 'emby'); } catch (e) { throw new HttpError(400, e.message); } await powerRun(s, 'emby', me.name, false).catch((e) => { throw new HttpError(502, e.message); }); return { ok: true }; });
+route('POST', '/api/servers/:id/reboot-vps', SUPER, async ({ me, params, body }) => { powerCheck(me, body); const s = serverById(params.id); try { await powerReady(s, 'vps'); } catch (e) { throw new HttpError(400, e.message); } await powerRun(s, 'vps', me.name, false); return { ok: true }; });
 
 /** Avisos: cada tipo como mucho una vez por hora */
 function agentAlert(s, d, kind, text, gap = 3600e3) {
@@ -5168,10 +5243,16 @@ while true; do
   DISKS=$(df -P -B1 -x tmpfs -x devtmpfs -x overlay -x squashfs -x efivarfs 2>/dev/null | awk 'NR>1 && $2>1000000000 {printf "%s{\"mount\":\"%s\",\"size\":%s,\"used\":%s}", (n++?",":""), $6, $2, $3}')
   if pgrep -f -i 'EmbyServer|emby-server|embyserver' >/dev/null 2>&1; then EMBY=true; else EMBY=false; fi
   set -- $MEM
-  JSON="{\"cpu\":$CPU,\"mem\":$1,\"memTotal\":$2,\"load\":$LOAD,\"cores\":$CORES,\"up\":$UP,\"down\":$DOWN,\"uptime\":$UPT,\"emby\":$EMBY,\"disks\":[$DISKS],\"host\":\"$HOST\",\"os\":\"$OS\",\"ver\":\"2\"}"
+  JSON="{\"cpu\":$CPU,\"mem\":$1,\"memTotal\":$2,\"load\":$LOAD,\"cores\":$CORES,\"up\":$UP,\"down\":$DOWN,\"uptime\":$UPT,\"emby\":$EMBY,\"disks\":[$DISKS],\"host\":\"$HOST\",\"os\":\"$OS\",\"ver\":\"3\"}"
   RESP=$(curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -H "X-Agent-Token: $TOKEN" --data "$JSON" "$PANEL/api/agent/report" 2>/dev/null || true)
   # Única orden que acepta: reiniciar la máquina, pedida por el superadministrador desde el panel
-  case "$RESP" in *'"cmd":"reboot"'*) logger -t panel-agente "Reinicio pedido desde el panel"; sleep 3; systemctl reboot ;; esac
+  case "$RESP" in
+    *'"cmd":"reboot"'*) logger -t panel-agente "Reinicio del VPS pedido desde el panel"; sleep 3; systemctl reboot ;;
+    *'"cmd":"restart-emby"'*) logger -t panel-agente "Reinicio de Emby pedido desde el panel"
+      if systemctl list-units --all --type=service 2>/dev/null | grep -q 'emby-server'; then systemctl restart emby-server
+      elif command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' | grep -qi emby; then docker restart $(docker ps -a --format '{{.Names}}' | grep -i emby | head -n1)
+      fi ;;
+  esac
 done
 `;
   const esc1 = (v) => String(v).replace(/'/g, '');
