@@ -1704,6 +1704,8 @@ function publicData(me) {
   return {
     today: today(), now: new Date().toISOString(),
     me: pubUser(me),
+    myTemplates: me.templates || {},
+    parentTemplates: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
     licMaster: me.role === 'super' && !LIC_CLIENT,
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
     license: me.role === 'super' ? licStatus() : null,
@@ -1990,6 +1992,13 @@ route('GET', '/api/access', ['super', 'admin', 'reseller'], ({ me }) => {
 function tgCode(c) { return `c${c.id}_${crypto.createHmac('sha256', db.secret).update('tg' + c.id).digest('hex').slice(0, 10)}`; }
 function leftWords(left) { return left <= 0 ? 'hoy' : left === 1 ? 'mañana' : `en ${left} días`; }
 /** Rellena una plantilla con los datos de la cuenta (sin la contraseña) */
+/** Plantilla que toca para las cuentas de un vendedor: la suya, si no la de su reseller, si no la del panel */
+const MY_TPL_KEYS = ['created', 'demo', 'renewed', 'expiring', 'quality', 'followup', 'vendor'];
+function tplFor(ownerId, key) {
+  let u = db.users.find((x) => x.id === ownerId), hops = 0;
+  while (u && hops++ < 3) { const t = u.templates && u.templates[key]; if (t) return t; u = u.parentId ? db.users.find((x) => x.id === u.parentId) : null; }
+  return db.settings.templates[key] || DEFAULT_TEMPLATES[key] || '';
+}
 function fillText(text, c) {
   const s = db.servers.find((x) => x.id === c.serverId) || {};
   const left = diffDays(c.expires, today());
@@ -2091,7 +2100,7 @@ async function telegramNotices() {
   const due = db.clients.filter((c) => c.tgChat && dueSoon(c, db.settings.notices.chat.days, t) && c.tgNoticeFor !== c.expires);
   for (const c of due.slice(0, 25)) {
     try {
-      await tg('sendMessage', { chat_id: c.tgChat, text: fillText(db.settings.templates.expiring, c) });
+      await tg('sendMessage', { chat_id: c.tgChat, text: fillText(tplFor(c.ownerId, 'expiring'), c) });
       c.tgNoticeFor = c.expires; c.noticeFor = c.expires;
       addLog('aviso', c, 'Aviso de vencimiento enviado por Telegram', null);
     } catch (e) {
@@ -2137,7 +2146,7 @@ route('POST', '/api/clients/:id/guide', '*', async ({ me, params, body }) => {
   if (!c.tgChat) throw new HttpError(400, 'Este cliente no tiene Telegram enlazado. Mándasela por WhatsApp o cópiala.');
   if (!cfg.token) throw new HttpError(400, 'El bot de Telegram no está configurado.');
   const custom = typeof body.text === 'string' ? body.text.trim().slice(0, 1500) : '';
-  await tg('sendMessage', { chat_id: c.tgChat, text: custom || fillText(db.settings.templates.quality || DEFAULT_TEMPLATES.quality, c) });
+  await tg('sendMessage', { chat_id: c.tgChat, text: custom || fillText(tplFor(c.ownerId, 'quality'), c) });
   await lock(async () => { addLog('aviso', c, custom ? `Mensaje enviado por Telegram: ${custom.slice(0, 80)}` : 'Guía de calidad enviada por Telegram', me); saveDb(); });
   return { ok: true };
 });
@@ -2147,6 +2156,18 @@ route('POST', '/api/clients/:id/tg-unlink', '*', ({ me, params }) => lock(async 
   return { ok: true };
 }));
 
+/* Mis mensajes: cada usuario puede tener los suyos. Vacío = usar el de su reseller o el del panel */
+route('PUT', '/api/my-templates', '*', ({ me, body }) => lock(async () => {
+  const next = {};
+  for (const k of MY_TPL_KEYS) {
+    const v = typeof body[k] === 'string' ? body[k].replace(/\r\n/g, '\n').slice(0, 2000).trim() : '';
+    if (v) next[k] = v;
+  }
+  if (Object.keys(next).length) me.templates = next; else delete me.templates;
+  addLog('ajustes', null, `${me.username} cambió sus plantillas de mensajes`, me);
+  saveDb();
+  return { ok: true };
+}));
 route('PUT', '/api/templates', SUPER, ({ body }) => lock(async () => {
   const next = {};
   for (const k of Object.keys(DEFAULT_TEMPLATES)) {
@@ -3623,7 +3644,7 @@ function addFollowup(c) {
 }
 const fuVisible = (me) => { const vis = visibleOwners(me); return db.followups.filter((f) => !vis || vis.has(f.ownerId)); };
 route('GET', '/api/followups', '*', ({ me }) => ({
-  list: fuVisible(me).map(({ tgChat, ...f }) => ({ ...f, tgLinked: !!tgChat, text: fillText(db.settings.templates.followup || DEFAULT_TEMPLATES.followup, { panelName: f.name, embyName: f.emby, serverId: f.serverId, expires: today(), screens: 0, quality: null }) })),
+  list: fuVisible(me).map(({ tgChat, ...f }) => ({ ...f, tgLinked: !!tgChat, text: fillText(tplFor(f.ownerId, 'followup'), { panelName: f.name, embyName: f.emby, serverId: f.serverId, expires: today(), screens: 0, quality: null }) })),
 }));
 route('POST', '/api/followups/:id', '*', ({ me, params, body }) => lock(async () => {
   const f = fuVisible(me).find((x) => x.id === params.id);
@@ -3638,7 +3659,7 @@ route('POST', '/api/followups/:id/telegram', '*', async ({ me, params, body }) =
   const f = fuVisible(me).find((x) => x.id === params.id);
   if (!f) throw new HttpError(404, 'Ese seguimiento ya no existe.');
   if (!f.tgChat) throw new HttpError(400, 'Este cliente no tenía Telegram enlazado. Escríbele por WhatsApp o copia el mensaje.');
-  const text = (typeof body.text === 'string' && body.text.trim()) ? body.text.trim().slice(0, 1500) : fillText(db.settings.templates.followup, { panelName: f.name, embyName: f.emby, serverId: f.serverId, expires: today(), screens: 0, quality: null });
+  const text = (typeof body.text === 'string' && body.text.trim()) ? body.text.trim().slice(0, 1500) : fillText(tplFor(f.ownerId, 'followup'), { panelName: f.name, embyName: f.emby, serverId: f.serverId, expires: today(), screens: 0, quality: null });
   await tg('sendMessage', { chat_id: f.tgChat, text });
   await lock(async () => { f.status = 'done'; f.doneAt = new Date().toISOString(); f.doneBy = me.name; addLog('aviso', null, `Seguimiento de la demo de ${f.name} enviado por Telegram`, me); saveDb(); });
   return { ok: true };

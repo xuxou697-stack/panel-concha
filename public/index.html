@@ -431,6 +431,9 @@ button.brand:hover .logo{box-shadow:0 0 0 2px var(--brand)}
 .klist .k{display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-top:1px solid var(--line)} .klist .k:first-child{border-top:0}
 .klist .k>.ic{margin-top:2px;flex-shrink:0;color:var(--muted)} .klist .k.ok>.ic{color:var(--ok)} .klist .k.todo>.ic{color:var(--warn)}
 .klist .k div{flex:1;min-width:0} .klist .k small{display:block;color:var(--muted);font-size:13px}
+.mytpl{margin-bottom:6px}.mytpl textarea::placeholder{color:color-mix(in srgb,var(--muted) 70%,transparent)}
+.mytpl-own{font-size:11px;font-weight:700;color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);border-radius:999px;padding:1px 8px;margin-left:4px}
+.mytpl-acts{display:flex;justify-content:flex-end;gap:6px;margin:-8px 0 8px}
 .impmap.todo{border-color:color-mix(in srgb,var(--warn) 60%,var(--line))}
 .impmap-r.need select{border-color:var(--warn);box-shadow:0 0 0 2px color-mix(in srgb,var(--warn) 25%,transparent)}
 .impmap-how{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);border-radius:999px;padding:1px 8px}
@@ -1541,6 +1544,7 @@ function navGroups() {
   g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []), ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
   g.push({ k: 'aj', t: 'Ajustes', i: 'sliders', items: [
     { v: 'perfil', t: 'Perfil', i: 'user' },
+    ...(!canDo('system') ? [{ v: 'plantillas', t: 'Mis mensajes', i: 'msg' }] : []),
     { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
     ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
     ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
@@ -5718,6 +5722,8 @@ function dMove(c) {
   });
 }
 const TPL = [['created', 'Cuenta creada'], ['demo', 'Demo creada'], ['renewed', 'Cuenta renovada'], ['expiring', 'Aviso de vencimiento'], ['quality', 'Guía de calidad']];
+/** Texto que usa este usuario: el suyo, si no el de su reseller, si no el del panel */
+const tplText = (k) => (S.d.myTemplates || {})[k] || (S.d.parentTemplates || {})[k] || (S.d.settings.templates || {})[k] || '';
 const TPL_ALL = [...TPL, ['followup', 'Seguimiento de una demo que terminó'], ['vendor', 'Acceso al panel para un vendedor']];
 /** Direccion del panel que se da a los vendedores: la de Ajustes o, si no hay, la que se esta usando ahora */
 function panelUrl() {
@@ -5728,7 +5734,7 @@ function panelUrl() {
 function fillVendor(u, password) {
   const vars = { nombre: u.name, usuario: u.username, 'contraseña': password || 'la que ya tienes', tipo: ROLE[u.role], panel: BRAND.name,
     direccion: panelUrl() || '(dirección del panel pendiente)', creditos: !hasCredits(u) ? 'ilimitados' : String(u.credits) };
-  return ((S.d.settings.templates || {}).vendor || '').replace(/\{([a-záéíóúñ_]+)\}/gi, (m, k) => { k = k.toLowerCase(); if (k === 'contrasena') k = 'contraseña'; if (k === 'dirección') k = 'direccion'; if (k === 'créditos') k = 'creditos'; return vars[k] !== undefined ? vars[k] : m; });
+  return tplText('vendor').replace(/\{([a-záéíóúñ_]+)\}/gi, (m, k) => { k = k.toLowerCase(); if (k === 'contrasena') k = 'contraseña'; if (k === 'dirección') k = 'direccion'; if (k === 'créditos') k = 'creditos'; return vars[k] !== undefined ? vars[k] : m; });
 }
 /** Mensaje con los datos de acceso al panel de un vendedor. La contraseña solo se conoce al crearlo o al cambiarla */
 function dVendorMsg(u, password) {
@@ -5753,7 +5759,7 @@ function fillTpl(key, c, password) {
     vence: c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires),
   };
   const alias = { contrasena: 'contraseña', 'dirección': 'direccion' };
-  return ((S.d.settings.templates || {})[key] || '').replace(/\{([a-záéíóúñ_]+)\}/gi, (m, k) => { k = k.toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
+  return tplText(key).replace(/\{([a-záéíóúñ_]+)\}/gi, (m, k) => { k = k.toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
 }
 async function copyText(text, el) {
   try { await navigator.clipboard.writeText(text); }
@@ -5793,7 +5799,19 @@ function dGuide(c) {
     onOpen: () => { const f = dlgForm; f.elements.msg.oninput = () => { const a = $('#guideWa', f); if (a) a.href = `https://wa.me/${wa}?text=${encodeURIComponent(f.elements.msg.value)}`; }; },
     onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Guía copiada: pégala en el chat'; } });
 }
+function vMisPlantillas() {
+  const mine = S.d.myTemplates || {}, base = (k) => (S.d.parentTemplates || {})[k] || (S.d.settings.templates || {})[k] || '';
+  const keys = TPL_ALL.filter(([k]) => k !== 'vendor' || me().role === 'reseller' || staff());
+  return head('Mis mensajes', 'Los textos que el panel te prepara para mandar a tus clientes. Déjalos a tu manera: solo cambian para ti y tus cuentas.') + `
+  <form id="myTpls" class="panel pad formpage" style="max-width:760px">
+    <p class="muted small" style="margin-bottom:16px">Variables que se rellenan solas: {nombre} {usuario} {contraseña} {servidor} {direccion} {pantallas} {contenido} {vence} {cuando} {dias} {enlace_telegram}. Si dejas un mensaje vacío, se usa el del panel (el que ves en gris).</p>
+    ${keys.map(([k, name]) => `<div class="mytpl"><label class="f">${name}${mine[k] ? ' <span class="mytpl-own">Personalizado</span>' : ''}${k === 'vendor' ? ' <span class="small">(variables: {nombre} {usuario} {contraseña} {tipo} {creditos} {direccion} {panel})</span>' : ''}<textarea name="${k}" rows="${k === 'created' || k === 'demo' || k === 'vendor' ? 11 : 5}" maxlength="2000" placeholder="${esc(base(k))}">${esc(mine[k] || '')}</textarea></label>
+      <div class="mytpl-acts">${mine[k] ? '' : `<button type="button" class="btn sm ghost" data-act="tpl-copy" data-k="${k}">Partir del texto del panel</button>`}${mine[k] ? `<button type="button" class="btn sm ghost" data-act="tpl-reset" data-k="${k}">Volver al del panel</button>` : ''}</div></div>`).join('')}
+    <div class="dfoot"><button type="submit" class="btn primary">Guardar mis mensajes</button></div>
+  </form>`;
+}
 function vPlantillas() {
+  if (!canDo('system')) return vMisPlantillas();
   const t = S.d.settings.templates || {};
   return head('Plantillas de mensajes', 'Los textos que el panel prepara para enviar a tus clientes al crear, renovar o avisar de un vencimiento.') + `
   <form id="tpls" class="panel pad formpage" style="max-width:760px">
@@ -6336,6 +6354,8 @@ document.addEventListener('click', (e) => {
     case 'lg-reload': S.logs = null; render(); break;
     case 'lg-more': S.lg.n += 300; render(); break;
     case 'imp-tab': S.imp.tab = el.dataset.k; render(); break;
+    case 'tpl-copy': { const ta = $(`#myTpls [name=${el.dataset.k}]`); if (ta) { ta.value = ta.placeholder; ta.focus(); el.remove(); } break; }
+    case 'tpl-reset': { const ta = $(`#myTpls [name=${el.dataset.k}]`); if (ta) { ta.value = ''; ta.focus(); } toast('Pulsa «Guardar mis mensajes» para volver al texto del panel'); break; }
     case 'imp-parse': impParse(); break;
     case 'imp-reset': S.imp = { tab: 'uni', rows: null, results: null }; render(); break;
     case 'imp-check': impRun(true); break;
@@ -6530,6 +6550,11 @@ document.addEventListener('submit', (e) => {
       await api('PUT', '/api/alerts/config', { transcode: { retention: n('alTrans') }, sessions: { retention: n('alSes') } });
       S.logs = null;
     }, 'Retención guardada');
+  }
+  if (e.target.id === 'myTpls') {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    act(() => api('PUT', '/api/my-templates', Object.fromEntries(TPL_ALL.map(([k]) => [k, fd.get(k) || '']))), 'Mensajes guardados');
   }
   if (e.target.id === 'pw') {
     e.preventDefault();
