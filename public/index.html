@@ -6101,8 +6101,10 @@ function bootFail(e) {
     <button onclick="location.reload()" style="border:0;border-radius:12px;padding:12px 22px;font-weight:700;color:#fff;background:linear-gradient(135deg,#fb923c,#ec4899,#8b5cf6);cursor:pointer">Reintentar ahora</button></div></div>`;
   let n = 10; const t = setInterval(() => { n--; const el = document.getElementById('bootLeft'); if (el) el.textContent = n; if (n <= 0) { clearInterval(t); location.reload(); } }, 1000);
 }
-window.addEventListener('error', (e) => { if (S.d && e.message) toast('Error en el panel: ' + e.message, true); });
-window.addEventListener('unhandledrejection', (e) => { if (S.d && e.reason && e.reason.message) toast(e.reason.message, true); });
+// Solo se avisa de errores del propio panel: los de extensiones del navegador (MetaMask, traductores…) se ignoran
+const ownErr = (src, stack) => { const t = String(stack || '') + ' ' + String(src || ''); if (/(chrome|moz|safari|edge)-extension:|webkit-masked-url|inpage\.js|contentscript/i.test(t)) return false; return !src || String(src).startsWith(location.origin); };
+window.addEventListener('error', (e) => { if (S.d && e.message && ownErr(e.filename, e.error && e.error.stack)) toast('Error en el panel: ' + e.message, true); });
+window.addEventListener('unhandledrejection', (e) => { const r = e.reason; if (!S.d || !r || !r.message) return; const st = String(r.stack || ''); if (!ownErr('', st) || (st && !st.includes(location.origin))) return; toast(r.message, true); });
 boot().catch(bootFail);
 </script>
 </body>
