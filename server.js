@@ -1711,6 +1711,7 @@ function publicData(me) {
     licMaster: me.role === 'super' && !LIC_CLIENT,
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
     license: me.role === 'super' ? licStatus() : null,
+    expDue: me.role === 'super' ? expDueCount() : 0,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } } },
     servers: db.servers.map((s) => (seeServers
       ? { id: s.id, name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } }
@@ -5002,6 +5003,150 @@ function dailySummary() {
 }
 route('POST', '/api/daily/test', SUPER, ({ me }) => { if (!me.tgChat) throw new HttpError(400, 'Enlaza primero tu Telegram en Ajustes › Seguridad.'); notifyUser(me, dailySummaryText()); return { ok: true }; });
 
+/* ======================================================================
+   Gastos (solo superadministrador): calendario de pagos, contabilidad
+   y avisos por Telegram antes del día de pago. No toca nada de Emby.
+   ====================================================================== */
+const EXP_CATS = ['servidor', 'contenido', 'dominio', 'software', 'otro'];
+const EXP_EVERY = [0, 1, 3, 6, 12]; // 0 = una sola vez
+function expCfg() { db.settings.expenses = { remind: 3, tg: true, ...(db.settings.expenses || {}) }; return db.settings.expenses; }
+function expList() { if (!Array.isArray(db.expenses)) db.expenses = []; return db.expenses; }
+function expFind(id) { const e = expList().find((x) => x.id === Number(id)); if (!e) throw new HttpError(404, 'Ese gasto ya no existe.'); return e; }
+const r2 = (n) => Math.round(n * 100) / 100;
+function expAmount(v) { const n = Number(String(v == null ? '' : v).replace(',', '.')); if (!Number.isFinite(n) || n < 0 || n > 1e7) throw new HttpError(400, 'El importe no es válido.'); return r2(n); }
+/** Siguiente fecha de pago respetando el día original (31 → 28/30 → vuelve a 31) */
+function expNext(e, from) {
+  const n = addMonths(from, e.every);
+  const { y, m } = parts(n), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${y}-${pad(m)}-${pad(Math.min(e.day || parts(from).d, last))}`;
+}
+function expRead(body, e) {
+  const name = str(body.name, 60);
+  if (!name) throw new HttpError(400, 'Ponle un nombre al gasto.');
+  const due = String(body.due || '');
+  if (!isDate(due)) throw new HttpError(400, 'Elige el día de pago.');
+  const every = Number(body.every);
+  if (!EXP_EVERY.includes(every)) throw new HttpError(400, 'Elige cada cuánto se paga.');
+  const cat = EXP_CATS.includes(body.cat) ? body.cat : 'otro';
+  return { ...(e || {}), name, amount: expAmount(body.amount), cat, every, due, day: parts(due).d, notes: str(body.notes, 300), method: str(body.method, 30) };
+}
+/** Lo ingresado en un mes: créditos vendidos a vendedores (misma cuenta que el Informe de ingresos) */
+function incomeByMonth(months) {
+  const out = Object.fromEntries(months.map((m) => [m, 0]));
+  const staffIds = new Set(db.users.filter((u) => isStaff(u)).map((u) => u.id));
+  const price = (u) => (u && u.creditPrice) || db.settings.creditPrice || 0;
+  for (const l of db.ledger) {
+    const m = localDate(new Date(l.ts)).slice(0, 7);
+    if (!(m in out) || l.kind !== 'credito' || !(l.delta > 0) || !(l.byId == null || staffIds.has(l.byId))) continue;
+    const u = db.users.find((x) => x.id === l.userId);
+    if (!u || isStaff(u)) continue;
+    out[m] += l.paid ? l.paid.amount : l.delta * price(u);
+  }
+  for (const m of months) out[m] = r2(out[m]);
+  return out;
+}
+function expView() {
+  const t = today(), cfg = expCfg(), list = expList();
+  const months = []; for (let i = 11; i >= 0; i--) months.push(addMonths(t.slice(0, 7) + '-01', -i).slice(0, 7));
+  const paid = Object.fromEntries(months.map((m) => [m, 0]));
+  const year = t.slice(0, 4), byCat = {};
+  let yearTotal = 0;
+  for (const e of list) for (const p of e.payments || []) {
+    const m = p.at.slice(0, 7);
+    if (m in paid) paid[m] += p.amount;
+    if (p.at.slice(0, 4) === year) { yearTotal += p.amount; byCat[e.cat] = (byCat[e.cat] || 0) + p.amount; }
+  }
+  const inc = incomeByMonth(months);
+  return {
+    today: t, remind: cfg.remind, tg: cfg.tg !== false, currency: db.settings.currency || 'EUR',
+    bot: !!db.settings.notices.telegram.token, cats: EXP_CATS,
+    list: list.map((e) => ({ ...e, left: e.done ? null : diffDays(e.due, t) })),
+    months: months.map((m) => ({ m, paid: r2(paid[m]), income: inc[m] })),
+    year: { y: year, total: r2(yearTotal), byCat: Object.fromEntries(Object.entries(byCat).map(([k, v]) => [k, r2(v)])) },
+  };
+}
+const expDueCount = () => { const t = today(), d = expCfg().remind || 0; return expList().filter((e) => !e.done && diffDays(e.due, t) <= Math.max(d, 0)).length; };
+
+route('GET', '/api/expenses', SUPER, () => expView());
+route('POST', '/api/expenses', SUPER, ({ me, body }) => lock(async () => {
+  const e = { id: newId(), ...expRead(body), payments: [], done: false, sent: {}, createdAt: today() };
+  expList().push(e);
+  addLog('ajustes', null, `Gasto apuntado: ${e.name} (${money2(e.amount)})`, me);
+  saveDb();
+  return { ok: true, expense: e };
+}));
+route('PUT', '/api/expenses/cfg', SUPER, ({ body }) => lock(async () => {
+  const cfg = expCfg(), d = Number(body.remind);
+  if (![0, 1, 2, 3, 5, 7].includes(d)) throw new HttpError(400, 'Elige con cuántos días de antelación avisar.');
+  cfg.remind = d; cfg.tg = !!body.tg;
+  saveDb();
+  return { ok: true };
+}));
+route('PUT', '/api/expenses/:id', SUPER, ({ me, params, body }) => lock(async () => {
+  const e = expFind(params.id), before = e.due;
+  Object.assign(e, expRead(body, e));
+  if (e.due !== before) { e.sent = {}; if (e.done) e.done = false; }
+  addLog('ajustes', null, `Gasto cambiado: ${e.name}`, me);
+  saveDb();
+  return { ok: true, expense: e };
+}));
+route('POST', '/api/expenses/:id/pay', SUPER, ({ me, params, body }) => lock(async () => {
+  const e = expFind(params.id);
+  if (e.done) throw new HttpError(400, 'Este gasto ya está pagado.');
+  const at = isDate(body.at) ? body.at : today();
+  const amount = body.amount == null || body.amount === '' ? e.amount : expAmount(body.amount);
+  e.payments = e.payments || [];
+  e.payments.push({ due: e.due, at, amount, method: str(body.method, 30) || e.method || '', ts: new Date().toISOString() });
+  if (e.payments.length > 240) e.payments = e.payments.slice(-240);
+  if (e.every) e.due = expNext(e, e.due); else e.done = true;
+  e.sent = {};
+  addLog('ajustes', null, `Gasto pagado: ${e.name} (${money2(amount)})`, me);
+  saveDb();
+  return { ok: true, expense: e };
+}));
+route('POST', '/api/expenses/:id/unpay', SUPER, ({ me, params }) => lock(async () => {
+  const e = expFind(params.id), p = (e.payments || []).pop();
+  if (!p) throw new HttpError(400, 'Este gasto no tiene pagos que deshacer.');
+  e.due = p.due; e.done = false; e.sent = {};
+  addLog('ajustes', null, `Pago deshecho: ${e.name}`, me);
+  saveDb();
+  return { ok: true, expense: e };
+}));
+route('DELETE', '/api/expenses/:id', SUPER, ({ me, params }) => lock(async () => {
+  const e = expFind(params.id);
+  db.expenses = expList().filter((x) => x !== e);
+  addLog('ajustes', null, `Gasto borrado: ${e.name}`, me);
+  saveDb();
+  return { ok: true };
+}));
+/** Una vez al día (desde las 9:00): avisa por Telegram de los pagos que se acercan, de los de hoy y de los atrasados */
+let expLastDay = null;
+function expDaily() {
+  const cfg = expCfg(), t = today();
+  if (cfg.tg === false || expLastDay === t) return;
+  const h = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
+  if (!process.env.DAILY_ANYTIME && h < 9) return;
+  expLastDay = t;
+  const soon = [], now = [], late = [];
+  for (const e of expList()) {
+    if (e.done) continue;
+    const left = diffDays(e.due, t); e.sent = e.sent || {};
+    if (left < 0 && e.sent.late !== e.due) { late.push(e); e.sent.late = e.due; }
+    else if (left === 0 && e.sent.day !== e.due) { now.push(e); e.sent.day = e.due; }
+    else if (left > 0 && cfg.remind > 0 && left <= cfg.remind && e.sent.before !== e.due) { soon.push(e); e.sent.before = e.due; }
+  }
+  if (!soon.length && !now.length && !late.length) return;
+  const line = (e, extra) => `• ${e.name}: ${money2(e.amount)}${extra ? ' · ' + extra : ''}`;
+  const fd = (s) => { const { d, m } = parts(s); return `${d}/${pad(m)}`; };
+  const out = ['🧾 Gastos del panel', ''];
+  if (late.length) out.push('🔴 Sin pagar, se pasó la fecha:', ...late.map((e) => line(e, 'era el ' + fd(e.due))), '');
+  if (now.length) out.push('🟠 Hoy toca pagar:', ...now.map((e) => line(e)), '');
+  if (soon.length) out.push('🗓️ Próximos pagos:', ...soon.map((e) => line(e, `el ${fd(e.due)} (${diffDays(e.due, t) === 1 ? 'mañana' : 'en ' + diffDays(e.due, t) + ' días'})`)), '');
+  out.push('Márcalos como pagados en Panel › Gastos.');
+  for (const u of db.users) if (u.role === 'super' && !u.disabled) notifyUser(u, out.join('\n'));
+  lock(async () => saveDb()).catch(() => {});
+}
+
 
 /* ======================================================================
    Cobros a vendedores: forma de pago, deudas, recordatorios, justificantes,
@@ -5803,7 +5948,7 @@ server.listen(PORT, HOST, () => {
   if (LIC_CLIENT) { const lLoop = () => { licCheck().finally(() => { const s = licStatus(); setTimeout(lLoop, Number(process.env.LICENSE_MS) || (s && s.state !== 'ok' ? 5 * 60000 : 3600e3)); }); }; setTimeout(lLoop, 2000); }
   // Al apagar (Redeploy en Coolify) se guarda lo pendiente del historial de conexiones
   for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveConn(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } process.exit(0); });
-  const dLoop = () => { try { licDaily(); } catch (e) { console.error('Licencias:', e.message); } if (live()) try { vpayDaily(); } catch (e) { console.error('Cobros:', e.message); } if (live()) try { dailySummary(); } catch (e) { console.error('Resumen diario:', e.message); } setTimeout(dLoop, Number(process.env.DAILY_MS) || 60000); };
+  const dLoop = () => { try { licDaily(); } catch (e) { console.error('Licencias:', e.message); } if (live()) try { vpayDaily(); } catch (e) { console.error('Cobros:', e.message); } if (live()) try { dailySummary(); } catch (e) { console.error('Resumen diario:', e.message); } try { expDaily(); } catch (e) { console.error('Gastos:', e.message); } setTimeout(dLoop, Number(process.env.DAILY_MS) || 60000); };
   setTimeout(dLoop, Number(process.env.DAILY_MS) || 30000);
   const qLoop = () => { (live() ? qualityDaily() : Promise.resolve()).catch((e) => console.error('Revisión de calidad:', e.message)).finally(() => setTimeout(qLoop, Number(process.env.QDAILY_MS) || 60000)); };
   setTimeout(qLoop, Number(process.env.QDAILY_MS) || 20000);

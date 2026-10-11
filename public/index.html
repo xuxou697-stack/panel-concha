@@ -1033,6 +1033,30 @@ table.acc tr.k-fallido td,table.acc tr.k-fallido2fa td,table.acc tr.k-bloqueado 
 .lcal .has{background:color-mix(in srgb,var(--brand) 5%,var(--surface))}
 .lcal button.lc-ok{box-shadow:inset 3px 0 0 var(--ok)}.lcal button.lc-soon{box-shadow:inset 3px 0 0 var(--warn)}.lcal button.lc-grace{box-shadow:inset 3px 0 0 #f08a4b}.lcal button.lc-off{box-shadow:inset 3px 0 0 var(--bad)}
 .flabel{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+/* Gastos (solo superadministrador) */
+.gxcal .has{background:color-mix(in srgb,var(--sand) 5%,var(--surface))}
+.gxcal button{display:flex;justify-content:space-between;gap:6px}.gxcal button span{overflow:hidden;text-overflow:ellipsis}.gxcal button em{font-style:normal;font-weight:600;flex:none}
+.gxcal button.gx-paid{box-shadow:inset 3px 0 0 var(--ok);opacity:.75}.gxcal button.gx-paid span{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--text) 40%,transparent)}
+.gxcal button.gx-today{box-shadow:inset 3px 0 0 #f08a4b;background:color-mix(in srgb,#f08a4b 14%,var(--raised))}
+.gxcal button.gx-soon{box-shadow:inset 3px 0 0 var(--warn)}.gxcal button.gx-late{box-shadow:inset 3px 0 0 var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--raised))}
+.gxcal button.gx-plan{box-shadow:inset 3px 0 0 var(--line);color:var(--muted)}
+.gxfoot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}.gxfoot b{color:var(--text)}.gxfoot b.plus{color:var(--ok)}
+.gxleg{display:flex;flex-wrap:wrap;gap:4px 12px}.gxleg span{display:inline-flex;align-items:center;gap:5px}.gxleg i{width:10px;height:10px;border-radius:3px;background:var(--line)}
+.gxleg .gx-paid i{background:var(--ok)}.gxleg .gx-today i{background:#f08a4b}.gxleg .gx-soon i{background:var(--warn)}.gxleg .gx-late i{background:var(--bad)}
+.gxi{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}.gxi .ic{width:20px;height:20px}
+.gxi.sm{width:28px;height:28px;border-radius:9px}.gxi.sm .ic{width:15px;height:15px}
+.gxc.st-plan{border-top-color:var(--line)}.gxc.st-paid{border-top-color:var(--ok);opacity:.85}.gxc.st-soon{border-top-color:var(--warn)}.gxc.st-today{border-top-color:#f08a4b}.gxc.st-late{border-top-color:var(--bad)}
+.gxp{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;color:var(--muted);background:var(--raised)}
+.gxp.gx-paid{color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent)}.gxp.gx-soon{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent)}
+.gxp.gx-today{color:#f08a4b;background:color-mix(in srgb,#f08a4b 16%,transparent)}.gxp.gx-late{color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,transparent)}
+.lmeta .gxl.gx-late{color:var(--bad)}.lmeta .gxl.gx-today{color:#f08a4b}.lmeta .gxl.gx-soon{color:var(--warn)}
+.gxacc{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:start}.gxside{display:flex;flex-direction:column;gap:14px}
+.gxt{width:100%;border-collapse:collapse;font-size:14px}.gxt th{font-size:12.5px;color:var(--muted);font-weight:600;text-align:left;padding:10px 16px}.gxt td{padding:9px 16px;border-top:1px solid var(--line);vertical-align:top}.gxt .r{text-align:right}
+.gxbar{height:5px;border-radius:5px;background:var(--raised);overflow:hidden;margin-top:4px}.gxbar i{display:block;height:100%;border-radius:5px}
+.gxbar.in i{background:var(--brand)}.gxbar.out i{background:var(--sand)}.gxt .gxbar{margin-left:auto;max-width:120px}
+.gxcat{display:grid;grid-template-columns:auto 96px 1fr auto;gap:10px;align-items:center;margin-bottom:10px;font-size:14px}.gxcat .gxbar{margin:0}
+@media (max-width:860px){.gxacc{grid-template-columns:1fr}}
+@media (max-width:560px){.gxcal button em{display:none}.gxt th,.gxt td{padding:8px 10px}.gxcat{grid-template-columns:auto 1fr auto}.gxcat .gxbar{grid-column:1/-1;grid-row:2}}
 .lnew{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:var(--raised);margin:4px 0 12px}.lnew span{color:var(--muted);font-size:13px}.lnew b{font-size:17px;color:var(--ok)}
 .ltok{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--raised);margin:10px 0}.ltok code{flex:1;word-break:break-all;font-size:13px}
 .lenv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px;margin:10px 0}.lenv div{display:flex;flex-direction:column}.lenv small{color:var(--muted);font-size:11px}.lenv code{word-break:break-all}
@@ -1502,7 +1526,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN; try { NAV_OPEN = new Set(JSON.parse(localStorage.getItem('menu') || '["cli"]')); } catch (e) { NAV_OPEN = new Set(['cli']); }
 
 /* ---------- Estado ---------- */
-const S = { fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -1557,7 +1581,7 @@ function navGroups() {
     ...(staff() && canDo('resellers') ? [{ v: 'venajustes', t: 'Ajustes vendedores', i: 'sliders' }] : [])] });
   if (canDo('admins')) g.push({ k: 'adm', items: [{ v: 'admins', t: 'Administradores', i: 'shield' }] });
   const sys = canDo('system');
-  g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []), ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
+  g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []), ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(isSuper() ? [{ v: 'gastos', t: 'Gastos', i: 'calendar', n: S.d.expDue || 0, hot: true }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
   g.push({ k: 'aj', t: 'Ajustes', i: 'sliders', items: [
     { v: 'perfil', t: 'Perfil', i: 'user' },
     ...(!canDo('system') ? [{ v: 'plantillas', t: 'Mis mensajes', i: 'msg' }] : []),
@@ -1767,7 +1791,7 @@ function render() {
   applyBrand(d.settings.brand); applyTheme();
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -1805,6 +1829,7 @@ function render() {
   if (S.view === 'fechas') fxWire();
   if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power || x.plan)))) loadAgents(); }, 10000); }
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
+  if (S.view === 'gastos' && !S.gx.busy && (!S.gx.data || Date.now() - S.gx.at > 30000)) loadGx();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
 }
@@ -3213,7 +3238,7 @@ const QS_KEYS = {
   directo: 'en directo viendo ahora reproduciendo', monitor: 'monitor sesiones reproducciones viendo transcode detener caratulas mensaje pantalla', inactivos: 'inactivos no ven sin conexion ultima conexion',
   uso: 'estadisticas lo mas visto horas punta peliculas series', altrans: 'transcode alertas conversion', alses: 'sesiones excedidas pantallas compartir cuenta limite', alhist: 'historial alertas',
   equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
-  admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', ajustes: 'precios paquetes tarifas meses pantallas',
+  admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', gastos: 'gastos pagos facturas contabilidad calendario vps ovh contenido nube dominio recordatorio', ajustes: 'precios paquetes tarifas meses pantallas',
   perfil: 'perfil nombre email moneda soporte mi contraseña cambiar clave', seguridad: 'seguridad 2fa verificacion dos pasos google authenticator telegram sesiones contraseña codigo rescate proteger',
   copias: 'copias seguridad backup restaurar descargar guardar datos google drive comprobar', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
   apariencia: 'apariencia colores logo marca tema nombre panel', notifs: 'notificaciones telegram bot avisos pantalla', importar: 'importar csv excel emby subir lista', logs: 'logs actividad registro accesos entradas',
@@ -4710,6 +4735,178 @@ async function agLink(id) {
     if (!dlg.open) { clearInterval(S.ag.wait); return; }
     try { const d = await api('GET', '/api/agent/status'); const x = d.servers.find((v) => v.id === id); if (x && x.online) { clearInterval(S.ag.wait); S.ag.data = d; const w = $('#agWait'); if (w) w.innerHTML = `${ic('check')}<b>¡Conectado!</b> Ya llegan los datos de ${esc(s.name)}.`; w && w.classList.add('done'); setTimeout(() => { if (dlg.open) dlg.close(); render(); }, 1800); } } catch (e) { /* se reintenta */ }
   }, 5000);
+}
+
+/* ---------- Gastos: calendario de pagos y contabilidad (solo superadministrador) ---------- */
+const GX_CAT = { servidor: ['Servidores', 'server', '#3fa9f5'], contenido: ['Contenido', 'film', '#a46bff'], dominio: ['Dominio y web', 'link', '#19c37d'], software: ['Programas', 'box', '#f5a524'], otro: ['Otros', 'note', '#8a9a9f'] };
+const GX_EVERY = [[1, 'Cada mes'], [3, 'Cada 3 meses'], [6, 'Cada 6 meses'], [12, 'Cada año'], [0, 'Una sola vez']];
+const GX_ST = { paid: 'Pagado', late: 'Atrasado', today: 'Hoy', soon: 'Pronto', plan: 'Previsto' };
+const gxEvery = (n) => (GX_EVERY.find((x) => x[0] === n) || [0, ''])[1];
+const gxOf = (id) => S.gx.data && S.gx.data.list.find((x) => x.id === id);
+async function loadGx() {
+  S.gx.busy = true;
+  try { S.gx.data = await api('GET', '/api/expenses'); S.gx.at = Date.now(); } catch (e) { S.gx.data = { list: [], error: e.message }; }
+  S.gx.busy = false;
+  if (S.view === 'gastos') render();
+}
+/** Siguiente fecha de pago respetando el día original (igual que el servidor) */
+function gxNext(e, from) {
+  const n = addMonths(from, e.every), [y, m] = n.split('-').map(Number), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${y}-${pad(m)}-${pad(Math.min(e.day || +from.slice(8), last))}`;
+}
+function gxState(e) {
+  if (e.done) return 'paid';
+  const l = diff(e.due, S.gx.data.today);
+  return l < 0 ? 'late' : l === 0 ? 'today' : l <= Math.max(S.gx.data.remind, 3) ? 'soon' : 'plan';
+}
+const gxLeft = (e) => { if (e.done) return 'Pagado'; const l = diff(e.due, S.gx.data.today); return l < 0 ? `Atrasado ${plural(-l, 'día', 'días')}` : l === 0 ? 'Toca pagar hoy' : l === 1 ? 'Mañana' : `Dentro de ${l} días`; };
+/** Pagos de un mes: los hechos, el pendiente y los que vendrán */
+function gxOcc(ym) {
+  const out = [], end = ym + '-31';
+  for (const e of S.gx.data.list) {
+    for (const p of e.payments || []) if (p.due.slice(0, 7) === ym) out.push({ e, date: p.due, amount: p.amount, st: 'paid' });
+    if (e.done) continue;
+    let ds = e.due, first = true, n = 0;
+    while (ds <= end && n++ < 400) {
+      if (ds.slice(0, 7) === ym) out.push({ e, date: ds, amount: e.amount, st: first ? gxState(e) : 'plan', cur: first });
+      if (!e.every) break;
+      ds = gxNext(e, ds); first = false;
+    }
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date) || a.e.name.localeCompare(b.e.name));
+}
+const gxSum = (arr) => Math.round(arr.reduce((n, o) => n + (o.amount || 0), 0) * 100) / 100;
+function vGastos() {
+  const d = S.gx.data, sub = 'Tus pagos fijos: servidores, contenido, dominio… Solo lo ves tú.';
+  const acts = `<button class="btn primary" data-act="gx-new">${ic('plus')}Nuevo gasto</button>`;
+  if (!d) return head('Gastos', sub, acts) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (d.error) return head('Gastos', sub, acts) + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
+  const t = d.today, ym = t.slice(0, 7), cur = d.months[d.months.length - 1] || { paid: 0, income: 0 };
+  const occ = gxOcc(ym), late = d.list.filter((e) => !e.done && e.due < t), now = d.list.filter((e) => !e.done && e.due === t);
+  const pend = gxSum(occ.filter((o) => o.st !== 'paid')) + gxSum(late.filter((e) => e.due < ym + '-01').map((e) => ({ amount: e.amount })));
+  const net = Math.round((cur.income - cur.paid) * 100) / 100;
+  const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
+  const tiles = `<div class="vptiles lict">${tile(eur(gxSum(occ)), 'Gastos de este mes', plural(occ.length, 'pago', 'pagos'))}${tile(eur(cur.paid), 'Pagado este mes', '', 'ok')}${tile(eur(pend), 'Por pagar', late.length ? plural(late.length, 'atrasado', 'atrasados') : 'lo que queda del mes', late.length ? 'bad' : pend ? 'warn' : '')}${tile(eur(net), 'Ingresos − gastos', `este mes · ingresos ${eur(cur.income)}`, net >= 0 ? 'ok' : 'bad')}</div>`;
+  const alertLine = late.length || now.length ? `<div class="licban grace">${ic('alert')}<div><b>${late.length ? plural(late.length, 'pago atrasado', 'pagos atrasados') : ''}${late.length && now.length ? ' y ' : ''}${now.length ? plural(now.length, 'pago toca hoy', 'pagos tocan hoy') : ''}</b><span>${[...late, ...now].map((e) => `${esc(e.name)} (${eur(e.amount)})`).join(' · ')}</span></div></div>` : '';
+  const tb = (k, txt, n) => `<button role="tab" data-act="gx-tab" data-k="${k}" aria-selected="${S.gx.tab === k}">${txt}${n ? ` <span class="n">${n}</span>` : ''}</button>`;
+  const tabs = `<div class="tabs fit" role="tablist">${tb('cal', 'Calendario')}${tb('list', 'Mis gastos', d.list.filter((e) => !e.done).length)}${tb('acc', 'Contabilidad')}</div>`;
+  const body = S.gx.tab === 'list' ? gxListHtml() : S.gx.tab === 'acc' ? gxAccHtml() : gxCalHtml();
+  return head('Gastos', sub, acts) + alertLine + tiles + tabs + body + gxCfgHtml();
+}
+function gxCalHtml() {
+  const d = S.gx.data;
+  if (!S.gx.cal) S.gx.cal = d.today.slice(0, 7);
+  const [y, m] = S.gx.cal.split('-').map(Number), days = new Date(Date.UTC(y, m, 0)).getUTCDate(), offset = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
+  const occ = gxOcc(S.gx.cal), by = {};
+  occ.forEach((o) => { (by[o.date] = by[o.date] || []).push(o); });
+  let cells = ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((x) => `<div class="dow">${x}</div>`).join('');
+  for (let i = 0; i < offset; i++) cells += '<div class="out"></div>';
+  for (let i = 1; i <= days; i++) {
+    const ds = `${y}-${pad(m)}-${pad(i)}`, list = by[ds] || [];
+    cells += `<div class="${ds === d.today ? 'today' : ''}${list.length ? ' has' : ''}"><span class="dn">${i}</span>${list.map((o) => `<button class="gx-${o.st}" data-act="${o.cur && o.st !== 'paid' ? 'gx-pay' : 'gx-more'}" data-id="${o.e.id}" title="${esc(o.e.name)}: ${eur(o.amount)} · ${GX_ST[o.st]}${o.cur && o.st !== 'paid' ? ' (pulsa para marcarlo pagado)' : ''}"><span>${esc(o.e.name)}</span><em>${eur(o.amount)}</em></button>`).join('')}</div>`;
+  }
+  for (let i = 0; i < (7 - ((offset + days) % 7)) % 7; i++) cells += '<div class="out"></div>';
+  const paid = gxSum(occ.filter((o) => o.st === 'paid')), all = gxSum(occ);
+  const legend = `<div class="gxleg">${['paid', 'today', 'soon', 'late', 'plan'].map((k) => `<span class="gx-${k}"><i></i>${GX_ST[k]}</span>`).join('')}</div>`;
+  return `<section class="tsec"><div class="sec-h"><h2>Calendario de pagos</h2><div class="licnav"><button class="btn sm ghost" data-act="gx-cal" data-step="-1" aria-label="Mes anterior">‹</button><b>${MES_L[m - 1]} ${y}</b><button class="btn sm ghost" data-act="gx-cal" data-step="1" aria-label="Mes siguiente">›</button>${S.gx.cal !== d.today.slice(0, 7) ? '<button class="btn sm ghost" data-act="gx-cal" data-step="0">Hoy</button>' : ''}</div></div>
+    <div class="panel"><div class="cal lcal gxcal">${cells}</div></div>
+    <div class="gxfoot">${legend}<span>Total del mes <b>${eur(all)}</b> · pagado <b class="plus">${eur(paid)}</b> · falta <b>${eur(Math.round((all - paid) * 100) / 100)}</b></span></div></section>`;
+}
+function gxListHtml() {
+  const d = S.gx.data;
+  if (!d.list.length) return `<div class="panel" style="margin-bottom:18px"><div class="empty okmsg">${ic('wallet')}<b>Todavía no has apuntado ningún gasto</b><span>Pulsa «Nuevo gasto» y apunta el VPS, el dueño del contenido, el dominio…</span><button class="btn primary" data-act="gx-new">${ic('plus')}Nuevo gasto</button></div></div>`;
+  const L = d.list.slice().sort((a, b) => (a.done - b.done) || (a.done ? 0 : a.due.localeCompare(b.due)) || a.name.localeCompare(b.name));
+  const card = (e) => {
+    const st = gxState(e), [cn, ci, cc] = GX_CAT[e.cat] || GX_CAT.otro, last = (e.payments || []).slice(-1)[0];
+    return `<article class="licc gxc st-${st}">
+      <header><span class="gxi" style="--c:${cc}">${ic(ci)}</span><div class="who"><b>${esc(e.name)}</b><small class="muted">${cn} · ${gxEvery(e.every)}</small></div><span class="gxp gx-${st}">${GX_ST[st]}</span></header>
+      <div class="lbig"><div><small>${e.done ? 'Pagado el' : 'Próximo pago'}</small><b>${fmt(e.done && last ? last.at : e.due)}</b></div><div class="r"><small>Importe</small><b>${eur(e.amount)}</b></div></div>
+      <div class="lmeta"><span class="gxl gx-${st}">${ic('clock')}${gxLeft(e)}</span>${last ? `<span>${ic('check')}Último pago ${fmt(last.at)}</span>` : ''}${e.method ? `<span>${ic('wallet')}${esc(e.method)}</span>` : ''}</div>
+      ${e.notes ? `<p class="lnote">${esc(e.notes)}</p>` : ''}
+      <div class="acts">${e.done ? '' : `<button class="btn sm primary" data-act="gx-pay" data-id="${e.id}">${ic('check')}Ya lo pagué</button>`}<button class="btn sm" data-act="gx-edit" data-id="${e.id}">${ic('edit')}Editar</button><button class="btn sm ghost" data-act="gx-more" data-id="${e.id}">Más…</button></div>
+    </article>`;
+  };
+  const monthly = Math.round(d.list.filter((e) => !e.done && e.every).reduce((n, e) => n + e.amount / e.every, 0) * 100) / 100;
+  return `<section class="tsec"><div class="sec-h"><h2>Mis gastos</h2><small>Gastos fijos: unos ${eur(monthly)} al mes</small></div><div class="licgrid">${L.map(card).join('')}</div></section>`;
+}
+function gxAccHtml() {
+  const d = S.gx.data, M = d.months.slice().reverse();
+  const max = Math.max(1, ...d.months.map((x) => Math.max(x.paid, x.income)));
+  const tot = d.months.reduce((a, x) => ({ paid: a.paid + x.paid, income: a.income + x.income }), { paid: 0, income: 0 });
+  const res = (n) => `<b class="${n >= 0 ? 'plus' : 'minus'}">${n >= 0 ? '' : '−'}${eur(Math.abs(Math.round(n * 100) / 100))}</b>`;
+  const rows = M.map((x) => { const [yy, mm] = x.m.split('-').map(Number); return `<tr><td>${MES_L[mm - 1]} ${yy}</td>
+    <td class="r">${eur(x.income)}<div class="gxbar in"><i style="width:${Math.round((x.income / max) * 100)}%"></i></div></td>
+    <td class="r">${eur(x.paid)}<div class="gxbar out"><i style="width:${Math.round((x.paid / max) * 100)}%"></i></div></td>
+    <td class="r">${res(x.income - x.paid)}</td></tr>`; }).join('');
+  const cats = Object.entries(d.year.byCat).sort((a, b) => b[1] - a[1]);
+  const cmax = Math.max(1, ...cats.map((c) => c[1]));
+  const catHtml = cats.length ? cats.map(([k, v]) => { const [cn, ci, cc] = GX_CAT[k] || GX_CAT.otro; return `<div class="gxcat"><span class="gxi sm" style="--c:${cc}">${ic(ci)}</span><span class="n">${cn}</span><div class="gxbar"><i style="width:${Math.round((v / cmax) * 100)}%;background:${cc}"></i></div><b>${eur(v)}</b></div>`; }).join('') : '<p class="muted small">Aún no hay pagos este año.</p>';
+  const pays = [];
+  d.list.forEach((e) => (e.payments || []).forEach((p) => pays.push({ e, p })));
+  pays.sort((a, b) => b.p.at.localeCompare(a.p.at) || (b.p.ts || '').localeCompare(a.p.ts || ''));
+  const hist = pays.length ? pays.slice(0, 40).map(({ e, p }) => `<div class="strow"><span class="d">${fmt(p.at)}</span><span class="t">${esc(e.name)}${p.method ? ' · ' + esc(p.method) : ''}</span><b class="minus">−${eur(p.amount)}</b></div>`).join('') : '<div class="empty" style="padding:14px 0">Cuando marques un gasto como pagado, saldrá aquí.</div>';
+  return `<section class="tsec"><div class="vptiles lict">
+      <div class="vpt"><b>${eur(d.year.total)}</b><span>Gastado en ${d.year.y}</span><small>suma de todos los pagos del año</small></div>
+      <div class="vpt"><b>${eur(Math.round(tot.paid * 100) / 100)}</b><span>Últimos 12 meses</span><small>media de ${eur(Math.round((tot.paid / 12) * 100) / 100)} al mes</small></div>
+      <div class="vpt ${tot.income - tot.paid >= 0 ? 'ok' : 'bad'}"><b>${eur(Math.round((tot.income - tot.paid) * 100) / 100)}</b><span>Te queda en 12 meses</span><small>ingresos ${eur(Math.round(tot.income * 100) / 100)} − gastos</small></div></div>
+    <div class="gxacc"><div class="panel"><div class="sec-h" style="padding:14px 16px 0"><h2>Mes a mes</h2><button class="btn sm ghost" data-act="gx-csv">${ic('download')}Descargar Excel (CSV)</button></div>
+      <table class="gxt"><thead><tr><th>Mes</th><th class="r">Ingresos</th><th class="r">Gastos</th><th class="r">Resultado</th></tr></thead><tbody>${rows}</tbody></table>
+      <p class="small muted" style="padding:0 16px 14px;margin:0">Ingresos: los créditos vendidos a tus vendedores (igual que en el Informe de ingresos). Gastos: lo que has marcado como pagado, por la fecha en que lo pagaste.</p></div>
+    <div class="gxside"><div class="panel pad"><h2 style="margin-bottom:12px">En qué se va en ${d.year.y}</h2>${catHtml}</div>
+      <div class="panel pad"><h2 style="margin-bottom:8px">Últimos pagos</h2><div class="ctl">${hist}</div></div></div></div></section>`;
+}
+function gxCfgHtml() {
+  const d = S.gx.data, linked = S.d.me.tgLinked;
+  const note = !d.bot ? 'Primero hay que conectar el bot de Telegram en <button class="lnk" data-view="notifs">Ajustes › Notificaciones</button>.' : !linked ? 'Enlaza tu Telegram en <button class="lnk" data-view="seguridad">Ajustes › Seguridad</button> para recibirlos.' : 'Te llegan a tu Telegram una vez al día, a partir de las 9:00.';
+  return `<details class="tcfg"><summary>${ic('bell')}Avisos de pago <span class="muted">· ${d.tg && d.remind ? `${plural(d.remind, 'día', 'días')} antes, el mismo día y si se pasa la fecha` : d.tg ? 'el mismo día y si se pasa la fecha' : 'apagados'}</span></summary>
+    <form id="gxCfg" class="formpage" style="margin-top:12px"><p class="small muted" style="margin:0 0 10px">${note}</p>
+    <label class="check"><input type="checkbox" name="tg"${d.tg ? ' checked' : ''}> Avisarme por Telegram</label>
+    <label class="f" style="max-width:280px;margin-top:8px">Avisar antes del día de pago<select name="remind">${options([[0, 'Solo el mismo día'], [1, '1 día antes'], [2, '2 días antes'], [3, '3 días antes'], [5, '5 días antes'], [7, '7 días antes']], d.remind)}</select></label>
+    <button class="btn primary" type="submit" style="margin-top:10px">Guardar</button></form></details>`;
+}
+function gxForm(e) {
+  const x = e || { name: '', amount: '', cat: 'servidor', every: 1, due: S.gx.data.today, method: '', notes: '' };
+  openDlg({ title: e ? 'Editar gasto' : 'Nuevo gasto', submit: e ? 'Guardar cambios' : 'Apuntar gasto',
+    body: `<label class="f">Qué pagas<input name="name" required maxlength="60" list="gxNames" value="${esc(x.name)}" placeholder="VPS OVH, dueño del contenido…" autocomplete="off"></label>
+      <datalist id="gxNames">${['VPS OVH', 'Servidor Emby', 'Dueño del contenido', 'Almacenamiento en la nube', 'Dominio', 'Emby Premiere'].map((v) => `<option value="${v}">`).join('')}</datalist>
+      <div class="row2"><label class="f">Importe (€)<input name="amount" type="number" min="0" step="0.01" required value="${x.amount}" inputmode="decimal"></label><label class="f">${e ? 'Próximo día de pago' : 'Día de pago'}<input type="date" name="due" required value="${x.due}"></label></div>
+      <span class="flabel">Se paga</span><div class="pmeth">${GX_EVERY.map(([n, txt]) => `<label><input type="radio" name="every" value="${n}"${n === x.every ? ' checked' : ''}><span>${txt}</span></label>`).join('')}</div>
+      <span class="flabel">Tipo de gasto</span><div class="pmeth">${Object.entries(GX_CAT).map(([k, [txt, i]]) => `<label><input type="radio" name="cat" value="${k}"${k === x.cat ? ' checked' : ''}><span>${ic(i)}${txt}</span></label>`).join('')}</div>
+      <div class="row2"><label class="f">Cómo lo pagas (opcional)<input name="method" maxlength="30" value="${esc(x.method || '')}" placeholder="Tarjeta, PayPal…"></label><label class="f">Notas (opcional)<input name="notes" maxlength="300" value="${esc(x.notes || '')}"></label></div>`,
+    onSubmit: async (fd) => {
+      const b = { name: fd.get('name'), amount: fd.get('amount'), due: fd.get('due'), every: +fd.get('every'), cat: fd.get('cat'), method: fd.get('method'), notes: fd.get('notes') };
+      await api(e ? 'PUT' : 'POST', e ? `/api/expenses/${e.id}` : '/api/expenses', b);
+      await loadGx();
+      return e ? 'Gasto guardado' : 'Gasto apuntado';
+    } });
+}
+function gxPay(id) {
+  const e = gxOf(id); if (!e) return;
+  openDlg({ title: 'Ya lo pagué: ' + e.name, submit: 'Marcar como pagado',
+    body: `<div class="lnew"><span>Pago del ${fmt(e.due)}</span><b>${eur(e.amount)}</b></div>
+      <div class="row2"><label class="f">Importe pagado (€)<input name="amount" type="number" min="0" step="0.01" value="${e.amount}" inputmode="decimal"></label><label class="f">Día en que lo pagaste<input type="date" name="at" value="${S.gx.data.today}"></label></div>
+      <label class="f">Cómo lo pagaste (opcional)<input name="method" maxlength="30" value="${esc(e.method || '')}"></label>
+      <p class="small muted" style="margin-top:8px">${e.every ? `El próximo pago quedará para el <b>${fmt(gxNext(e, e.due))}</b>.` : 'Es un pago de una sola vez: quedará como pagado.'}</p>`,
+    onSubmit: async (fd) => { await api('POST', `/api/expenses/${id}/pay`, { amount: fd.get('amount'), at: fd.get('at'), method: fd.get('method') }); await loadGx(); return `${e.name}: pagado`; } });
+}
+function gxMore(id) {
+  const e = gxOf(id); if (!e) return;
+  const it = (act, icon, label, hint, cls = '') => `<button type="button" class="mitem ${cls}" data-act="${act}" data-id="${id}">${ic(icon)}<span>${label}<small>${hint}</small></span></button>`;
+  const pays = (e.payments || []).slice().reverse();
+  showDlg(e.name, `<p class="small muted" style="margin:0 0 12px">${(GX_CAT[e.cat] || GX_CAT.otro)[0]} · ${gxEvery(e.every)} · ${eur(e.amount)}${e.done ? ' · pagado' : ' · próximo pago el ' + fmt(e.due)}</p>
+    <div class="mgrid2">${e.done ? '' : it('gx-pay', 'check', 'Ya lo pagué', 'apuntar el pago')}${it('gx-edit', 'edit', 'Editar', 'importe, fecha, tipo…')}${pays.length ? it('gx-unpay', 'refresh', 'Deshacer último pago', 'si lo marcaste por error') : ''}${it('gx-del', 'trash', 'Borrar gasto', 'y su historial', 'danger')}</div>
+    <h3 style="margin:16px 0 8px">Pagos</h3><div class="ctl">${pays.length ? pays.map((p) => `<div class="strow"><span class="d">${fmt(p.at)}</span><span class="t">del ${fmt(p.due)}${p.method ? ' · ' + esc(p.method) : ''}</span><b class="minus">−${eur(p.amount)}</b></div>`).join('') : '<div class="empty" style="padding:14px 0">Todavía sin pagos apuntados.</div>'}</div>`);
+}
+function gxCsv() {
+  const rows = [['Fecha de pago', 'Gasto', 'Tipo', 'Importe', 'Forma de pago', 'Pago del día']];
+  S.gx.data.list.forEach((e) => (e.payments || []).forEach((p) => rows.push([p.at, e.name, (GX_CAT[e.cat] || GX_CAT.otro)[0], String(p.amount).replace('.', ','), p.method || '', p.due])));
+  rows.splice(1, rows.length, ...rows.slice(1).sort((a, b) => a[0].localeCompare(b[0])));
+  const csv = '﻿' + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `gastos-${S.gx.data.today}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
 /* ---------- Licencias: alquiler del panel ---------- */
@@ -6213,6 +6410,15 @@ document.addEventListener('click', (e) => {
   if (a === 'fx-quick') { const f = fxState(); f.mode = 'add'; f.amount = el.dataset.a; f.unit = el.dataset.u; render(); return; }
   if (a === 'fx-reason') { const r = $('#fxForm').elements.reason; r.value = el.dataset.t; fxRead(); return; }
   if (a === 'lic-new') { licNew(); return; }
+  if (a === 'gx-new') { gxForm(); return; }
+  if (a === 'gx-edit') { const e = gxOf(id); if (e) gxForm(e); return; }
+  if (a === 'gx-pay') { gxPay(id); return; }
+  if (a === 'gx-more') { gxMore(id); return; }
+  if (a === 'gx-tab') { S.gx.tab = el.dataset.k; render(); return; }
+  if (a === 'gx-csv') { gxCsv(); return; }
+  if (a === 'gx-cal') { const st = +el.dataset.step; if (!st) S.gx.cal = S.gx.data.today.slice(0, 7); else { const [yy, mm] = S.gx.cal.split('-').map(Number), t = new Date(Date.UTC(yy, mm - 1 + st, 1)); S.gx.cal = `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}`; } render(); return; }
+  if (a === 'gx-unpay') { const e = gxOf(id); if (!e) return; dConfirm('Deshacer el último pago', `«${esc(e.name)}» volverá a quedar pendiente, como antes de marcarlo.`, 'Deshacer', async () => { await api('POST', `/api/expenses/${id}/unpay`, {}); await loadGx(); }, 'Pago deshecho'); return; }
+  if (a === 'gx-del') { const e = gxOf(id); if (!e) return; dConfirm('Borrar «' + e.name + '»', 'Se borra el gasto y su historial de pagos. La contabilidad dejará de contarlo.', 'Borrar', async () => { await api('DELETE', `/api/expenses/${id}`); await loadGx(); }, 'Gasto borrado'); return; }
   if (a === 'lic-renew') { licRenew(id); return; }
   if (a === 'lic-edit') { licEdit(id); return; }
   if (a === 'lic-more') { licMore(id); return; }
@@ -6455,6 +6661,7 @@ document.addEventListener('input', (e) => {
   const q = $('#' + id); q.focus(); q.setSelectionRange(pos, pos);
 });
 document.addEventListener('submit', (e) => {
+  if (e.target.id === 'gxCfg') { e.preventDefault(); const f = e.target.elements; api('PUT', '/api/expenses/cfg', { remind: +f.remind.value, tg: f.tg.checked }).then(async () => { toast('Avisos guardados'); await loadGx(); }, (x) => toast(x.message, true)); return; }
   if (e.target.id === 'licContact') { e.preventDefault(); api('PUT', '/api/licenses/contact', { contact: e.target.elements.contact.value }).then(() => { toast('Contacto guardado'); S.lic.data = null; loadLic(); }, (x) => toast(x.message, true)); return; }
   if (e.target.id === 'vpCfg') {
     e.preventDefault();
