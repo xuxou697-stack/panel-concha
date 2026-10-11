@@ -28,7 +28,7 @@ const CHECK_EVERY_MS = 60 * 1000;
 /* Alertas: los dos modulos vienen apagados; los enciende un administrador */
 const DEFAULT_ALERTS = {
   transcode: { on: false, stop: true, tip: true, tipEvery: 30, tipText: '', onlyVideo: true, retention: 30, message: 'Tu app está convirtiendo el vídeo y eso satura el servidor. Ve a Ajustes › Reproducción › Velocidad de transmisión máx. y elige la más alta (1000 Mbit/s o la máxima que tenga). Así se verá fluido.' },
-  sessions: { on: false, stop: false, retention: 30, grace: 5, policy: 'newest', message: 'Has superado el número de pantallas de tu cuenta. Se ha detenido esta reproducción.' },
+  sessions: { on: false, stop: false, logout: true, retention: 30, grace: 5, policy: 'newest', message: 'Has superado el número de pantallas de tu cuenta. Se ha detenido esta reproducción.' },
 };
 /* Avisos de vencimiento al cliente. Vienen apagados; los enciende el superadministrador */
 const DEFAULT_NOTICES = {
@@ -3326,6 +3326,14 @@ async function stopSession(s, x, text) {
   await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Aviso', Text: text, TimeoutMs: 10000 }).catch(() => {});
   await emby(s, 'POST', `/Sessions/${x.Id}/Playing/Stop`, {});
 }
+/** Último recurso cuando un aparato no obedece a «Detener»: se borra el aparato en Emby y su sesión se cierra.
+    El cliente tendrá que volver a entrar con su usuario y contraseña. */
+async function logoutDevice(s, x) {
+  if (!x.DeviceId) throw new Error('sin aparato');
+  await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Aviso', Text: 'Has superado el número de pantallas de tu cuenta. Se ha cerrado la sesión en este aparato.', TimeoutMs: 10000 }).catch(() => {});
+  await emby(s, 'DELETE', `/Devices?Id=${encodeURIComponent(x.DeviceId)}`);
+}
+const stoppedAt = new Map(); // reproduccion detenida por exceso de pantallas -> cuando (para ver si de verdad se ha parado)
 function sessionTitle(x) {
   const it = x.NowPlayingItem || {};
   return it.SeriesName ? `${it.SeriesName} – ${it.Name || ''}` : (it.Name || '');
@@ -3391,16 +3399,31 @@ async function monitor() {
             if (now - pending.get(pk) < cfg.sessions.grace * 1000) continue;
           }
           pending.delete(pk);
-          if (recent.has(key) && now - recent.get(key) < (cfg.sessions.stop ? 60000 : 30 * 60000)) continue;
+          if (recent.has(key) && now - recent.get(key) < (cfg.sessions.stop ? 25000 : 30 * 60000)) continue;
           recent.set(key, now);
           let action = 'Solo aviso';
           if (cfg.sessions.stop) {
             // por defecto se detienen las que llevan menos tiempo reproduciendo; tambien se puede lo contrario, o todas
             const pol = cfg.sessions.policy, dir = pol === 'oldest' ? -1 : 1;
             const extra = [...live].sort((a, b) => dir * (((a.PlayState || {}).PositionTicks || 0) - ((b.PlayState || {}).PositionTicks || 0))).slice(0, pol === 'all' ? live.length : live.length - c.screens);
-            let ok = 0;
-            for (const x of extra) { try { await stopSession(s, x, cfg.sessions.message); ok++; } catch (e) { /* se registra abajo */ } }
-            action = ok ? `${ok} ${ok === 1 ? 'reproducción detenida' : 'reproducciones detenidas'}` : 'No se pudo detener';
+            let ok = 0, out = 0, fail = 0;
+            for (const sk of [...stoppedAt.keys()]) if (now - stoppedAt.get(sk) > 10 * 60000) stoppedAt.delete(sk);
+            for (const x of extra) {
+              const sk = `${s.id}:${x.Id}`;
+              // Ya se le dijo que parase y sigue reproduciendo, o el aparato no admite que se le pare desde fuera: se cierra su sesión
+              const stubborn = (stoppedAt.has(sk) && now - stoppedAt.get(sk) < 5 * 60000) || x.SupportsRemoteControl === false;
+              if (stubborn && cfg.sessions.logout !== false) { try { await logoutDevice(s, x); out++; stoppedAt.delete(sk); continue; } catch (e) { /* se intenta detener */ } }
+              try { await stopSession(s, x, cfg.sessions.message); ok++; stoppedAt.set(sk, now); }
+              catch (e) {
+                if (cfg.sessions.logout !== false) { try { await logoutDevice(s, x); out++; continue; } catch { /* nada */ } }
+                fail++;
+              }
+            }
+            const parts2 = [];
+            if (ok) parts2.push(`${ok} ${ok === 1 ? 'reproducción detenida' : 'reproducciones detenidas'}`);
+            if (out) parts2.push(`${out} ${out === 1 ? 'aparato desconectado (no obedecía)' : 'aparatos desconectados (no obedecían)'}`);
+            if (fail) parts2.push(`${fail} sin poder detener`);
+            action = parts2.length ? parts2.join(' · ') : 'No se pudo detener';
           }
           events.push({ type: 'sesiones', c, s, action, device: live.map((x) => x.DeviceName || '?').join(', '), app: '', item: live.map(sessionTitle).filter(Boolean).join(' / '),
             reason: `${live.length} reproducciones a la vez con ${c.screens} ${c.screens === 1 ? 'pantalla contratada' : 'pantallas contratadas'}` });
@@ -3447,6 +3470,7 @@ route('PUT', '/api/alerts/config', STAFF, ({ me, body }) => lock(async () => {
     if (b.retention !== undefined) cur[k].retention = days(b.retention, cur[k].retention);
     if (k === 'sessions' && b.grace !== undefined) { const n = Number(b.grace); if (Number.isInteger(n) && n >= 0 && n <= 300) cur[k].grace = n; }
     if (k === 'sessions' && ['newest', 'oldest', 'all'].includes(b.policy)) cur[k].policy = b.policy;
+    if (k === 'sessions' && b.logout !== undefined) cur[k].logout = !!b.logout;
     if (typeof b.message === 'string' && b.message.trim()) cur[k].message = b.message.trim().slice(0, 300);
     if (was !== cur[k].on) addLog('alertas', null, `${k === 'transcode' ? 'Control de transcodificación' : 'Control de sesiones excedidas'} ${cur[k].on ? 'activado' : 'desactivado'}`, me);
   }
@@ -3574,6 +3598,9 @@ async function recordUsage() {
       let list;
       try { list = await emby(s, 'GET', '/Sessions'); } catch { continue; }
       const byEmby = new Map(db.clients.filter((c) => c.serverId === s.id).map((c) => [c.embyId, c]));
+      const playing = new Map(); // cuenta -> aparatos reproduciendo ahora mismo
+      for (const x of list || []) if (x.NowPlayingItem && byEmby.has(x.UserId)) { const c = byEmby.get(x.UserId); if (!playing.has(c)) playing.set(c, new Set()); playing.get(c).add(x.DeviceId || x.Id); }
+      for (const [c, devs] of playing) if (devs.size > 1) recordPeak(c, devs.size);
       for (const x of list || []) {
         recordConn(byEmby.get(x.UserId), x);
         const it = x.NowPlayingItem;
@@ -3613,10 +3640,20 @@ function saveConn(force) {
   if (!connDirty || (!force && Date.now() - connSaved < 120000)) return;
   try {
     const lim = Date.now() - 45 * 86400000;
-    for (const k of Object.keys(conn)) { conn[k] = conn[k].filter((r) => Date.parse(r[1]) >= lim).slice(-150); if (!conn[k].length || !db.clients.some((c) => String(c.id) === k)) delete conn[k]; }
+    if (conn._peaks) for (const k of Object.keys(conn._peaks)) { conn._peaks[k] = conn._peaks[k].filter((r) => Date.parse(r[0]) >= lim); if (!conn._peaks[k].length || !db.clients.some((c) => String(c.id) === k)) delete conn._peaks[k]; }
+    for (const k of Object.keys(conn)) { if (k === '_peaks') continue; conn[k] = conn[k].filter((r) => Date.parse(r[1]) >= lim).slice(-150); if (!conn[k].length || !db.clients.some((c) => String(c.id) === k)) delete conn[k]; }
     fs.writeFileSync(CONN_FILE + '.tmp', JSON.stringify(conn)); fs.renameSync(CONN_FILE + '.tmp', CONN_FILE);
     connDirty = false; connSaved = Date.now();
   } catch (e) { console.error('Conexiones:', e.message); }
+}
+/** Momentos en que una cuenta reproducía en varios aparatos A LA VEZ (visto en Emby en el mismo minuto) */
+function recordPeak(c, n) {
+  const all = connLoad(), pk = all._peaks || (all._peaks = {}), list = pk[c.id] || (pk[c.id] = []);
+  const last = list[list.length - 1], nowIso = new Date().toISOString();
+  if (last && Date.now() - Date.parse(last[0]) < 10 * 60000 && last[2] >= 0) { last[0] = nowIso; if (n > last[1]) last[1] = n; last[2]++; }
+  else list.push([nowIso, n, 1]);
+  if (list.length > 100) pk[c.id] = list.slice(-100);
+  connDirty = true;
 }
 function recordConn(c, x) {
   if (!c || !x || !x.UserId) return;
@@ -3640,11 +3677,10 @@ function shareInfo(c, days = 7) {
   const lim = Date.now() - days * 86400000, rows = (connLoad()[c.id] || []).filter((r) => Date.parse(r[1]) >= lim);
   const devs = new Map(), zones = new Set();
   for (const r of rows) { devs.set(r[5], { name: r[2], app: r[3], last: r[1] }); if (r[4]) zones.add(ipZone(r[4])); }
-  // Aparatos a la vez: tramos que se solapan
-  let maxAt = 0;
-  const ev = []; for (const r of rows) { if (!r[6]) continue; ev.push([Date.parse(r[0]), 1, r[5]]); ev.push([Date.parse(r[1]) + 60000, -1, r[5]]); } // solo aparatos viendo algo
-  ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const on = new Map(); for (const [, d, id] of ev) { on.set(id, (on.get(id) || 0) + d); const n = [...on.values()].filter((v) => v > 0).length; if (n > maxAt) maxAt = n; }
+  // Aparatos a la vez: solo cuenta cuando Emby los ve REPRODUCIENDO en el mismo minuto.
+  // (Antes se contaban también apps abiertas sin ver nada o el cambio de un aparato a otro, y daba avisos falsos.)
+  let maxAt = Math.min(1, rows.filter((r) => r[6]).length);
+  for (const p of ((connLoad()._peaks || {})[c.id] || [])) if (Date.parse(p[0]) >= lim && p[1] > maxAt) maxAt = p[1];
   const screens = c.screens || 1, reasons = [];
   if (devs.size >= Math.max(4, screens * 2 + 1)) reasons.push(`${devs.size} aparatos distintos`);
   if (zones.size >= 3) reasons.push(`desde ${zones.size} sitios diferentes`);
@@ -3667,7 +3703,7 @@ route('GET', '/api/shared', '*', ({ me }) => {
   const list = db.clients.filter((c) => c.status !== 'trash' && !c.demo && (!vis || vis.has(c.ownerId)))
     .map((c) => ({ id: c.id, ...shareInfo(c) })).filter((x) => x.level !== 'no')
     .sort((a, b) => (a.level === b.level ? 0 : a.level === 'alto' ? -1 : 1) || b.devices - a.devices);
-  return { list, since: (() => { let min = null; for (const v of Object.values(connLoad())) for (const r of v) if (!min || r[0] < min) min = r[0]; return min; })() };
+  return { list, since: (() => { let min = null; for (const v of Object.values(connLoad())) if (Array.isArray(v)) for (const r of v) if (!min || r[0] < min) min = r[0]; return min; })() };
 });
 route('GET', '/api/clients/:id/connections', '*', ({ me, params }) => {
   const c = clientFor(me, params.id);

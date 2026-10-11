@@ -1033,6 +1033,7 @@ table.acc tr.k-fallido td,table.acc tr.k-fallido2fa td,table.acc tr.k-bloqueado 
 .lcal .has{background:color-mix(in srgb,var(--brand) 5%,var(--surface))}
 .lcal button.lc-ok{box-shadow:inset 3px 0 0 var(--ok)}.lcal button.lc-soon{box-shadow:inset 3px 0 0 var(--warn)}.lcal button.lc-grace{box-shadow:inset 3px 0 0 #f08a4b}.lcal button.lc-off{box-shadow:inset 3px 0 0 var(--bad)}
 .flabel{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+.reptg{display:flex;flex-direction:column;gap:6px;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--raised);border:1px solid var(--line)}.reptg b{display:flex;align-items:center;gap:6px}.reptg .ic{width:16px;height:16px;color:var(--brand)}.reptg input{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}.reptg .acts{display:flex;gap:6px;flex-wrap:wrap}
 /* Gastos (solo superadministrador) */
 .gxcal .has{background:color-mix(in srgb,var(--sand) 5%,var(--surface))}
 .gxcal button{display:flex;justify-content:space-between;gap:6px}.gxcal button span{overflow:hidden;text-overflow:ellipsis}.gxcal button em{font-style:normal;font-weight:600;flex:none}
@@ -2392,6 +2393,8 @@ function vNuevo(demo) {
 
 /* ---------- Avisos de vencimiento ---------- */
 const tgLink = (c) => { const b = S.d.settings.notices.telegram.bot; return b ? `https://t.me/${b}?start=${c.tgCode}` : ''; };
+/** Texto con el enlace personal de Telegram, para añadirlo al mensaje que se le da al cliente */
+const tgBlock = (c) => { const l = tgLink(c); return l ? `🔔 Recibe por Telegram los avisos de tu cuenta (antes de que caduque y novedades). Abre este enlace y pulsa «Iniciar»:\n${l}` : ''; };
 function noticeRows() {
   const days = S.d.settings.notices.chat.days;
   return S.d.clients.filter((c) => !c.demo && c.status === 'active' && diff(c.expires, S.d.today) >= 0 && diff(c.expires, S.d.today) <= days).sort(byExpiry);
@@ -2416,6 +2419,15 @@ function vAvisos() {
       </div></td></tr>`;
   }).join('')}</tbody></table></div>
   <p class="flownote">El texto es la plantilla «Aviso de vencimiento». Al pulsar WhatsApp se abre el chat con el mensaje escrito y la cuenta queda como avisada. Al pulsar Telegram se copia el mensaje y se abre su chat para pegarlo.</p>`;
+}
+/** En la reparación: si el cliente aún no tiene Telegram enlazado, su enlace listo para mandárselo */
+function repTg(c) {
+  const l = tgLink(c); if (!l) return '';
+  if (c.tgLinked) return `<p class="small muted" style="margin-top:12px">${ic('check')} Tiene Telegram enlazado: recibe los avisos.</p>`;
+  const wa = waNum(c.whatsapp);
+  return `<div class="reptg"><b>${ic('send')}Aún no recibe avisos por Telegram</b><span class="small muted">Mándale su enlace. Al abrirlo y pulsar «Iniciar» queda enlazado.</span>
+    <input id="tgLinkBox" readonly value="${esc(l)}" aria-label="Enlace de Telegram del cliente">
+    <div class="acts"><button type="button" class="btn sm primary" data-act="tg-copy">Copiar enlace</button>${wa ? `<a class="btn sm" target="_blank" rel="noopener" style="text-decoration:none" href="https://wa.me/${wa}?text=${encodeURIComponent(tgBlock(c))}">Enviar por WhatsApp</a>` : ''}</div></div>`;
 }
 function dTelegram(c) {
   const link = tgLink(c), nt = S.d.settings.notices.telegram;
@@ -2547,6 +2559,7 @@ function vAlertas(kind) {
   if (def.type && a.tab === 'cfg' && staff() && cfg) {
     body = `<form id="alcfg" data-k="${def.key}" class="panel pad formpage" style="max-width:720px">
       <label class="check"><input type="checkbox" name="stop"${cfg.stop ? ' checked' : ''}> Detener la reproducción automáticamente (si no, solo se registra el aviso)</label>
+      ${def.key === 'sessions' ? `<label class="check"><input type="checkbox" name="logout"${cfg.logout !== false ? ' checked' : ''}> Si un aparato no obedece y sigue reproduciendo, cerrar su sesión (tendrá que volver a entrar con su usuario y contraseña)</label>` : ''}
       ${def.key === 'transcode' ? `<label class="check"><input type="checkbox" name="onlyVideo"${cfg.onlyVideo ? ' checked' : ''}> Actuar solo cuando se convierte el vídeo (ignorar si solo cambia el audio o los subtítulos)</label>` : ''}
       <label class="f" style="margin-top:14px">Mensaje que ve el usuario al detenerle<textarea name="message" rows="3" maxlength="300">${esc(cfg.message)}</textarea></label>
       ${def.key === 'transcode' ? `<h2 class="sep">Aviso de calidad baja</h2>
@@ -4149,7 +4162,8 @@ function vTiempos() {
     con: `<h2>Control de pantallas simultáneas</h2>
       <p class="muted small" style="margin:-10px 0 14px">Vigila que cada cuenta no reproduzca en más pantallas de las que tiene contratadas.</p>
       <label class="check"><input type="checkbox" name="on"${a.on ? ' checked' : ''}> Activar la vigilancia de pantallas (queda anotado en Alertas, Sesiones excedidas)</label>
-      <label class="check" style="margin-bottom:12px"><input type="checkbox" name="stop"${a.stop ? ' checked' : ''}> Activar control automático: detener las reproducciones que superen el límite</label>
+      <label class="check"><input type="checkbox" name="stop"${a.stop ? ' checked' : ''}> Activar control automático: detener las reproducciones que superen el límite</label>
+      <label class="check" style="margin-bottom:12px"><input type="checkbox" name="logout"${a.logout !== false ? ' checked' : ''}> Si un aparato no obedece y sigue reproduciendo, cerrar su sesión (tendrá que volver a entrar con su usuario y contraseña)</label>
       <div class="row2">
         ${num('grace', 'Tiempo de gracia (segundos)', a.grace, 0, 300, 'Espera antes de detener cuando se supera el límite. Recomendado: 5 a 10')}
         ${num('monitorSec', 'Intervalo de vigilancia (segundos)', g.monitorSec, 10, 600, 'Cada cuánto consulta el panel a Emby. Mínimo 10')}
@@ -4162,6 +4176,7 @@ function vTiempos() {
       <div class="infobox"><b>Cómo funciona</b><ul>
         <li>El panel pregunta a Emby cada ${g.monitorSec} s, también con el panel cerrado en el navegador (la ventana negra debe seguir abierta).</li>
         <li>Si una cuenta supera sus pantallas, espera ${a.grace} s de gracia y vuelve a mirar. Si sigue igual, detiene según la política elegida. En el peor caso tarda unos ${g.monitorSec + a.grace} s.</li>
+        <li>Algunas apps (algunas teles y navegadores) no obedecen la orden de detener. Si el aparato sigue reproduciendo en la siguiente vuelta, se le cierra la sesión.</li>
         <li>Las cuentas «sin límite de pantallas» no se vigilan. El control de transcodificación se configura en Alertas, Transcode.</li>
       </ul></div>`,
     lim: `<h2>Límites</h2>
@@ -5992,14 +6007,19 @@ function dMessage(c, password, key) {
     title: `Mensaje para ${c.panelName}`, submit: 'Copiar mensaje',
     body: `<label class="f">Plantilla<select name="tpl">${options(TPL, key || (c.demo ? 'demo' : 'created'))}</select></label>
       <label class="check"><input type="checkbox" name="guide" checked> Añadir al final la guía para poner la calidad al máximo (en cuentas y demos nuevas)</label>
+      ${tgLink(c) ? `<label class="check"><input type="checkbox" name="tg"${c.tgLinked ? '' : ' checked'}> Añadir el enlace de Telegram para que reciba los avisos${c.tgLinked ? ' <span class="muted small">(ya lo tiene enlazado)</span>' : ''}</label>` : ''}
       <label class="f">Mensaje (puedes retocarlo antes de copiarlo)<textarea name="msg" rows="13" style="font-family:ui-monospace,Consolas,monospace;font-size:13.5px"></textarea></label>
       ${notes.map((n) => `<p class="muted small" style="margin-bottom:8px">${n}</p>`).join('')}
       ${wa ? '<a class="btn" id="waLink" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">Enviar por WhatsApp</a>' : ''}`,
     onOpen: () => {
       const f = dlgForm;
       const link = () => { const a = $('#waLink', f); if (a) a.href = `https://wa.me/${wa}?text=${encodeURIComponent(f.elements.msg.value)}`; };
-      const upd = () => { const k = f.elements.tpl.value, add = f.elements.guide.checked && (k === 'created' || k === 'demo'); f.elements.msg.value = fillTpl(k, c, password) + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link(); };
-      f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; f.elements.msg.oninput = link; upd();
+      const upd = () => {
+        const k = f.elements.tpl.value, add = f.elements.guide.checked && (k === 'created' || k === 'demo'), main = fillTpl(k, c, password);
+        const tg = f.elements.tg && f.elements.tg.checked && k !== 'quality' && !main.includes(tgLink(c)) ? '\n\n' + tgBlock(c) : '';
+        f.elements.msg.value = main + tg + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link();
+      };
+      f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; if (f.elements.tg) f.elements.tg.onchange = upd; f.elements.msg.oninput = link; upd();
     },
     onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Mensaje copiado'; },
   });
@@ -6557,7 +6577,7 @@ document.addEventListener('click', (e) => {
         await reload();
         const fixed = r.report.filter((x) => !x.ok && !x.warn).length;
         showDlg(`Reparación de ${c.panelName}`, `<p class="preview">${fixed ? `Se ${fixed === 1 ? 'ha corregido 1 cosa' : `han corregido ${fixed} cosas`} en Emby.` : 'Todo estaba correcto en Emby. No ha hecho falta cambiar nada.'}${r.report.some((x) => x.warn) ? ' Hay un aviso que debes revisar.' : ''}</p>
-          <ul class="hist">${r.report.map((x) => `<li><b class="${x.ok ? 'plus' : 'minus'}"${x.warn ? ' style="color:var(--warn)"' : ''}>${x.ok ? 'Correcto' : x.warn ? 'Atención' : 'Corregido'}</b> ${esc(x.text)}</li>`).join('')}</ul>`);
+          <ul class="hist">${r.report.map((x) => `<li><b class="${x.ok ? 'plus' : 'minus'}"${x.warn ? ' style="color:var(--warn)"' : ''}>${x.ok ? 'Correcto' : x.warn ? 'Atención' : 'Corregido'}</b> ${esc(x.text)}</li>`).join('')}</ul>${repTg(S.d.clients.find((x) => x.id === c.id) || c)}`);
       }).catch((x) => { if (dlg.open) dlg.close(); toast(x.message, true); });
     } break;
     case 'toggle': if (c) { S.open.has(c.id) ? S.open.delete(c.id) : S.open.add(c.id); render(); } break;
@@ -6763,7 +6783,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'alcfg') {
     e.preventDefault();
     const fd = new FormData(e.target), k = e.target.dataset.k;
-    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', tip: fd.get('tip') === 'on', ...(k === 'transcode' ? { tipEvery: +fd.get('tipEvery'), tipText: fd.get('tipText') } : {}), message: fd.get('message'), retention: +fd.get('retention') } })
+    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', tip: fd.get('tip') === 'on', ...(k === 'transcode' ? { tipEvery: +fd.get('tipEvery'), tipText: fd.get('tipText') } : { logout: fd.get('logout') === 'on' }), message: fd.get('message'), retention: +fd.get('retention') } })
       .then(async () => { await loadAlerts(); await reload(); toast('Configuración guardada'); }).catch((x) => toast(x.message, true));
   }
   if (e.target.id === 'noticeForm') {
@@ -6799,7 +6819,7 @@ document.addEventListener('submit', (e) => {
     const fd = new FormData(e.target), tab = e.target.dataset.tab, n = (k) => +fd.get(k);
     act(async () => {
       if (tab === 'con') {
-        await api('PUT', '/api/alerts/config', { sessions: { on: fd.get('on') === 'on', stop: fd.get('stop') === 'on', grace: n('grace'), policy: fd.get('policy'), message: fd.get('message') } });
+        await api('PUT', '/api/alerts/config', { sessions: { on: fd.get('on') === 'on', stop: fd.get('stop') === 'on', logout: fd.get('logout') === 'on', grace: n('grace'), policy: fd.get('policy'), message: fd.get('message') } });
         await api('PUT', '/api/settings', { monitorSec: n('monitorSec'), liveSec: n('liveSec') });
         S.al.data = null;
       } else if (tab === 'lim') await api('PUT', '/api/settings', { warnDays: n('warnDays'), demoMax: n('demoMax') });
