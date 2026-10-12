@@ -308,6 +308,17 @@ table.prices input{width:92px;background:var(--bg);border:1px solid var(--line);
 .nav .sub{display:flex;flex-direction:column;gap:1px;margin:0 0 4px 18px;padding-left:8px;border-left:1px solid var(--line)}
 .nav .sub button{padding:6px 10px;font-size:14px}
 .nav .n.hot{background:var(--bad);color:#fff}
+/* Menu: un color para cada apartado, para distinguirlos de un vistazo */
+.nav .g-cli{--gc:#5aa9f0}.nav .g-demo{--gc:#f0b545}.nav .g-emby{--gc:#a9a6ff}.nav .g-mon{--gc:#3fd0b5}
+.nav .g-al{--gc:#f0725f}.nav .g-ven{--gc:#ec86b4}.nav .g-pan{--gc:#8fd36a}.nav .g-aj{--gc:#9fb4bf}
+:root[data-theme="light"] .nav .g-cli{--gc:#1f6fc0}:root[data-theme="light"] .nav .g-demo{--gc:#a8650a}:root[data-theme="light"] .nav .g-emby{--gc:#5b54c9}:root[data-theme="light"] .nav .g-mon{--gc:#0f7f6a}
+:root[data-theme="light"] .nav .g-al{--gc:#c23d29}:root[data-theme="light"] .nav .g-ven{--gc:#b23a72}:root[data-theme="light"] .nav .g-pan{--gc:#3f7d1d}:root[data-theme="light"] .nav .g-aj{--gc:#58717d}
+.nav .grp[class*="g-"]{margin-top:10px}
+.nav .grp[class*="g-"] > .ic:first-child{width:28px;height:28px;padding:6px;border-radius:8px;flex:none;color:var(--gc);background:color-mix(in srgb,var(--gc) 18%,transparent)}
+.nav .grp[class*="g-"][aria-expanded="true"] .t{color:var(--gc)}
+.nav .sub[class*="g-"]{border-left:2px solid color-mix(in srgb,var(--gc) 55%,transparent);margin-left:22px}
+.nav .sub[class*="g-"] button[aria-current="page"]{box-shadow:inset 3px 0 0 var(--gc);background:color-mix(in srgb,var(--gc) 14%,var(--raised))}
+.nav .sub[class*="g-"] button[aria-current="page"] .ic{color:var(--gc)}
 .sidefoot{display:flex;align-items:center;gap:10px;padding:12px 14px 14px}
 .sidefoot #who{flex:1;min-width:0;line-height:1.35}
 .sidefoot .ib{margin:0;text-decoration:none}
@@ -1784,8 +1795,8 @@ function render() {
     const here = g.items.some((x) => x.v === S.view && (!x.f || x.f === listF));
     const open = here || NAV_OPEN.has(g.k);
     const hot = g.items.reduce((n, x) => n + (x.hot && x.n ? x.n : 0), 0);
-    return `<button type="button" class="grp" data-act="navgrp" data-k="${g.k}" aria-expanded="${open}">${ic(g.i)}<span class="t">${g.t}</span>${!open && hot ? `<span class="n hot">${hot}</span>` : ''}${ic('chev').replace('class="ic"', 'class="ic chev"')}</button>` +
-      (open ? `<div class="sub">${g.items.map(item).join('')}</div>` : '');
+    return `<button type="button" class="grp g-${g.k}" data-act="navgrp" data-k="${g.k}" aria-expanded="${open}">${ic(g.i)}<span class="t">${g.t}</span>${!open && hot ? `<span class="n hot">${hot}</span>` : ''}${ic('chev').replace('class="ic"', 'class="ic chev"')}</button>` +
+      (open ? `<div class="sub g-${g.k}">${g.items.map(item).join('')}</div>` : '');
   }).join('');
   $('#nav').scrollTop = navTop;
   $('#who').innerHTML = `<b>${esc(d.me.name)}</b><br>${ROLE[d.me.role]}, ${!pays() ? 'créditos ilimitados' : plural(d.me.credits, 'crédito', 'créditos')}`;
