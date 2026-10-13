@@ -445,6 +445,9 @@ const PERM_RULES = [
   ['PUT', /^\/api\/servers\/\d+$/, 'servers'],
   ['DELETE', /^\/api\/servers\/\d+$/, 'servers'],
   ['PUT', /^\/api\/(settings|brand|tiles|templates|notices|credit-packs)$/, 'system'],
+  ['POST', /^\/api\/logs\/clear$/, 'reports'],
+  ['POST', /^\/api\/shared\/clear$/, 'clients'],
+  ['PUT', /^\/api\/servers\/\d+\/max$/, 'servers'],
 ];
 function permFor(method, pathname) {
   const r = PERM_RULES.find(([m, re]) => (m === '*' || m === method) && re.test(pathname));
@@ -1642,7 +1645,20 @@ function readAdminOptions(me, body, u) {
 }
 /** Servidores en los que un usuario puede crear cuentas: lista vacia = todos */
 function serverAllowed(u, s) { return isStaff(u) || !u.serverIds || !u.serverIds.length || u.serverIds.includes(s.id); }
-function assertServerAllowed(u, s) { if (s.off) throw new HttpError(400, `El servidor "${s.name}" está pausado: no admite cuentas nuevas ahora mismo.`); if (!serverAllowed(u, s)) throw new HttpError(403, `No tienes permiso para crear cuentas en "${s.name}".`); }
+/** Clientes que ocupan sitio en un servidor (todo menos la papelera; las demos también cuentan) */
+const srvLoad = (s) => db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash').length;
+const srvMax = (s) => Math.max(0, Number(s.maxClients) || 0);
+function assertRoom(s, n = 1) {
+  const max = srvMax(s), used = srvLoad(s);
+  if (max > 0 && used + n > max) throw new HttpError(400, `El servidor "${s.name}" está lleno: tiene ${used} de ${max} clientes. Elige otro servidor o sube su límite en Servidores › Editar.`);
+}
+function readMaxClients(v, cur) {
+  if (v === undefined || v === null || v === '') return cur || 0;
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 0 || n > 100000) throw new HttpError(400, 'El máximo de clientes debe ser un número entero (0 = sin límite).');
+  return n;
+}
+function assertServerAllowed(u, s) { assertRoom(s); if (s.off) throw new HttpError(400, `El servidor "${s.name}" está pausado: no admite cuentas nuevas ahora mismo.`); if (!serverAllowed(u, s)) throw new HttpError(403, `No tienes permiso para crear cuentas en "${s.name}".`); }
 /** Opciones del vendedor que solo fijan los administradores */
 function readVendorOptions(me, body, u) {
   if (!isStaff(me)) return;
@@ -1714,8 +1730,8 @@ function publicData(me) {
     expDue: me.role === 'super' ? expDueCount() : 0,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } } },
     servers: db.servers.map((s) => (seeServers
-      ? { id: s.id, name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } }
-      : { id: s.id, name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') } })),
+      ? { id: s.id, name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
+      : { id: s.id, name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
     clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId))).map((c) => ({ ...c, tgChat: undefined, tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
     log: db.log.filter((l) => l.type !== 'login' && seeClients && (!vis ? true : (l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)).slice(0, 500),
@@ -1980,7 +1996,15 @@ route('PUT', '/api/me', '*', ({ me, body }) => lock(async () => {
   return { ok: true };
 }));
 /* Registro de actividad completo, con los inicios de sesion */
-route('GET', '/api/logs', STAFF, () => ({ log: db.log.slice(0, 3000), total: db.log.length }));
+/* «Vaciar» deja la pantalla en blanco desde ese momento. Los datos se quedan para las estadísticas, los ingresos
+   y el historial de cada cuenta; se borran solos según Ajustes › Retención de datos. */
+route('GET', '/api/logs', STAFF, () => { const from = db.settings.logClearedAt || ''; const L = from ? db.log.filter((l) => l.ts > from) : db.log; return { log: L.slice(0, 3000), total: L.length, clearedAt: from }; });
+route('POST', '/api/logs/clear', STAFF, ({ me }) => lock(async () => {
+  db.settings.logClearedAt = new Date().toISOString();
+  addLog('ajustes', null, 'Registro de actividad vaciado', me);
+  saveDb();
+  return { ok: true };
+}));
 /* Historial de accesos. El superadministrador lo ve todo (también los intentos con usuarios que no existen).
    Un administrador ve los de resellers y subresellers y los suyos; un reseller, los suyos y los de sus subresellers. */
 route('GET', '/api/access', ['super', 'admin', 'reseller'], ({ me }) => {
@@ -1990,6 +2014,14 @@ route('GET', '/api/access', ['super', 'admin', 'reseller'], ({ me }) => {
   else { const mine = new Set([me.id, ...db.users.filter((u) => u.parentId === me.id).map((u) => u.id)]); ok = (e) => mine.has(e.userId); }
   return { access: db.access.filter(ok).slice(0, 5000), total: db.access.length };
 });
+
+route('POST', '/api/access/clear', SUPER, ({ me }) => lock(async () => {
+  const n = db.access.length;
+  db.access = [];
+  addLog('ajustes', null, `Historial de accesos vaciado (${n})`, me);
+  saveDb();
+  return { ok: true, cleared: n };
+}));
 
 /* ---------- Avisos de vencimiento ---------- */
 function tgCode(c) { return `c${c.id}_${crypto.createHmac('sha256', db.secret).update('tg' + c.id).digest('hex').slice(0, 10)}`; }
@@ -2224,7 +2256,7 @@ route('PUT', '/api/templates', SUPER, ({ body }) => lock(async () => {
 
 /* Servidores (solo superadministrador) */
 route('POST', '/api/servers', SUPER, ({ me, body }) => lock(async () => {
-  const s = { id: 0, name: str(body.name, 60), url: cleanUrl(body.url), publicUrl: str(body.publicUrl, 200), apiKey: str(body.apiKey, 200), packages: {} };
+  const s = { id: 0, name: str(body.name, 60), url: cleanUrl(body.url), publicUrl: str(body.publicUrl, 200), apiKey: str(body.apiKey, 200), packages: {}, maxClients: readMaxClients(body.maxClients, 0) };
   if (!s.name) throw new HttpError(400, 'Ponle un nombre al servidor.');
   if (!s.apiKey) throw new HttpError(400, 'Falta la API key.');
   const info = await emby(s, 'GET', '/System/Info');
@@ -2237,7 +2269,7 @@ route('POST', '/api/servers', SUPER, ({ me, body }) => lock(async () => {
 }));
 route('PUT', '/api/servers/:id', SUPER, ({ params, body }) => lock(async () => {
   const s = serverById(params.id);
-  const next = { ...s, name: str(body.name, 60) || s.name, url: cleanUrl(body.url), publicUrl: body.publicUrl === undefined ? (s.publicUrl || '') : str(body.publicUrl, 200), apiKey: str(body.apiKey, 200) || s.apiKey };
+  const next = { ...s, name: str(body.name, 60) || s.name, url: cleanUrl(body.url), publicUrl: body.publicUrl === undefined ? (s.publicUrl || '') : str(body.publicUrl, 200), apiKey: str(body.apiKey, 200) || s.apiKey, maxClients: readMaxClients(body.maxClients, s.maxClients) };
   const info = await emby(next, 'GET', '/System/Info');
   const newId_ = info && info.Id ? String(info.Id).slice(0, 64) : '';
   // Si la nueva direccion es OTRO servidor Emby, se avisa: las cuentas del panel no existirian alli
@@ -2248,6 +2280,13 @@ route('PUT', '/api/servers/:id', SUPER, ({ params, body }) => lock(async () => {
   if (s.apiKey) { delete s.keyLost; delete s.lostEnc; }
   saveDb();
   return { ok: true };
+}));
+route('PUT', '/api/servers/:id/max', SUPER, ({ me, params, body }) => lock(async () => {
+  const s = serverById(params.id), before = srvMax(s);
+  s.maxClients = readMaxClients(body.maxClients, 0);
+  if (before !== s.maxClients) addLog('servidor', null, `Límite de clientes de "${s.name}": ${s.maxClients || 'sin límite'}`, me);
+  saveDb();
+  return { ok: true, maxClients: s.maxClients, used: srvLoad(s) };
 }));
 route('DELETE', '/api/servers/:id', SUPER, ({ me, params }) => lock(async () => {
   const s = serverById(params.id);
@@ -2714,6 +2753,7 @@ route('POST', '/api/clients/:id/restore', '*', ({ me, params }) => lock(async ()
   if (c.status !== 'trash') return { ok: true };
   if (c.demo) throw new HttpError(400, 'Las demos no se restauran. Renuévala para convertirla en cuenta.');
   if (diffDays(c.expires, today()) < 0) throw new HttpError(400, 'Su suscripción ya venció. Renuévala para sacarla de la papelera.');
+  assertRoom(serverOf(c));
   const wasOff = c.off; delete c.off; delete c.offBy;
   try { await grantAccess(c); } catch (e) { if (wasOff) c.off = wasOff; throw e; }
   c.status = 'active';
@@ -2865,6 +2905,7 @@ route('POST', '/api/clients/:id/repair', '*', ({ me, params }) => lock(async () 
 
 /* Transferir a otro servidor: crea el usuario en el nuevo y lo borra del antiguo (el historial de reproduccion no viaja) */
 async function moveClient(me, c, to, passwordIn) {
+  if (c.serverId !== to.id && c.status !== 'trash') assertRoom(to);
   const from = serverOf(c);
   if (to.id === from.id) throw new HttpError(400, 'La cuenta ya está en ese servidor.');
   if (!c.quality) throw new HttpError(400, 'Usa bibliotecas propias del servidor actual. Asígnale contenido Básico o 4K antes de transferirla.');
@@ -3027,7 +3068,7 @@ route('GET', '/api/audit', STAFF, async () => {
     for (const u of users || []) {
       const pol = u.Policy || {};
       if (pol.IsAdministrator) { admins++; continue; }
-      if (!known.has(u.Id)) out.notInPanel.push({ server: s.name, serverId: s.id, embyId: u.Id, name: u.Name, disabled: !!pol.IsDisabled,
+      if (!known.has(u.Id)) out.notInPanel.push({ k: `np:${s.id}:${u.Id}`, sig: '1', server: s.name, serverId: s.id, embyId: u.Id, name: u.Name, disabled: !!pol.IsDisabled,
         libs: !!pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0, seen: vd(u.LastActivityDate), created: vd(u.DateCreated) });
     }
     out.servers.push({ id: s.id, name: s.name, emby: (users || []).length - admins, panel: mine.length, admins });
@@ -3035,7 +3076,7 @@ route('GET', '/api/audit', STAFF, async () => {
       out.checked++;
       const row = { id: c.id, server: s.name, panelName: c.panelName, embyName: c.embyName, owner: names.get(c.ownerId) || '' };
       const u = byId.get(c.embyId);
-      if (!u) { out.notInEmby.push(row); continue; }
+      if (!u) { out.notInEmby.push({ ...row, k: `ne:${c.id}`, sig: '1' }); continue; }
       const pol = u.Policy || {};
       const hasLibs = !!pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0;
       const problems = [];
@@ -3059,11 +3100,30 @@ route('GET', '/api/audit', STAFF, async () => {
         const pk = s.packages[c.quality];
         if (!!pk.all !== !!pol.EnableAllFolders || (!pk.all && !sameLibs(pk.folders, pol.EnabledFolders))) problems.push(`sus bibliotecas en Emby no son las del paquete ${QUALITIES[c.quality]}`);
       }
-      if (problems.length) out.mismatch.push({ ...row, problems });
+      if (problems.length) out.mismatch.push({ ...row, problems, k: `mm:${c.id}`, sig: problems.join('|') });
     }
   }
+  // Avisos que se vaciaron: no vuelven a salir salvo que cambien
+  const hide = db.auditHide || {}, keep = (x) => hide[x.k] !== x.sig;
+  const before = out.notInPanel.length + out.notInEmby.length + out.mismatch.length;
+  out.notInPanel = out.notInPanel.filter(keep); out.notInEmby = out.notInEmby.filter(keep); out.mismatch = out.mismatch.filter(keep);
+  out.hidden = before - (out.notInPanel.length + out.notInEmby.length + out.mismatch.length);
   return out;
 });
+route('POST', '/api/audit/hide', STAFF, ({ me, body }) => lock(async () => {
+  if (!db.auditHide || typeof db.auditHide !== 'object') db.auditHide = {};
+  const items = Array.isArray(body.items) ? body.items.slice(0, 20000) : [];
+  for (const it of items) if (Array.isArray(it) && typeof it[0] === 'string' && typeof it[1] === 'string') db.auditHide[it[0].slice(0, 120)] = it[1].slice(0, 2000);
+  addLog('ajustes', null, `Auditoría vaciada (${items.length} ${items.length === 1 ? 'aviso' : 'avisos'})`, me);
+  saveDb();
+  return { ok: true };
+}));
+route('POST', '/api/audit/unhide', STAFF, ({ me }) => lock(async () => {
+  db.auditHide = {};
+  addLog('ajustes', null, 'Auditoría: vuelven a mostrarse los avisos ocultos', me);
+  saveDb();
+  return { ok: true };
+}));
 
 /* Auditoría: arreglar lo que sobra en Emby o en el panel */
 route('POST', '/api/audit/emby-users', STAFF, ({ me, body }) => lock(async () => {
@@ -3145,6 +3205,50 @@ route('POST', '/api/users', ['super', 'admin', 'reseller'], ({ me, body }) => lo
   addLog('usuario', null, `Nuevo ${ROLE_NAME[role].toLowerCase()}: ${u.name} (${u.username})` + (subCost ? `. ${subCost} ${subCost === 1 ? 'crédito' : 'créditos'}` : ''), me);
   saveDb();
   return { ok: true };
+}));
+/* Importar resellers y subresellers desde Excel o CSV.
+   Columnas: usuario, nombre, tipo (reseller / subreseller), reseller (usuario del que depende un subreseller), créditos, contraseña.
+   Si no trae contraseña se inventa una; al entrar la primera vez tendrán que cambiarla. Con «check» solo se comprueba. */
+const VEN_ROLE = (v) => { const t = String(v || '').trim().toLowerCase().replace(/[\s_-]+/g, ''); return /^(sub|subreseller|subrevendedor|subvendedor)$/.test(t) ? 'sub' : /^(reseller|revendedor|vendedor|res|r)?$/.test(t) ? 'reseller' : ''; };
+route('POST', '/api/users/import', STAFF, ({ me, body }) => lock(async () => {
+  needPerm(me, 'resellers');
+  const rows = Array.isArray(body.rows) ? body.rows.slice(0, 2000) : [];
+  if (!rows.length) throw new HttpError(400, 'El archivo no trae ningún vendedor.');
+  const check = !!body.check, out = { created: [], skipped: [], willCreate: 0 };
+  const taken = new Set(db.users.map((u) => u.username)), batch = new Map(); // usuario -> rol, de este mismo archivo
+  // Primero los resellers, después los subresellers (así su reseller ya existe)
+  const norm = rows.map((r, i) => ({ i: i + 2, r, role: VEN_ROLE(r.role) })).sort((a, b) => (a.role === 'sub') - (b.role === 'sub'));
+  for (const { i, r, role } of norm) {
+    const fail = (error) => out.skipped.push({ row: i, username: String(r.username || ''), error });
+    let username;
+    try { username = readUsername(r.username); } catch (e) { fail(e.message); continue; }
+    if (!role) { fail('El tipo debe ser «reseller» o «subreseller».'); continue; }
+    if (taken.has(username)) { fail('Ese usuario ya existe en el panel.'); continue; }
+    let parentId = null, parentName = '';
+    if (role === 'sub') {
+      const pn = String(r.parent || '').trim().toLowerCase();
+      if (!pn) { fail('Un subreseller necesita la columna «reseller» con el usuario del que depende.'); continue; }
+      const p = db.users.find((u) => u.username === pn || u.name.toLowerCase() === pn);
+      if (p) { if (p.role !== 'reseller') { fail(`«${pn}» no es un reseller.`); continue; } parentId = p.id; parentName = p.name; }
+      else if (batch.get(pn) === 'reseller') { parentName = pn; }
+      else { fail(`No encuentro el reseller «${pn}». Créalo antes o ponlo en el mismo archivo.`); continue; }
+    }
+    const credits = Math.max(0, Math.floor(Number(String(r.credits || '0').replace(',', '.')) || 0));
+    if (credits > 100000) { fail('Demasiados créditos.'); continue; }
+    let password = String(r.password || '').trim();
+    if (password && password.length < 8) { fail('La contraseña debe tener al menos 8 caracteres (o déjala vacía y se inventa una).'); continue; }
+    taken.add(username); batch.set(username, role);
+    if (check) { out.willCreate++; continue; }
+    if (!password) password = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 10) + crypto.randomInt(10, 99);
+    if (role === 'sub' && !parentId) { const p = db.users.find((u) => u.username === parentName); parentId = p.id; parentName = p.name; }
+    const u = { id: newId(), username, name: str(r.name, 60) || username, role, parentId, credits: 0, disabled: false, createdAt: today(), mustPw: true };
+    setPassword(u, password);
+    db.users.push(u);
+    if (credits) { u.credits = credits; addLedger(u, credits, 'Saldo inicial (importado)', me, 'ajuste'); }
+    out.created.push({ username, name: u.name, role, parent: parentName, credits, password });
+  }
+  if (!check && out.created.length) { addLog('usuario', null, `Importados ${out.created.length} ${out.created.length === 1 ? 'vendedor' : 'vendedores'} desde archivo`, me); saveDb(); }
+  return out;
 }));
 route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, body }) => lock(async () => {
   const u = userById(params.id);
@@ -3674,7 +3778,8 @@ function recordConn(c, x) {
 const ipZone = (ip) => { const m = /^(\d+\.\d+\.\d+)\.\d+$/.exec(ip || ''); return m ? m[1] : (ip || '').split(':').slice(0, 4).join(':'); };
 /** Resumen de los ultimos dias de una cuenta, y si parece compartida */
 function shareInfo(c, days = 7) {
-  const lim = Date.now() - days * 86400000, rows = (connLoad()[c.id] || []).filter((r) => Date.parse(r[1]) >= lim);
+  // «Borrar y empezar de cero»: lo anterior a esa fecha ya no cuenta para el detector (el historial de conexiones se conserva)
+  const lim = Math.max(Date.now() - days * 86400000, Date.parse(c.shareReset || '') || 0), rows = (connLoad()[c.id] || []).filter((r) => Date.parse(r[1]) >= lim);
   const devs = new Map(), zones = new Set();
   for (const r of rows) { devs.set(r[5], { name: r[2], app: r[3], last: r[1] }); if (r[4]) zones.add(ipZone(r[4])); }
   // Aparatos a la vez: solo cuenta cuando Emby los ve REPRODUCIENDO en el mismo minuto.
@@ -3698,6 +3803,16 @@ function sharedCount(vis) {
   shareCache.set(key, { n: ids.length, ids, at: Date.now() });
   return ids.length;
 }
+route('POST', '/api/shared/clear', '*', ({ me, body }) => lock(async () => {
+  const vis = visibleOwners(me), now = new Date().toISOString();
+  const list = db.clients.filter((c) => c.status !== 'trash' && (!vis || vis.has(c.ownerId)) && (body.id ? c.id === Number(body.id) : true));
+  let n = 0;
+  for (const c of list) { if (body.id || shareInfo(c).level !== 'no') { c.shareReset = now; n++; } }
+  shareCache.clear();
+  if (n) addLog('ajustes', null, body.id ? `Cuentas compartidas: borrados los datos de ${list[0] ? list[0].panelName : 'una cuenta'}` : `Cuentas compartidas: lista vaciada (${n})`, me);
+  saveDb();
+  return { ok: true, cleared: n };
+}));
 route('GET', '/api/shared', '*', ({ me }) => {
   const vis = visibleOwners(me);
   const list = db.clients.filter((c) => c.status !== 'trash' && !c.demo && (!vis || vis.has(c.ownerId)))
@@ -4909,10 +5024,35 @@ function teamVisible(me) {
   if (me.role === 'reseller') return db.users.filter((u) => u.parentId === me.id);
   return [];
 }
+/* Avisos de «Atención» que se han descartado: vuelven a salir solo si aparece algo nuevo */
+const attnSig = (a) => a.reasons.map((r) => r.k).sort().join(',');
+const riskSig = (r) => r.reasons.join('|');
+const attnHidden = (u, a) => { const h = (db.attnHide || {})[u.id]; return !!h && h.a === attnSig(a); };
+const riskHidden = (u, r) => { const h = (db.attnHide || {})[u.id]; return !!h && h.r === riskSig(r); };
+route('POST', '/api/team/clear', ['super', 'admin', 'reseller'], ({ me, body }) => lock(async () => {
+  if (!db.attnHide || typeof db.attnHide !== 'object') db.attnHide = {};
+  const vis = teamVisible(me), only = body.id ? Number(body.id) : 0, kind = body.kind || 'all';
+  let n = 0;
+  for (const u of vis) {
+    if (only && u.id !== only) continue;
+    const h = db.attnHide[u.id] || {};
+    if (kind === 'all' || kind === 'attention') { const a = vendorAttention(u); if (a.reasons.length) { h.a = attnSig(a); n++; } }
+    if (kind === 'all' || kind === 'risk') { const r = accessRisk(u); if (r.level !== 'no') { h.r = riskSig(r); n++; } }
+    db.attnHide[u.id] = h;
+  }
+  if ((kind === 'all' || kind === 'incidents') && (me.role === 'super' || (me.role === 'admin' && can(me, 'resellers')))) {
+    const ids = new Set(vis.map((u) => u.id)), before = db.incidents.length;
+    db.incidents = db.incidents.filter((x) => !(ids.has(x.userId) && (!only || x.userId === only) && (!body.incident || x.id === body.incident)));
+    n += before - db.incidents.length;
+  }
+  addLog('ajustes', null, `Atención del equipo: ${n} ${n === 1 ? 'aviso descartado' : 'avisos descartados'}`, me);
+  saveDb();
+  return { ok: true, cleared: n };
+}));
 route('GET', '/api/team', ['super', 'admin', 'reseller'], ({ me }) => {
   const team = teamVisible(me).filter((u) => !u.disabled);
-  const attention = team.filter((u) => u.role !== 'admin').map((u) => ({ id: u.id, name: u.name, username: u.username, role: u.role, ...vendorAttention(u) })).filter((x) => x.reasons.length);
-  const suspicious = team.map((u) => ({ id: u.id, name: u.name, username: u.username, role: u.role, ...accessRisk(u) })).filter((x) => x.level !== 'no');
+  const attention = team.filter((u) => u.role !== 'admin').map((u) => ({ id: u.id, name: u.name, username: u.username, role: u.role, ...vendorAttention(u) })).filter((x) => x.reasons.length && !attnHidden(x, x));
+  const suspicious = team.map((u) => ({ id: u.id, name: u.name, username: u.username, role: u.role, ...accessRisk(u) })).filter((x) => x.level !== 'no' && !riskHidden(x, x));
   const visIds = new Set(teamVisible(me).map((u) => u.id));
   const incidents = me.role === 'super' || (me.role === 'admin' && can(me, 'resellers')) ? db.incidents.filter((x) => visIds.has(x.userId)).slice(0, 30) : [];
   const rates = {};
@@ -4923,8 +5063,8 @@ function teamCount(me) {
   if (!['super', 'admin', 'reseller'].includes(me.role)) return 0;
   const team = teamVisible(me).filter((u) => !u.disabled);
   const visIds = new Set(teamVisible(me).map((u) => u.id)); // los avisos cuentan aunque ya esté bloqueado
-  return team.filter((u) => u.role !== 'admin' && vendorAttention(u).reasons.length).length
-    + team.filter((u) => accessRisk(u).level !== 'no').length
+  return team.filter((u) => { if (u.role === 'admin') return false; const a = vendorAttention(u); return a.reasons.length && !attnHidden(u, a); }).length
+    + team.filter((u) => { const r = accessRisk(u); return r.level !== 'no' && !riskHidden(u, r); }).length
     + db.incidents.filter((x) => !x.closed && visIds.has(x.userId)).length;
 }
 route('POST', '/api/incidents/:id', STAFF, ({ me, params, body }) => lock(async () => {

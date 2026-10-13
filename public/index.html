@@ -1367,6 +1367,85 @@ section.fx-s:last-child{margin-top:14px}
   .clv .ccard .hd .ib{width:32px;height:32px} .cav{width:38px;height:38px;font-size:16px}
   .cl-row{flex-wrap:wrap} .cl-row select{flex:1 1 100%;max-width:none} .cl-pg{margin-left:0;flex:1;justify-content:space-between}
 }
+
+/* ======================================================================
+   v90 · Toque final: bienvenida, botones de vaciar, límite por servidor,
+   portada de entrada y pequeños detalles de acabado
+   ====================================================================== */
+/* Bienvenida de la lista de clientes: la bahía al atardecer */
+.lwel{position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px 24px;margin:2px 0 22px;padding:24px 26px;border-radius:22px;color:#fff;isolation:isolate;
+  background:radial-gradient(120% 160% at 100% 0%,#ff7a59 0%,transparent 42%),radial-gradient(90% 140% at 70% 120%,#e2457a 0%,transparent 55%),radial-gradient(120% 160% at 0% 100%,#14a6c9 0%,transparent 55%),linear-gradient(135deg,#0d3b5c,#3b2a8f);
+  box-shadow:0 20px 44px -26px rgba(226,69,122,.55);animation:lwIn .5s cubic-bezier(.2,.7,.2,1) both}
+.lwel::before{content:"";position:absolute;right:-70px;top:-90px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(255,224,138,.55),rgba(255,224,138,0) 65%);z-index:-1}
+.lwel::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:46px;z-index:-1;opacity:.35;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 46' preserveAspectRatio='none'%3E%3Cpath d='M0 26 C100 6 200 46 300 26 S500 6 600 26 V46 H0Z' fill='%23ffffff'/%3E%3C/svg%3E") center bottom/100% 100% no-repeat}
+@keyframes lwIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.lw-t{min-width:0;flex:1 1 320px}
+.lw-g{margin:0 0 4px;font-size:14px;font-weight:600;opacity:.92}.lw-g span{font-weight:400;opacity:.8}
+.lwel h1{margin:0;font-size:clamp(24px,3.4vw,34px);line-height:1.15;font-weight:800;letter-spacing:-.015em}
+.lwel h1 span{background:linear-gradient(90deg,#ffe08a,#ffb36b 55%,#ff9eb5);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lw-p{margin:6px 0 0;opacity:.9;font-size:15px}
+.lw-ks{display:grid;grid-template-columns:repeat(4,minmax(78px,1fr));gap:8px;flex:0 1 auto}
+.lw-k{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:10px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:inherit;text-align:left;min-height:44px}
+button.lw-k{cursor:pointer;transition:transform .15s ease,background .15s ease}button.lw-k:hover{transform:translateY(-2px);background:rgba(255,255,255,.2)}
+.lw-k b{font-size:24px;line-height:1.1;font-weight:800}.lw-k span{font-size:12.5px;opacity:.9}
+.lw-k.ok b{color:#b7f5d3}.lw-k.warn b{color:#ffe08a}.lw-k.bad b{color:#ffc2b8}.lw-k.demo b{color:#d9d5ff}
+@media (max-width:560px){.lwel{padding:20px 18px;border-radius:18px}.lw-ks{grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:6px}.lw-k{padding:8px 9px}.lw-k b{font-size:20px}.lw-k span{font-size:11.5px}}
+@media (prefers-reduced-motion:reduce){.lwel{animation:none}}
+
+/* Botones de vaciar: discretos, con un toque rojizo */
+.btn.clr{color:#f0725f;border-color:color-mix(in srgb,#f0725f 45%,var(--line))}
+.btn.clr:hover{background:color-mix(in srgb,#f0725f 14%,var(--raised));color:#ff8b78}
+.btn.sm.ghost.clr{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
+.btn.sm.ghost.clr:hover{background:color-mix(in srgb,var(--ok) 14%,var(--raised))}
+:root[data-theme="light"] .btn.clr{color:#c23d29}
+
+/* Barra de abajo del móvil: número de caducadas */
+.tabbar button{position:relative}
+.tbn{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f0725f;color:#fff;font-style:normal;font-size:11px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--surface)}
+
+/* Máximo de clientes por servidor */
+.sv-chips{grid-template-columns:repeat(6,minmax(0,1fr))}
+.svm{--c:#19c37d;font:inherit;color:inherit;cursor:default;position:relative}
+button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c) 20%,transparent)}
+.svm.free{--c:#8fa9b5}.svm.near{--c:#f5a524}.svm.full{--c:#f0616d}
+.svm b small{font-size:12px;font-weight:600;opacity:.75}
+.svm-bar{display:block;height:4px;border-radius:4px;background:color-mix(in srgb,var(--c) 18%,transparent);margin:4px 4px 0;overflow:hidden}.svm-bar i{display:block;height:100%;border-radius:4px;background:var(--c)}
+.svmq{margin-top:8px}
+@media (max-width:900px){.sv-chips{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Importar vendedores */
+.ivh h2{display:flex;align-items:center;gap:8px}.ivh .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.ivh h2 .ic{color:var(--brand)}
+.ivcols{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.ivcols span{font-size:13px;padding:5px 10px;border-radius:20px;background:var(--raised);border:1px solid var(--line);color:var(--muted)}.ivcols b{color:var(--text)}
+.ivtab{overflow-x:auto;margin-top:10px}.ivtab code{font-size:13px;padding:2px 6px;border-radius:6px;background:var(--raised)}
+.ivok{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;background:color-mix(in srgb,var(--ok) 12%,var(--raised))}.ivok>.ic{color:var(--ok);width:24px;height:24px;flex:none}.ivok div{display:flex;flex-direction:column;gap:2px}.ivok span{color:var(--muted);font-size:14px}
+.okline{color:var(--ok);margin:6px 0}.warnline{color:var(--warn);margin:6px 0}
+
+/* Portada de entrada: «Bienvenidos al panel Concha» en tonos de atardecer */
+#gate .gwel{display:block;margin-top:2px;font-size:15px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#ffd2c2;text-shadow:0 2px 14px rgba(255,90,80,.45)}
+#gate .gname{font-size:56px;background-image:linear-gradient(90deg,#ffb36b,#ff7a59 25%,#ff4d6d 50%,#e11d48 70%,#ff9eb5 90%,#ffb36b)!important;filter:drop-shadow(0 6px 22px rgba(255,77,109,.35))}
+#gate .gmsg{margin:6px 0 0;max-width:340px;color:#ffe4dc;font-size:15px;line-height:1.5;font-style:italic;opacity:.95}
+:root[data-theme="light"] #gate .gwel{color:#c2410c;text-shadow:none}
+:root[data-theme="light"] #gate .gname{background-image:linear-gradient(90deg,#ea580c,#e11d48 40%,#be123c 65%,#f43f5e 85%,#ea580c)!important}
+:root[data-theme="light"] #gate .gmsg{color:#7c2d12}
+@media (max-width:860px){#gate .gname{font-size:46px}#gate .gwel{font-size:13px;letter-spacing:.18em}#gate .gmsg{font-size:14px}}
+
+/* Barra del móvil: botón central «Nuevo» */
+.tabbar .tbplus{display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 4px 9px;font-size:12px;color:var(--text);background:none;border:0;cursor:pointer}
+.tbplus i{display:grid;place-items:center;width:46px;height:46px;margin-top:-16px;border-radius:50%;color:#fff;background:linear-gradient(135deg,#14a6c9,#7c5cff 55%,#e2457a);box-shadow:0 8px 20px -8px #7c5cff,0 0 0 4px var(--bg)}
+.tbplus i .ic{width:24px;height:24px}.tbplus span{font-weight:600}
+.tbpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.tbp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 10px;border-radius:16px;border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));background:color-mix(in srgb,var(--brand) 12%,var(--raised));color:var(--text);font:inherit;cursor:pointer;text-align:center}
+.tbp .ic{width:28px;height:28px;color:var(--brand)}.tbp b{font-size:16px}.tbp small{color:var(--muted);font-size:12.5px}
+.tbp.demo{border-color:color-mix(in srgb,#a46bff 40%,var(--line));background:color-mix(in srgb,#a46bff 12%,var(--raised))}.tbp.demo .ic{color:#a46bff}
+.tbp:hover{transform:translateY(-2px)}
+/* Pequeños detalles de acabado */
+::selection{background:color-mix(in srgb,var(--brand) 35%,transparent)}
+.btn{transition:transform .12s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease}
+.btn.primary:hover{box-shadow:0 8px 20px -10px var(--brand)}
+.btn:active{transform:scale(.98)}
+.tabbar{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);background:color-mix(in srgb,var(--surface) 88%,transparent)}
+.tabbar button[aria-current="page"] .ic{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--brand) 70%,transparent))}
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 45%,transparent) transparent}
 </style>
 </head>
 <body>
@@ -1380,7 +1459,7 @@ section.fx-s:last-child{margin-top:14px}
   </div>
   <button type="button" class="ib themebtn" data-act="theme" aria-label="Cambiar entre tema claro y oscuro"></button>
   <main class="gwrap">
-    <div class="brand ghead"><span class="gring"><span class="logo"></span></span><b class="brand-name gname">Concha</b><span class="gtag">Panel de cuentas Emby</span></div>
+    <div class="brand ghead"><span class="gring"><span class="logo"></span></span><span class="gwel">Bienvenidos al panel</span><b class="brand-name gname">Concha</b><span class="gtag">Panel de cuentas Emby</span><p class="gmsg">Tu bahía tranquila: cada cuenta en orden,<br>cada cliente a un toque.</p></div>
     <form id="gateForm" class="gcard">
       <h1 id="gateTitle">Iniciar sesión</h1>
       <p id="gateText"></p>
@@ -1406,7 +1485,7 @@ section.fx-s:last-child{margin-top:14px}
 
 <div id="app" hidden>
   <aside class="side">
-    <button type="button" class="brand" data-view="resumen" title="Ir al resumen" aria-label="Ir al resumen"><span class="logo"></span><span><b class="brand-name">Concha</b><span class="sub">Cuentas Emby</span></span></button>
+    <button type="button" class="brand" data-act="home" title="Ir a la lista de clientes" aria-label="Ir a la lista de clientes"><span class="logo"></span><span><b class="brand-name">Concha</b><span class="sub">Cuentas Emby</span></span></button>
     <div class="clock" aria-label="Fecha y hora"><div class="ctime"><b data-clock="hm">--:--</b><i data-clock="s">00</i></div><div class="cday" data-clock="day"></div><div class="cdate" data-clock="date"></div></div>
     <button type="button" class="qsbtn" data-act="qs" aria-label="Buscar opciones, clientes o vendedores (Ctrl+K)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><span>Buscar…</span><kbd>Ctrl K</kbd></button>
     <nav class="nav" id="nav" aria-label="Secciones"></nav>
@@ -1416,7 +1495,7 @@ section.fx-s:last-child{margin-top:14px}
       <button type="button" class="ib plain" data-act="logout" aria-label="Cerrar sesión" title="Cerrar sesión"></button>
     </div>
   </aside>
-  <button type="button" class="brand topbar" data-view="resumen" title="Ir al resumen" aria-label="Ir al resumen"><span class="logo"></span><b class="brand-name">Concha</b><span class="topclock"><b data-clock="hm">--:--</b><span data-clock="short"></span></span></button>
+  <button type="button" class="brand topbar" data-act="home" title="Ir a la lista de clientes" aria-label="Ir a la lista de clientes"><span class="logo"></span><b class="brand-name">Concha</b><span class="topclock"><b data-clock="hm">--:--</b><span data-clock="short"></span></span></button>
   <button type="button" class="qsm" data-act="qs" aria-label="Buscar opciones, clientes o vendedores"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg></button>
   <main id="main"></main>
   <div id="shade" data-act="menu"></div>
@@ -1734,7 +1813,7 @@ async function start() {
   try { S.d = await api('GET', '/api/data', null, { timeout: 30000 }); } // primera carga: con límite de tiempo
   finally { bootLoading(false); }
   if (S.d.me.mustPw) return showMustPw();
-  $('#gate').hidden = true; $('#app').hidden = false; navFromHash(); render(); payReturn();
+  $('#gate').hidden = true; $('#app').hidden = false; goHome(); try { history.replaceState(null, '', location.pathname + location.search + '#/' + homeKey()); } catch (e) { /* nada */ } render(); payReturn();
 }
 /** Primera entrada (o contraseña puesta por otro): hay que elegir una propia antes de usar el panel */
 function showMustPw() {
@@ -1827,8 +1906,14 @@ function render() {
   if (S.view === 'cuentas' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'cuentas' && S.d.servers.length && !noCli() && (!S.liveAt || Date.now() - S.liveAt > 30000)) { S.liveAt = Date.now(); loadLive(); }
   const tab = (attrs, icon, label, cur) => `<button type="button" ${attrs}${cur ? ' aria-current="page"' : ''}>${ic(icon)}<span>${label}</span></button>`;
-  $('#tabbar').innerHTML = tab('data-act="menu"', 'menu', 'Menú') + tab('data-view="resumen"', 'grid', 'Resumen', S.view === 'resumen') + (noCli() ? '' : tab('data-act="new"', 'userplus', 'Cuenta', S.view === 'nuevo') +
-    tab('data-act="demo"', 'timer', 'Demo', S.view === 'demonueva') + tab('data-view="cuentas" data-filter="all"', 'users', 'Clientes', S.view === 'cuentas'));
+  // Móvil: Menú · Clientes · Caducadas · Cuenta · Demo (el Resumen sigue en el menú)
+  const nExp = noCli() ? 0 : live().filter((c) => stage(c) === 'expired').length;
+  const tabN = (attrs, icon, label, cur, n) => `<button type="button" ${attrs}${cur ? ' aria-current="page"' : ''}>${ic(icon)}${n ? `<em class="tbn">${n > 99 ? '99+' : n}</em>` : ''}<span>${label}</span></button>`;
+  $('#tabbar').innerHTML = tab('data-act="menu"', 'menu', 'Menú') + (noCli() ? tab('data-view="resumen"', 'grid', 'Resumen', S.view === 'resumen')
+    : tab('data-view="cuentas" data-filter="all"', 'users', 'Clientes', S.view === 'cuentas' && S.filter === 'all')
+      + `<button type="button" class="tbplus" data-act="tb-new"${S.view === 'nuevo' || S.view === 'demonueva' ? ' aria-current="page"' : ''} aria-label="Nueva cuenta o demo"><i>${ic('plus')}</i><span>Nuevo</span></button>`
+      + tabN('data-view="cuentas" data-filter="expired"', 'alert', 'Caducadas', S.view === 'cuentas' && S.filter === 'expired', nExp)
+      + tab('data-view="calendario"', 'calendar', 'Calendario', S.view === 'calendario'));
   if (S.view === 'auditoria' && !S.audit && !S.auditBusy) loadAudit();
   if (S.view === 'logs' && !S.logs && !S.logsBusy) loadLogs();
   if (S.view === 'accesos' && !S.acc.data && !S.acc.busy) loadAccess();
@@ -1853,14 +1938,17 @@ const navKey = () => S.view + (S.view === 'cuentas' ? '/' + (S.filter || 'all') 
 const navState = (extra) => ({ k: navKey(), v: S.view, f: S.filter, vid: S.vendorId, sid: S.sf.id, ...extra });
 function navSync() {
   if (NAV.fromPop) { NAV.fromPop = false; return; }
-  const st = history.state || {}, k = navKey();
+  const st = history.state || {}, k = navKey(), home = homeKey();
   if (!st.k) { history.replaceState(navState(), '', '#/' + k); return; }
   if (st.dlg || st.k === k) return; // con una ventana abierta decide su cierre
-  history.pushState(navState(), '', '#/' + k);
+  // El historial solo tiene dos pasos: la lista de clientes y la pantalla actual. Así «Atrás» siempre vuelve a la lista.
+  if (k === home) { if (st.sub) { NAV.fromPop = false; history.back(); } else history.replaceState(navState(), '', '#/' + k); return; }
+  if (st.sub) history.replaceState(navState({ sub: 1 }), '', '#/' + k);
+  else history.pushState(navState({ sub: 1 }), '', '#/' + k);
 }
 function navDlgOpened() {
   const st = history.state || {};
-  if (!st.dlg) history.pushState(navState({ dlg: 1 }), '', location.hash || '#/' + navKey());
+  if (!st.dlg) history.pushState(navState({ dlg: 1, sub: navKey() !== homeKey() ? 1 : undefined }), '', location.hash || '#/' + navKey());
 }
 function navDlgClosed() {
   if (NAV.closing) return;
@@ -1868,7 +1956,7 @@ function navDlgClosed() {
     const st = history.state || {};
     if (!st.dlg || dlg.open) return; // se abrió otra ventana encima: sigue ocupando el mismo paso
     if (navKey() === st.k) { NAV.skip = true; history.back(); } // se cierra sin cambiar de pantalla: quitamos su paso
-    else history.replaceState(navState(), '', '#/' + navKey()); // la ventana llevó a otra pantalla: ese paso pasa a ser la pantalla nueva
+    else history.replaceState(navState({ sub: navKey() !== homeKey() ? 1 : undefined }), '', '#/' + navKey()); // la ventana llevó a otra pantalla: ese paso pasa a ser la pantalla nueva
   }, 0);
 }
 window.addEventListener('popstate', (e) => {
@@ -1881,7 +1969,11 @@ window.addEventListener('popstate', (e) => {
   S.view = st.v; if (st.f) S.filter = st.f; if (st.vid != null) S.vendorId = st.vid; if (st.sid != null && st.sid !== S.sf.id) sfReset(st.sid); S.page = 1;
   NAV.fromPop = true; render(); window.scrollTo(0, 0);
 });
-/** Al entrar o recargar (F5) se abre la pantalla que había en la dirección */
+/** Página principal del panel: Clientes › Lista (o el Resumen, si ese usuario no ve clientes).
+    Se abre al entrar, al recargar (F5) y al pulsar «Atrás» desde cualquier pantalla. */
+const homeKey = () => (noCli() ? 'resumen' : 'cuentas/all');
+function goHome() { if (noCli()) S.view = 'resumen'; else { S.view = 'cuentas'; S.filter = 'all'; } S.page = 1; }
+/** (Antes se abría la pantalla que había en la dirección; se deja por si se quiere volver a usar) */
 function navFromHash() {
   const m = /^#\/([a-z]+)(?:\/(\w+))?$/.exec(location.hash || '');
   if (!m) return;
@@ -2307,6 +2399,27 @@ function clientSorter() {
   };
 }
 function closeCombo() { document.querySelectorAll('.combo-pop:not([hidden])').forEach((p) => { p.hidden = true; p.previousElementSibling.setAttribute('aria-expanded', 'false'); }); }
+/** Bienvenida de la página principal: saludo con tu nombre y tus cuentas de un vistazo */
+function listWelcome() {
+  const d = S.d, now = new Date(), hr = now.getHours();
+  const greet = hr < 6 ? 'Buenas noches' : hr < 14 ? 'Buenos días' : hr < 21 ? 'Buenas tardes' : 'Buenas noches';
+  const emoji = hr >= 6 && hr < 14 ? '☀️' : hr >= 14 && hr < 21 ? '🌅' : '🌙';
+  const raw = String(d.me.name && !Object.values(ROLE).includes(d.me.name) ? d.me.name : d.me.username || '');
+  const name = raw.charAt(0).toUpperCase() + raw.slice(1), brand = esc((d.settings.brand && d.settings.brand.name) || 'Concha');
+  const cnt = { active: 0, soon: 0, expired: 0, demo: 0 };
+  live().forEach((c) => { const st = stage(c); if (cnt[st] !== undefined) cnt[st]++; });
+  const phrases = ['Todo tu negocio, en calma y en un solo lugar.', 'Tus clientes te esperan: aquí tienes cada cuenta a un toque.', 'Hoy es un buen día para renovar y sumar clientes.', 'Como la bahía al atardecer: todo en orden y bajo control.'];
+  const phrase = phrases[now.getDate() % phrases.length];
+  const date = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, (x) => x.toUpperCase());
+  const k = (cls, n, label, filter) => filter
+    ? `<button type="button" class="lw-k ${cls}" data-act="goto" data-filter="${filter}"><b>${n}</b><span>${label}</span></button>`
+    : `<div class="lw-k ${cls}"><b>${n}</b><span>${label}</span></div>`;
+  return `<section class="lwel" aria-label="Bienvenida">
+    <div class="lw-t"><p class="lw-g">${greet} ${emoji} <span>· ${esc(date)}</span></p>
+      <h1>Bienvenido a ${brand}, <span>${esc(name)}</span></h1><p class="lw-p">${phrase}</p></div>
+    <div class="lw-ks">${k('ok', cnt.active, cnt.active === 1 ? 'activa' : 'activas')}${k('warn', cnt.soon, 'por vencer', 'soon')}${k('bad', cnt.expired, cnt.expired === 1 ? 'caducada' : 'caducadas', 'expired')}${k('demo', cnt.demo, cnt.demo === 1 ? 'demo' : 'demos', 'demo')}</div>
+  </section>`;
+}
 function vCuentas() {
   if (!S.d.servers.length) return head('Cuentas') + noServer();
   const q = S.q.trim().toLowerCase(), loose = q ? new Set(dqMatches(q).map((c) => c.id)) : null; // tambien sin tildes, signos ni espacios
@@ -2346,7 +2459,7 @@ function vCuentas() {
   const filters = vendorBox + sel('fServer', S.fServer, 'Todos los servidores', S.d.servers.map((x) => [x.id, x.name]));
   const addBtns = `${staff() ? `<button class="cl-ib" data-act="import" title="Importar de Emby" aria-label="Importar de Emby">${ic('download')}</button>` : ''}<button class="cl-ib" data-act="demo" title="Nueva demo" aria-label="Nueva demo">${ic('timer')}</button><button class="cl-add" data-act="new" title="Nueva cuenta" aria-label="Nueva cuenta">${ic('plus')}<span>Nueva</span></button>`;
   const sIcon = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg>';
-  return `<div class="clv">` + head('Clientes Emby', 'Gestiona tus clientes y suscripciones Emby', addBtns) + ntiles() + `
+  return `<div class="clv">` + (S.filter === 'all' ? listWelcome() : '') + head('Clientes Emby', 'Gestiona tus clientes y suscripciones Emby', addBtns) + ntiles() + `
   <div class="cl-tools">
     <label class="cl-search">${sIcon}<input type="search" id="q" placeholder="Buscar…" value="${esc(S.q)}" aria-label="Buscar cuentas por nombre, usuario, contacto, nota o vendedor"></label>
     <select id="fState" aria-label="Estado">${options([['all', 'Estado'], ['active', 'Activos'], ['soon', 'Por vencer'], ['expired', 'Vencidos'], ['demo', 'Demos'], ['off', 'Desactivados']], S.filter)}</select>
@@ -2385,7 +2498,7 @@ function vNuevo(demo) {
       <label class="f">Email<span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span></label>
     </div>
     <div class="row4">
-      <label class="f">Servidor *<select name="serverId">${S.d.servers.filter((x) => x.usable !== false).map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></label>
+      <label class="f">Servidor *<select name="serverId">${S.d.servers.filter((x) => x.usable !== false).sort((a, b) => !!a.full - !!b.full).map((x) => `<option value="${x.id}"${x.full ? ' disabled' : ''}>${esc(x.name)}${x.full ? ' · lleno' : ''}</option>`).join('')}</select></label>
       <label class="f">Contenido *<select name="quality">${qualityOpts('basico', false)}</select></label>
       ${plan}
     </div>
@@ -2462,7 +2575,9 @@ function vCobros() {
 }
 
 function vAuditoria() {
-  return head('Auditoría', 'Compara los clientes del panel con los usuarios que hay de verdad en cada servidor Emby, por si alguno se ha quedado sin eliminar.', '<button class="btn primary" data-act="audit">' + ic('refresh') + 'Volver a comprobar</button>') + `<div id="audit">${auditHtml()}</div>`;
+  const a = S.audit, n = a ? a.notInPanel.length + a.notInEmby.length + a.mismatch.length : 0;
+  return head('Auditoría', 'Compara los clientes del panel con los usuarios que hay de verdad en cada servidor Emby, por si alguno se ha quedado sin eliminar.', '<button class="btn primary" data-act="audit">' + ic('refresh') + 'Volver a comprobar</button>'
+    + (n ? `<button class="btn clr" data-act="au-clear">${ic('trash')}Vaciar avisos</button>` : '') + (a && a.hidden ? `<button class="btn ghost" data-act="au-unhide">${ic('eye')}Ver ${plural(a.hidden, 'oculto', 'ocultos')}</button>` : '')) + `<div id="audit">${auditHtml()}</div>`;
 }
 function auditHtml() {
   const a = S.audit;
@@ -2618,7 +2733,7 @@ function vAlertas(kind) {
       : `<div class="panel"><div class="empty">${all.length ? 'Ninguna alerta coincide con los filtros.' : cfg && !cfg.on ? 'No hay eventos registrados. La vigilancia está apagada' + (staff() ? ': enciéndela arriba para empezar.' : '.') : 'No hay eventos registrados.'}</div></div>`;
     body = filters + pager + table;
   }
-  return head(def.title, def.sub) + (a.data.error ? `<p class="err" style="max-width:none;margin-bottom:10px">${esc(a.data.error)}</p>` : '') + module + `<div class="tiles">${tiles}</div>` + tabs + body;
+  return head(def.title, def.sub, staff() && all.length ? `<button class="btn clr" data-act="al-clear">${ic('trash')}Vaciar historial</button>` : '') + (a.data.error ? `<p class="err" style="max-width:none;margin-bottom:10px">${esc(a.data.error)}</p>` : '') + module + `<div class="tiles">${tiles}</div>` + tabs + body;
 }
 function alertsCsv(kind) {
   const cell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
@@ -3890,7 +4005,7 @@ function vServidores() {
       <div class="sv-id"><button type="button" class="sf-link sv-name" data-act="srv-open" data-id="${s.id}">${esc(s.name)}</button>${st}${s.off ? '<span class="pillst mid">Pausado</span>' : ''}
         <div class="sv-url" title="${esc(s.url || '')}">${esc(s.url || '')}</div>${s.keyLost ? '<div class="err" style="max-width:none;margin-top:4px">Falta su API key: pulsa Editar y vuelve a pegarla.</div>' : ''}
         ${pk < 2 ? `<div class="err" style="max-width:none;margin-top:4px">Falta elegir bibliotecas de ${[!s.ready.basico && 'Básico', !s.ready.k4 && '4K'].filter(Boolean).join(' y ')}</div>` : ''}</div>
-      <div class="sv-chips">${chip('users', 'Cuentas', n.cli, 'blue')}${chip('screen', 'Pantallas', n.scr, 'violet')}${chip('box', 'Paquetes', pk, 'indigo')}${chip('userplus', 'Nuevas', n.nuevos, 'teal')}${chip('timer', 'Demos', n.demos, 'amber')}</div>
+      <div class="sv-chips">${chip('users', 'Cuentas', n.cli, 'blue')}${chip('screen', 'Pantallas', n.scr, 'violet')}${chip('box', 'Paquetes', pk, 'indigo')}${chip('userplus', 'Nuevas', n.nuevos, 'teal')}${chip('timer', 'Demos', n.demos, 'amber')}${svMaxChip(s, can)}</div>
       <div class="sv-acts">
         ${can ? `<button type="button" class="sv-tg${s.off ? '' : ' on'}" data-act="sv-pause" data-id="${s.id}" title="${s.off ? 'Pausado: no admite cuentas nuevas. Pulsa para activarlo' : 'Activo para cuentas nuevas. Pulsa para pausarlo'}">${ic('power')}${s.off ? 'OFF' : 'ON'}</button>` : ''}
         ${canDo('packages') ? `<button class="btn sm primary" data-act="server-pkg" data-id="${s.id}">Contenido</button>` : ''}
@@ -3907,6 +4022,25 @@ function vServidores() {
   };
   const legend = `<div class="sv-legend"><span>${ic('power')}ON/OFF: admite cuentas nuevas o está pausado</span><span>${ic('refresh')}Comprobar</span>${sup ? `<span>${ic('bolt')}Reiniciar Emby</span><span>${ic('power')}Reiniciar VPS (con agente)</span>` : ''}<span>${ic('info')}Detalles</span>${can ? `<span>${ic('trash')}Quitar</span>` : ''}</div>`;
   return head('Servidores Emby', 'Tus servidores de un vistazo. En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', can ? `<button class="btn primary" data-act="server-new">${ic('plus')}Conectar otro servidor</button>` : '') + tiles + legend + `<div class="sv-list">${rows.map(card).join('')}</div>`;
+}
+/** Máximo de clientes de un servidor: chip con la ocupación (se pulsa para cambiarlo) */
+function svMaxChip(s, can) {
+  const max = s.maxClients || 0, used = s.used != null ? s.used : S.d.clients.filter((c) => c.serverId === s.id && c.status !== 'trash').length;
+  const pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0, cls = !max ? 'free' : pct >= 100 ? 'full' : pct >= 85 ? 'near' : 'okk';
+  const inner = `<span>${ic('users')}Máximo</span><b>${max ? `${used}<small>/${max}</small>` : '∞'}</b>${max ? `<i class="svm-bar"><i style="width:${pct}%"></i></i>` : ''}`;
+  const tip = max ? `${used} de ${max} clientes (${pct}%)${pct >= 100 ? ': lleno, no admite cuentas nuevas' : ''}` : 'Sin límite de clientes';
+  return can ? `<button type="button" class="sv-c svm ${cls}" data-act="sv-max" data-id="${s.id}" title="${tip}. Pulsa para cambiarlo">${inner}</button>` : `<div class="sv-c svm ${cls}" title="${tip}">${inner}</div>`;
+}
+function dSrvMax(s) {
+  const used = s.used != null ? s.used : 0;
+  openDlg({ title: `Máximo de clientes de ${s.name}`, submit: 'Guardar',
+    body: `<p class="muted" style="margin:0 0 12px">Cuántos clientes como mucho admite este servidor. Al llegar al máximo no deja crear más cuentas ni demos en él, ni pasar cuentas de otro servidor. Las cuentas que ya tiene no se tocan.</p>
+      <div class="lnew"><span>Ahora tiene</span><b>${plural(used, 'cliente', 'clientes')}</b></div>
+      <label class="f">Máximo de clientes (0 = sin límite)<input type="number" name="max" min="0" max="100000" step="1" value="${s.maxClients || 0}" inputmode="numeric"></label>
+      <div class="pmeth svmq">${[0, 50, 100, 150, 200, 300, 500].map((n) => `<label><input type="radio" name="q" value="${n}"><span>${n || 'Sin límite'}</span></label>`).join('')}</div>
+      <p class="small muted">Las demos también ocupan sitio. Lo que está en la papelera no cuenta. Si el servidor va bien, súbelo poco a poco.</p>`,
+    onOpen: () => { dlgForm.onchange = (e) => { if (e.target.name === 'q') dlgForm.elements.max.value = e.target.value; }; },
+    onSubmit: async (fd) => { const r = await api('PUT', `/api/servers/${s.id}/max`, { maxClients: +fd.get('max') || 0 }); return r.maxClients ? `${s.name}: máximo ${r.maxClients} clientes` : `${s.name}: sin límite de clientes`; } });
 }
 async function srvHealth() {
   if (S.hlBusy) return; S.hlBusy = true;
@@ -4475,11 +4609,75 @@ async function impRun(dry) {
   } catch (x) { imp.busy = false; toast(x.message, true); }
   if (S.view === 'importar') render();
 }
+/* ---------- Importar resellers y subresellers desde Excel o CSV ---------- */
+const IV_COLS = { username: ['usuario', 'user', 'username', 'login', 'nick'], name: ['nombre', 'name', 'nombre completo'], role: ['tipo', 'rol', 'role', 'nivel', 'type'],
+  parent: ['reseller', 'padre', 'parent', 'depende', 'depende de', 'reseller padre', 'del reseller'], credits: ['creditos', 'créditos', 'credits', 'saldo'], password: ['contraseña', 'contrasena', 'password', 'clave', 'pass'] };
+const ivNorm = (h) => String(h || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[_\-.]+/g, ' ');
+function ivRows(table) {
+  if (!table.length) throw new Error('El archivo está vacío.');
+  const head = table[0].map(ivNorm), idx = {};
+  for (const [k, names] of Object.entries(IV_COLS)) { const i = head.findIndex((h) => names.map(ivNorm).includes(h)); if (i >= 0) idx[k] = i; }
+  if (idx.username == null) throw new Error('No encuentro la columna «usuario». La primera fila debe tener los nombres de las columnas (usuario, nombre, tipo, reseller, créditos, contraseña).');
+  return table.slice(1).map((r) => Object.fromEntries(Object.keys(IV_COLS).map((k) => [k, idx[k] != null ? String(r[idx[k]] ?? '').trim() : '']))).filter((r) => r.username);
+}
+function vImpVen() {
+  const v = S.iv || (S.iv = { rows: null, check: null, result: null, busy: false });
+  const ROLE_T = (r) => (/^sub/i.test(r) ? 'Subreseller' : 'Reseller');
+  const intro = `<div class="panel pad ivh"><h2>${ic('users')}Importar resellers y subresellers</h2>
+    <p class="muted">Sube un Excel (.xlsx) o un CSV con tus vendedores. La primera fila lleva los nombres de las columnas:</p>
+    <div class="ivcols"><span><b>usuario</b> obligatorio</span><span><b>nombre</b></span><span><b>tipo</b> reseller o subreseller</span><span><b>reseller</b> el usuario del que depende un subreseller</span><span><b>créditos</b> saldo inicial</span><span><b>contraseña</b> si la dejas vacía, se inventa una</span></div>
+    <p class="small muted">Primero se crean los resellers y después sus subresellers. La primera vez que entren tendrán que poner una contraseña nueva. Los créditos iniciales no cuentan como venta en el Informe de ingresos.</p>
+    <div class="acts"><label class="btn primary" style="cursor:pointer">${ic('download')}Elegir archivo<input type="file" id="ivFile" accept=".xlsx,.csv,.txt,.tsv" hidden></label><button class="btn" data-act="iv-tpl">${ic('note')}Descargar plantilla</button></div></div>`;
+  if (v.result) {
+    const r = v.result;
+    return `<div class="panel pad"><div class="ivok">${ic('check')}<div><b>${plural(r.created.length, 'vendedor creado', 'vendedores creados')}</b><span>${r.skipped.length ? plural(r.skipped.length, 'fila no se ha podido crear', 'filas no se han podido crear') + '.' : 'Todo correcto.'} Guarda ahora las contraseñas: <b>no se vuelven a mostrar</b>.</span></div></div>
+      ${r.created.length ? `<div class="acts" style="margin:12px 0"><button class="btn primary" data-act="iv-csv">${ic('download')}Descargar usuarios y contraseñas</button><button class="btn" data-act="iv-copy">${ic('copy')}Copiar</button></div>
+      <div class="ivtab"><table class="cards"><thead><tr><th>Usuario</th><th>Nombre</th><th>Tipo</th><th>Depende de</th><th>Créditos</th><th>Contraseña</th></tr></thead><tbody>${r.created.map((x) => `<tr><td><b>${esc(x.username)}</b></td><td>${esc(x.name)}</td><td>${ROLE_T(x.role)}</td><td>${esc(x.parent || '—')}</td><td>${x.credits}</td><td><code>${esc(x.password)}</code></td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${ivSkipped(r.skipped)}
+      <div class="acts" style="margin-top:14px"><button class="btn" data-act="iv-reset">Importar otro archivo</button><button class="btn ghost" data-view="equipo">Ver vendedores</button></div></div>`;
+  }
+  if (!v.rows) return intro;
+  const c = v.check;
+  return intro + `<div class="panel pad"><h2>Vista previa · ${plural(v.rows.length, 'fila', 'filas')}</h2>
+    ${c ? `<p class="${c.skipped.length ? 'warnline' : 'okline'}">${c.willCreate ? `Se pueden crear <b>${plural(c.willCreate, 'vendedor', 'vendedores')}</b>.` : 'No hay ningún vendedor nuevo que crear.'}${c.skipped.length ? ` ${plural(c.skipped.length, 'fila tiene', 'filas tienen')} algún problema (abajo).` : ''}</p>` : '<p class="muted">Comprobando…</p>'}
+    <div class="ivtab"><table class="cards"><thead><tr><th>Usuario</th><th>Nombre</th><th>Tipo</th><th>Depende de</th><th>Créditos</th><th>Contraseña</th></tr></thead><tbody>${v.rows.slice(0, 200).map((x) => `<tr><td><b>${esc(x.username)}</b></td><td>${esc(x.name || x.username)}</td><td>${ROLE_T(x.role)}</td><td>${esc(x.parent || '—')}</td><td>${esc(x.credits || '0')}</td><td>${x.password ? '••••••' : '<span class="muted small">se inventa</span>'}</td></tr>`).join('')}</tbody></table></div>
+    ${v.rows.length > 200 ? `<p class="small muted">Y ${v.rows.length - 200} más…</p>` : ''}
+    ${c ? ivSkipped(c.skipped) : ''}
+    <div class="acts" style="margin-top:14px"><button class="btn ghost" data-act="iv-reset">Cancelar</button><button class="btn primary" data-act="iv-go"${!c || !c.willCreate || v.busy ? ' disabled' : ''}>${ic('userplus')}Crear ${c ? plural(c.willCreate, 'vendedor', 'vendedores') : ''}</button></div></div>`;
+}
+const ivSkipped = (list) => (list && list.length ? `<details class="tcfg" open><summary>${ic('alert')}No se crean (${list.length})</summary><ul class="hist" style="margin-top:8px">${list.map((x) => `<li><b>Fila ${x.row}</b> ${esc(x.username || '')} <span class="small err" style="max-width:none">${esc(x.error)}</span></li>`).join('')}</ul></details>` : '');
+async function ivLoad(file) {
+  const v = S.iv || (S.iv = {});
+  try {
+    const table = /\.xlsx$/i.test(file.name) ? await impXlsx(await file.arrayBuffer()) : impCsv(await file.text());
+    v.rows = ivRows(table); v.check = null; v.result = null;
+    if (!v.rows.length) throw new Error('No hay ninguna fila con usuario.');
+    render();
+    v.check = await api('POST', '/api/users/import', { rows: v.rows, check: true });
+  } catch (e) { toast(e.message, true); v.rows = v.rows && v.rows.length ? v.rows : null; }
+  render();
+}
+function ivCsvText(list) { return '﻿' + [['usuario', 'nombre', 'tipo', 'depende de', 'creditos', 'contraseña'], ...list.map((x) => [x.username, x.name, /^sub/.test(x.role) ? 'subreseller' : 'reseller', x.parent || '', x.credits, x.password])].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n'); }
+function ivDownload(text, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+document.addEventListener('change', (e) => { if (e.target.id === 'ivFile' && e.target.files[0]) ivLoad(e.target.files[0]); });
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act^="iv-"]'); if (!el) return;
+  const a = el.dataset.act, v = S.iv || (S.iv = {});
+  if (a === 'iv-reset') { S.iv = { rows: null, check: null, result: null }; render(); }
+  if (a === 'iv-tpl') ivDownload('﻿usuario;nombre;tipo;reseller;creditos;contraseña\r\nmaria;María López;reseller;;50;\r\njuan;Juan Pérez;subreseller;maria;10;\r\n', 'plantilla-vendedores.csv');
+  if (a === 'iv-csv' && v.result) ivDownload(ivCsvText(v.result.created), `vendedores-importados-${S.d.today}.csv`);
+  if (a === 'iv-copy' && v.result) navigator.clipboard && navigator.clipboard.writeText(v.result.created.map((x) => `${x.name} (${x.username}): ${x.password}`).join('\n')).then(() => toast('Copiado')).catch(() => toast('No se pudo copiar', true));
+  if (a === 'iv-go' && v.rows && !v.busy) {
+    v.busy = true; render();
+    api('POST', '/api/users/import', { rows: v.rows }).then(async (r) => { v.result = r; v.busy = false; await reload(); toast(plural(r.created.length, 'vendedor creado', 'vendedores creados')); }, (x) => { v.busy = false; toast(x.message, true); render(); });
+  }
+});
 function vImportar() {
   const imp = S.imp, d = S.d, tab = imp.tab;
   const tb = (k, t) => `<button role="tab" data-act="imp-tab" data-k="${k}" aria-selected="${tab === k}">${t}</button>`;
-  const tabs = `<div class="tabs" role="tablist">${tb('uni', 'Importador universal Emby')}${tb('emby', 'Desde el servidor Emby')}${tb('tools', 'Herramientas')}</div>`;
+  const tabs = `<div class="tabs" role="tablist">${tb('uni', 'Importador universal Emby')}${tb('emby', 'Desde el servidor Emby')}${canDo('resellers') ? tb('ven', 'Resellers y subresellers') : ''}${tb('tools', 'Herramientas')}</div>`;
   const hd = head('Importar clientes', 'Trae a este panel las cuentas que ya tienes, sin gastar créditos.');
+  if (tab === 'ven') return hd + tabs + vImpVen();
   if (tab === 'emby') return hd + tabs + `<div class="panel pad" style="max-width:720px"><h2>Usuarios que ya existen en Emby</h2>
     <p class="muted" style="margin:8px 0 14px">Lee los usuarios de tu servidor Emby que aún no están en el panel y los añade con la fecha de vencimiento que elijas. Conservan su contraseña y sus bibliotecas hasta que los renueves.</p>
     <button class="btn primary" data-act="import">${ic('download')}Importar de Emby</button></div>`;
@@ -4583,10 +4781,10 @@ function vCompartidas() {
       <div class="cstats sm">${chip(x.devices, 'aparatos')}${chip(x.places, 'sitios')}${chip(x.maxAt + '/' + (c.screens || '∞'), 'a la vez')}</div>
       <p class="why">${esc(x.reasons.join(' · '))}</p>
       <div class="devs">${x.devList.slice(0, 4).map((v) => `<span>${ic('screen')}${esc(v.name)}</span>`).join('')}${x.devList.length > 4 ? `<span>+${x.devList.length - 4}</span>` : ''}</div>
-      <div class="acts"><button class="btn sm" data-act="m-conn" data-id="${c.id}">${ic('signal')}Conexiones</button><button class="btn sm primary" data-act="sh-msg" data-id="${c.id}">${ic('send')}Escribirle</button>${c.off ? '' : `<button class="btn sm ghost" data-act="c-off" data-id="${c.id}">${ic('pause')}Desactivar</button>`}</div>
+      <div class="acts"><button class="btn sm ghost clr" data-act="sh-clear1" data-id="${c.id}" title="Ya lo he revisado: borrar sus datos y empezar de cero">${ic('check')}Revisado</button><button class="btn sm" data-act="m-conn" data-id="${c.id}">${ic('signal')}Conexiones</button><button class="btn sm primary" data-act="sh-msg" data-id="${c.id}">${ic('send')}Escribirle</button>${c.off ? '' : `<button class="btn sm ghost" data-act="c-off" data-id="${c.id}">${ic('pause')}Desactivar</button>`}</div>
     </article>`;
   }).join('');
-  return head('Cuentas compartidas', sub, `<button class="btn" data-act="sh-reload">${ic('refresh')}Actualizar</button>`) + since + `<div class="shgrid">${cards}</div>`;
+  return head('Cuentas compartidas', sub, `<button class="btn" data-act="sh-reload">${ic('refresh')}Actualizar</button><button class="btn clr" data-act="sh-clear">${ic('trash')}Vaciar lista</button>`) + since + `<div class="shgrid">${cards}</div>`;
 }
 function dShareMsg(c) {
   const text = `Hola ${c.panelName} 👋\n\nHemos visto tu cuenta de Emby conectada desde varios aparatos y sitios distintos a la vez. Tu plan incluye ${c.screens ? (c.screens === 1 ? '1 pantalla' : c.screens + ' pantallas') : 'las pantallas contratadas'}.\n\nSi la usáis más personas, te puedo ampliar pantallas por poco más. ¿Te lo preparo?`;
@@ -5166,13 +5364,13 @@ function vAtencion() {
       <p class="why">${esc(x.reasons.join(' · '))}</p>
       ${x.devs.length ? `<div class="devs">${x.devs.map((v) => `<span>${ic('screen')}${esc(v)}</span>`).join('')}</div>` : ''}
       <p class="small muted" style="margin:0">Puede que haya pasado su contraseña a otra persona o que se la hayan robado.</p>
-      <div class="acts"><button class="btn sm" data-act="tm-acc" data-id="${x.id}">${ic('lock')}Ver sus accesos</button><button class="btn sm ghost" data-act="user-power" data-id="${x.id}">${ic('power')}Desactivar</button></div>
+      <div class="acts"><button class="btn sm ghost clr" data-act="tm-clear1" data-k="risk" data-id="${x.id}">${ic('check')}Descartar</button><button class="btn sm" data-act="tm-acc" data-id="${x.id}">${ic('lock')}Ver sus accesos</button><button class="btn sm ghost" data-act="user-power" data-id="${x.id}">${ic('power')}Desactivar</button></div>
     </article>`).join('')}</div>`) : '';
   const ICO = { ventas: 'chart', acceso: 'clock', creditos: 'coins' };
   const att = d.attention.length ? sec('Necesitan atención', 'para vender más', `<div class="fulist">${d.attention.map((x) => `<article class="fuc">
       <div class="fu-l"><b>${esc(x.name)}</b><small>@${esc(x.username)} · ${role(x.role)} · ${plural(x.clients, 'cliente', 'clientes')}${d.rates[x.id] && d.rates[x.id].rate != null ? ` · renuevan ${d.rates[x.id].rate}%` : ''}</small>
         <div class="atr">${x.reasons.map((r) => `<span class="at-${r.k}">${ic(ICO[r.k] || 'alert')}${esc(r.t)}</span>`).join('')}</div></div>
-      <div class="acts"><button class="btn sm primary" data-act="tm-msg" data-id="${x.id}">${ic('send')}Escribirle</button>${x.reasons.some((r) => r.k === 'creditos') && canDo('credits') ? `<button class="btn sm" data-act="user-credits" data-id="${x.id}">${ic('coins')}Créditos</button>` : ''}</div>
+      <div class="acts"><button class="btn sm ghost clr" data-act="tm-clear1" data-k="attention" data-id="${x.id}">${ic('check')}Descartar</button><button class="btn sm primary" data-act="tm-msg" data-id="${x.id}">${ic('send')}Escribirle</button>${x.reasons.some((r) => r.k === 'creditos') && canDo('credits') ? `<button class="btn sm" data-act="user-credits" data-id="${x.id}">${ic('coins')}Créditos</button>` : ''}</div>
     </article>`).join('')}</div>`) : '';
   const nothing = !inc && !sus && !att ? `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Todo en orden</b><span>Nadie de tu equipo necesita atención ahora mismo.</span></div></div>` : '';
   const g = d.guard;
@@ -5183,7 +5381,8 @@ function vAtencion() {
       <label class="check"><input type="checkbox" name="block"${g.block ? ' checked' : ''}> Además, bloquearle el acceso al momento hasta que yo lo revise</label>
       <p class="small muted" style="margin:6px 0 12px">Tus propias acciones de superadministrador no cuentan.</p>
       <button class="btn primary" type="submit">Guardar</button></form></details>` : '';
-  return head('Atención', sub, `<button class="btn" data-act="tm-reload">${ic('refresh')}Actualizar</button>`) + inc + sus + att + nothing
+  const anyA = open.length || closed.length || d.suspicious.length || d.attention.length;
+  return head('Atención', sub, `<button class="btn" data-act="tm-reload">${ic('refresh')}Actualizar</button>${anyA ? `<button class="btn clr" data-act="tm-clear">${ic('trash')}Vaciar avisos</button>` : ''}`) + inc + sus + att + nothing
     + (closed.length ? `<p class="small muted" style="margin-top:14px">${plural(closed.length, 'aviso de acciones raras ya revisado', 'avisos de acciones raras ya revisados')}.</p>` : '') + cfg;
 }
 function tmMsg(id) {
@@ -5272,7 +5471,7 @@ function vAccesos() {
       ${canLogs ? `<td class="r">${e.userId && e.kind === 'entrada' ? `<button class="btn sm" data-act="acc-did" data-id="${e.userId}">Qué hizo</button>` : ''}</td>` : ''}</tr>`).join('')}
     </tbody></table></div>${rows.length > shown.length ? `<p class="small muted" style="margin-top:8px">Se muestran ${shown.length} de ${rows.length}. Descarga el historial para verlos todos.</p>` : ''}`
     : '<div class="panel"><div class="empty">No hay accesos con esos filtros.</div></div>';
-  return head('Historial de accesos', sub, `<button class="btn" data-act="acc-csv">${ic('download')}Descargar (CSV)</button><button class="btn" data-act="acc-reload">${ic('refresh')}Actualizar</button>`)
+  return head('Historial de accesos', sub, `<button class="btn" data-act="acc-csv">${ic('download')}Descargar (CSV)</button><button class="btn" data-act="acc-reload">${ic('refresh')}Actualizar</button>${isSuper() && d.access.length ? `<button class="btn clr" data-act="acc-clear">${ic('trash')}Vaciar historial</button>` : ''}`)
     + (fails ? `<p class="err" style="max-width:none;margin-bottom:12px">${plural(fails, 'intento fallido', 'intentos fallidos')} en los últimos 7 días. Fíltralos en «Intentos fallidos».</p>` : '')
     + tools + table;
 }
@@ -5304,7 +5503,7 @@ function vLogs() {
   const actors = [...new Map(all.filter((l) => l.actorId != null).map((l) => [l.actorId, l.actor])).entries()];
   const tile = (n, label, cls = '') => `<div class="tile ${cls}"><b>${n}</b><span>${label}</span></div>`;
   const shown = rows.slice(0, f.n);
-  return head('Registro de actividad', sub, '<button class="btn" data-act="lg-reload">Actualizar</button>') +
+  return head('Registro de actividad', sub, `<button class="btn" data-act="lg-reload">${ic('refresh')}Actualizar</button>${all.length ? `<button class="btn clr" data-act="lg-clear">${ic('trash')}Vaciar registro</button>` : ''}`) + (S.logs.clearedAt ? `<p class="small muted" style="margin:-6px 0 12px">Vaciado el ${fmtTs(S.logs.clearedAt, true)}. Se ve lo que ha pasado desde entonces.</p>` : '') +
     (manual.length ? `<div class="warnbox"><b>${plural(manual.length, 'cambio manual de fecha', 'cambios manuales de fecha')} en las últimas 48 horas</b>
       <div class="small muted" style="margin:4px 0 8px">Fechas de vencimiento cambiadas a mano, sin renovar.</div>
       ${manual.slice(0, 8).map((l) => `<div class="small">${fmtTs(l.ts, true)} · <b style="color:var(--text)">${esc(l.client || '')}</b> · ${esc(l.text)} · ${esc(l.actor || '')}</div>`).join('')}</div>` : '') +
@@ -6112,9 +6311,10 @@ function dServer(s) {
       <label class="f">Dirección para el panel<input name="url" required placeholder="http://192.168.0.29:8096" value="${esc(s ? s.url : '')}"></label>
       <label class="f">Dirección que das a los clientes (opcional)<input name="publicUrl" maxlength="200" placeholder="https://emby.tudominio.com" value="${esc(s ? s.publicUrl || '' : '')}"></label>
       <label class="f">API key${s ? ' (vacío = mantener la actual)' : ''}<input name="apiKey" type="password" ${s ? '' : 'required'} autocomplete="off"></label>
+      <label class="f">Máximo de clientes (0 = sin límite)<input name="maxClients" type="number" min="0" max="100000" step="1" value="${s ? s.maxClients || 0 : 0}" inputmode="numeric"></label>
       <p class="muted small">La API key se crea en Emby: Ajustes, Avanzado, Claves de API. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,
     onSubmit: async (fd) => {
-      const body = { name: fd.get('name'), url: fd.get('url'), publicUrl: fd.get('publicUrl'), apiKey: fd.get('apiKey') };
+      const body = { name: fd.get('name'), url: fd.get('url'), publicUrl: fd.get('publicUrl'), apiKey: fd.get('apiKey'), maxClients: +fd.get('maxClients') || 0 };
       if (s) {
         try { await api('PUT', `/api/servers/${s.id}`, body); }
         catch (e) { if (e.status !== 409 || !window.confirm(e.message + '\n\n¿Seguro que quieres cambiarlo? Las cuentas del panel están creadas en el servidor anterior.')) throw e; await api('PUT', `/api/servers/${s.id}`, { ...body, confirmOther: true }); }
@@ -6473,6 +6673,14 @@ document.addEventListener('click', (e) => {
   if (a === 'daily-test') { api('POST', '/api/daily/test', {}).then(() => toast('Resumen enviado: mira tu Telegram'), (x) => toast(x.message, true)); return; }
   if (a === 'm-conn') { const cc = S.d.clients.find((v) => v.id === id); if (cc) dConn(cc); return; }
   if (a === 'sh-reload') { S.sh.data = null; loadShared(); render(); return; }
+  if (a === 'sh-clear') { dConfirm('Vaciar cuentas compartidas', 'Se borran los datos de todas las cuentas de la lista y el detector empieza de cero desde ahora. El historial de conexiones de cada cliente se conserva.', 'Vaciar lista', async () => { await api('POST', '/api/shared/clear', {}); S.sh.data = null; loadShared(); }, 'Lista vaciada'); return; }
+  if (a === 'sh-clear1') { const c = S.d.clients.find((x) => x.id === id); api('POST', '/api/shared/clear', { id }).then(() => { toast(`${c ? c.panelName : 'Cuenta'}: datos borrados, empieza de cero`); S.sh.data = null; loadShared(); render(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'tm-clear') { dConfirm('Vaciar los avisos de Atención', 'Se quitan todos los avisos de esta pantalla. Si a alguien le pasa algo nuevo, volverá a salir.', 'Vaciar avisos', async () => { await api('POST', '/api/team/clear', {}); S.tm.data = null; loadTeam(); }, 'Avisos vaciados'); return; }
+  if (a === 'tm-clear1') { api('POST', '/api/team/clear', { id, kind: el.dataset.k }).then(() => { toast('Aviso descartado'); S.tm.data = null; loadTeam(); reload(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'acc-clear') { dConfirm('Vaciar el historial de accesos', 'Se borran todas las entradas, salidas e intentos fallidos guardados. No se puede deshacer. Si quieres guardarlas, descarga antes el CSV.', 'Vaciar historial', async () => { await api('POST', '/api/access/clear', {}); S.acc.data = null; loadAccess(); }, 'Historial de accesos vaciado'); return; }
+  if (a === 'lg-clear') { dConfirm('Vaciar el registro de actividad', 'La pantalla queda en blanco y desde ahora se apunta lo nuevo. Las estadísticas, los ingresos y el historial de cada cuenta no se pierden.', 'Vaciar registro', async () => { await api('POST', '/api/logs/clear', {}); S.logs = null; }, 'Registro vaciado'); return; }
+  if (a === 'au-clear') { const au = S.audit; if (!au) return; const items = [...au.notInPanel, ...au.notInEmby, ...au.mismatch].filter((x) => x.k).map((x) => [x.k, x.sig]); dConfirm('Vaciar los avisos de la auditoría', `Se ocultan ${plural(items.length, 'aviso', 'avisos')}. No se toca nada en Emby ni en el panel. Si algo cambia, volverá a salir.`, 'Vaciar avisos', async () => { await api('POST', '/api/audit/hide', { items }); setTimeout(loadAudit, 50); }, 'Auditoría vaciada'); return; }
+  if (a === 'au-unhide') { api('POST', '/api/audit/unhide', {}).then(() => { toast('Vuelven a verse todos los avisos'); loadAudit(); }, (x) => toast(x.message, true)); return; }
   if (a === 'sh-msg') { const cc = S.d.clients.find((v) => v.id === id); if (cc) dShareMsg(cc); return; }
   if (a === 'qm-tg') {
     const msg = (dlgForm.elements.msg || {}).value || '', url = el.dataset.url;
@@ -6525,6 +6733,8 @@ document.addEventListener('click', (e) => {
       inp.value = kind === 'password' ? genPassword() : kind === 'embyName' ? embyGen() : 'cliente_' + genPassword().slice(0, 4);
       break;
     }
+    case 'tb-new': showDlg('¿Qué quieres crear?', `<div class="tbpick"><button type="button" class="tbp" data-act="tb-pick" data-k="new">${ic('userplus')}<b>Nueva cuenta</b><small>Un cliente de pago</small></button><button type="button" class="tbp demo" data-act="tb-pick" data-k="demo">${ic('timer')}<b>Nueva demo</b><small>Prueba gratis de unas horas</small></button></div>`); break;
+    case 'tb-pick': { const k = el.dataset.k; if (dlg.open) dlg.close(); setTimeout(() => needServer(() => { S.view = k === 'demo' ? 'demonueva' : 'nuevo'; render(); window.scrollTo(0, 0); }), 30); break; }
     case 'new': needServer(() => { S.view = 'nuevo'; render(); window.scrollTo(0, 0); }); break;
     case 'paid': if (c) act(() => api('POST', `/api/clients/${c.id}/paid`, {}), 'Cobro registrado'); break;
     case 'audit': loadAudit(); break;
@@ -6606,6 +6816,7 @@ document.addEventListener('click', (e) => {
     case 'delete': if (c) dConfirm(`Eliminar a ${c.panelName}`, `El usuario <b>${esc(c.embyName)}</b> se borra de Emby junto con su historial y su progreso. No se puede deshacer.`,
       'Eliminar para siempre', () => api('DELETE', `/api/clients/${c.id}`), 'Cuenta eliminada'); break;
     case 'dash': S.dash = el.dataset.k; try { localStorage.setItem('resumen', S.dash); } catch (x) { /* sin almacenamiento */ } render(); window.scrollTo(0, 0); break;
+    case 'home': goHome(); S.q = ''; render(); window.scrollTo(0, 0); break;
     case 'goto': S.view = el.dataset.filter === 'trash' ? 'papelera' : 'cuentas'; if (el.dataset.filter !== 'trash') S.filter = el.dataset.filter; S.q = ''; render(); break;
     case 'filter': S.filter = el.dataset.filter; S.page = 1; render(); break;
     case 'logf': S.logF = el.dataset.v; render(); break;
@@ -6615,6 +6826,7 @@ document.addEventListener('click', (e) => {
     case 'run': act(() => api('POST', '/api/run', {}), 'Revisión hecha'); break;
     case 'server-new': dServer(); break;
     case 'server-edit': if (srv) dServer(srv); break;
+    case 'sv-max': if (srv) dSrvMax(srv); break;
     case 'server-pkg': if (srv) dPackages(srv); break;
     case 'srv-open': if (srv) { if (dlg.open) dlg.close(); sfReset(srv.id); S.view = 'srvficha'; render(); window.scrollTo(0, 0); } break;
     case 'sf-tab': S.sf.tab = el.dataset.k; render(); break;
