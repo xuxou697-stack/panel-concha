@@ -1429,6 +1429,51 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 :root[data-theme="light"] #gate .gmsg{color:#7c2d12}
 @media (max-width:860px){#gate .gname{font-size:46px}#gate .gwel{font-size:13px;letter-spacing:.18em}#gate .gmsg{font-size:14px}}
 
+/* Resumen «Fácil» */
+.fz{display:flex;flex-direction:column;gap:6px}
+.fz-hero{position:relative;overflow:hidden;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px 24px;padding:26px 28px;border-radius:24px;color:#fff;margin-bottom:14px;
+  background:radial-gradient(110% 150% at 100% 0%,#ff9a62 0%,transparent 45%),radial-gradient(100% 140% at 0% 100%,#14a6c9 0%,transparent 55%),linear-gradient(135deg,#123d63,#4b2f9e);box-shadow:0 22px 46px -28px rgba(124,92,255,.7);animation:lwIn .5s cubic-bezier(.2,.7,.2,1) both}
+.fz-hero::after{content:"";position:absolute;right:-60px;top:-80px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,224,138,.5),transparent 65%);pointer-events:none}
+.fz-g{margin:0 0 4px;font-size:15px;font-weight:600;opacity:.95}
+.fz-hero h1{margin:0;font-size:clamp(26px,3.8vw,38px);font-weight:800;letter-spacing:-.015em;line-height:1.1}
+.fz-date{margin:4px 0 0;opacity:.8;font-size:14px}
+.fz-note{margin:12px 0 0;padding:9px 13px;border-radius:12px;background:rgba(255,255,255,.14);font-size:14.5px;max-width:560px}.fz-note b{color:#ffe08a}
+.fz-ha{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:relative;z-index:1}
+.fz-hero .btn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff;min-height:44px}.fz-hero .btn.primary{background:#fff;color:#3b2a8f;border-color:#fff;font-weight:700}
+.fz-cred{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.14);font-weight:600}.fz-cred .ic{color:#ffe08a}
+.fz-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fz-c{--c:var(--ok);position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:18px 18px 16px;border-radius:20px;cursor:pointer;text-align:left;font:inherit;color:var(--text);
+  border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--c) 16%,var(--surface)),var(--surface) 70%);transition:transform .15s ease,box-shadow .15s ease}
+.fz-c:hover{transform:translateY(-3px);box-shadow:0 14px 28px -18px var(--c)}
+.fz-c.warn{--c:var(--warn)}.fz-c.bad{--c:var(--bad)}.fz-c.demo{--c:#a46bff}
+.fz-e{font-size:24px;line-height:1}.fz-c b{font-size:40px;line-height:1.1;font-weight:800;color:var(--c);margin-top:6px}
+.fz-t{font-weight:700;font-size:16px}.fz-c small{color:var(--muted);font-size:13px}
+.fz-c em{position:absolute;top:16px;right:16px;display:flex;align-items:center;gap:2px;font-style:normal;font-size:12.5px;color:var(--muted)}.fz-c em .ic{width:14px;height:14px;transform:rotate(-90deg)}
+.fz-bar{display:flex;height:10px;border-radius:10px;overflow:hidden;background:var(--raised);margin:14px 2px 6px}.fz-bar i{display:block;height:100%}
+.fz-bar .ok,.fz-barl .ok{background:var(--ok)}.fz-bar .warn,.fz-barl .warn{background:var(--warn)}.fz-bar .bad,.fz-barl .bad{background:var(--bad)}
+.fz-barl{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 2px 18px;font-size:12.5px;color:var(--muted)}.fz-barl span{display:inline-flex;align-items:center;gap:6px}.fz-barl i{width:10px;height:10px;border-radius:3px}
+.fz-days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.fz-d{display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px 8px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font:inherit;color:var(--text);text-align:center}
+button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
+.fz-d>span{font-size:22px}.fz-d b{font-size:26px;font-weight:800;line-height:1.15}.fz-d small{color:var(--muted);font-size:13px}
+.fz .rv{margin-bottom:18px}
+.fz-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.fz-box{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 16px 10px;min-width:0}
+@media (max-width:900px){.fz-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.fz-two{grid-template-columns:1fr}}
+@media (max-width:560px){.fz .rv{grid-template-columns:1fr!important;display:grid}.fz-hero{padding:20px 18px;border-radius:20px}.fz-ha{width:100%}.fz-ha .btn{flex:1;justify-content:center}.fz-c{padding:14px 14px 12px}.fz-c b{font-size:32px}.fz-t{font-size:14.5px}.fz-c em{display:none}.fz-days{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){.fz-hero{animation:none}}
+/* Precios y botón de pago en Telegram */
+.po-h{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}.po-h h2{margin:0 0 2px}.po-h p{margin:0}
+.po-i{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(135deg,#2aabee,#229ed9)}.po-i .ic{width:20px;height:20px}
+.po-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start;margin-top:8px}
+.po-prev small{display:block;color:var(--muted);margin-bottom:6px}
+.tgb{padding:14px;border-radius:16px;background:linear-gradient(160deg,#0e2333,#16324a);display:flex;flex-direction:column;gap:6px}
+.tgm{white-space:pre-wrap;background:#1f3a52;color:#eaf4fb;padding:10px 12px;border-radius:12px 12px 12px 4px;font-size:13.5px;line-height:1.45;max-width:100%;overflow-wrap:anywhere}
+.tgbtn{text-align:center;padding:9px;border-radius:10px;background:rgba(255,255,255,.12);color:#cfe9ff;font-weight:600;font-size:13.5px}
+@media (max-width:760px){.po-grid{grid-template-columns:1fr}}
+/* Menú: sección donde estás (cerrada) */
+.nav .grp.here .t{color:var(--gc,var(--brand));font-weight:700}
+.nav .grp.here::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--gc,var(--brand));margin-left:auto;flex:none}
 /* Barra del móvil: botón central «Nuevo» */
 .tabbar .tbplus{display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 4px 9px;font-size:12px;color:var(--text);background:none;border:0;cursor:pointer}
 .tbplus i{display:grid;place-items:center;width:46px;height:46px;margin-top:-16px;border-radius:50%;color:#fff;background:linear-gradient(135deg,#14a6c9,#7c5cff 55%,#e2457a);box-shadow:0 8px 20px -8px #7c5cff,0 0 0 4px var(--bg)}
@@ -1614,7 +1659,8 @@ function tick() {
   document.querySelectorAll('[data-clock]').forEach((el) => { const t = v[el.dataset.clock]; if (el.textContent !== t) el.textContent = t; });
 }
 tick(); setInterval(tick, 1000);
-let NAV_OPEN; try { NAV_OPEN = new Set(JSON.parse(localStorage.getItem('menu') || '["cli"]')); } catch (e) { NAV_OPEN = new Set(['cli']); }
+/* Al abrir el panel todas las secciones del menú empiezan cerradas; se abre la que pulses (y se cierran las demás) */
+let NAV_OPEN = new Set();
 
 /* ---------- Estado ---------- */
 const S = { fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
@@ -1872,9 +1918,10 @@ function render() {
   $('#nav').innerHTML = navGroups().map((g) => {
     if (!g.t) return g.items.map(item).join('');
     const here = g.items.some((x) => x.v === S.view && (!x.f || x.f === listF));
-    const open = here || NAV_OPEN.has(g.k);
-    const hot = g.items.reduce((n, x) => n + (x.hot && x.n ? x.n : 0), 0);
-    return `<button type="button" class="grp g-${g.k}" data-act="navgrp" data-k="${g.k}" aria-expanded="${open}">${ic(g.i)}<span class="t">${g.t}</span>${!open && hot ? `<span class="n hot">${hot}</span>` : ''}${ic('chev').replace('class="ic"', 'class="ic chev"')}</button>` +
+    const open = NAV_OPEN.has(g.k);
+    // Solo se suman los números; si algún aviso es «!», se enseña «!»
+    const hot = g.items.some((x) => x.hot && x.n === '!') ? '!' : g.items.reduce((n, x) => n + (x.hot && typeof x.n === 'number' ? x.n : 0), 0);
+    return `<button type="button" class="grp g-${g.k}${here && !open ? ' here' : ''}" data-act="navgrp" data-k="${g.k}" aria-expanded="${open}">${ic(g.i)}<span class="t">${g.t}</span>${!open && hot ? `<span class="n hot">${hot}</span>` : ''}${ic('chev').replace('class="ic"', 'class="ic chev"')}</button>` +
       (open ? `<div class="sub g-${g.k}">${g.items.map(item).join('')}</div>` : '');
   }).join('');
   $('#nav').scrollTop = navTop;
@@ -1926,6 +1973,7 @@ function render() {
   if (S.view === 'fechas') fxWire();
   if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power || x.plan)))) loadAgents(); }, 10000); }
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
+  if (S.view === 'plantillas') poWire();
   if (S.view === 'gastos' && !S.gx.busy && (!S.gx.data || Date.now() - S.gx.at > 30000)) loadGx();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
@@ -2208,8 +2256,9 @@ function vResumen() {
   ${d.log.length ? timeline(d.log.slice(0, 8)) : '<div class="panel"><div class="empty">Todavía no hay movimientos.</div></div>'}</section>` + dashPicker('clasico');
 }
 /* ---------- Diseños del Resumen (se elige abajo del todo; se guarda en este navegador) ---------- */
-const DASH = [['clasico', 'Clásico'], ['tarjetas', 'Tarjetas'], ['limpio', 'Limpio'], ['control', 'Control']];
-function dashStyle() { let v = ''; try { v = localStorage.getItem('resumen') || ''; } catch (e) { /* sin almacenamiento */ } return DASH.some(([k]) => k === v) ? v : (S.dash || 'tarjetas'); }
+const DASH = [['facil', 'Fácil'], ['clasico', 'Clásico'], ['tarjetas', 'Tarjetas'], ['limpio', 'Limpio'], ['control', 'Control']];
+/* v92: el diseño «Fácil» pasa a ser el de serie (se guarda con otra clave para que salga aunque antes se eligiera otro) */
+function dashStyle() { let v = ''; try { v = localStorage.getItem('resumen2') || ''; } catch (e) { /* sin almacenamiento */ } return DASH.some(([k]) => k === v) ? v : (S.dash || 'facil'); }
 function dashPicker(cur) {
   return `<div class="dpick"><span>${ic('grid')}Diseño del resumen</span><div class="dpick-b" role="radiogroup" aria-label="Diseño del resumen">${DASH.map(([k, t]) => `<button type="button" role="radio" aria-checked="${k === cur}" data-act="dash" data-k="${k}">${t}</button>`).join('')}</div></div>`;
 }
@@ -2231,7 +2280,41 @@ function dDue(list, max = 6) {
   if (!list.length) return `<div class="ddue-ok">${ic('check')}<b>Nada pendiente</b><span>Ninguna cuenta vence en los próximos ${S.d.settings.warnDays} días.</span></div>`;
   return `<div class="ddue">${list.slice(0, max).map((c) => { const [t, k] = dLeft(c); return `<div class="ddr"><span class="dav ${k}">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="ddn"><b>${esc(c.panelName)}</b><small>${diff(c.expires, S.d.today) < 0 ? 'Caducó' : 'Vence'} ${t}</small></div><button type="button" class="btn sm" data-act="renew" data-id="${c.id}">Renovar</button></div>`; }).join('')}${list.length > max ? `<button type="button" class="dmore" data-act="goto" data-filter="soon">Ver ${plural(list.length - max, 'más', 'más')} ${ic('chev')}</button>` : ''}</div>`;
 }
+/** Resumen «Fácil»: lo importante, con palabras sencillas y colores claros */
+function dashFacil(p) {
+  const { d, cnt, g, urgent, greet, emoji, review, secTip } = p;
+  const raw = String(d.me.name && !Object.values(ROLE).includes(d.me.name) ? d.me.name : d.me.username || ''), wName = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const st = d.stats, n1 = (a) => (Array.isArray(a) ? a[1] : a) || 0;
+  const now = new Date(), date = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, (x) => x.toUpperCase());
+  const total = cnt.active + cnt.soon + cnt.expired;
+  const credits = pays() ? `<span class="fz-cred">${ic('coins')}${plural(d.me.credits, 'crédito', 'créditos')}</span>` : '';
+  const big = (cls, emo, n, title, hint, filter) => `<button type="button" class="fz-c ${cls}" data-act="goto" data-filter="${filter}"><span class="fz-e" aria-hidden="true">${emo}</span><b>${n}</b><span class="fz-t">${title}</span><small>${hint}</small><em>Ver ${ic('chev')}</em></button>`;
+  const pct = (n) => (total ? Math.max(n ? 2 : 0, Math.round((n / total) * 100)) : 0);
+  const bar = total ? `<div class="fz-bar" role="img" aria-label="${cnt.active} funcionando, ${cnt.soon} a punto de caducar, ${cnt.expired} caducadas"><i class="ok" style="width:${pct(cnt.active)}%"></i><i class="warn" style="width:${pct(cnt.soon)}%"></i><i class="bad" style="width:${pct(cnt.expired)}%"></i></div>
+    <p class="fz-barl"><span><i class="ok"></i>Funcionando</span><span><i class="warn"></i>A punto de caducar</span><span><i class="bad"></i>Caducadas</span></p>` : '';
+  const day = (emo, n, label, attrs) => `<${attrs ? 'button type="button" ' + attrs : 'div'} class="fz-d"><span aria-hidden="true">${emo}</span><b>${n}</b><small>${label}</small></${attrs ? 'button' : 'div'}>`;
+  const due = urgent.filter((c) => diff(c.expires, d.today) >= 0).sort(byExpiry);
+  const note = cnt.expired ? `Tienes <b>${plural(cnt.expired, 'cuenta caducada', 'cuentas caducadas')}</b>: si renuevan, vuelven a ver al momento.` : cnt.soon ? `<b>${plural(cnt.soon, 'cuenta caduca', 'cuentas caducan')}</b> pronto. Buen momento para escribirles.` : total ? '¡Todo en orden! Ninguna cuenta caduca en los próximos días. 🎉' : 'Todavía no tienes cuentas. Crea la primera con «Nueva cuenta».';
+  return licBanner() + secTip + `<div class="fz">
+    <section class="fz-hero"><div><p class="fz-g">${greet}, ${esc(wName)} ${emoji}</p><h1>Así está tu negocio hoy</h1><p class="fz-date">${esc(date)}</p><p class="fz-note">${note}</p></div>
+      <div class="fz-ha"><button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>${credits}</div></section>
+    <div class="sec-h"><h2>Tus cuentas</h2><small>${plural(total, 'cuenta', 'cuentas')} · toca para ver la lista</small></div>
+    <div class="fz-cards">
+      ${big('ok', '🟢', cnt.active, 'Funcionando', 'Pueden ver Emby ahora', 'all')}
+      ${big('warn', '🟡', cnt.soon, 'A punto de caducar', `En ${plural(g.warnDays, 'día', 'días')} o menos`, 'soon')}
+      ${big('bad', '🔴', cnt.expired, 'Caducadas', 'Sin contenido hasta que renueven', 'expired')}
+      ${big('demo', '🎬', cnt.demo, 'Demos en curso', 'Pruebas gratis de unas horas', 'demo')}
+    </div>${bar}
+    <div class="sec-h"><h2>Hoy</h2><small>lo que ha pasado desde las 00:00</small></div>
+    <div class="fz-days">${day('✨', n1(st.today.alta), 'cuentas nuevas')}${day('🔄', n1(st.today.renovacion), 'renovaciones')}${day('🎁', n1(st.today.demo), 'demos creadas')}${day('📺', `<span id="nowPlaying">${S.live ? S.live.sessions.length : '…'}</span>`, 'viendo ahora', 'data-view="monitor"')}</div>
+    ${review ? `<div class="sec-h"><h2>Para revisar</h2></div>${review}` : ''}
+    <div class="fz-two">
+      <section class="fz-box"><div class="sec-h"><h2>Caducan pronto</h2><button class="btn sm ghost" data-view="calendario">${ic('calendar')}Calendario</button></div>${dDue(due, 6)}</section>
+      <section class="fz-box"><div class="sec-h"><h2>Últimos movimientos</h2><button class="btn sm ghost" data-view="movimientos">Ver todos</button></div>${d.log.length ? timeline(d.log.slice(0, 5)) : '<div class="empty">Todavía no hay movimientos.</div>'}</section>
+    </div></div>` + dashPicker('facil');
+}
 function dashNew(style, p) {
+  if (style === 'facil') return dashFacil(p);
   const { welcome, d, cnt, g, urgent, greet, emoji, wName, phrase, quick, review, secTip, dsearch } = p;
   const total = cnt.active + cnt.soon + cnt.expired + cnt.trash, st = d.stats, team = d.users.length > 1, mine = (a) => (team ? a[1] : a[1]);
   const credits = pays() ? `<span class="dcred">${ic('coins')}${plural(d.me.credits, 'crédito', 'créditos')}</span>` : '';
@@ -6292,7 +6375,7 @@ function vMisPlantillas() {
     ${keys.map(([k, name]) => `<div class="mytpl"><label class="f">${name}${mine[k] ? ' <span class="mytpl-own">Personalizado</span>' : ''}${k === 'vendor' ? ' <span class="small">(variables: {nombre} {usuario} {contraseña} {tipo} {creditos} {direccion} {panel})</span>' : ''}<textarea name="${k}" rows="${k === 'created' || k === 'demo' || k === 'vendor' ? 11 : 5}" maxlength="2000" placeholder="${esc(base(k))}">${esc(mine[k] || '')}</textarea></label>
       <div class="mytpl-acts">${mine[k] ? '' : `<button type="button" class="btn sm ghost" data-act="tpl-copy" data-k="${k}">Partir del texto del panel</button>`}${mine[k] ? `<button type="button" class="btn sm ghost" data-act="tpl-reset" data-k="${k}">Volver al del panel</button>` : ''}</div></div>`).join('')}
     <div class="dfoot"><button type="submit" class="btn primary">Guardar mis mensajes</button></div>
-  </form>`;
+  </form>` + payOfferHtml();
 }
 function vPlantillas() {
   if (!canDo('system')) return vMisPlantillas();
@@ -6302,7 +6385,44 @@ function vPlantillas() {
     <p class="muted small" style="margin-bottom:16px">Variables que se rellenan solas: {nombre} {usuario} {contraseña} {servidor} {direccion} {pantallas} {contenido} {vence} {cuando} {dias} {enlace_telegram}. Si dejas una plantilla vacía, vuelve al texto original.</p>
     ${TPL_ALL.map(([k, name]) => `<label class="f">${name}${k === 'vendor' ? ' <span class="small">(variables: {nombre} {usuario} {contraseña} {tipo} {creditos} {direccion} {panel})</span>' : ''}<textarea name="${k}" rows="${k === 'created' || k === 'demo' || k === 'vendor' ? 12 : 6}" maxlength="2000">${esc(t[k] || '')}</textarea></label>`).join('')}
     <div class="dfoot"><button type="submit" class="btn primary">Guardar plantillas</button></div>
+  </form>` + payOfferHtml();
+}
+/* ---------- Precios y botón de pago en el aviso de caducidad por Telegram (cada vendedor el suyo) ---------- */
+const PO_SAMPLE = '💶 Precios para renovar:\n• 1 mes: 10 €\n• 3 meses: 27 €\n• 6 meses: 50 €\n• 12 meses: 90 €\n\nPaga con el botón de abajo y avísame. ¡Gracias, {nombre}!';
+function payOfferHtml() {
+  const mine = S.d.myPayOffer, parent = S.d.parentPayOffer, inherit = !mine && !!S.d.me.parentId;
+  const o = mine || (inherit && parent) || { on: false, prices: '', url: '', button: '💳 Pagar y renovar' };
+  const bot = S.d.settings.notices.telegram.bot;
+  return `<form id="poForm" class="panel pad formpage po" style="max-width:760px;margin-top:18px">
+    <div class="po-h"><span class="po-i">${ic('send')}</span><div><h2>Precios y botón de pago en Telegram</h2><p class="muted small">Cuando el bot avisa por Telegram a un cliente tuyo de que su cuenta va a caducar, añade debajo tus precios y un botón para pagar. Cada vendedor pone los suyos.</p></div></div>
+    ${!bot ? `<p class="warnline small">${canDo('system') ? 'Primero conecta el bot de Telegram en Ajustes › Notificaciones.' : 'El superadministrador todavía no ha conectado el bot de Telegram.'}</p>` : ''}
+    ${S.d.me.parentId ? `<label class="check"><input type="checkbox" name="inherit"${inherit ? ' checked' : ''}> Usar los precios de mi reseller${parent ? '' : ' <span class="muted small">(tu reseller aún no ha puesto los suyos)</span>'}</label>` : ''}
+    <div class="po-body"${inherit ? ' hidden' : ''}>
+      <label class="check"><input type="checkbox" name="on"${o.on ? ' checked' : ''}> Añadir mis precios y el botón de pago al aviso de caducidad</label>
+      <div class="po-grid">
+        <div>
+          <label class="f">Tus precios (puedes usar {nombre} y {vence})<textarea name="prices" rows="7" maxlength="900" placeholder="${esc(PO_SAMPLE.replace(/\n/g, '&#10;'))}">${esc(o.prices || '')}</textarea></label>
+          ${!o.prices ? '<button type="button" class="btn sm ghost" data-act="po-sample">Poner un ejemplo</button>' : ''}
+          <label class="f">Enlace de pago (opcional)<input name="url" maxlength="300" value="${esc(o.url || '')}" placeholder="https://paypal.me/tuusuario" inputmode="url" autocomplete="off"></label>
+          <label class="f">Texto del botón<input name="button" maxlength="40" value="${esc(o.button || '💳 Pagar y renovar')}"></label>
+          <p class="small muted">Sirve cualquier enlace de pago: PayPal.me, Revolut, Stripe, tu web… Bizum no tiene enlace: pon tu número en los precios.</p>
+        </div>
+        <div class="po-prev"><small>Así lo verá tu cliente</small><div class="tgb"><div class="tgm" id="poPrev"></div><div class="tgbtn" id="poBtn"></div></div></div>
+      </div>
+    </div>
+    <div class="dfoot" style="justify-content:flex-start;gap:8px"><button type="submit" class="btn primary">Guardar</button>${bot ? `<button type="button" class="btn" data-act="po-test">${ic('send')}Enviarme una prueba</button>` : ''}</div>
   </form>`;
+}
+function poWire() {
+  const f = $('#poForm'); if (!f || f.dataset.w) return; f.dataset.w = 1;
+  const upd = () => {
+    const inh = f.elements.inherit && f.elements.inherit.checked; $('.po-body', f).hidden = !!inh;
+    const tpl = tplText('expiring').replace(/\{nombre\}/gi, 'Ana').replace(/\{usuario\}/gi, 'ana.12').replace(/\{vence\}/gi, '17/10').replace(/\{cuando\}/gi, 'en 3 días').replace(/\{dias\}/gi, '3');
+    const on = f.elements.on.checked, pr = f.elements.prices.value.replace(/\{nombre\}/gi, 'Ana').replace(/\{vence\}/gi, '17/10'), url = f.elements.url.value.trim();
+    $('#poPrev').textContent = tpl + (on && pr ? '\n\n' + pr : '');
+    const b = $('#poBtn'); b.textContent = f.elements.button.value || '💳 Pagar y renovar'; b.hidden = !(on && url);
+  };
+  f.oninput = upd; f.onchange = upd; upd();
 }
 function dServer(s) {
   openDlg({
@@ -6554,8 +6674,7 @@ document.addEventListener('click', (e) => {
   if (!el) return;
   const a = el.dataset.act, id = +el.dataset.id;
   if (a === 'navgrp') { // plegar o desplegar un grupo del menu, sin cerrarlo en el movil
-    const k = el.dataset.k; el.getAttribute('aria-expanded') === 'true' ? NAV_OPEN.delete(k) : NAV_OPEN.add(k);
-    try { localStorage.setItem('menu', JSON.stringify([...NAV_OPEN])); } catch (x) { /* sin almacenamiento */ }
+    const k = el.dataset.k; if (el.getAttribute('aria-expanded') === 'true') NAV_OPEN.delete(k); else { NAV_OPEN.clear(); NAV_OPEN.add(k); }
     if (el.getAttribute('aria-expanded') === 'true' && el.nextElementSibling && el.nextElementSibling.querySelector('[aria-current]')) return; // el grupo de la seccion actual no se pliega
     render(); return;
   }
@@ -6641,6 +6760,8 @@ document.addEventListener('click', (e) => {
   if (a === 'fx-quick') { const f = fxState(); f.mode = 'add'; f.amount = el.dataset.a; f.unit = el.dataset.u; render(); return; }
   if (a === 'fx-reason') { const r = $('#fxForm').elements.reason; r.value = el.dataset.t; fxRead(); return; }
   if (a === 'lic-new') { licNew(); return; }
+  if (a === 'po-sample') { const t = $('#poForm textarea[name=prices]'); if (t) { t.value = PO_SAMPLE; t.dispatchEvent(new Event('input', { bubbles: true })); t.focus(); } return; }
+  if (a === 'po-test') { const f = $('#poForm').elements; const inh = f.inherit && f.inherit.checked; api('POST', '/api/my-payoffer/test', inh ? {} : { preview: true, prices: f.prices.value, url: f.url.value, button: f.button.value }).then(() => toast('Prueba enviada a tu Telegram'), (x) => toast(x.message, true)); return; }
   if (a === 'gx-new') { gxForm(); return; }
   if (a === 'gx-edit') { const e = gxOf(id); if (e) gxForm(e); return; }
   if (a === 'gx-pay') { gxPay(id); return; }
@@ -6815,7 +6936,7 @@ document.addEventListener('click', (e) => {
     case 'del-refund': if (c) dDelRefund(c); break;
     case 'delete': if (c) dConfirm(`Eliminar a ${c.panelName}`, `El usuario <b>${esc(c.embyName)}</b> se borra de Emby junto con su historial y su progreso. No se puede deshacer.`,
       'Eliminar para siempre', () => api('DELETE', `/api/clients/${c.id}`), 'Cuenta eliminada'); break;
-    case 'dash': S.dash = el.dataset.k; try { localStorage.setItem('resumen', S.dash); } catch (x) { /* sin almacenamiento */ } render(); window.scrollTo(0, 0); break;
+    case 'dash': S.dash = el.dataset.k; try { localStorage.setItem('resumen2', S.dash); } catch (x) { /* sin almacenamiento */ } render(); window.scrollTo(0, 0); break;
     case 'home': goHome(); S.q = ''; render(); window.scrollTo(0, 0); break;
     case 'goto': S.view = el.dataset.filter === 'trash' ? 'papelera' : 'cuentas'; if (el.dataset.filter !== 'trash') S.filter = el.dataset.filter; S.q = ''; render(); break;
     case 'filter': S.filter = el.dataset.filter; S.page = 1; render(); break;
@@ -6904,6 +7025,8 @@ document.addEventListener('input', (e) => {
   const q = $('#' + id); q.focus(); q.setSelectionRange(pos, pos);
 });
 document.addEventListener('submit', (e) => {
+  if (e.target.id === 'poForm') { e.preventDefault(); const f = e.target.elements; const body = f.inherit && f.inherit.checked ? { inherit: true } : { on: f.on.checked, prices: f.prices.value, url: f.url.value, button: f.button.value };
+    api('PUT', '/api/my-payoffer', body).then(async () => { await reload(); toast('Precios guardados'); }, (x) => toast(x.message, true)); return; }
   if (e.target.id === 'gxCfg') { e.preventDefault(); const f = e.target.elements; api('PUT', '/api/expenses/cfg', { remind: +f.remind.value, tg: f.tg.checked }).then(async () => { toast('Avisos guardados'); await loadGx(); }, (x) => toast(x.message, true)); return; }
   if (e.target.id === 'licContact') { e.preventDefault(); api('PUT', '/api/licenses/contact', { contact: e.target.elements.contact.value }).then(() => { toast('Contacto guardado'); S.lic.data = null; loadLic(); }, (x) => toast(x.message, true)); return; }
   if (e.target.id === 'vpCfg') {

@@ -1721,6 +1721,8 @@ function publicData(me) {
     today: today(), now: new Date().toISOString(),
     me: pubUser(me),
     myTemplates: me.templates || {},
+    myPayOffer: me.payOffer || null,
+    parentPayOffer: me.parentId ? payOfferFor(me.parentId) : null,
     tvMine: me.tvNotice || null,
     tvParent: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.tvNotice) || null; })(),
     parentTemplates: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
@@ -2164,6 +2166,48 @@ async function telegramPoll() {
   } catch (e) { if (tgLastErr !== e.message) console.error('Telegram:', e.message); tgLastErr = e.message; }
   finally { tgBusy = false; }
 }
+/* Precios y enlace de pago que cada vendedor añade a su aviso de caducidad por Telegram.
+   Si un subreseller no tiene los suyos, se usan los de su reseller. */
+function payOfferFor(ownerId) {
+  let u = db.users.find((x) => x.id === ownerId), hops = 0;
+  while (u && hops++ < 3) { if (u.payOffer) return u.payOffer.on ? u.payOffer : null; u = u.parentId ? db.users.find((x) => x.id === u.parentId) : null; }
+  return null;
+}
+/** Mensaje de aviso de caducidad para Telegram: el texto, los precios y el botón de pago (si los hay) */
+function expiringTg(c) {
+  const off = payOfferFor(c.ownerId);
+  let text = fillText(tplFor(c.ownerId, 'expiring'), c);
+  if (off && off.prices) text += '\n\n' + fillText(off.prices, c);
+  const msg = { chat_id: c.tgChat, text, disable_web_page_preview: true };
+  if (off && off.url) msg.reply_markup = { inline_keyboard: [[{ text: off.button || '💳 Pagar y renovar', url: off.url }]] };
+  return msg;
+}
+function readPayOffer(body) {
+  const url = str(body.url, 300), prices = typeof body.prices === 'string' ? body.prices.replace(/\r\n/g, '\n').slice(0, 900).trim() : '';
+  if (url && !/^(https?:\/\/|tg:\/\/)[^\s]+$/i.test(url)) throw new HttpError(400, 'El enlace de pago debe empezar por https:// (por ejemplo, https://paypal.me/tuusuario).');
+  const on = !!body.on;
+  if (on && !prices && !url) throw new HttpError(400, 'Escribe tus precios o pon un enlace de pago.');
+  return { on, prices, url, button: str(body.button, 40) || '💳 Pagar y renovar' };
+}
+route('PUT', '/api/my-payoffer', '*', ({ me, body }) => lock(async () => {
+  if (body.inherit) delete me.payOffer; else me.payOffer = readPayOffer(body);
+  addLog('ajustes', null, `${me.username} cambió sus precios y enlace de pago de Telegram`, me);
+  saveDb();
+  return { ok: true };
+}));
+route('POST', '/api/my-payoffer/test', '*', async ({ me, body }) => {
+  const cfg = db.settings.notices.telegram;
+  if (!cfg.token) throw new HttpError(400, 'Todavía no hay bot de Telegram en el panel.');
+  if (!me.tgChat) throw new HttpError(400, 'Enlaza primero tu Telegram en Ajustes › Seguridad para recibir la prueba.');
+  const off = body && body.preview ? readPayOffer({ ...body, on: true }) : payOfferFor(me.id);
+  const fake = { panelName: 'Cliente de prueba', embyName: 'cliente.prueba', serverId: (db.servers[0] || {}).id, expires: addDays(today(), 3), screens: 1, quality: 'basico', ownerId: me.id };
+  let text = '🧪 PRUEBA · así lo recibirán tus clientes\n\n' + fillText(tplFor(me.id, 'expiring'), fake);
+  if (off && off.prices) text += '\n\n' + fillText(off.prices, fake);
+  const msg = { chat_id: me.tgChat, text, disable_web_page_preview: true };
+  if (off && off.url) msg.reply_markup = { inline_keyboard: [[{ text: off.button || '💳 Pagar y renovar', url: off.url }]] };
+  await tg('sendMessage', msg);
+  return { ok: true };
+});
 /** Envia el aviso de vencimiento por Telegram, una vez por periodo y solo en horas de dia */
 async function telegramNotices() {
   const cfg = db.settings.notices.telegram;
@@ -2173,7 +2217,7 @@ async function telegramNotices() {
   const due = db.clients.filter((c) => c.tgChat && dueSoon(c, db.settings.notices.chat.days, t) && c.tgNoticeFor !== c.expires);
   for (const c of due.slice(0, 25)) {
     try {
-      await tg('sendMessage', { chat_id: c.tgChat, text: fillText(tplFor(c.ownerId, 'expiring'), c) });
+      await tg('sendMessage', expiringTg(c));
       c.tgNoticeFor = c.expires; c.noticeFor = c.expires;
       addLog('aviso', c, 'Aviso de vencimiento enviado por Telegram', null);
     } catch (e) {
