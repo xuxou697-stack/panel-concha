@@ -1471,6 +1471,39 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .tgm{white-space:pre-wrap;background:#1f3a52;color:#eaf4fb;padding:10px 12px;border-radius:12px 12px 12px 4px;font-size:13.5px;line-height:1.45;max-width:100%;overflow-wrap:anywhere}
 .tgbtn{text-align:center;padding:9px;border-radius:10px;background:rgba(255,255,255,.12);color:#cfe9ff;font-weight:600;font-size:13.5px}
 @media (max-width:760px){.po-grid{grid-template-columns:1fr}}
+/* Monitor: qué hace el servidor con cada reproducción */
+.pbox{--k:#19c37d;margin:8px 0 6px;padding:10px 11px;border-radius:14px;border:1px solid color-mix(in srgb,var(--k) 40%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--k) 14%,var(--surface)),var(--surface) 75%)}
+.pbox.pk-img{--k:#f0616d}.pbox.pk-aud{--k:#f5a524}.pbox.pk-rmx{--k:#3fa9f5}
+.pb-h{display:flex;gap:8px;align-items:center}.pb-e{font-size:18px;line-height:1}.pb-h b{display:block;font-size:14.5px;color:var(--k);line-height:1.2}.pb-h small{display:block;font-size:12px;color:var(--muted)}
+.pb-t{margin:6px 0 8px;font-size:12.5px;color:var(--muted);line-height:1.4}
+.pb-rows{display:flex;flex-direction:column;gap:5px}
+.pb-r{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;padding:6px 8px;border-radius:10px;background:color-mix(in srgb,var(--ok) 9%,var(--raised));font-size:12.5px;min-width:0}
+.pb-r.cv{background:color-mix(in srgb,var(--k) 18%,var(--raised))}.pb-r.cv.lite{background:color-mix(in srgb,#3fa9f5 14%,var(--raised))}
+.pb-ic{font-size:14px;width:18px;text-align:center}.pb-l{font-weight:700}.pb-s{margin-left:auto;font-weight:600;font-size:11.5px;white-space:nowrap}
+.pb-r.og .pb-s{color:var(--ok)}.pb-r.cv .pb-s{color:var(--k)}.pb-r.cv.lite .pb-s{color:#3fa9f5}
+.pb-d{flex-basis:100%;padding-left:24px;color:var(--muted);font-size:12px;overflow-wrap:anywhere}.pb-d b{color:var(--text)}
+.pb-n{flex-basis:100%;padding-left:24px;font-size:11.5px;color:var(--k);font-weight:600}
+.pb-why{margin:8px 0 0;font-size:12.5px;color:var(--muted)}.pb-why b{color:var(--text)}
+.pb-tip{margin:5px 0 0;font-size:12.5px;padding:6px 8px;border-radius:9px;background:var(--raised)}
+.mc .pill.tr2{background:linear-gradient(135deg,#3fa9f5,#2f7fd1);color:#fff}.mc .pill.pk-aud{background:linear-gradient(135deg,#f5a524,#e08a00);color:#1b1300}
+/* Equipo en línea */
+.onl{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#19c37d;padding:2px 9px;border-radius:20px;background:color-mix(in srgb,#19c37d 14%,transparent);vertical-align:2px}
+.onl::before{content:"";width:8px;height:8px;border-radius:50%;background:#19c37d;box-shadow:0 0 0 0 rgba(25,195,125,.6);animation:onp 1.8s infinite}
+@keyframes onp{0%{box-shadow:0 0 0 0 rgba(25,195,125,.55)}70%{box-shadow:0 0 0 7px rgba(25,195,125,0)}100%{box-shadow:0 0 0 0 rgba(25,195,125,0)}}
+.onstrip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.onp{display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:var(--raised);color:var(--text);font-size:13.5px}
+.onp i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px;color:#fff;background:linear-gradient(135deg,#19c37d,#0ea5a4)}.onp small{color:var(--muted);font-size:11.5px}
+@media (prefers-reduced-motion:reduce){.onl::before{animation:none}}
+/* Contratar el panel */
+.gsales{display:flex;align-items:center;gap:12px;width:min(420px,100%);padding:12px 16px;border-radius:16px;text-decoration:none;color:#fff;background:linear-gradient(120deg,rgba(255,122,89,.22),rgba(226,69,122,.22));border:1px solid rgba(255,170,150,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.gsales>span:first-child{font-size:22px}.gsales b{display:block;font-size:14.5px}.gsales small{display:block;color:#ffd9cc;font-size:13px}
+.gsales:hover{border-color:#ffb3a0}
+:root[data-theme="light"] .gsales{color:#7c2d12;background:rgba(255,237,230,.85);border-color:#fbc4b0}:root[data-theme="light"] .gsales small{color:#9a3412}
+.ssales{display:flex;align-items:center;gap:10px;margin:8px 10px 10px;padding:9px 11px;border-radius:12px;text-decoration:none;color:var(--text);border:1px dashed color-mix(in srgb,#ff7a59 45%,var(--line));background:color-mix(in srgb,#ff7a59 7%,transparent)}
+.ssales>span:first-child{font-size:16px}.ssales b{display:block;font-size:12.5px}.ssales small{display:block;font-size:11.5px;color:var(--muted);overflow-wrap:anywhere}
+.ssales:hover{background:color-mix(in srgb,#ff7a59 14%,transparent)}
+.psales{display:inline-flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;text-decoration:none;color:var(--text);border:1px solid color-mix(in srgb,#ff7a59 40%,var(--line));background:color-mix(in srgb,#ff7a59 10%,var(--raised))}
+.psales>span:first-child{font-size:22px}.psales b{display:block}.psales small{display:block;color:var(--muted)}
 /* Menú: sección donde estás (cerrada) */
 .nav .grp.here .t{color:var(--gc,var(--brand));font-weight:700}
 .nav .grp.here::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--gc,var(--brand));margin-left:auto;flex:none}
@@ -1524,6 +1557,7 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
       <button class="gbtn" type="submit" id="gateBtn">Acceder</button>
       <div class="gatehelp" id="gateHelp" hidden></div>
     </form>
+    <a class="gsales" id="gateSales" hidden></a>
     <footer class="gfoot"><b id="gateHost"></b><span>© <span id="gateYear"></span> Todos los derechos reservados</span></footer>
   </main>
 </div>
@@ -1534,6 +1568,7 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
     <div class="clock" aria-label="Fecha y hora"><div class="ctime"><b data-clock="hm">--:--</b><i data-clock="s">00</i></div><div class="cday" data-clock="day"></div><div class="cdate" data-clock="date"></div></div>
     <button type="button" class="qsbtn" data-act="qs" aria-label="Buscar opciones, clientes o vendedores (Ctrl+K)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><span>Buscar…</span><kbd>Ctrl K</kbd></button>
     <nav class="nav" id="nav" aria-label="Secciones"></nav>
+    <div id="sideSales"></div>
     <div class="sidefoot">
       <div id="who"></div>
       <button type="button" class="ib plain" data-act="theme" aria-label="Cambiar entre tema claro y oscuro"></button>
@@ -1789,6 +1824,7 @@ function showGate(setup) {
   $('#gateTitle').textContent = setup ? 'Bienvenido' : 'Iniciar sesión';
   $('#gateHost').textContent = location.hostname;
   $('#gateYear').textContent = new Date().getFullYear();
+  { const gs = $('#gateSales'); if (SALES) { gs.outerHTML = salesHtml('gsales').replace('<a class="gsales"', '<a class="gsales" id="gateSales"'); } else gs.hidden = true; }
   $('#gateErr').hidden = true;
   $('#gateForm').reset();
   TICKET = null; $('#gStep1').hidden = false; $('#gStep2').hidden = true;
@@ -1845,10 +1881,13 @@ $('#gateForm').addEventListener('submit', async (e) => {
   }
   btn.disabled = false;
 });
+/* Correo para quien quiera contratar un panel como este (se cambia en Ajustes › Marca del panel) */
+let SALES = '';
+const salesHtml = (cls) => SALES ? `<a class="${cls}" href="mailto:${esc(SALES)}?subject=${encodeURIComponent('Quiero información sobre el panel')}"><span aria-hidden="true">✨</span><span><b>¿Quieres tu propio panel?</b><small>Escríbenos: ${esc(SALES)}</small></span></a>` : '';
 async function boot() {
   bootLoading(true);
   const st = await api('GET', '/api/state', null, { timeout: 15000 });
-  applyBrand(st.brand); applyTheme(); SUPPORT = st.support || null;
+  applyBrand(st.brand); applyTheme(); SUPPORT = st.support || null; SALES = st.salesEmail || '';
   if (st.license && st.license.state === 'locked') return showLock(st.license);
   if (st.needsSetup) return showGate(true);
   if (!st.authed) return showGate(false);
@@ -1927,6 +1966,8 @@ function render() {
   $('#nav').scrollTop = navTop;
   $('#who').innerHTML = `<b>${esc(d.me.name)}</b><br>${ROLE[d.me.role]}, ${!pays() ? 'créditos ilimitados' : plural(d.me.credits, 'crédito', 'créditos')}`;
   applyBrand(d.settings.brand); applyTheme();
+  if (d.salesEmail !== undefined) SALES = d.salesEmail || '';
+  { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
@@ -2053,7 +2094,7 @@ function whenShort(v) {
 /** Último acceso de un admin, reseller o subreseller */
 function lastAccessHtml(u, cls = '') {
   const l = u.lastLogin, seen = seenDate(u.lastSeen);
-  const now = seen && Date.now() - seen < 5 * 60000;
+  const now = u.online !== undefined ? !!u.online : seen && Date.now() - seen < 5 * 60000;
   return `<div class="lacc ${cls}">${ic('lock')}<span>Último acceso: <b>${l ? whenShort(l.at) : 'nunca'}</b>${l ? ` · ${esc(l.dev || '')}${l.ip ? ' · IP ' + esc(l.ip) : ''}` : ''}${now ? ' · <em class="on">conectado ahora</em>' : seen && l ? ` · activo por última vez ${whenShort(u.lastSeen)}` : ''}</span></div>`;
 }
 /** Corto, para la lista: "hoy, 10:24", "ayer, 22:15" o "lun 5 oct, 21:30" */
@@ -2308,6 +2349,7 @@ function dashFacil(p) {
     <div class="sec-h"><h2>Hoy</h2><small>lo que ha pasado desde las 00:00</small></div>
     <div class="fz-days">${day('✨', n1(st.today.alta), 'cuentas nuevas')}${day('🔄', n1(st.today.renovacion), 'renovaciones')}${day('🎁', n1(st.today.demo), 'demos creadas')}${day('📺', `<span id="nowPlaying">${S.live ? S.live.sessions.length : '…'}</span>`, 'viendo ahora', 'data-view="monitor"')}</div>
     ${review ? `<div class="sec-h"><h2>Para revisar</h2></div>${review}` : ''}
+    ${(() => { const on = d.users.filter((u) => u.online && u.id !== d.me.id && !u.disabled); return on.length ? `<div class="onstrip"><span class="onl">En el panel ahora</span>${on.map((u) => `<span class="onp"><i>${esc(u.name.charAt(0).toUpperCase())}</i>${esc(u.name)}<small>${ROLE[u.role]}</small></span>`).join('')}</div>` : ''; })()}
     <div class="fz-two">
       <section class="fz-box"><div class="sec-h"><h2>Caducan pronto</h2><button class="btn sm ghost" data-view="calendario">${ic('calendar')}Calendario</button></div>${dDue(due, 6)}</section>
       <section class="fz-box"><div class="sec-h"><h2>Últimos movimientos</h2><button class="btn sm ghost" data-view="movimientos">Ver todos</button></div>${d.log.length ? timeline(d.log.slice(0, 5)) : '<div class="empty">Todavía no hay movimientos.</div>'}</section>
@@ -2992,13 +3034,42 @@ function trWhy(x) {
   else if (x.trVideo) tip = 'Ese aparato no reproduce el vídeo tal cual: mejor una versión en H264.';
   return { what, detail: parts.join(' · '), reasons, tip };
 }
+/* ---------- Qué está haciendo el servidor con cada reproducción (fácil de entender) ----------
+   Imagen = vídeo, Sonido = audio, Envoltorio = formato del archivo (MKV, MP4…). Solo convertir la imagen carga de verdad el servidor. */
+function playKind(x) {
+  const v = !!x.trVideo, a = !!x.trAudio, remux = !v && !a && (x.transcode || x.method === 'DirectStream');
+  if (v) return { cls: 'img', emo: '🔴', short: a ? 'Convierte imagen y sonido' : 'Convierte la imagen', title: a ? 'Convierte la imagen y el sonido' : 'Convierte la imagen', load: 'Carga ALTA en el servidor', txt: 'El servidor está recodificando el vídeo en directo. Es lo que más lo satura.' };
+  if (a) return { cls: 'aud', emo: '🟡', short: 'Convierte el sonido', title: 'Convierte solo el sonido', load: 'Carga baja', txt: 'La imagen llega original y sin pérdida. Solo se cambia el audio para que el aparato lo pueda oír.' };
+  if (remux) return { cls: 'rmx', emo: '🔵', short: 'Remux', title: 'Solo cambia el envoltorio (remux)', load: 'Carga muy baja', txt: 'Imagen y sonido originales. Solo se pasa el archivo a otro formato (por ejemplo, de MKV a MP4) que el aparato entiende.' };
+  return { cls: 'dir', emo: '🟢', short: 'Directo', title: 'Reproducción directa', load: 'Sin carga', txt: 'El aparato reproduce el archivo tal cual. Lo mejor que puede pasar.' };
+}
+function playBox(x, why) {
+  const k = playKind(x), dims = x.width ? `${x.width}×${x.height}${x.codec ? ' ' + x.codec.toUpperCase() : ''}` : '';
+  const ch = x.audioCh > 2 ? ' ' + (x.audioCh === 6 ? '5.1' : x.audioCh === 8 ? '7.1' : x.audioCh + 'ch') : x.audioCh === 2 ? ' estéreo' : '';
+  const row = (icon, label, conv, from, to, note) => `<div class="pb-r ${conv ? 'cv' : 'og'}"><span class="pb-ic" aria-hidden="true">${icon}</span><span class="pb-l">${label}</span><span class="pb-s">${conv ? '🔄 Convertido' : '✅ Original'}</span>${from || to ? `<span class="pb-d">${esc(from || '')}${conv && to ? ` <b>→ ${esc(to)}</b>` : ''}</span>` : ''}${note ? `<span class="pb-n">${esc(note)}</span>` : ''}</div>`;
+  const vTo = x.trVideo ? `${x.trWidth ? x.trWidth + '×' + x.trHeight : ''}${x.trCodec ? ' ' + x.trCodec.toUpperCase() : ''}`.trim() : '';
+  const qNote = x.trVideo && x.quality && x.quality.level === 'likely' ? 'Se ve peor que el original' : x.trVideo ? 'Puede verse igual, pero carga el servidor' : '';
+  const env = x.trVideo || x.trAudio ? 'Se adapta para el aparato' : k.cls === 'rmx' ? 'Se cambia el formato del archivo' : 'Igual que el archivo';
+  return `<div class="pbox pk-${k.cls}">
+    <div class="pb-h"><span class="pb-e" aria-hidden="true">${k.emo}</span><div><b>${k.title}</b><small>${k.load}</small></div></div>
+    <p class="pb-t">${k.txt}</p>
+    <div class="pb-rows">
+      ${row('🎬', 'Imagen', x.trVideo, dims, vTo, qNote)}
+      ${row('🔊', 'Sonido', x.trAudio, x.audio ? acName(x.audio) + ch : '', x.trAudio ? acName(x.trAudioCodec) : '', '')}
+      ${x.trVideo || x.trAudio ? '' : `<div class="pb-r ${k.cls === 'rmx' ? 'cv lite' : 'og'}"><span class="pb-ic" aria-hidden="true">📦</span><span class="pb-l">Envoltorio</span><span class="pb-s">${k.cls === 'rmx' ? '🔄 Cambiado' : '✅ Igual'}</span><span class="pb-d">${env}</span></div>`}
+    </div>
+    ${why && why.reasons.length ? `<p class="pb-why"><b>¿Por qué?</b> ${esc(why.reasons.slice(0, 2).join(', '))}.</p>` : ''}
+    ${why && why.tip ? `<p class="pb-tip">💡 ${esc(why.tip)}</p>` : ''}
+  </div>`;
+}
 function monCard(x) {
   const pct = x.duration ? Math.min(100, Math.round((x.position / x.duration) * 100)) : 0;
   const c = monColor(x.serverId), rc = RES_COLOR[x.res] || '#8c9aa6';
   const dims = x.width ? `${x.width}×${x.height}${x.codec ? ' ' + x.codec : ''}` : '';
   const why = trWhy(x);
   const trTo = x.trVideo && x.trWidth ? `→ ${x.trWidth}×${x.trHeight}${x.trCodec ? ' ' + x.trCodec : ''}` : '';
-  const pill = x.transcode ? '<span class="pill tr">Transcode</span>' : x.paused ? '<span class="pill pa">En pausa</span>' : '<span class="pill"><span class="l">Reproduciendo</span><span class="s">▶ Viendo</span></span>';
+  const pk = playKind(x);
+  const pill = x.transcode || x.method === 'DirectStream' ? `<span class="pill ${pk.cls === 'img' ? 'tr' : 'tr2'} pk-${pk.cls}">${pk.short}</span>` : x.paused ? '<span class="pill pa">En pausa</span>' : '<span class="pill"><span class="l">Reproduciendo</span><span class="s">▶ Viendo</span></span>';
   const kind = { pelicula: 'Película', serie: 'Serie', tv: 'TV' }[x.kind] || '';
   const who = x.client && x.client !== x.user ? `<b>${esc(x.client)}</b><small>${esc(x.user)}${x.demo ? ' · demo' : ''}</small>` : `<b>${esc(x.user)}</b>${x.demo ? '<small>demo</small>' : x.client ? '' : '<small>no está en el panel</small>'}`;
   return `<article class="mc${x.paused ? ' paused' : ''}" style="--c:${c}">
@@ -3010,9 +3081,7 @@ function monCard(x) {
       <h3 title="${esc(x.title)}">${esc(x.title)}</h3>${x.sub ? `<div class="st2" title="${esc(x.sub)}">${esc(x.sub)}</div>` : ''}
       <div class="who">${ic('user')}<div>${who}${x.owner ? `<small>Vendedor: ${esc(x.owner)}</small>` : ''}</div></div>
       <div class="q">${x.res ? `<span style="--r:${rc}">${x.res}</span>` : ''}${dims ? `<span style="--r:#3fa9f5">${esc(dims)}</span>` : ''}${trTo && !why ? `<span style="--r:#ff7a3d">${esc(trTo)}</span>` : ''}</div>
-      ${why ? `<div class="why" title="${esc([why.reasons.join(', '), why.tip].filter(Boolean).join(' — '))}"><b>${ic('bolt')}Convierte: ${esc(why.what)}</b>${why.detail ? `<span class="wd">${esc(why.detail)}</span>` : ''}${why.reasons.length ? `<span>Motivo: ${esc(why.reasons.slice(0, 2).join(', '))}</span>` : ''}${why.tip ? `<em>💡 ${esc(why.tip)}</em>` : ''}</div>` : ''}
-      <div class="mmeth"><span class="mm-${(x.method || 'x').toLowerCase()}" title="Método de reproducción tal como lo informa Emby">${esc(METHOD[x.method] || x.method || 'Desconocido')}</span>${x.quality ? `<span class="ql ql-${x.quality.level}" title="${esc(x.quality.text)}">${x.quality.level === 'none' ? 'Imagen sin pérdida' : x.quality.level === 'likely' ? 'Calidad baja probable' : 'Vídeo recodificado'}</span>` : ''}</div>
-      ${x.quality && x.quality.level !== 'none' ? `<div class="qtxt">${esc(x.quality.text)}</div>` : ''}
+      ${playBox(x, why)}
       <div class="ln"><span>Archivo</span><b>${x.srcBitrate ? mbps(x.srcBitrate) : '—'}</b></div>
       ${x.encBitrate ? `<div class="ln" title="Es el bitrate que Emby pide al codificador, no una medida real de la red"><span>Pedido al codificador</span><b>${mbps(x.encBitrate)}</b></div>` : ''}
       ${!x.canMsg || !x.remote ? `<div class="qlim">${!x.canMsg ? 'Este aparato no admite mensajes. ' : ''}${!x.remote ? 'No admite control remoto: puede ignorar «Detener».' : ''}</div>` : ''}
@@ -3240,8 +3309,8 @@ function vSeguridad() {
       <details class="rescue"><summary>¿No se enlaza?</summary><p>Abre el chat con <b>@${esc(x.bot)}</b> en Telegram y <b>envíale este código</b> como mensaje (cópialo y pégalo):</p>
         <div class="cpy"><code>${esc(x.tgLink.split('start=')[1] || '')}</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(x.tgLink.split('start=')[1] || '')}">${ic('copy')}Copiar</button></div>
         <p class="muted small">El bot te contestará «Listo…». Luego pulsa «Ya lo he hecho, comprobar». Si el bot no contesta nada, puede que ese mismo bot esté puesto en otro programa o panel (por ejemplo, el panel antiguo de tu PC): ciérralo, porque solo uno puede leer sus mensajes.</p></details>`
-    : `${sw('login', x.alerts.login, 'Cada vez que alguien entra en mi cuenta', 'Con la hora, la IP y el aparato. Si no has sido tú, lo sabrás al momento.')}
-      ${isSuper() ? sw('credits', x.alerts.credits, 'Créditos cargados por otros', 'Si un admin carga muchos créditos, sin cobrar o sin apuntar el cobro, y si se repite una referencia de pago.') : ''}${isSuper() ? sw('daily', x.alerts.daily, 'Resumen diario a las 9:00', 'Cómo fue ayer y qué hay que revisar hoy, en un solo mensaje. <button type="button" class="linkbtn" data-act="daily-test">Probar ahora</button>') : ''}${isSuper() || (me().role === 'admin' && canDo('resellers')) ? sw('sabotage', x.alerts.sabotage, 'Acciones raras del equipo', 'Si alguien borra, desactiva o cambia muchas cosas seguidas.') : ''}${isSuper() || (me().role === 'admin' && canDo('servers')) ? sw('quality', x.alerts.quality, 'Calidad y saturación', 'Resumen de la revisión diaria de calidad y aviso si un servidor convierte muchos vídeos a la vez.') : ''}${isSuper() ? sw('staffLogins', x.alerts.staffLogins, 'Cuando entra un administrador', 'Te avisa de las entradas de tus administradores.') + sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar, con el tiempo que estuvo caído.') + sw('backup', x.alerts.backup, 'Copia de seguridad diaria', 'Te llega el archivo cifrado (se configura en Copias de seguridad).') + sw('payments', x.alerts.payments, 'Cuando un vendedor compra créditos', 'Con el importe y su saldo nuevo.') : me().role === 'admin' && canDo('viewServers') ? sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar.') : ''}
+    : `${sw('login', x.alerts.login, 'Cada vez que alguien entra en mi cuenta', 'Con la hora, la IP y el aparato. Si no has sido tú, lo sabrás al momento.')}${!isSuper() && (me().role === 'reseller' || (me().role === 'admin' && canDo('resellers'))) ? sw('vendorLogins', x.alerts.vendorLogins, me().role === 'reseller' ? 'Cuando entra uno de mis subresellers' : 'Cuando entra un reseller o subreseller', 'Con su nombre y la hora.') : ''}
+      ${isSuper() ? sw('credits', x.alerts.credits, 'Créditos cargados por otros', 'Si un admin carga muchos créditos, sin cobrar o sin apuntar el cobro, y si se repite una referencia de pago.') : ''}${isSuper() ? sw('daily', x.alerts.daily, 'Resumen diario a las 9:00', 'Cómo fue ayer y qué hay que revisar hoy, en un solo mensaje. <button type="button" class="linkbtn" data-act="daily-test">Probar ahora</button>') : ''}${isSuper() || (me().role === 'admin' && canDo('resellers')) ? sw('sabotage', x.alerts.sabotage, 'Acciones raras del equipo', 'Si alguien borra, desactiva o cambia muchas cosas seguidas.') : ''}${isSuper() || (me().role === 'admin' && canDo('servers')) ? sw('quality', x.alerts.quality, 'Calidad y saturación', 'Resumen de la revisión diaria de calidad y aviso si un servidor convierte muchos vídeos a la vez.') : ''}${isSuper() ? sw('staffLogins', x.alerts.staffLogins, 'Cuando entra un administrador', 'Te avisa de las entradas de tus administradores.') + sw('vendorLogins', x.alerts.vendorLogins, 'Cuando entra un reseller o subreseller', 'Con su nombre, el aparato y la IP.') + sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar, con el tiempo que estuvo caído.') + sw('backup', x.alerts.backup, 'Copia de seguridad diaria', 'Te llega el archivo cifrado (se configura en Copias de seguridad).') + sw('payments', x.alerts.payments, 'Cuando un vendedor compra créditos', 'Con el importe y su saldo nuevo.') : me().role === 'admin' && canDo('viewServers') ? sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar.') : ''}
       <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn" data-act="sec-tgtest">Enviar mensaje de prueba</button><button class="btn ghost" data-act="sec-tgoff">Desenlazar</button></div>`;
   const tgc = `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#0ea5e9">${ic('bell')}</span><div><h2>Avisos de seguridad por Telegram</h2><small>Mensajes privados solo para ti.</small></div>
     <span class="pillst ${x.tgLinked ? 'on' : 'off'}">${x.tgLinked ? 'Enlazado' : 'Sin enlazar'}</span></div>${tgs}</section>`;
@@ -3710,7 +3779,7 @@ function vendorCard(u, depth) {
   return `<article class="vcard r-${u.role}${u.disabled ? ' off' : ''}" style="margin-left:${depth * 28}px">
     <div class="vmain">
       <div class="vrole">${ROLE[u.role]}${u.disabled ? ', desactivado' : ''}</div>
-      <div><span class="name">${esc(u.name)}</span>${u.id === me().id ? ' <span class="muted small">(tú)</span>' : ''} <span class="muted small">@${esc(u.username)}${u.parentId ? ', de ' + esc(userName(u.parentId) || 'otro reseller') : ''}</span></div>
+      <div><span class="name">${esc(u.name)}</span>${u.id === me().id ? ' <span class="muted small">(tú)</span>' : u.online ? ' <span class="onl" title="Tiene el panel abierto ahora">En línea</span>' : ''} <span class="muted small">@${esc(u.username)}${u.parentId ? ', de ' + esc(userName(u.parentId) || 'otro reseller') : ''}</span></div>
       ${u.id !== me().id ? lastAccessHtml(u) : ''}
       <div class="tags">
         <span class="tag cr">${hasCredits(u) ? plural(u.credits, 'crédito', 'créditos') : 'Créditos ilimitados'}</span>
@@ -3749,7 +3818,9 @@ function vEquipo(off) {
   const cards = list.length ? `<div class="vcards">${vendorTree(list).map(([u, d]) => vendorCard(u, d)).join('')}</div>`
     : `<div class="panel"><div class="empty">${q ? 'Ningún vendedor coincide con la búsqueda.' : off ? 'No hay ningún usuario desactivado. Para bloquear a alguien, usa Más, Desactivar en su tarjeta.' : 'Todavía no hay vendedores.'}</div></div>`;
   const mayCreate = staff() || me().canCreateSubs;
-  return head(title, sub + (mayCreate ? '' : ' Tu cuenta no tiene permiso para crear subresellers: pídeselo a tu administrador.'), mayCreate ? `<button class="btn primary" data-act="user-new">${ic('userplus')}${staff() ? 'Crear vendedor' : 'Crear subreseller'}</button>` : '') + tiles +
+  const onl = S.d.users.filter((u) => u.online && u.id !== me().id && !u.disabled);
+  const onStrip = !off && S.d.users.length > 1 ? `<div class="onstrip">${onl.length ? `<span class="onl">En línea ahora</span>${onl.map((u) => `<span class="onp"><i>${esc(u.name.charAt(0).toUpperCase())}</i>${esc(u.name)}<small>${ROLE[u.role]}</small></span>`).join('')}` : '<span class="muted small">Nadie de tu equipo tiene el panel abierto ahora mismo.</span>'}</div>` : '';
+  return head(title, sub + (mayCreate ? '' : ' Tu cuenta no tiene permiso para crear subresellers: pídeselo a tu administrador.'), mayCreate ? `<button class="btn primary" data-act="user-new">${ic('userplus')}${staff() ? 'Crear vendedor' : 'Crear subreseller'}</button>` : '') + onStrip + tiles +
     `<div class="tools"><input type="search" id="uq" placeholder="Buscar vendedor por nombre o usuario" value="${esc(S.uq)}" aria-label="Buscar vendedores"></div>` + cards;
 }
 /* ---------- Administradores ---------- */
@@ -4333,6 +4404,7 @@ function ajSections() {
       <input type="hidden" name="logo" value="${esc((g.brand && g.brand.logo) || '')}">
       <label class="f">Dirección del panel que das a los vendedores<input name="url" maxlength="200" placeholder="https://panel.tudominio.com" value="${esc((g.brand && g.brand.url) || '')}"></label>
       <label class="f">Nombre del panel<input name="name" required maxlength="30" value="${esc((g.brand && g.brand.name) || 'Concha')}"></label>
+      <label class="f">Correo para quien quiera contratar el panel (se ve en la entrada; vacío = no se muestra)<input name="salesEmail" type="email" maxlength="120" value="${esc(S.d.salesEmail || '')}" placeholder="tucorreo@ejemplo.com"></label>
       <label class="check" style="margin-bottom:8px"><input type="checkbox" name="custom"${g.brand && g.brand.color ? ' checked' : ''}> Usar mi propio color principal <input type="color" name="color" value="${esc((g.brand && g.brand.color) || '#5cc3e2')}" aria-label="Color principal"></label>
       <p class="muted small" style="margin-bottom:12px">Sin marcar, el panel usa el azul de la bahía, ajustado para el tema claro y el oscuro.</p>
       <button class="btn primary" type="submit">Guardar marca</button>
@@ -4379,7 +4451,7 @@ function vPerfil() {
       <div><small>Balance</small><b>${pays() ? plural(m.credits, 'crédito', 'créditos') : 'Ilimitado'}</b></div>
       ${pays() && m.creditPrice ? `<div><small>Valor</small><b>${eur(m.credits * m.creditPrice)}</b></div>` : ''}
       <div><small>En el panel desde</small><b>${fmt(m.createdAt)}</b></div>
-    </div></div></div></section>`;
+    </div></div></div></section>` + (SALES ? `<section><h2>Contratar el panel</h2><div class="panel pad pcontact"><p class="muted" style="margin:0 0 10px">¿Conoces a alguien que quiera un panel como este para su propio Emby? Que nos escriba a este correo y le damos toda la información.</p>${salesHtml('psales')}</div></section>` : '');
 }
 /* ---------- Ajustes: Tiempos ---------- */
 function vTiempos() {
@@ -7140,7 +7212,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'brandForm') {
     e.preventDefault();
     const fd = new FormData(e.target);
-    act(() => api('PUT', '/api/brand', { url: fd.get('url'), name: fd.get('name'), color: fd.get('custom') === 'on' ? fd.get('color') : '', logo: fd.get('logo') }), 'Marca guardada');
+    act(() => api('PUT', '/api/brand', { url: fd.get('url'), name: fd.get('name'), color: fd.get('custom') === 'on' ? fd.get('color') : '', logo: fd.get('logo'), salesEmail: fd.get('salesEmail') || '' }), 'Marca guardada');
   }
   if (e.target.id === 'tpls') {
     e.preventDefault();

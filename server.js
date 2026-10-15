@@ -1483,7 +1483,7 @@ function notifyStaff(kind, text) {
   for (const u of db.users) {
     if (u.disabled || !u.tgChat) continue;
     const pref = (u.secAlerts || {})[kind];
-    if (u.role === 'super' ? pref !== false : (u.role === 'admin' && pref === true && (kind !== 'servers' || can(u, 'viewServers')) && (kind !== 'quality' || can(u, 'servers')) && (kind !== 'sabotage' || can(u, 'resellers')))) notifyUser(u, text);
+    if (u.role === 'super' ? pref !== false : (u.role === 'admin' && pref === true && (kind !== 'servers' || can(u, 'viewServers')) && (kind !== 'quality' || can(u, 'servers')) && (kind !== 'sabotage' || can(u, 'resellers')) && (kind !== 'vendorLogins' || can(u, 'resellers')))) notifyUser(u, text);
   }
 }
 const whenTxt = () => new Date().toLocaleString('es-ES', { timeZone: process.env.TZ || 'Europe/Madrid', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
@@ -1605,7 +1605,7 @@ function assertEmbyNameFree(server, embyName) {
 }
 const pubUser = (u) => ({
   id: u.id, username: u.username, name: u.name, role: u.role, mustPw: !!u.mustPw, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, offBy: u.offBy || null, offAt: u.offAt || null, createdAt: u.createdAt,
-  lastLogin: u.lastLogin || null, lastSeen: u.lastSeen || null, renew: u.role === 'reseller' || u.role === 'sub' ? renewRate([u.id]) : null, debt: u.role === 'reseller' || u.role === 'sub' ? debtOf(u).amount : 0,
+  lastLogin: u.lastLogin || null, lastSeen: u.lastSeen || null, online: !!u.lastSeen && Date.now() - Date.parse(u.lastSeen) < 3 * 60000 && !(u.lastOut && u.lastOut >= u.lastSeen), renew: u.role === 'reseller' || u.role === 'sub' ? renewRate([u.id]) : null, debt: u.role === 'reseller' || u.role === 'sub' ? debtOf(u).amount : 0,
   creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [],
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
   twoFa: !!(u.totp && u.totp.on), tgLinked: !!u.tgChat,
@@ -1722,6 +1722,7 @@ function publicData(me) {
     me: pubUser(me),
     myTemplates: me.templates || {},
     myPayOffer: me.payOffer || null,
+    salesEmail: salesEmail(),
     parentPayOffer: me.parentId ? payOfferFor(me.parentId) : null,
     tvMine: me.tvNotice || null,
     tvParent: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.tvNotice) || null; })(),
@@ -1757,7 +1758,9 @@ function route(method, pattern, roles, handler) {
 const STAFF = ['super', 'admin'];
 const SUPER = ['super'];
 
-route('GET', '/api/state', null, ({ req }) => ({ needsSetup: !db.users.length, authed: !!currentUser(req), brand: db.settings.brand, support: db.settings.support, license: licStatus() }));
+const SALES_EMAIL = 'clickonline69@proton.me';
+const salesEmail = () => (typeof db.settings.salesEmail === 'string' ? db.settings.salesEmail : SALES_EMAIL);
+route('GET', '/api/state', null, ({ req }) => ({ needsSetup: !db.users.length, authed: !!currentUser(req), brand: db.settings.brand, support: db.settings.support, license: licStatus(), salesEmail: salesEmail() }));
 /* Marca del panel: nombre, color y logo propios */
 route('PUT', '/api/brand', SUPER, ({ me, body }) => lock(async () => {
   const name = str(body.name, 30) || 'Concha';
@@ -1769,6 +1772,7 @@ route('PUT', '/api/brand', SUPER, ({ me, body }) => lock(async () => {
   const url = str(body.url, 200).replace(/\/+$/, '');
   if (url && !/^https?:\/\/[^\s/]+/i.test(url)) throw new HttpError(400, 'La dirección del panel debe empezar por http:// o https://');
   db.settings.brand = { ...db.settings.brand, name, color: color.toLowerCase(), logo, url };
+  if (typeof body.salesEmail === 'string') { const se = str(body.salesEmail, 120); if (se && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(se)) throw new HttpError(400, 'El correo de contacto no es válido.'); db.settings.salesEmail = se; }
   addLog('ajustes', null, 'Marca del panel cambiada', me);
   saveDb();
   return { ok: true, brand: db.settings.brand };
@@ -1872,6 +1876,13 @@ function finishLogin(req, res, u, via2fa) {
   const al = u.secAlerts || {};
   if (al.login !== false) notifyUser(u, `🔐 Nuevo inicio de sesión en tu cuenta «${u.username}» del panel ${db.settings.brand.name || 'Concha'}.\n${dev}\nIP: ${ip}\n${whenTxt()}\n\nSi no has sido tú, entra en Ajustes › Seguridad, pulsa «Cerrar las demás sesiones» y cambia la contraseña.`);
   if (u.role === 'admin') notifyStaff('staffLogins', `👤 El administrador ${u.name} (${u.username}) ha entrado en el panel.\n${dev} · IP ${ip}\n${whenTxt()}`);
+  // Entradas de resellers y subresellers: al jefe (y a los admins que lo pidan) y, si es un subreseller, también a su reseller
+  if (u.role === 'reseller' || u.role === 'sub') {
+    const par = u.parentId ? db.users.find((x) => x.id === u.parentId) : null;
+    const who = u.role === 'sub' ? `🟢 El subreseller ${u.name} (@${u.username})${par ? `, de ${par.name},` : ''}` : `🟢 El reseller ${u.name} (@${u.username})`;
+    notifyStaff('vendorLogins', `${who} ha entrado en el panel.\n${dev} · IP ${ip}\n${whenTxt()}`);
+    if (par && !par.disabled && (par.secAlerts || {}).vendorLogins !== false && par.role === 'reseller') notifyUser(par, `🟢 Tu subreseller ${u.name} (@${u.username}) ha entrado en el panel.\n${whenTxt()}`);
+  }
 }
 route('POST', '/api/login/2fa', null, async ({ req, body, res }) => {
   const ip = clientIp(req);
@@ -1905,7 +1916,7 @@ route('POST', '/api/login/2fa', null, async ({ req, body, res }) => {
 route('POST', '/api/logout', null, ({ req, res }) => {
   const tok = sessionToken(req);
   const sv = tok && sessions.get(tok), su = sv && db.users.find((x) => x.id === sv.userId);
-  if (su) addAccess(su, 'salida', req);
+  if (su) { addAccess(su, 'salida', req); su.lastOut = new Date().toISOString(); }
   if (tok) sessions.delete(tok);
   res.setHeader('Set-Cookie', 'sid=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
   return { ok: true };
@@ -4378,7 +4389,7 @@ route('GET', '/api/security', '*', ({ me, req }) => {
   return {
     twoFa: !!(me.totp && me.totp.on), codesLeft: me.totp && me.totp.on ? (me.totp.codes || []).length : 0,
     bot: cfg.token ? cfg.bot || '' : '', tgLinked: !!me.tgChat, tgLink: cfg.token && cfg.bot ? `https://t.me/${cfg.bot}?start=${userTgCode(me)}` : '',
-    alerts: { login: al.login !== false, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
+    alerts: { login: al.login !== false, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, vendorLogins: me.role === 'super' || me.role === 'reseller' ? al.vendorLogins !== false : al.vendorLogins === true, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
     sessions: list, idleMin: db.settings.security.idleMin,
   };
 });
@@ -4429,7 +4440,7 @@ route('POST', '/api/users/:id/reset2fa', '*', ({ me, params }) => lock(async () 
 }));
 route('PUT', '/api/security/alerts', '*', ({ me, body }) => lock(async () => {
   const al = me.secAlerts || {};
-  for (const k of ['login', 'servers', 'staffLogins', 'backup', 'payments', 'quality', 'sabotage', 'daily', 'credits']) if (typeof body[k] === 'boolean') al[k] = body[k];
+  for (const k of ['login', 'servers', 'staffLogins', 'vendorLogins', 'backup', 'payments', 'quality', 'sabotage', 'daily', 'credits']) if (typeof body[k] === 'boolean') al[k] = body[k];
   me.secAlerts = al; saveDb();
   return { ok: true };
 }));
