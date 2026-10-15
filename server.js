@@ -258,7 +258,17 @@ async function emby(server, method, p, body) {
     throw err;
   }
   if (!text) return null;
-  try { return JSON.parse(text); } catch { return text; }
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  // Rutas que siempre deben devolver una lista: si llega { Items: [...] } se saca la lista;
+  // si llega una página web (un proxy delante de Emby), se avisa en vez de romper el panel.
+  if (method === 'GET' && /^\/(Users|Sessions|Library\/VirtualFolders|Library\/SelectableMediaFolders)(\?|$)/.test(p) && !Array.isArray(data)) {
+    if (data && Array.isArray(data.Items)) return data.Items;
+    const err = new Error(`"${server.name}" no ha contestado como Emby. Revisa que la «Dirección para el panel» lleve directamente a Emby (mejor la IP con el puerto, por ejemplo http://IP:8096).`);
+    err.embyStatus = 502;
+    throw err;
+  }
+  return data;
 }
 function serverById(id) {
   const s = db.servers.find((x) => x.id === Number(id));
@@ -271,10 +281,18 @@ function serverOf(client) {
   return s;
 }
 async function embyLibraries(server) {
-  let list;
-  try { list = await emby(server, 'GET', '/Library/VirtualFolders'); }
-  catch (e) { if (e.embyStatus !== 404) throw e; list = await emby(server, 'GET', '/Library/SelectableMediaFolders'); }
-  return (list || []).map((f) => ({ id: String(f.Guid || f.ItemId || f.Id || ''), name: f.Name })).filter((f) => f.id);
+  // Cada versión de Emby (o un proxy delante) puede contestar distinto: lista, { Items: [...] } o texto.
+  // Se prueban varias rutas y se usa la primera que devuelva una lista de verdad.
+  const asList = (v) => Array.isArray(v) ? v : (v && Array.isArray(v.Items) ? v.Items : null);
+  const paths = ['/Library/VirtualFolders', '/Library/VirtualFolders/Query', '/Library/SelectableMediaFolders', '/Library/MediaFolders'];
+  let list = null, lastErr = null;
+  for (const p of paths) {
+    try { list = asList(await emby(server, 'GET', p)); }
+    catch (e) { if (e.embyStatus === 401 || e.embyStatus === 403 || e.embyStatus === 0) throw e; lastErr = e; }
+    if (list) break;
+  }
+  if (!list) throw lastErr || new HttpError(502, `"${server.name}" no devolvió la lista de bibliotecas. Revisa que la «Dirección para el panel» lleve directamente a Emby.`);
+  return list.map((f) => ({ id: String(f.Guid || f.ItemId || f.Id || ''), name: f.Name || f.name || 'Biblioteca' })).filter((f) => f.id);
 }
 function packageReady(server, quality) {
   const p = server.packages && server.packages[quality];
