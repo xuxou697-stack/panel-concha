@@ -1504,6 +1504,34 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .ssales:hover{background:color-mix(in srgb,#ff7a59 14%,transparent)}
 .psales{display:inline-flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;text-decoration:none;color:var(--text);border:1px solid color-mix(in srgb,#ff7a59 40%,var(--line));background:color-mix(in srgb,#ff7a59 10%,var(--raised))}
 .psales>span:first-child{font-size:22px}.psales b{display:block}.psales small{display:block;color:var(--muted)}
+/* Portada: siempre centrada (la página interna tiene un ancho máximo que aquí no aplica) */
+#gate .gwrap{max-width:none;width:100%;box-sizing:border-box;margin:0;padding-left:16px;padding-right:16px}
+#gate .gcard,#gate .gsales,#gate .gfoot{margin-left:auto;margin-right:auto}
+/* Detalles: la tarjeta flota, el botón brilla al pasar la luz y caen chispitas alrededor del logo */
+#gate .gcard{animation:gcIn .7s cubic-bezier(.2,.7,.2,1) both,gcFloat 7s ease-in-out .7s infinite}
+@keyframes gcIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes gcFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#gate .gbtn{position:relative;overflow:hidden}
+#gate .gbtn::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:gsh 3.8s ease-in-out 1.2s infinite}
+@keyframes gsh{0%{left:-60%}55%,100%{left:130%}}
+.gring::after{content:"✦";position:absolute;right:-10px;top:4px;color:#ffe08a;font-size:18px;text-shadow:0 0 10px #ffd36b;animation:gtw 2.6s ease-in-out infinite}
+#gate .ghead{position:relative}
+#gate .ghead::before{content:"✦";position:absolute;left:calc(50% - 74px);top:22px;color:#a7f3ff;font-size:12px;text-shadow:0 0 8px #67e8f9;animation:gtw 3.4s ease-in-out .8s infinite}
+@keyframes gtw{0%,100%{opacity:.2;transform:scale(.7) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(20deg)}}
+@media (min-width:1000px){#gate .gcard{width:440px}#gate .gname{font-size:64px}}
+@media (prefers-reduced-motion:reduce){#gate .gcard,#gate .gbtn::after,.gring::after,#gate .ghead::before{animation:none}}
+/* Fecha bloqueada para resellers y subresellers */
+.lockdate{display:flex;gap:10px;align-items:center;margin:4px 0 12px;padding:10px 12px;border-radius:12px;background:var(--raised);border:1px dashed var(--line)}.lockdate>.ic{color:var(--muted);flex:none}.lockdate div{display:flex;flex-direction:column}.lockdate span{font-size:12.5px;color:var(--muted)}
+/* Mensaje directo por Telegram */
+.tgto{display:flex;align-items:center;gap:10px;margin-bottom:12px}.tgto div{display:flex;flex-direction:column}.tgto small{color:var(--muted)}
+.tgno{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;background:var(--raised)}.tgno>.ic{color:#2aabee;width:22px;height:22px;flex:none}.tgno div{display:flex;flex-direction:column;gap:4px}.tgno span{color:var(--muted);font-size:14px}
+/* Precios por cantidad */
+.tr-h{font-size:15px;margin:14px 0 8px}.tr-rows{display:flex;flex-direction:column;gap:8px}
+.tr-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}.tr-row input{width:110px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text)}.tr-row span{color:var(--muted)}
+.tr-prev{display:flex;flex-direction:column;gap:4px;margin:12px 0 8px;font-size:14px}.tr-prev span{padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--ok) 10%,var(--raised))}.tr-prev:empty{display:none}
+.packrow.pk3{grid-template-columns:1fr 110px 150px}.packhead span{font-size:12px;color:var(--muted);font-weight:600}
+@media (max-width:560px){.packrow.pk3{grid-template-columns:1fr 80px 90px}}
+.tierbox{display:flex;gap:12px;align-items:flex-start;margin:0 0 14px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,#19c37d 12%,var(--raised));border:1px solid color-mix(in srgb,#19c37d 35%,var(--line))}.tierbox>.ic{color:#19c37d;width:22px;height:22px;flex:none}.tierbox div{display:flex;flex-direction:column;gap:3px}.tierbox span{font-size:14px;color:var(--muted)}.tierbox span b{color:var(--text)}
 /* Menú: sección donde estás (cerrada) */
 .nav .grp.here .t{color:var(--gc,var(--brand));font-weight:700}
 .nav .grp.here::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--gc,var(--brand));margin-left:auto;flex:none}
@@ -1655,7 +1683,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-pkg': 'box', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -2015,6 +2043,7 @@ function render() {
   if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power || x.plan)))) loadAgents(); }, 10000); }
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
   if (S.view === 'plantillas') poWire();
+  if (S.view === 'ajustes') tiersWire();
   if (S.view === 'gastos' && !S.gx.busy && (!S.gx.data || Date.now() - S.gx.at > 30000)) loadGx();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
@@ -2677,6 +2706,32 @@ function repTg(c) {
   return `<div class="reptg"><b>${ic('send')}Aún no recibe avisos por Telegram</b><span class="small muted">Mándale su enlace. Al abrirlo y pulsar «Iniciar» queda enlazado.</span>
     <input id="tgLinkBox" readonly value="${esc(l)}" aria-label="Enlace de Telegram del cliente">
     <div class="acts"><button type="button" class="btn sm primary" data-act="tg-copy">Copiar enlace</button>${wa ? `<a class="btn sm" target="_blank" rel="noopener" style="text-decoration:none" href="https://wa.me/${wa}?text=${encodeURIComponent(tgBlock(c))}">Enviar por WhatsApp</a>` : ''}</div></div>`;
+}
+/** Mensaje directo al cliente por el bot de Telegram */
+function dTgMsg(c) {
+  const bot = S.d.settings.notices.telegram.bot;
+  if (!bot) return showDlg('Mensaje por Telegram', `<p class="muted">${canDo('system') ? 'Todavía no hay bot de Telegram. Conéctalo en Ajustes › Notificaciones.' : 'El superadministrador todavía no ha conectado el bot de Telegram.'}</p>`);
+  if (!c.tgLinked) return showDlg(`Mensaje a ${c.panelName}`, `<div class="tgno">${ic('send')}<div><b>${esc(c.panelName)} aún no tiene Telegram enlazado</b><span>Mándale su enlace personal (por WhatsApp, por ejemplo). Cuando lo abra y pulse «Iniciar», ya podrás escribirle desde aquí.</span></div></div><div class="dfoot" style="justify-content:flex-start"><button type="button" class="btn primary" data-act="m-tg" data-id="${c.id}">Ver su enlace</button></div>`);
+  const offer = S.d.myPayOffer || S.d.parentPayOffer;
+  const left = c.demo ? null : diff(c.expires, S.d.today);
+  const Q = [['👋 Saludo', 'Hola {nombre} 👋 ¿Qué tal todo con el servicio?'],
+    ['⏳ Renovar', left != null && left >= 0 ? 'Hola {nombre} 👋 Tu cuenta vence el {vence}. ¿Quieres que te la renueve?' : 'Hola {nombre} 👋 Tu cuenta ha caducado. Si quieres seguir viendo, dime y te la renuevo al momento.'],
+    ['✅ Pago recibido', '¡Gracias, {nombre}! Pago recibido. Tu cuenta ya está renovada hasta el {vence}. 🎬'],
+    ['🔧 Mantenimiento', 'Hola {nombre}. Esta noche haremos mantenimiento en el servidor. Puede haber cortes cortos. Disculpa las molestias.'],
+    ['📺 Calidad', 'Hola {nombre}. Si ves cortes, entra en los Ajustes de la app de Emby y pon la calidad al máximo. Si sigue igual, avísame.']];
+  openDlg({ title: `Mensaje a ${c.panelName} por Telegram`, submit: 'Enviar por Telegram',
+    body: `<div class="tgto"><span class="po-i">${ic('send')}</span><div><b>${esc(c.panelName)}</b><small>Le llega al momento por el bot @${esc(bot)}</small></div></div>
+      <div class="mtpl">${Q.map(([t, m]) => `<button type="button" data-act="tgq" data-m="${esc(m)}">${t}</button>`).join('')}</div>
+      <label class="f">Mensaje (puedes usar {nombre} y {vence})<textarea name="text" rows="5" maxlength="3000" required placeholder="Escribe aquí tu mensaje…"></textarea></label>
+      ${offer && offer.on ? `<label class="check"><input type="checkbox" name="pay"> Añadir mis precios y el botón de pago</label>` : '<p class="small muted">Si pones tus precios y tu enlace de pago en Ajustes › Mis mensajes, también los podrás añadir aquí.</p>'}
+      <div class="po-prev" style="margin-top:10px"><small>Así lo verá</small><div class="tgb"><div class="tgm" id="tgmPrev">…</div><div class="tgbtn" id="tgmBtn" hidden></div></div></div>`,
+    onOpen: () => {
+      const f = dlgForm, fill = (t) => t.replace(/\{nombre\}/gi, c.panelName).replace(/\{vence\}/gi, c.demo ? '' : fmt2(c.expires));
+      const upd = () => { const pay = f.elements.pay && f.elements.pay.checked; $('#tgmPrev').textContent = (fill(f.elements.text.value) || '…') + (pay && offer.prices ? '\n\n' + fill(offer.prices) : ''); const b = $('#tgmBtn'); b.hidden = !(pay && offer.url); b.textContent = offer ? offer.button || '💳 Pagar y renovar' : ''; };
+      f.oninput = upd; f.onchange = upd; f.onclick = (e) => { const q = e.target.closest('[data-act=tgq]'); if (q) { e.preventDefault(); e.stopPropagation(); f.elements.text.value = q.dataset.m; upd(); f.elements.text.focus(); } };
+      upd(); f.elements.text.focus();
+    },
+    onSubmit: async (fd) => { await api('POST', `/api/clients/${c.id}/tg-msg`, { text: fd.get('text'), pay: fd.get('pay') === 'on' }); return `Mensaje enviado a ${c.panelName}`; } });
 }
 function dTelegram(c) {
   const link = tgLink(c), nt = S.d.settings.notices.telegram;
@@ -3655,6 +3710,13 @@ function ordersTable(list, who) {
     <td>${fmtTs(o.created, true)}<div class="small muted">${esc(o.id)}</div></td>${who ? `<td>${esc(o.user)}</td>` : ''}<td><b>+${o.credits}</b>${o.pack ? `<div class="small muted">${esc(o.pack)}</div>` : ''}</td>
     <td>${money(o.amount, o.currency)}</td><td>${payName(o.method)}</td><td><span class="pillst ${st[1]}">${st[0]}</span></td></tr>`; }).join('')}</tbody></table></div>`;
 }
+/** Importe de «Otra cantidad» con los precios por tramos */
+function buyCalc(p, n) {
+  const t = (p.tiers || []).slice().sort((a, b) => a.from - b.from);
+  let unit = p.price;
+  if (t.length) { unit = t[0].price; for (const x of t) if (n >= x.from) unit = x.price; }
+  return Math.round(n * unit * 100) / 100;
+}
 function buyHtml() {
   const p = S.pay;
   if (!p || !p.canBuy || !p.methods.length) return '';
@@ -3664,9 +3726,10 @@ function buyHtml() {
   const COLORS = ['#3fa9f5', '#a46bff', '#19c37d', '#ff7a3d', '#e2457a', '#14b8c4'];
   const n0 = Math.max(p.min, 20);
   return `<section><h2>Comprar créditos</h2>
-    <p class="muted small" style="margin-bottom:12px">Pagas de forma segura en ${p.methods.map((m) => (m === 'stripe' ? 'Stripe (tarjeta, Apple Pay, Google Pay)' : 'NOWPayments (USDT, BTC y otras)')).join(' o ')}. En cuanto se confirma, los créditos se suman solos. Tu precio: <b>${cur(p.price)}</b> por crédito.</p>
+    <p class="muted small" style="margin-bottom:12px">Pagas de forma segura en ${p.methods.map((m) => (m === 'stripe' ? 'Stripe (tarjeta, Apple Pay, Google Pay)' : 'NOWPayments (USDT, BTC y otras)')).join(' o ')}. En cuanto se confirma, los créditos se suman solos.${(p.tiers || []).length ? '' : ` Tu precio: <b>${cur(p.price)}</b> por crédito.`}</p>
+    ${(p.tiers || []).length ? `<div class="tierbox">${ic('coins')}<div><b>Cuantos más compras, más barato</b><span>${p.tiers.map((x, i) => { const to = p.tiers[i + 1] ? p.tiers[i + 1].from - 1 : null; return `${to ? `De ${x.from} a ${to}` : `Desde ${x.from}`}: <b>${cur(x.price)}</b> cada crédito`; }).join(' · ')}</span></div></div>` : ''}
     <div class="packs">${p.packs.map((k, i) => `<div class="pack" style="--c:${COLORS[i % COLORS.length]}"><span class="pk-n">${esc(k.name)}</span><b>${k.credits}<small> créditos</small></b><span class="pk-p">${cur(k.amount)}</span><div class="pk-b">${btns(`data-pack="${k.i}"`)}</div></div>`).join('')}
-      <div class="pack pk-free" style="--c:#f5a524"><span class="pk-n">Otra cantidad</span><input type="number" id="buyN" min="${p.min}" max="100000" step="1" value="${n0}" aria-label="Créditos a comprar"><span class="pk-p" id="buyP">${cur(n0 * p.price)}</span><div class="pk-b">${btns('data-free="1"')}</div></div></div>
+      <div class="pack pk-free" style="--c:#f5a524"><span class="pk-n">Otra cantidad</span><input type="number" id="buyN" min="${p.min}" max="100000" step="1" value="${n0}" aria-label="Créditos a comprar"><span class="pk-p" id="buyP">${cur(buyCalc(p, n0))}</span><div class="pk-b">${btns('data-free="1"')}</div></div></div>
     <h2 style="margin-top:18px">Mis compras</h2>${ordersTable(p.orders, false)}</section>`;
 }
 async function buyGo(el) {
@@ -3731,7 +3794,7 @@ async function dDelRefund(c) {
   const who = r.parts.length ? r.parts.map((p) => `<div class="rfwho"><span>${esc(p.name)}${p.userId === me().id ? ' (tú)' : ''}</span><b>+${p.credits} ${p.credits === 1 ? 'crédito' : 'créditos'}</b></div>`).join('') : '';
   openDlg({ title: `Eliminar a ${c.panelName}`, submit: r.total ? `Eliminar y devolver ${r.total}` : 'Eliminar', danger: true,
     body: `<p>El usuario <b>${esc(c.embyName)}</b> se borra de Emby para siempre (con su historial y su progreso). No se puede deshacer.</p>
-      <div class="rfbox"><div class="rfh">${ic('coins')}<div><b>${r.total ? `Se devuelven ${plural(r.total, 'crédito', 'créditos')}` : 'No hay créditos que devolver'}</b><small>Lo pagado hace menos de 24 h vuelve entero; de lo demás, la parte del tiempo que no se ha usado.</small></div></div>${who}${lines}</div>`,
+      <div class="rfbox"><div class="rfh">${ic('coins')}<div><b>${r.total ? `Se devuelven ${plural(r.total, 'crédito', 'créditos')}` : 'No hay créditos que devolver'}</b><small>Lo pagado hace menos de 1 hora vuelve entero; de lo demás, la parte del tiempo que no se ha usado.</small></div></div>${who}${lines}</div>`,
     onSubmit: async () => { const x = await api('POST', `/api/clients/${c.id}/delete-refund`, {}); return x.refunded ? `Cuenta eliminada. Devueltos ${plural(x.refunded, 'crédito', 'créditos')}` : 'Cuenta eliminada'; } });
 }
 
@@ -3946,7 +4009,7 @@ function vVendedor() {
   const adminPart = !staff() ? '' : `
     <div id="vendOpts"${role === 'admin' ? ' hidden' : ''}>
     <h2 class="sep">Precio</h2>
-    <label class="f" style="max-width:260px">Precio por crédito<input type="number" name="creditPrice" min="0" max="100000" step="0.01" value="${u ? u.creditPrice || '' : S.d.settings.creditPrice || ''}" placeholder="0,00"></label>
+    <label class="f" style="max-width:260px">Precio propio por crédito (opcional)<input type="number" name="creditPrice" min="0" max="100000" step="0.01" value="${u ? u.creditPrice || '' : (S.d.settings.priceTiers || []).length ? '' : S.d.settings.creditPrice || ''}" placeholder="${(S.d.settings.priceTiers || []).length ? 'Precios por cantidad' : '0,00'}"><small class="muted" style="font-weight:400">Vacío = usa el precio general${(S.d.settings.priceTiers || []).length ? ' por cantidad' : ''} de Precios y paquetes.</small></label>
     <p class="muted small" style="margin:-6px 0 4px">Es informativo: sirve para ver cuánto valen en dinero los créditos que tiene. No cambia lo que cuesta cada alta.</p>
     <h2 class="sep">Créditos y demos</h2>
     ${chk('allowNegative', u && u.allowNegative, 'Permitir créditos negativos (puede seguir vendiendo sin saldo y te lo debe)')}
@@ -4376,8 +4439,9 @@ function ajSections() {
     </form></div></section>`,
     packs: `  <section><h2>Paquetes de créditos</h2>
     <div class="panel pad"><form id="packs" style="max-width:520px">
-      <p class="muted small" style="margin-bottom:10px">Los que aparecen al asignar créditos a un vendedor. Deja una fila vacía para quitarla.</p>
-      ${[...(g.creditPacks || []), {}, {}].slice(0, 12).map((p) => `<div class="packrow"><input name="pn" maxlength="40" placeholder="Nombre del paquete" value="${esc(p.name || '')}" aria-label="Nombre del paquete"><input name="pc" type="number" min="1" max="100000" step="1" placeholder="Créditos" value="${p.credits || ''}" aria-label="Créditos"></div>`).join('')}
+      <p class="muted small" style="margin-bottom:10px">Los que aparecen al asignar créditos y al comprar online. Deja una fila vacía para quitarla. El <b>precio fijo</b> es opcional: si lo pones, ese paquete cuesta eso; si no, créditos × el precio del crédito.</p>
+      <div class="packrow pk3 packhead"><span>Nombre</span><span>Créditos</span><span>Precio fijo (opcional)</span></div>
+      ${[...(g.creditPacks || []), {}, {}].slice(0, 12).map((p) => `<div class="packrow pk3"><input name="pn" maxlength="40" placeholder="Nombre del paquete" value="${esc(p.name || '')}" aria-label="Nombre del paquete"><input name="pc" type="number" min="1" max="100000" step="1" placeholder="Créditos" value="${p.credits || ''}" aria-label="Créditos"><input name="pp" type="number" min="0" step="0.01" placeholder="Auto" value="${p.price || ''}" aria-label="Precio fijo del paquete" inputmode="decimal"></div>`).join('')}
       <button class="btn primary" type="submit" style="margin-top:6px">Guardar paquetes</button>
     </form></div></section>`,
     notices: `  <section><h2>Avisos de vencimiento</h2>
@@ -4413,7 +4477,34 @@ function ajSections() {
 }
 function vAjustes() {
   const x = ajSections();
-  return head('Precios y paquetes', 'Lo que cuesta cada alta y renovación, y los paquetes de créditos. Los plazos y límites están en Ajustes, Tiempos.') + x.rules + x.packs;
+  return head('Precios y paquetes', 'Lo que cuesta cada alta y renovación, y los paquetes de créditos. Los plazos y límites están en Ajustes, Tiempos.') + x.rules + tiersHtml() + x.packs;
+}
+/* Precio del crédito en euros para las compras online: general y por cantidad */
+function tiersHtml() {
+  const g = S.d.settings, t = (g.priceTiers || []).slice().sort((a, b) => a.from - b.from), rows = [...t, {}, {}].slice(0, Math.max(3, t.length + 1));
+  const cur = g.currency || 'EUR';
+  return `<section><h2>Precio del crédito (compras online)</h2>
+    <div class="panel pad"><form id="tiersForm" style="max-width:640px">
+      <p class="muted small" style="margin-bottom:12px">Lo que paga en ${cur === 'EUR' ? 'euros' : cur} un vendedor por cada crédito al comprar desde el panel. Con <b>precios por cantidad</b>, cuantos más créditos compra, más barato le sale cada uno.</p>
+      <label class="f" style="max-width:260px">Precio general por crédito<input type="number" name="gprice" min="0" step="0.01" value="${g.creditPrice || ''}" placeholder="0,00" inputmode="decimal"></label>
+      <h3 class="tr-h">Precios por cantidad <span class="muted small">(opcional; si los pones, mandan sobre el general)</span></h3>
+      <div class="tr-rows">${rows.map((r, i) => `<div class="tr-row"><span>Desde</span><input name="tfrom" type="number" min="1" step="1" value="${r.from || (i === 0 && !t.length ? '' : '')}" placeholder="${i === 0 ? '1' : '100'}" aria-label="Desde cuántos créditos"><span>créditos →</span><input name="tprice" type="number" min="0" step="0.01" value="${r.price || ''}" placeholder="${i === 0 ? '3,00' : '2,50'}" inputmode="decimal" aria-label="Precio por crédito"><span>${cur === 'EUR' ? '€' : cur} cada uno</span></div>`).join('')}</div>
+      <p class="tr-prev" id="tierPrev"></p>
+      <p class="muted small">Ejemplo: «Desde 1 → 3,00» y «Desde 100 → 2,50». Quien compre 50 paga 150 €; quien compre 100 paga 250 €. El primer tramo empieza siempre en 1. Si un vendedor tiene un precio propio en su ficha, se usa el suyo.</p>
+      <button class="btn primary" type="submit" style="margin-top:6px">Guardar precios del crédito</button>
+    </form></div></section>`;
+}
+function tiersWire() {
+  const f = $('#tiersForm'); if (!f || f.dataset.w) return; f.dataset.w = 1;
+  const upd = () => {
+    const fr = f.querySelectorAll('[name=tfrom]'), pr = f.querySelectorAll('[name=tprice]'), t = [];
+    fr.forEach((x, i) => { const a = +x.value, b = +String(pr[i].value).replace(',', '.'); if (a >= 1 && b > 0) t.push({ from: a, price: b }); });
+    t.sort((a, b) => a.from - b.from);
+    const el = $('#tierPrev');
+    if (!t.length) { el.textContent = ''; return; }
+    el.innerHTML = t.map((x, i) => { const to = t[i + 1] ? t[i + 1].from - 1 : null; return `<span>${to ? `De ${x.from} a ${to}` : `Desde ${x.from}`} créditos: <b>${eur(x.price)}</b> cada uno</span>`; }).join('');
+  };
+  f.oninput = upd; upd();
 }
 /* ---------- Ajustes: Perfil ---------- */
 function vPerfil() {
@@ -5867,7 +5958,7 @@ function dEdit(c) {
     title: `Editar a ${c.panelName}`, submit: 'Guardar cambios',
     body: `<div class="seenbox" data-seenbox="${c.id}" style="margin-bottom:14px">${seenBox(c.id)}</div><label class="f">Nombre del cliente<input name="panelName" required maxlength="80" value="${esc(c.panelName)}"></label>
       ${passField('Nueva contraseña de Emby (vacío = no cambiarla)', false)}
-      ${adminPart}
+      ${adminPart}${!staff() && !c.demo ? `<div class="lockdate">${ic('lock')}<div><b>Vence el ${fmt(c.expires)}</b><span>La fecha no se puede cambiar a mano: se alarga al renovar.</span></div></div>` : ''}
       <div class="row2">
         <label class="f">Email<input type="email" name="email" maxlength="120" value="${esc(c.email || '')}"></label>
         <label class="f">WhatsApp<input name="whatsapp" maxlength="120" inputmode="tel" value="${esc(c.whatsapp || '')}"></label>
@@ -5913,7 +6004,7 @@ function dMore(c) {
   const noCredits = !owner || owner.role === 'super' || (owner.role === 'admin' && !owner.useCredits);
   const grp = (title, items, cls = '') => { const html = items.filter(Boolean).join(''); return html ? `<div class="mgrp ${cls}"><h4>${title}</h4><div class="mgrid2">${html}</div></div>` : ''; };
   showDlg(c.panelName, `<div class="mlist2">
-    ${grp('Enviar al cliente', [it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
+    ${grp('Enviar al cliente', [it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
     ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', staff() && others ? it('m-move', 'Servidor') : ''])}
     ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
     ${grp('Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
@@ -6978,6 +7069,7 @@ document.addEventListener('click', (e) => {
     case 'm-owner': if (c) dOwner(c); break;
     case 'm-move': if (c) dMove(c); break;
     case 'm-tg': if (c) dTelegram(c); break;
+    case 'm-tgmsg': if (c) dTgMsg(c); break;
     case 'tg-copy': { const box = $('#tgLinkBox'); copyText(box.value, box).then(() => toast('Enlace copiado')).catch((x) => toast(x.message, true)); break; }
     case 'tg-unlink': if (c) { if (dlg.open) dlg.close(); act(() => api('POST', `/api/clients/${c.id}/tg-unlink`, {}), 'Telegram desenlazado'); } break;
     case 'noticed': if (c) {
@@ -7084,7 +7176,7 @@ document.addEventListener('input', (e) => {
     $('.combo-none', list).hidden = n > 0;
     return;
   }
-  if (id === 'buyN' && S.pay) { const p = $('#buyP'); if (p) p.textContent = money((+e.target.value || 0) * S.pay.price, S.pay.currency); return; }
+  if (id === 'buyN' && S.pay) { const p = $('#buyP'); if (p) p.textContent = money(buyCalc(S.pay, +e.target.value || 0), S.pay.currency); return; }
   if (id === 'dq') { S.dq = e.target.value; const r = $('#dqr'); if (r) r.innerHTML = dqHtml(); if (S.d.servers.length && !S.seen && Date.now() - S.seenAt > 60000) loadSeen(); return; }
   if (id === 'monQ') { S.mon.q = e.target.value; monPaint(); return; }
   if (id === 'accq') { S.acc.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#accq'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
@@ -7195,8 +7287,14 @@ document.addEventListener('submit', (e) => {
   }
   if (e.target.id === 'packs') {
     e.preventDefault();
-    const fd = new FormData(e.target), names = fd.getAll('pn'), creds = fd.getAll('pc');
-    act(() => api('PUT', '/api/credit-packs', { packs: names.map((n, k) => ({ name: n.trim(), credits: +creds[k] || 0 })).filter((p) => p.name || p.credits) }), 'Paquetes de créditos guardados');
+    const fd = new FormData(e.target), names = fd.getAll('pn'), creds = fd.getAll('pc'), prices = fd.getAll('pp');
+    act(() => api('PUT', '/api/credit-packs', { packs: names.map((n, k) => ({ name: n.trim(), credits: +creds[k] || 0, price: prices[k] || 0 })).filter((p) => p.name || p.credits) }), 'Paquetes de créditos guardados');
+  }
+  if (e.target.id === 'tiersForm') {
+    e.preventDefault();
+    const f = e.target, fr = f.querySelectorAll('[name=tfrom]'), pr = f.querySelectorAll('[name=tprice]');
+    const tiers = [...fr].map((x, i) => ({ from: x.value, price: pr[i].value })).filter((t) => t.from || t.price);
+    act(() => api('PUT', '/api/price-tiers', { tiers, price: f.elements.gprice.value || 0 }), 'Precios del crédito guardados');
   }
   if (e.target.id === 'alcfg') {
     e.preventDefault();

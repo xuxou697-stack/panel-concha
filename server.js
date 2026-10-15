@@ -2280,6 +2280,25 @@ route('POST', '/api/clients/:id/guide', '*', async ({ me, params, body }) => {
   await lock(async () => { addLog('aviso', c, custom ? `Mensaje enviado por Telegram: ${custom.slice(0, 80)}` : 'Guía de calidad enviada por Telegram', me); saveDb(); });
   return { ok: true };
 });
+/* Mensaje directo al cliente por el bot de Telegram (con sus precios y botón de pago, si se quiere) */
+route('POST', '/api/clients/:id/tg-msg', '*', async ({ me, params, body }) => {
+  const c = clientFor(me, params.id), cfg = db.settings.notices.telegram;
+  if (!cfg.token) throw new HttpError(400, 'El bot de Telegram no está configurado.');
+  if (!c.tgChat) throw new HttpError(400, 'Este cliente no tiene Telegram enlazado. Mándale primero su enlace.');
+  const text = typeof body.text === 'string' ? body.text.replace(/\r\n/g, '\n').trim().slice(0, 3000) : '';
+  if (!text) throw new HttpError(400, 'Escribe el mensaje.');
+  const msg = { chat_id: c.tgChat, text: fillText(text, c), disable_web_page_preview: true };
+  const off = body.pay ? payOfferFor(c.ownerId) : null;
+  if (off && off.prices) msg.text += '\n\n' + fillText(off.prices, c);
+  if (off && off.url) msg.reply_markup = { inline_keyboard: [[{ text: off.button || '💳 Pagar y renovar', url: off.url }]] };
+  try { await tg('sendMessage', msg); }
+  catch (e) {
+    if (/blocked|chat not found|deactivated/i.test(e.message)) { await lock(async () => { delete c.tgChat; addLog('aviso', c, 'Telegram desenlazado: el cliente bloqueó el bot', null); saveDb(); }); throw new HttpError(400, 'El cliente ha bloqueado el bot o borró el chat: ya no está enlazado.'); }
+    throw e;
+  }
+  await lock(async () => { addLog('aviso', c, `Mensaje directo por Telegram: ${text.slice(0, 80)}`, me); saveDb(); });
+  return { ok: true };
+});
 route('POST', '/api/clients/:id/tg-unlink', '*', ({ me, params }) => lock(async () => {
   const c = clientFor(me, params.id);
   if (c.tgChat) { delete c.tgChat; addLog('aviso', c, 'Telegram desenlazado', me); saveDb(); }
@@ -2669,6 +2688,7 @@ route('PUT', '/api/clients/:id', '*', ({ me, params, body }) => lock(async () =>
   const changes = [];
   const newPassword = typeof body.password === 'string' && body.password ? readNewPassword(body.password, 4) : '';
   readContact(body, c); // valida antes de tocar nada
+  if (!isStaff(me) && body.expires !== undefined && body.expires !== c.expires) throw new HttpError(403, 'La fecha de caducidad no se puede cambiar a mano. Usa «Renovar».');
   if (isStaff(me)) {
     // Solo administradores: fecha, pantallas, contenido y dueno
     const free = !paysCredits(me); // con creditos activados, fecha y pantallas solo cambian renovando
@@ -2828,9 +2848,9 @@ route('DELETE', '/api/clients/:id', STAFF, ({ me, params }) => lock(async () => 
 }));
 
 /* ---------- Eliminar una cuenta devolviendo los créditos ----------
- * Regla: lo pagado en las últimas 24 horas se devuelve entero; de lo demás, la parte del tiempo que no se ha usado.
+ * Regla: lo pagado en la última hora se devuelve entero; de lo demás, la parte del tiempo que no se ha usado.
  * Cada crédito vuelve a quien lo pagó. */
-const REFUND_FULL_MS = 24 * 3600000;
+const REFUND_FULL_MS = 3600000; // v95: solo la primera hora se devuelve entero (antes 24 h: se podía regalar un día gratis y recuperar el crédito)
 /** Pagos de la cuenta. Las cuentas antiguas no los tienen apuntados: se sacan del historial de créditos */
 function chargesOf(c) {
   if (Array.isArray(c.charges) && c.charges.length) return c.charges;
@@ -2851,7 +2871,7 @@ function refundFor(c) {
   const now = Date.now(), t = today(), per = new Map(), lines = [];
   for (const ch of chargesOf(c)) {
     let back = 0, why;
-    if (now - Date.parse(ch.ts) < REFUND_FULL_MS) { back = ch.credits; why = 'pagado hace menos de 24 h: se devuelve entero'; }
+    if (now - Date.parse(ch.ts) < REFUND_FULL_MS) { back = ch.credits; why = 'pagado hace menos de 1 hora: se devuelve entero'; }
     else {
       const total = Math.max(1, diffDays(ch.to, ch.from)), left = Math.min(total, Math.max(0, diffDays(ch.to, t > ch.from ? t : ch.from)));
       back = Math.floor((ch.credits * left) / total);
@@ -3472,9 +3492,31 @@ route('PUT', '/api/credit-packs', SUPER, ({ body }) => lock(async () => {
     const name = str(p && p.name, 40), credits = Number(p && p.credits);
     if (!name && !credits) continue;
     if (!name || !Number.isInteger(credits) || credits < 1 || credits > 100000) throw new HttpError(400, 'Cada paquete necesita un nombre y una cantidad de créditos mayor que cero.');
-    packs.push({ name, credits });
+    const price = Number(String(p.price == null ? '' : p.price).replace(',', '.')) || 0;
+    if (price < 0 || price > 1000000) throw new HttpError(400, 'El precio de un paquete no es válido.');
+    packs.push(price > 0 ? { name, credits, price: Math.round(price * 100) / 100 } : { name, credits });
   }
   db.settings.creditPacks = packs;
+  saveDb();
+  return { ok: true };
+}));
+/* Precio general del crédito y precios por cantidad (tramos) para las compras online */
+route('PUT', '/api/price-tiers', SUPER, ({ me, body }) => lock(async () => {
+  const num = (v) => Number(String(v == null ? '' : v).replace(',', '.'));
+  const tiers = [];
+  for (const t of Array.isArray(body.tiers) ? body.tiers.slice(0, 8) : []) {
+    const from = num(t && t.from), price = num(t && t.price);
+    if (!from && !price) continue;
+    if (!Number.isInteger(from) || from < 1 || from > 100000) throw new HttpError(400, 'En cada tramo, «desde» debe ser un número entero de créditos (1 o más).');
+    if (!(price > 0) || price > 100000) throw new HttpError(400, 'En cada tramo pon un precio por crédito mayor que 0.');
+    if (tiers.some((x) => x.from === from)) throw new HttpError(400, `Hay dos tramos que empiezan en ${from}.`);
+    tiers.push({ from, price: Math.round(price * 100) / 100 });
+  }
+  tiers.sort((a, b) => a.from - b.from);
+  if (tiers.length && tiers[0].from !== 1) throw new HttpError(400, 'El primer tramo debe empezar en 1 crédito.');
+  db.settings.priceTiers = tiers;
+  if (body.price !== undefined) { const g = num(body.price); if (!(g >= 0) || g > 100000) throw new HttpError(400, 'El precio general no es válido.'); db.settings.creditPrice = Math.round(g * 100) / 100; }
+  addLog('ajustes', null, tiers.length ? `Precios por cantidad: ${tiers.map((t) => `desde ${t.from} → ${t.price}`).join(' · ')}` : 'Precios por cantidad quitados', me);
   saveDb();
   return { ok: true };
 }));
@@ -4036,7 +4078,19 @@ route('GET', '/api/income', STAFF, ({ req }) => {
 /* ---------- Compra de créditos online: Stripe (tarjeta) y NOWPayments (cripto) ---------- */
 const STRIPE_API = process.env.STRIPE_API || 'https://api.stripe.com';
 const NOWPAY_API = process.env.NOWPAY_API || 'https://api.nowpayments.io';
-const buyerPrice = (u) => Number(u.creditPrice || db.settings.creditPrice || 0);
+/* Precio del crédito. Orden: el precio propio del vendedor; si no tiene, los tramos por cantidad
+   (por ejemplo, de 1 a 99 créditos a 3 € y desde 100 a 2,50 €); si no hay tramos, el precio general. */
+const priceTiers = () => (Array.isArray(db.settings.priceTiers) ? db.settings.priceTiers : []).filter((t) => t && t.from >= 1 && t.price > 0).sort((a, b) => a.from - b.from);
+function unitPrice(u, credits) {
+  if (u && Number(u.creditPrice) > 0) return Number(u.creditPrice);
+  const tiers = priceTiers();
+  if (tiers.length) { let t = tiers[0]; for (const x of tiers) if (credits >= x.from) t = x; return Number(t.price); }
+  return Number(db.settings.creditPrice || 0);
+}
+/** Valor de un crédito para saldos y deudas (sin cantidad: el precio normal, el del primer tramo) */
+const buyerPrice = (u) => Number(u.creditPrice || db.settings.creditPrice || (priceTiers()[0] || {}).price || 0);
+/** Lo que cuesta comprar X créditos (o un paquete con precio fijo) */
+const buyAmount = (u, credits, pack) => Math.round((pack && Number(pack.price) > 0 ? Number(pack.price) : credits * unitPrice(u, credits)) * 100) / 100;
 const canBuy = (u) => (u.role === 'reseller' || u.role === 'sub') && !u.disabled;
 function panelBase(req) {
   const fixed = (db.settings.brand.url || '').replace(/\/+$/, '');
@@ -4081,7 +4135,7 @@ route('GET', '/api/pay', '*', ({ me }) => {
   const c = db.payCfg, price = buyerPrice(me), cur = db.settings.currency || 'EUR';
   const methods = [c.stripe.on && c.stripe.key ? 'stripe' : null, c.nowpay.on && c.nowpay.key ? 'nowpay' : null].filter(Boolean);
   const mine = db.orders.filter((o) => o.userId === me.id).slice(0, 30).map(pubOrder);
-  const out = { canBuy: canBuy(me), methods, price, currency: cur, min: c.min, packs: (db.settings.creditPacks || []).map((p, i) => ({ i, name: p.name, credits: p.credits, amount: Math.round(p.credits * price * 100) / 100 })), orders: mine };
+  const out = { canBuy: canBuy(me), methods, price, currency: cur, min: c.min, own: Number(me.creditPrice) > 0, tiers: Number(me.creditPrice) > 0 ? [] : priceTiers(), packs: (db.settings.creditPacks || []).map((p, i) => ({ i, name: p.name, credits: p.credits, fixed: Number(p.price) > 0, amount: buyAmount(me, p.credits, p) })), orders: mine };
   if (me.role === 'super') {
     out.cfg = { stripe: { on: c.stripe.on, hasKey: !!c.stripe.key, test: /^sk_test_/.test(c.stripe.key), hasWh: !!c.stripe.whsec }, nowpay: { on: c.nowpay.on, hasKey: !!c.nowpay.key, hasIpn: !!c.nowpay.ipn }, min: c.min };
     out.all = db.orders.slice(0, 100).map(pubOrder);
@@ -4115,12 +4169,12 @@ route('POST', '/api/pay/checkout', '*', async ({ me, body, req }) => {
   if (method === 'stripe' && !(c.stripe.on && c.stripe.key)) throw new HttpError(400, 'El pago con tarjeta no está activado.');
   if (method === 'nowpay' && !(c.nowpay.on && c.nowpay.key)) throw new HttpError(400, 'El pago con criptomonedas no está activado.');
   const packs = db.settings.creditPacks || [];
-  let credits, packName = '';
-  if (body.pack !== undefined && body.pack !== null && body.pack !== '') { const p = packs[Number(body.pack)]; if (!p) throw new HttpError(400, 'Ese paquete ya no existe.'); credits = p.credits; packName = p.name; }
+  let credits, packName = '', packObj = null;
+  if (body.pack !== undefined && body.pack !== null && body.pack !== '') { const p = packs[Number(body.pack)]; if (!p) throw new HttpError(400, 'Ese paquete ya no existe.'); credits = p.credits; packName = p.name; packObj = p; }
   else { credits = Number(body.credits); if (!Number.isInteger(credits) || credits < c.min || credits > 100000) throw new HttpError(400, `Elige entre ${c.min} y 100000 créditos.`); }
-  const price = buyerPrice(me), cur = (db.settings.currency || 'EUR').toUpperCase();
-  if (!price) throw new HttpError(400, 'Tu precio por crédito no está configurado. Avisa al administrador.');
-  const amount = Math.round(credits * price * 100) / 100;
+  const cur = (db.settings.currency || 'EUR').toUpperCase();
+  const amount = buyAmount(me, credits, packObj);
+  if (!(amount > 0)) throw new HttpError(400, 'Tu precio por crédito no está configurado. Avisa al administrador.');
   if (method === 'stripe' && amount < 0.5) throw new HttpError(400, 'El importe mínimo para pagar con tarjeta es 0,50.');
   // No mas de 5 pedidos sin pagar a la vez por usuario
   const open = db.orders.filter((o) => o.userId === me.id && o.status === 'pending' && Date.now() - Date.parse(o.created) < 3600000);
