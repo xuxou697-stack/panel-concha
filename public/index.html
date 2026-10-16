@@ -1539,6 +1539,56 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 @keyframes gtw{0%,100%{opacity:.2;transform:scale(.7) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(20deg)}}
 @media (min-width:1000px){#gate .gcard{width:440px}#gate .gname{font-size:64px}}
 @media (prefers-reduced-motion:reduce){#gate .gcard,#gate .gbtn::after,.gring::after,#gate .ghead::before{animation:none}}
+/* ---------- Entrada v102: pantalla partida, todo a la vista sin bajar ---------- */
+.ggrid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse at 30% 40%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse at 30% 40%,#000 20%,transparent 75%)}
+#gate .gwrap>section{margin:0;min-width:0}
+#gate .gwrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(380px,.85fr);grid-template-rows:1fr auto;grid-template-areas:"side panel" "extra panel";min-height:100vh;min-height:100dvh;padding:0!important;gap:0;align-items:stretch;justify-content:stretch}
+.gside{grid-area:side;align-self:end;display:flex;flex-direction:column;gap:26px;padding:48px clamp(28px,6vw,96px) 22px;color:#fff}
+.gpanel{grid-area:panel;display:flex;align-items:center;justify-content:center;padding:32px clamp(20px,4vw,56px);background:linear-gradient(180deg,rgba(3,12,26,.55),rgba(10,10,36,.55));border-left:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.gextra{grid-area:extra;align-self:start;display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:6px clamp(28px,6vw,96px) 34px}
+#gate .ghead{display:grid!important;grid-template-columns:auto 1fr;grid-template-areas:"ring wel" "ring name" "tag tag" "msg msg";align-items:center;column-gap:18px;row-gap:2px;text-align:left!important}
+#gate .ghead::before{display:none}
+#gate .gring{grid-area:ring;width:84px;height:84px;margin:0}
+#gate .gwel{grid-area:wel;align-self:end;font-size:13px;margin:0}
+#gate .gname{grid-area:name;align-self:start;font-size:clamp(48px,5.4vw,76px)!important;line-height:1}
+#gate .gtag{grid-area:tag;margin-top:14px}
+#gate .gmsg{grid-area:msg;max-width:460px;margin:6px 0 0;font-size:17px;font-style:normal;color:#f2ded8}
+.gfeat{list-style:none;margin:0;padding:0;display:grid;gap:10px;max-width:480px}
+.gfeat li{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.gfeat li>span{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:linear-gradient(135deg,rgba(34,211,238,.25),rgba(167,139,250,.25))}
+.gfeat b{display:block;font-size:15px;color:#fff}.gfeat small{display:block;font-size:13px;color:#b9d3e0}
+#gate .gcard{width:100%!important;max-width:400px;padding:30px 28px 24px;animation:gcIn .7s cubic-bezier(.2,.7,.2,1) both!important;background:rgba(6,18,36,.72)}
+#gate h1{font-size:28px;text-align:left}#gate #gateText{text-align:left;margin-bottom:20px}
+#gate .gcard .f{margin-bottom:14px}
+.gcapf>span{display:block;margin-bottom:6px}
+.caprow{display:flex;align-items:stretch;gap:8px}
+.caprow .capq{display:flex;align-items:center;margin:0;padding:0 14px;border-radius:12px;font-size:16px;white-space:nowrap}
+.caprow input{flex:1;min-width:0;width:auto}
+.gcapnew{flex:none;width:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(2,12,24,.45);color:#e2f3fa;font-size:20px;font-weight:700;cursor:pointer;transition:transform .3s,border-color .15s}
+.gcapnew:hover{border-color:#a78bfa;transform:rotate(180deg)}
+#gate .gbtn{margin-top:6px}
+#gate .gsales{width:auto!important;max-width:480px;margin:0!important}
+#gate .gfoot{align-items:flex-start;text-align:left;margin:0!important;font-size:12.5px;opacity:.85}#gate .gfoot b{font-size:13.5px}
+:root[data-theme="light"] .gside{color:#0b2533}
+:root[data-theme="light"] #gate .gmsg{color:#4a2a20}
+:root[data-theme="light"] .gpanel{background:rgba(255,255,255,.45);border-left-color:rgba(30,60,110,.12)}
+:root[data-theme="light"] .gfeat li{background:rgba(255,255,255,.6);border-color:rgba(30,60,110,.12)}
+:root[data-theme="light"] .gfeat b{color:#0b2533}:root[data-theme="light"] .gfeat small{color:#4c6878}
+:root[data-theme="light"] .gcapnew{background:#fff;border-color:#c9dbe4;color:#1f3b48}
+:root[data-theme="light"] .ggrid{background-image:linear-gradient(rgba(30,60,110,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(30,60,110,.06) 1px,transparent 1px)}
+@media (max-height:760px) and (min-width:900px){.gside{gap:18px;padding-top:28px}.gfeat li{padding:9px 14px}.gfeat li>span{width:34px;height:34px;font-size:17px}#gate .gring{width:70px;height:70px}#gate .gname{font-size:clamp(44px,4.6vw,62px)!important}#gate .gmsg{font-size:15.5px}#gate .gcard{padding:24px 24px 20px}#gate .gcard .f{margin-bottom:11px}#gate #gateText{margin-bottom:14px}.gextra{padding-bottom:20px}}
+@media (max-height:640px) and (min-width:900px){.gfeat small,#gate .gmsg{display:none}}
+@media (max-width:899px){
+  #gate .gwrap{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;grid-template-areas:"side" "panel" "extra"}
+  .gside{align-self:start;padding:26px 18px 6px;gap:0}
+  .gfeat,#gate .gmsg{display:none}
+  #gate .ghead{grid-template-areas:"ring wel" "ring name" "ring tag";column-gap:14px}
+  #gate .gring{width:62px;height:62px}#gate .gname{font-size:40px!important}#gate .gtag{margin:2px 0 0;font-size:11px}#gate .gwel{font-size:11px}
+  .gpanel{padding:16px 14px;background:none;border:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+  #gate .gcard{padding:22px 18px 20px}
+  .gextra{align-items:stretch;padding:4px 14px 26px}#gate .gsales{max-width:none}#gate .gfoot{align-items:center;text-align:center}
+}
+
 /* Fecha bloqueada para resellers y subresellers */
 .lockdate{display:flex;gap:10px;align-items:center;margin:4px 0 12px;padding:10px 12px;border-radius:12px;background:var(--raised);border:1px dashed var(--line)}.lockdate>.ic{color:var(--muted);flex:none}.lockdate div{display:flex;flex-direction:column}.lockdate span{font-size:12.5px;color:var(--muted)}
 /* Mensaje directo por Telegram */
@@ -1577,22 +1627,26 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 
 <div id="gate" hidden>
   <div class="gbg" aria-hidden="true">
-    <i class="gb gb1"></i><i class="gb gb2"></i><i class="gb gb3"></i><i class="gb gb4"></i>
-    <i class="bub" style="left:8%;--d:0s;--t:14s;--s:10px"></i><i class="bub" style="left:22%;--d:4s;--t:18s;--s:6px"></i><i class="bub" style="left:38%;--d:8s;--t:16s;--s:12px"></i>
-    <i class="bub" style="left:55%;--d:2s;--t:20s;--s:8px"></i><i class="bub" style="left:71%;--d:6s;--t:15s;--s:14px"></i><i class="bub" style="left:86%;--d:10s;--t:19s;--s:7px"></i>
-    <div class="gwaves"><svg viewBox="0 0 1200 120" preserveAspectRatio="none"><path class="w1" d="M0 60 C150 20 300 100 450 60 S750 20 900 60 S1050 100 1200 60 V120 H0Z"/><path class="w2" d="M0 80 C200 50 350 110 600 80 S1000 50 1200 80 V120 H0Z"/></svg></div>
+    <i class="gb gb1"></i><i class="gb gb2"></i><i class="gb gb3"></i><i class="gb gb4"></i><i class="ggrid"></i>
   </div>
   <button type="button" class="ib themebtn" data-act="theme" aria-label="Cambiar entre tema claro y oscuro"></button>
   <main class="gwrap">
+    <section class="gside">
     <div class="brand ghead"><span class="gring"><span class="logo"></span></span><span class="gwel">Bienvenidos al panel</span><b class="brand-name gname">Concha</b><span class="gtag">Panel de cuentas Emby</span><p class="gmsg">Tu bahía tranquila: cada cuenta en orden,<br>cada cliente a un toque.</p></div>
+    <ul class="gfeat" aria-label="Lo que hace el panel">
+      <li><span aria-hidden="true">⚡</span><div><b>Altas y renovaciones al momento</b><small>Crea, renueva y pausa cuentas Emby en un clic.</small></div></li>
+      <li><span aria-hidden="true">🔔</span><div><b>Avisos automáticos</b><small>Tus clientes reciben el aviso antes de caducar.</small></div></li>
+      <li><span aria-hidden="true">📡</span><div><b>Todo en directo</b><small>Quién está viendo, en qué servidor y con qué calidad.</small></div></li>
+    </ul>
+    </section>
+    <section class="gpanel">
     <form id="gateForm" class="gcard">
       <h1 id="gateTitle">Iniciar sesión</h1>
       <p id="gateText"></p>
       <div id="gStep1">
       <label class="f">Usuario<input name="username" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Tu usuario"></label>
       <label class="f"><span id="gateLabel">Contraseña</span><span class="pwrow"><input type="password" name="password" required autocomplete="current-password" placeholder="••••••••"><button type="button" class="eye" data-act="gate-eye" aria-label="Mostrar la contraseña"></button></span></label>
-      <label class="f"><span class="capq" id="capQ">… = ?</span><input name="captcha" required inputmode="numeric" autocomplete="off" placeholder="Tu respuesta"></label>
-      <button type="button" class="gnew" data-act="gate-cap">↻ Nueva pregunta</button>
+      <div class="f gcapf"><span>Comprobación rápida</span><div class="caprow"><span class="capq" id="capQ">… = ?</span><input name="captcha" required inputmode="numeric" autocomplete="off" placeholder="Resultado" aria-label="Resultado de la operación"><button type="button" class="gcapnew" data-act="gate-cap" title="Otra pregunta" aria-label="Otra pregunta">↻</button></div></div>
       </div>
       <div id="gStep2" hidden>
         <div class="g2icon" aria-hidden="true">🔐</div>
@@ -1604,8 +1658,11 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
       <button class="gbtn" type="submit" id="gateBtn">Acceder</button>
       <div class="gatehelp" id="gateHelp" hidden></div>
     </form>
+    </section>
+    <section class="gextra">
     <a class="gsales" id="gateSales" hidden></a>
     <footer class="gfoot"><b id="gateHost"></b><span>© <span id="gateYear"></span> Todos los derechos reservados</span></footer>
+    </section>
   </main>
 </div>
 
