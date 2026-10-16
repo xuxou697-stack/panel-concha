@@ -4761,7 +4761,7 @@ function impMapBuild(rows) {
     out[k] = [...vals.entries()].sort((a, b) => b[1].n - a[1].n).map(([v, e]) => {
       let to = '', how = '';
       const sv = (saved[k] || {})[v];
-      const ok = (x) => (k === 'owner' ? S.d.users.some((u) => String(u.id) === String(x)) : k === 'server' ? S.d.servers.some((u) => String(u.id) === String(x)) : /^(basico|k4)\|[124]?$/.test(x));
+      const ok = (x) => x === 'skip' || (k === 'owner' ? S.d.users.some((u) => String(u.id) === String(x)) : k === 'server' ? S.d.servers.some((u) => String(u.id) === String(x)) : /^(basico|k4)\|[124]?$/.test(x));
       if (sv && ok(sv)) { to = String(sv); how = 'Como la última vez'; }
       else if (e.votes.size && k !== 'server') { const best = [...e.votes.entries()].sort((a, b) => b[1] - a[1])[0]; if (ok(best[0])) { to = best[0]; how = 'Según las cuentas que ya tienes'; } }
       if (!to && k === 'package') { const sc = (/(\d)\s*(cx|conex|pant|screen|disp)/i.exec(v) || [])[1]; if (/4k|uhd|2160/i.test(v) || sc) { to = `${/4k|uhd|2160/i.test(v) ? 'k4' : 'basico'}|${['1', '2', '4'].includes(sc) ? sc : ''}`; how = 'Por el nombre'; } }
@@ -4778,6 +4778,7 @@ function impMapRow(r) {
     if (v === '-') { o[k] = ''; continue; }
     const hit = (m[k] || []).find((x) => x.v === v);
     if (!hit) continue;
+    if (hit.to === 'skip') { o._skip = 1; continue; }
     if (k === 'server') { const sv = S.d.servers.find((x) => x.id === +hit.to); o.server = sv ? sv.name : ''; }
     else if (k === 'owner') { const u = hit.to === 'me' ? me() : S.d.users.find((x) => x.id === +hit.to); o.owner = u ? u.username : ''; }
     else { const [q, sc] = String(hit.to).split('|'); o.package = q === 'k4' ? '4K' : 'Basico'; if (sc) { o.screens = sc; o.scrSet = 1; } }
@@ -4792,20 +4793,24 @@ function impMapBox() {
   if (!keys.length) return '';
   const T = { server: 'Servidor', package: 'Paquete (contenido y pantallas)', owner: 'Vendedor' };
   const pick = '<option value="">— Elige —</option>';
-  const opts = (k, to) => k === 'server' ? pick + S.d.servers.map((x) => `<option value="${x.id}"${String(to) === String(x.id) ? ' selected' : ''}>${esc(x.name)}</option>`).join('')
+  const skipO = (to) => `<option value="skip"${to === 'skip' ? ' selected' : ''}>✕ No importar estas cuentas</option>`;
+  const opts = (k, to) => optsB(k, to).replace(pick, pick + skipO(to));
+  const optsB = (k, to) => k === 'server' ? pick + S.d.servers.map((x) => `<option value="${x.id}"${String(to) === String(x.id) ? ' selected' : ''}>${esc(x.name)}</option>`).join('')
     : k === 'owner' ? pick + [...S.d.users].sort((a, b) => RANK[a.role] - RANK[b.role] || a.name.localeCompare(b.name)).map((u) => `<option value="${u.id}"${String(to) === String(u.id) ? ' selected' : ''}>${esc(u.name)} (${ROLE[u.role]})</option>`).join('')
     : pick + [['basico', 'Básico'], ['k4', '4K']].map(([q, qt]) => `<optgroup label="${qt}">${[['', 'pantallas por defecto'], ['1', '1 pantalla'], ['2', '2 pantallas'], ['4', '4 pantallas']].map(([sc, st]) => `<option value="${q}|${sc}"${to === `${q}|${sc}` ? ' selected' : ''}>${qt} · ${st}</option>`).join('')}</optgroup>`).join('');
   const short = (v) => (v.length > 22 ? v.slice(0, 8) + '…' + v.slice(-4) : v);
   const miss = impMissing();
   return `<div class="impmap${miss ? ' todo' : ''}"><h3>${ic('sliders')}Traduce los datos del otro panel</h3>
     <p class="muted small">Tu archivo trae códigos del otro panel. Dile a qué equivale cada uno: los usuarios de ejemplo te ayudan a reconocerlos. Lo que elijas se recuerda para la próxima vez, y si alguna de esas cuentas ya está en tu panel, se propone sola.</p>
+    <p class="muted small">¿Aún no tienes todos los servidores o vendedores en este panel? Elige solo los que tengas y marca el resto como <b>«No importar estas cuentas»</b>. Puedes volver a subir el mismo archivo más adelante: las que ya estén no se repiten.</p>
+    ${miss ? `<div class="acts" style="margin:6px 0 10px"><button type="button" class="btn small" data-act="imp-skiprest">${ic('x')}No importar lo que falta por elegir</button></div>` : ''}
     ${keys.map((k) => `<div class="impmap-g"><b>${T[k]}</b>${m[k].map((x, i) => `<div class="impmap-r${x.to ? '' : ' need'}"><div class="impmap-v"><code title="${esc(x.v)}">${esc(short(x.v))}</code>${x.how && x.to ? `<span class="impmap-how">${esc(x.how)}</span>` : ''}<small>${plural(x.n, 'cuenta', 'cuentas')}: ${x.ex.map(esc).join(', ')}${x.n > x.ex.length ? '…' : ''}</small></div><span class="impmap-a">→</span><select class="impmap-s" data-k="${k}" data-i="${i}" aria-label="${T[k]} para ${esc(short(x.v))}">${opts(k, x.to)}</select></div>`).join('')}</div>`).join('')}
     <p class="impmap-miss" id="impMiss"${miss ? '' : ' hidden'}>${ic('alert')}Te ${miss === 1 ? 'falta 1 valor' : `faltan ${miss} valores`} por elegir. Hasta entonces no se puede importar.</p>
   </div>`;
 }
 function impMapSave() {
   const m = S.imp.map || {}, out = {};
-  for (const k of Object.keys(m)) for (const x of m[k]) if (x.to) (out[k] = out[k] || {})[x.v] = x.to;
+  for (const k of Object.keys(m)) for (const x of m[k]) if (x.to && x.to !== 'skip') (out[k] = out[k] || {})[x.v] = x.to;
   if (Object.keys(out).length) api('PUT', '/api/import/map', out).catch(() => {});
 }
 async function impParse() {
@@ -4842,9 +4847,12 @@ async function impRun(dry) {
   imp.busy = true; imp.results = []; imp.dry = dry; imp.progress = 0; render();
   try {
     for (let i = 0; i < imp.rows.length; i += 25) {
-      const part = imp.rows.slice(i, i + 25).map(({ rawExpires, ...r }) => impMapRow(r));
+      const all = imp.rows.slice(i, i + 25).map(({ rawExpires, ...r }) => impMapRow(r)), idx = [], part = [];
+      all.forEach((r, j) => { if (r._skip) imp.results.push({ i: i + j, status: 'skip', text: 'No se importa: lo elegiste en «Traduce los datos»' }); else { delete r._skip; idx.push(j); part.push(r); } });
+      imp.progress = Math.min(imp.rows.length, i + 25);
+      if (!part.length) { if (S.view === 'importar') render(); continue; }
       const r = await api('POST', '/api/import/rows', { rows: part, serverId: imp.serverId || undefined, ownerId: imp.ownerId || undefined, create: imp.create, fixOwner: imp.fixOwner, dry });
-      r.results.forEach((x) => imp.results.push({ ...x, i: x.i + i }));
+      r.results.forEach((x) => imp.results.push({ ...x, i: i + idx[x.i] }));
       imp.progress = Math.min(imp.rows.length, i + 25);
       if (S.view === 'importar') render();
     }
@@ -7152,6 +7160,7 @@ document.addEventListener('click', (e) => {
     case 'imp-reset': S.imp = { tab: 'uni', rows: null, results: null }; render(); break;
     case 'imp-check': impRun(true); break;
     case 'imp-go': impRun(false); break;
+    case 'imp-skiprest': for (const x of Object.values(S.imp.map || {}).flat()) if (!x.to) { x.to = 'skip'; x.how = ''; } S.imp.results = null; S.imp.dry = null; render(); break;
     case 'adm-new': dAdmin(null); break;
     case 'adm-perms': if (usr) dPerms(usr); break;
     case 'adm-link': if (usr) dXtreme(usr); break;
