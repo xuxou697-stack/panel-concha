@@ -6453,8 +6453,8 @@ function fillTpl(key, c, password) {
     cuando: (() => { const l = diff(c.expires, S.d.today); return l <= 0 ? 'hoy' : l === 1 ? 'mañana' : `en ${l} días`; })(), dias: String(Math.max(0, diff(c.expires, S.d.today))), enlace_telegram: tgLink(c),
     vence: c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires),
   };
-  const alias = { contrasena: 'contraseña', 'dirección': 'direccion' };
-  return tplText(key).replace(/\{([a-záéíóúñ_]+)\}/gi, (m, k) => { k = k.toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
+  const alias = { contrasena: 'contraseña', 'dirección': 'direccion', fecha: 'vence', caducidad: 'vence', vencimiento: 'vence', cliente: 'nombre', user: 'usuario' };
+  return tplText(key).replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
 }
 async function copyText(text, el) {
   try { await navigator.clipboard.writeText(text); }

@@ -2074,7 +2074,9 @@ function fillText(text, c) {
   const left = diffDays(c.expires, today());
   const vars = { nombre: c.panelName, usuario: c.embyName, servidor: s.name || '', direccion: s.publicUrl || '', vence: c.expires.split('-').reverse().join('/'),
     cuando: leftWords(left), dias: String(Math.max(0, left)), pantallas: c.screens ? String(c.screens) : 'sin límite', contenido: c.quality ? QUALITIES[c.quality] : '', 'contraseña': 'la que ya tienes' };
-  return String(text || '').replace(/\{([a-záéíóúñ_]+)\}/gi, (m, k) => { k = k.toLowerCase(); if (k === 'contrasena') k = 'contraseña'; if (k === 'dirección') k = 'direccion'; return vars[k] !== undefined ? vars[k] : m; });
+  // Vale {nombre} y también [nombre]; «fecha», «caducidad» y «cliente» se entienden como {vence} y {nombre}
+  const alias = { contrasena: 'contraseña', 'dirección': 'direccion', fecha: 'vence', caducidad: 'vence', vencimiento: 'vence', cliente: 'nombre', user: 'usuario' };
+  return String(text || '').replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
 }
 const dueSoon = (c, days, t) => { if (c.demo || c.status !== 'active') return false; const left = diffDays(c.expires, t); return left >= 0 && left <= days; };
 /* 1) Mensaje en la pantalla de Emby, cuando el cliente esta viendo.
