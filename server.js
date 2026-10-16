@@ -235,9 +235,11 @@ class HttpError extends Error { constructor(status, message) { super(message); t
 async function emby(server, method, p, body) {
   let res;
   try {
-    res = await fetch(server.url + '/emby' + p, {
+    // La clave va en la cabecera y también en la dirección (api_key): algunos proxys delante de Emby quitan las cabeceras
+    const sep = p.includes('?') ? '&' : '?';
+    res = await fetch(server.url + '/emby' + p + sep + 'api_key=' + encodeURIComponent(server.apiKey || ''), {
       method,
-      headers: { 'X-Emby-Token': server.apiKey, Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      headers: { 'X-Emby-Token': server.apiKey, 'X-Emby-Authorization': `MediaBrowser Client="Concha", Device="Panel", DeviceId="concha-panel", Version="1.0", Token="${server.apiKey || ''}"`, 'User-Agent': 'Mozilla/5.0 (Concha panel)', Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(15000),
     });
@@ -250,7 +252,9 @@ async function emby(server, method, p, body) {
   const text = await res.text();
   if (!res.ok) {
     let msg;
-    if (res.status === 401 || res.status === 403) msg = `"${server.name}" ha rechazado la API key.`;
+    const web = /<html|<!doctype|cloudflare|nginx|access denied/i.test(text);
+    if ((res.status === 401 || res.status === 403) && web) msg = `Algo delante de "${server.name}" (un cortafuegos o Cloudflare) bloquea al panel antes de llegar a Emby. Usa en «Dirección para el panel» la IP con el puerto (http://IP:8096) o pide que dejen pasar la IP del panel.`;
+    else if (res.status === 401 || res.status === 403) msg = `"${server.name}" ha rechazado la API key. Crea una nueva en Emby (Ajustes › Avanzado › Claves de API) y pégala aquí.`;
     else if (res.status === 404) msg = `Emby no encuentra ese usuario o recurso en "${server.name}".`;
     else msg = `Emby respondió con error ${res.status}${text ? ': ' + text.slice(0, 200) : ''}`;
     const err = new Error(msg);
