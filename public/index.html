@@ -1452,6 +1452,25 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .fz-bar{display:flex;height:10px;border-radius:10px;overflow:hidden;background:var(--raised);margin:14px 2px 6px}.fz-bar i{display:block;height:100%}
 .fz-bar .ok,.fz-barl .ok{background:var(--ok)}.fz-bar .warn,.fz-barl .warn{background:var(--warn)}.fz-bar .bad,.fz-barl .bad{background:var(--bad)}
 .fz-barl{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 2px 18px;font-size:12.5px;color:var(--muted)}.fz-barl span{display:inline-flex;align-items:center;gap:6px}.fz-barl i{width:10px;height:10px;border-radius:3px}
+.ag-emby{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:var(--raised);font-size:13.5px;color:var(--muted)}
+.ag-emby>span{display:inline-flex;align-items:center;gap:6px}.ag-emby svg{width:15px;height:15px}.ag-emby .warn{color:var(--warn)}
+.ae-st{font-weight:700;color:var(--ok)!important}.ae-st i{width:9px;height:9px;border-radius:50%;background:currentColor;display:inline-block}.ae-st.bad{color:var(--bad)!important}.ae-st.wait{color:var(--muted)!important}
+.fz-live{display:block;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#19c37d 14%,var(--surface)),var(--surface) 60%);transition:border-color .15s,transform .15s}
+.fz-live:hover{border-color:#19c37d;transform:translateY(-1px)}
+.fzl-top{display:flex;align-items:center;gap:8px}.fzl-k{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#19c37d}.fzl-top em{margin-left:auto;font-style:normal;font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}.fzl-top em svg{width:14px;height:14px;transform:rotate(-90deg)}
+.fzl-dot{width:10px;height:10px;border-radius:50%;background:var(--idle)}.fzl-dot.on{background:#19c37d;box-shadow:0 0 0 0 rgba(25,195,125,.6);animation:fzlp 1.8s infinite}
+@keyframes fzlp{0%{box-shadow:0 0 0 0 rgba(25,195,125,.55)}70%{box-shadow:0 0 0 10px rgba(25,195,125,0)}100%{box-shadow:0 0 0 0 rgba(25,195,125,0)}}
+@media (prefers-reduced-motion:reduce){.fzl-dot.on{animation:none}}
+.fzl-main{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 22px;margin-top:6px}
+.fzl-n{display:flex;align-items:baseline;gap:10px}.fzl-n b{font-size:44px;line-height:1.05;font-weight:800;color:#19c37d}.fzl-n span{font-weight:700;font-size:16px}
+.fzl-meta{display:flex;flex-wrap:wrap;gap:6px 14px;padding-bottom:6px;color:var(--muted);font-size:13.5px}.fzl-meta span{display:inline-flex;align-items:center;gap:5px}.fzl-meta .warn{color:var(--warn)}.fzl-meta svg{width:15px;height:15px}
+.fzl-s b{color:var(--text)}
+.fzl-ps{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.fzl-p{display:inline-flex;align-items:center;gap:8px;max-width:260px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--raised);border:1px solid var(--line)}
+.fzl-p i{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px;background:#19c37d;color:#05261a}.fzl-p.pz i{background:var(--idle);color:var(--text)}
+.fzl-p>span{display:flex;flex-direction:column;min-width:0;line-height:1.2}.fzl-p b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fzl-p small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fzl-more{align-self:center;color:var(--muted);font-size:13px}.fzl-wait{margin:8px 0 0;color:var(--muted);font-size:14px}
+@media (max-width:560px){.fzl-n b{font-size:36px}.fzl-top em{display:none}.fzl-p{max-width:100%}}
 .fz-days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
 .fz-d{display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px 8px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font:inherit;color:var(--text);text-align:center}
 button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
@@ -2018,7 +2037,7 @@ function render() {
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
   if (S.view === 'directo') { loadLive(); S.liveTimer = setInterval(loadLive, (S.d.settings.liveSec || 15) * 1000); }
   if ((S.view === 'nuevo' || S.view === 'demonueva') && $('#newClient')) wireCost(+$('#newClient').elements.serverId.value, null, $('#newClient'));
-  if (S.view === 'resumen' && S.d.servers.length && !noCli()) loadLive();
+  if (S.view === 'resumen' && S.d.servers.length && !noCli()) { loadLive(); S.liveTimer = setInterval(() => { if (!document.hidden) loadLive(); }, 20000); }
   if (S.view === 'cuentas' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'cuentas' && S.d.servers.length && !noCli() && (!S.liveAt || Date.now() - S.liveAt > 30000)) { S.liveAt = Date.now(); loadLive(); }
   const tab = (attrs, icon, label, cur) => `<button type="button" ${attrs}${cur ? ' aria-current="page"' : ''}>${ic(icon)}<span>${label}</span></button>`;
@@ -2040,7 +2059,7 @@ function render() {
   if (S.view === 'mensajeeq') vbRefresh();
   if (S.view === 'cobrosven' && !S.vp.busy && (!S.vp.data || Date.now() - S.vp.at > 20000)) loadVpay();
   if (S.view === 'fechas') fxWire();
-  if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power || x.plan)))) loadAgents(); }, 10000); }
+  if (S.view === 'estado') { if (!S.ag.busy && (!S.ag.data || Date.now() - S.ag.at > 20000)) loadAgents(); S.liveTimer = setInterval(() => { if (!dlg.open && (Date.now() - S.ag.at > 55000 || (S.ag.data && S.ag.data.servers.some((x) => x.power || x.plan)))) loadAgents(); if (!dlg.open && !document.hidden && (!S.liveEAt || Date.now() - S.liveEAt > 30000)) { S.liveEAt = Date.now(); loadLive().then(() => { if (S.view === 'estado' && !dlg.open) { const y = window.scrollY; render(); window.scrollTo(0, y); } }); } }, 10000); }
   if (S.view === 'licencias' && !S.lic.busy && (!S.lic.data || Date.now() - S.lic.at > 30000)) loadLic();
   if (S.view === 'plantillas') poWire();
   if (S.view === 'ajustes') tiersWire();
@@ -2350,6 +2369,20 @@ function dDue(list, max = 6) {
   if (!list.length) return `<div class="ddue-ok">${ic('check')}<b>Nada pendiente</b><span>Ninguna cuenta vence en los próximos ${S.d.settings.warnDays} días.</span></div>`;
   return `<div class="ddue">${list.slice(0, max).map((c) => { const [t, k] = dLeft(c); return `<div class="ddr"><span class="dav ${k}">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="ddn"><b>${esc(c.panelName)}</b><small>${diff(c.expires, S.d.today) < 0 ? 'Caducó' : 'Vence'} ${t}</small></div><button type="button" class="btn sm" data-act="renew" data-id="${c.id}">Renovar</button></div>`; }).join('')}${list.length > max ? `<button type="button" class="dmore" data-act="goto" data-filter="soon">Ver ${plural(list.length - max, 'más', 'más')} ${ic('chev')}</button>` : ''}</div>`;
 }
+/** Tarjeta «En directo» del Resumen: cuántos clientes están viendo ahora y qué. Al tocarla se abre el Monitor */
+function fzLiveHtml() {
+  const L = S.live;
+  if (!L) return `<div class="fzl-top"><span class="fzl-dot"></span><span class="fzl-k">En directo</span></div><p class="fzl-wait">Mirando quién está viendo…</p>`;
+  const ses = L.sessions || [], people = new Set(ses.map((x) => (x.clientId || x.user || '').toString().toLowerCase())).size;
+  const paused = ses.filter((x) => x.paused).length, trans = ses.filter((x) => x.method === 'Transcode').length;
+  const bySrv = {}; ses.forEach((x) => { bySrv[x.server] = (bySrv[x.server] || 0) + 1; });
+  const srvs = S.d.servers.length > 1 ? Object.entries(bySrv).sort((a, b) => b[1] - a[1]).map(([n, k]) => `<span class="fzl-s">${ic('server')}${esc(n)} <b>${k}</b></span>`).join('') : '';
+  const chips = ses.slice(0, 6).map((x) => `<span class="fzl-p${x.paused ? ' pz' : ''}"><i>${esc((x.user || '?').charAt(0).toUpperCase())}</i><span><b>${esc(x.user)}</b><small>${x.paused ? 'En pausa · ' : ''}${esc(x.title || '')}</small></span></span>`).join('');
+  return `<div class="fzl-top"><span class="fzl-dot${ses.length ? ' on' : ''}"></span><span class="fzl-k">En directo ahora</span><em>Abrir el Monitor ${ic('chev')}</em></div>
+    <div class="fzl-main"><div class="fzl-n"><b>${people}</b><span>${people === 1 ? 'cliente viendo' : 'clientes viendo'}</span></div>
+      <div class="fzl-meta"><span>${ic('tv')}${plural(ses.length, 'pantalla', 'pantallas')}</span>${paused ? `<span>${ic('pause')}${paused} en pausa</span>` : ''}${trans ? `<span class="warn">${ic('alert')}${plural(trans, 'convirtiendo vídeo', 'convirtiendo vídeo')}</span>` : ''}${srvs}</div></div>
+    ${ses.length ? `<div class="fzl-ps">${chips}${ses.length > 6 ? `<span class="fzl-more">y ${ses.length - 6} más</span>` : ''}</div>` : '<p class="fzl-wait">Ahora mismo nadie está viendo nada.</p>'}`;
+}
 /** Resumen «Fácil»: lo importante, con palabras sencillas y colores claros */
 function dashFacil(p) {
   const { d, cnt, g, urgent, greet, emoji, review, secTip } = p;
@@ -2368,6 +2401,7 @@ function dashFacil(p) {
   return licBanner() + secTip + `<div class="fz">
     <section class="fz-hero"><div><p class="fz-g">${greet}, ${esc(wName)} ${emoji}</p><h1>Así está tu negocio hoy</h1><p class="fz-date">${esc(date)}</p><p class="fz-note">${note}</p></div>
       <div class="fz-ha"><button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>${credits}</div></section>
+    ${d.servers.length && !noCli() ? `<button type="button" class="fz-live" id="fzLive" data-view="monitor" aria-label="Clientes viendo ahora: abrir el Monitor">${fzLiveHtml()}</button>` : ''}
     <div class="sec-h"><h2>Tus cuentas</h2><small>${plural(total, 'cuenta', 'cuentas')} · toca para ver la lista</small></div>
     <div class="fz-cards">
       ${big('ok', '🟢', cnt.active, 'Funcionando', 'Pueden ver Emby ahora', 'all')}
@@ -2997,6 +3031,7 @@ async function loadLive() {
   try { S.live = await api('GET', '/api/sessions'); } catch (e) { S.live = { sessions: [], errors: [e.message] }; }
   const el = $('#live'); if (el) el.innerHTML = liveHtml();
   const np = $('#nowPlaying'); if (np) np.textContent = S.live.sessions.length;
+  const fl = $('#fzLive'); if (fl) fl.innerHTML = fzLiveHtml();
   document.querySelectorAll('[data-live]').forEach((n) => { const c = S.d.clients.find((v) => v.id === +n.dataset.live); const h = c && liveOf(c); if (h) n.innerHTML = h; });
 }
 
@@ -4264,7 +4299,7 @@ async function srvHealth() {
   try { const r = await api('GET', '/api/health'); S.hl = { at: Date.now(), map: Object.fromEntries(r.servers.map((x) => [x.id, x])) }; }
   catch { S.hl = { at: Date.now(), map: {} }; }
   S.hlBusy = false;
-  if (S.view === 'servidores' && !dlg.open) { const y = window.scrollY; render(); window.scrollTo(0, y); }
+  if ((S.view === 'servidores' || S.view === 'estado') && !dlg.open) { const y = window.scrollY; render(); window.scrollTo(0, y); }
 }
 /* ---------- Ficha de un servidor (Servidores › Detalles) ---------- */
 function sfReset(id) { clearTimeout(S.sf.timer); S.sf = { id, tab: S.sf.id === id ? S.sf.tab : 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }; }
@@ -5151,6 +5186,15 @@ function vEstado() {
   const d = S.ag.data, sub = 'Cómo va la máquina donde está Emby: procesador, memoria, disco e internet. Se actualiza solo cada minuto.';
   if (!d) return head('Estado del servidor', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
   if (!d.servers.length) return head('Estado del servidor', sub) + noServer();
+  if (!S.hl || Date.now() - S.hl.at > 30000) srvHealth();
+  if (!S.live && !S.liveBusyE) { S.liveBusyE = 1; loadLive().finally(() => { S.liveBusyE = 0; if (S.view === 'estado' && !dlg.open) render(); }); }
+  /* Lo que se sabe de Emby aunque el VPS no tenga agente: si responde, versión, cuentas y quién está viendo */
+  const embyStrip = (s) => {
+    const h = ((S.hl && S.hl.map) || {})[s.id], srv = S.d.servers.find((x) => x.id === s.id) || {};
+    const ses = ((S.live && S.live.sessions) || []).filter((x) => x.server === srv.name), cli = S.d.clients.filter((c) => c.serverId === s.id && c.status !== 'trash' && !c.demo).length;
+    const st = !h || h.ok == null ? '<span class="ae-st wait"><i></i>Comprobando Emby…</span>' : h.ok === false ? '<span class="ae-st bad"><i></i>Emby no responde</span>' : `<span class="ae-st"><i></i>Emby en marcha${h.version ? ' · v' + esc(h.version) : ''}</span>`;
+    return `<div class="ag-emby">${st}<span>${ic('users')}${plural(cli, 'cuenta', 'cuentas')}</span><span>${ic('play')}${S.live ? plural(ses.length, 'viendo ahora', 'viendo ahora') : '…'}</span>${ses.some((x) => x.method === 'Transcode') ? `<span class="warn">${ic('alert')}${plural(ses.filter((x) => x.method === 'Transcode').length, 'convirtiendo vídeo', 'convirtiendo vídeo')}</span>` : ''}</div>`;
+  };
   const card = (s) => {
     const L = s.last, can = canDo('servers');
     const pwBtns = isSuper() ? `<div class="pw-btns"><button class="btn sm" data-act="ag-pw" data-k="emby" data-id="${s.id}">${ic('refresh')}Reiniciar Emby</button>${s.installed ? `<button class="btn sm" data-act="ag-pw" data-k="vps" data-id="${s.id}"${s.online ? '' : ' disabled title="El agente no está conectado"'}>${ic('power')}Reiniciar VPS</button>` : ''}</div>` : '';
@@ -5158,12 +5202,15 @@ function vEstado() {
     const busy = s.power ? `<div class="pw-busy"><span class="bl-sp"></span><span>${s.power.waitUntil ? `Avisando en pantalla: ${what(s.power.kind)} se reinicia a las ${fmtTs(s.power.waitUntil).split(', ').pop()}…` : s.power.kind === 'vps' ? (s.power.sent ? 'El VPS se está reiniciando…' : 'Orden enviada: el VPS la recibirá en menos de un minuto…') : 'Emby se está reiniciando…'}</span></div>`
       : s.plan ? `<div class="pw-plan">${ic('clock')}<span>Reinicio ${s.plan.kind === 'vps' ? 'del VPS' : 'de Emby'} ${s.plan.when === 'idle' ? '<b>cuando nadie esté viendo</b>' : `programado a las <b>${fmtTs(s.plan.at).split(', ').pop()}</b>`}</span>${isSuper() ? `<button class="btn sm ghost" data-act="ag-cancel" data-id="${s.id}">Cancelar</button>` : ''}</div>` : '';
     const rescue = isSuper() && s.installed ? `<label class="pw-resc" title="Si Emby deja de responder unos minutos pero el VPS está bien, el agente lo reinicia solo (como mucho una vez por hora)"><input type="checkbox" data-act="ag-rescue" data-id="${s.id}"${s.rescue ? ' checked' : ''}${s.agentVer && s.agentVer < 3 ? ' disabled' : ''}><span class="sw"></span>${ic('shield')}Rescate automático${s.agentVer && s.agentVer < 3 ? ' <small>(reinstala el agente)</small>' : ''}</label>` : '';
-    if (!s.installed) return `<article class="agcard none"><header><span class="ag-ic">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${s.pending ? 'Orden de instalación creada: falta ejecutarla en el VPS' : 'Sin agente instalado'}</small></div><span class="lpill ${s.pending ? 'soon' : 'off'}">${s.pending ? 'Esperando' : 'Sin datos'}</span></header>
+    if (!s.installed) return `<article class="agcard none"><header><span class="ag-ic">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${s.pending ? 'Orden de instalación creada: falta ejecutarla en el VPS' : 'Sin agente instalado'}</small></div><span class="lpill ${s.pending ? 'soon' : 'off'}">${s.pending ? 'Esperando' : 'Sin datos'}</span></header>${embyStrip(s)}
       <p class="ag-why">Instala el agente en el VPS de este Emby para ver aquí su procesador, memoria, disco e internet, y recibir avisos si algo va mal. Solo lee datos de la máquina: no toca Emby ni tus cuentas.</p>
       ${busy}${can ? `<div class="acts"><button class="btn primary" data-act="ag-link" data-id="${s.id}">${ic('download')}${s.pending ? 'Ver la orden otra vez' : 'Instalar agente'}</button>${pwBtns}</div>` : '<p class="muted small">Pide al superadministrador que lo instale.</p>'}</article>`;
+    if (!L) return `<article class="agcard none"><header><span class="ag-ic">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>Agente instalado, pero todavía no ha enviado datos</small></div><span class="lpill soon">Esperando</span></header>${embyStrip(s)}
+      <p class="ag-why">El agente está dado de alta pero el panel aún no ha recibido nada de él. Suele tardar un minuto. Si pasa más tiempo, vuelve a ejecutar la orden en el VPS: puede que no llegara a instalarse o que el VPS no llegue al panel.</p>
+      ${busy}${can ? `<div class="acts"><button class="btn primary" data-act="ag-link" data-id="${s.id}">${ic('download')}Ver la orden otra vez</button><button class="btn" data-act="ag-del" data-id="${s.id}">${ic('trash')}Quitar agente</button>${pwBtns}</div>` : ''}</article>`;
     const on = s.online;
     const disk = (L.disks || []).slice().sort((a, b) => b.used / b.size - a.used / a.size);
-    return `<article class="agcard ${on ? '' : 'stale'}"><header><span class="ag-ic ${on ? 'on' : ''}">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${esc(L.host || '')}${L.os ? ' · ' + esc(L.os) : ''}</small></div><span class="lpill ${on ? 'ok' : 'off'}">${on ? 'Conectado' : 'Sin datos ' + agAgo(L.at)}</span></header>
+    return `<article class="agcard ${on ? '' : 'stale'}"><header><span class="ag-ic ${on ? 'on' : ''}">${ic('server')}</span><div class="ag-t"><b>${esc(s.name)}</b><small>${esc(L.host || '')}${L.os ? ' · ' + esc(L.os) : ''}</small></div><span class="lpill ${on ? 'ok' : 'off'}">${on ? 'Conectado' : 'Sin datos ' + agAgo(L.at)}</span></header>${embyStrip(s)}
       <div class="ag-rings">
         ${agRing(L.cpu, 'Procesador', `${plural(L.cores || 1, 'núcleo', 'núcleos')} · carga ${L.load}`, agLvl(L.cpu))}
         ${agRing(L.mem, 'Memoria', L.memTotal ? 'de ' + agBytes(L.memTotal) : '', agLvl(L.mem, 80, 92))}
