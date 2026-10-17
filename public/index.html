@@ -1605,6 +1605,8 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .nav .grp.here .t{color:var(--gc,var(--brand));font-weight:700}
 .nav .grp.here::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--gc,var(--brand));margin-left:auto;flex:none}
 /* Barra del móvil: botón central «Nuevo» */
+.tabbar.t6 button,.tabbar.t6 .tbplus{font-size:11px;padding-left:1px;padding-right:1px}.tabbar.t6 span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media (max-width:360px){.tabbar.t6 button,.tabbar.t6 .tbplus{font-size:10px}}
 .tabbar .tbplus{display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 4px 9px;font-size:12px;color:var(--text);background:none;border:0;cursor:pointer}
 .tbplus i{display:grid;place-items:center;width:46px;height:46px;margin-top:-16px;border-radius:50%;color:#fff;background:linear-gradient(135deg,#14a6c9,#7c5cff 55%,#e2457a);box-shadow:0 8px 20px -8px #7c5cff,0 0 0 4px var(--bg)}
 .tbplus i .ic{width:24px;height:24px}.tbplus span{font-weight:600}
@@ -2105,7 +2107,9 @@ function render() {
     : tab('data-view="cuentas" data-filter="all"', 'users', 'Clientes', S.view === 'cuentas' && S.filter === 'all')
       + `<button type="button" class="tbplus" data-act="tb-new"${S.view === 'nuevo' || S.view === 'demonueva' ? ' aria-current="page"' : ''} aria-label="Nueva cuenta o demo"><i>${ic('plus')}</i><span>Nuevo</span></button>`
       + tabN('data-view="cuentas" data-filter="expired"', 'alert', 'Caducadas', S.view === 'cuentas' && S.filter === 'expired', nExp)
-      + tab('data-view="calendario"', 'calendar', 'Calendario', S.view === 'calendario'));
+      + tab('data-view="calendario"', 'calendar', 'Calendario', S.view === 'calendario')
+      + tab('data-view="resumen"', 'grid', 'Resumen', S.view === 'resumen'));
+  $('#tabbar').classList.toggle('t6', !noCli());
   if (S.view === 'auditoria' && !S.audit && !S.auditBusy) loadAudit();
   if (S.view === 'logs' && !S.logs && !S.logsBusy) loadLogs();
   if (S.view === 'accesos' && !S.acc.data && !S.acc.busy) loadAccess();

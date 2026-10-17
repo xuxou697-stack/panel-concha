@@ -1666,6 +1666,16 @@ function readAdminOptions(me, body, u) {
   }
 }
 /** Servidores en los que un usuario puede crear cuentas: lista vacia = todos */
+/** Servidores que un vendedor puede ver: los que tiene asignados (si no tiene, los de su reseller)
+ * y aquellos donde ya tenga alguna cuenta suya. El equipo (super y administradores) los ve todos. */
+function serversFor(me) {
+  if (!me || isStaff(me)) return db.servers;
+  let ids = Array.isArray(me.serverIds) && me.serverIds.length ? me.serverIds : null;
+  if (!ids && me.parentId) { const p = db.users.find((x) => x.id === me.parentId); if (p && Array.isArray(p.serverIds) && p.serverIds.length) ids = p.serverIds; }
+  if (!ids) return db.servers;
+  const vis = visibleOwners(me), used = new Set(db.clients.filter((c) => c.status !== 'trash' && (!vis || vis.has(c.ownerId))).map((c) => c.serverId));
+  return db.servers.filter((x) => ids.includes(x.id) || used.has(x.id));
+}
 function serverAllowed(u, s) { return isStaff(u) || !u.serverIds || !u.serverIds.length || u.serverIds.includes(s.id); }
 /** Clientes que ocupan sitio en un servidor (todo menos la papelera; las demos también cuentan) */
 const srvLoad = (s) => db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash').length;
@@ -1754,7 +1764,7 @@ function publicData(me) {
     license: me.role === 'super' ? licStatus() : null,
     expDue: me.role === 'super' ? expDueCount() : 0,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } } },
-    servers: db.servers.map((s) => (seeServers
+    servers: serversFor(me).map((s) => (seeServers
       ? { id: s.id, name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
       : { id: s.id, name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
@@ -3467,7 +3477,7 @@ route('GET', '/api/lastseen', '*', async ({ me }) => {
   const vis = visibleOwners(me);
   const seen = {}, info = {};
   let changed = false;
-  for (const s of db.servers) {
+  for (const s of serversFor(me)) {
     let hit = seenCache.get(s.id);
     if (!hit || Date.now() - hit.at > 60000) {
       try {
@@ -3726,7 +3736,7 @@ route('GET', '/api/sessions', '*', async ({ me }) => {
   const vis = visibleOwners(me);
   const out = [];
   const errors = [];
-  await Promise.all(db.servers.map(async (s) => {
+  await Promise.all(serversFor(me).map(async (s) => {
     try {
       const mine = vis ? new Set(db.clients.filter((c) => c.serverId === s.id && vis.has(c.ownerId)).map((c) => c.embyId)) : null;
       const byEmby = new Map(db.clients.filter((c) => c.serverId === s.id).map((c) => [c.embyId, c.id]));
@@ -3753,7 +3763,7 @@ route('POST', '/api/monitor/broadcast', '*', async ({ me, body }) => {
   if (!text) throw new HttpError(400, 'Escribe el mensaje.');
   const vis = visibleOwners(me), only = Number(body.serverId) || 0;
   let sent = 0, failed = 0;
-  for (const s of db.servers) {
+  for (const s of serversFor(me)) {
     if (only && s.id !== only) continue;
     const mine = new Map(db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash' && (!vis || vis.has(c.ownerId))).map((c) => [c.embyId, c]));
     let list;
@@ -3771,7 +3781,7 @@ route('POST', '/api/monitor/broadcast', '*', async ({ me, body }) => {
 /* ---------- Vigilancia de servidores: aviso si se cae y cuando vuelve ---------- */
 const health = new Map(); // serverId -> { fails, down, since, checked, ok }
 async function watchServers() {
-  for (const s of db.servers) {
+  for (const s of serversFor(me)) {
     const h = health.get(s.id) || { fails: 0, down: false, since: null, checked: null, ok: true };
     let ok = true, why = '';
     const t0 = Date.now();
@@ -3804,7 +3814,7 @@ async function watchServers() {
     health.set(s.id, h);
   }
 }
-route('GET', '/api/health', '*', () => ({ servers: db.servers.map((s) => { const h = health.get(s.id); return { id: s.id, name: s.name, ok: h ? !h.down : null, since: h && h.down ? h.since : null, checked: h ? h.checked : null, version: h ? h.version || '' : '', ms: h ? h.ms || 0 : 0 }; }) }));
+route('GET', '/api/health', '*', ({ me }) => ({ servers: serversFor(me).map((s) => { const h = health.get(s.id); return { id: s.id, name: s.name, ok: h ? !h.down : null, since: h && h.down ? h.since : null, checked: h ? h.checked : null, version: h ? h.version || '' : '', ms: h ? h.ms || 0 : 0 }; }) }));
 
 /* ---------- Estadísticas de uso: el panel apunta cada minuto lo que se está viendo ---------- */
 const PLAY_MS = Number(process.env.PLAY_MS) || 60000;
@@ -4600,7 +4610,7 @@ const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
 route('GET', '/api/monitor', '*', async ({ me }) => {
   const vis = visibleOwners(me);
   const out = [], errors = [], servers = [];
-  await Promise.all(db.servers.map(async (s) => {
+  await Promise.all(serversFor(me).map(async (s) => {
     const cl = db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash');
     const byEmby = new Map(cl.map((c) => [c.embyId, c]));
     try {
