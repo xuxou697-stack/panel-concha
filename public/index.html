@@ -1455,6 +1455,44 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .ag-emby{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:var(--raised);font-size:13.5px;color:var(--muted)}
 .ag-emby>span{display:inline-flex;align-items:center;gap:6px}.ag-emby svg{width:15px;height:15px}.ag-emby .warn{color:var(--warn)}
 .ae-st{font-weight:700;color:var(--ok)!important}.ae-st i{width:9px;height:9px;border-radius:50%;background:currentColor;display:inline-block}.ae-st.bad{color:var(--bad)!important}.ae-st.wait{color:var(--muted)!important}
+.fzt-r[data-act]{cursor:pointer;border-radius:8px;padding:2px 4px;margin:0 -4px}.fzt-r[data-act]:hover{background:var(--raised)}
+.fzt-top .fzt-more{margin-left:8px}
+.hoy-bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:0 0 16px}
+.hoy-days{display:inline-flex;padding:4px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.hoy-day{border:0;background:none;color:var(--muted);font:inherit;font-weight:600;padding:7px 16px;border-radius:9px;cursor:pointer}.hoy-day.on{background:var(--brand);color:#05212c}
+.hoy-chips{display:flex;flex-wrap:wrap;gap:8px}
+.hoy-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:14px;cursor:pointer}
+.hoy-chip b{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--raised);font-size:12.5px;text-align:center}.hoy-chip.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--surface))}.hoy-chip.on b{background:var(--brand);color:#05212c}
+.hoy-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:12px}
+.hoy-card{--c:#19c37d;min-width:0;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:inset 4px 0 0 var(--c)}.hoy-card.demo{--c:#a46bff}.hoy-card.ren{--c:#3fa9f5}
+.hoy-h{display:flex;align-items:center;gap:12px}.hoy-ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;background:color-mix(in srgb,var(--c) 16%,var(--raised))}
+.hoy-n{flex:1;min-width:0;display:flex;flex-direction:column}.hoy-n b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hoy-n small{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hoy-tag{flex:none;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c)}
+.hoy-h time{flex:none;font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted)}
+.hoy-f{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.hoy-f span{display:flex;flex-direction:column;padding:7px 10px;border-radius:10px;background:var(--raised);min-width:0}
+.hoy-f small{font-size:11.5px;color:var(--muted)}.hoy-f b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hoy-a{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media (max-width:560px){.hoy-list{grid-template-columns:minmax(0,1fr)}.hoy-f{grid-template-columns:repeat(2,minmax(0,1fr))}.hoy-chip{padding:7px 11px;font-size:13px}}
+.fz-today{margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#f5a524 30%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#f5a524 10%,var(--surface)),var(--surface) 60%)}
+.fzt-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}.fzt-k{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#f5a524}.fzt-top small{color:var(--muted);font-size:12.5px;margin-left:auto}
+.fzt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fzt-b{--c:#19c37d;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));background:color-mix(in srgb,var(--c) 9%,var(--raised));color:var(--text);font:inherit;text-align:left;cursor:pointer;min-width:0}
+.fzt-b:hover{border-color:var(--c)}.fzt-b.demo{--c:#a46bff}.fzt-b.ren{--c:#3fa9f5}
+.fzt-e{font-size:20px;line-height:1}.fzt-b b{font-size:34px;font-weight:800;line-height:1.1;color:var(--c);margin-top:4px}.fzt-l{font-weight:700;font-size:14.5px}
+.fzt-c{font-size:12px;color:var(--muted)}.fzt-c.up{color:var(--ok)}.fzt-c.down{color:var(--bad)}
+.fzt-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end;margin-top:14px}
+.fzt-list{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fzt-r{display:flex;align-items:center;gap:10px;min-width:0;font-size:14px}.fzt-r time{flex:none;color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.fzt-r b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fzt-r small{flex:none;color:var(--muted);font-size:12.5px}
+.fzt-tag{flex:none;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--c,#19c37d) 18%,transparent);color:var(--c,#19c37d)}.fzt-tag.ok{--c:#19c37d}.fzt-tag.demo{--c:#a46bff}.fzt-tag.ren{--c:#3fa9f5}
+.fzt-more{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;background:none;border:0;padding:4px 0;color:var(--brand);font:inherit;font-size:13px;cursor:pointer}.fzt-more svg{width:14px;height:14px;transform:rotate(-90deg)}
+.fzt-none{margin:0;color:var(--muted);font-size:14px}
+.fzt-wk{display:flex;flex-direction:column;align-items:center;gap:4px}.fzt-wt{font-size:11.5px;color:var(--muted);font-weight:600}
+.fzt-w{display:flex;align-items:flex-end;gap:6px;height:76px}
+.fzt-wc{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;width:18px;height:100%}
+.fzt-wc i{display:block;width:100%;border-radius:5px 5px 2px 2px;background:color-mix(in srgb,#19c37d 45%,var(--raised))}.fzt-wc.on i{background:#19c37d}
+.fzt-wc em{font-style:normal;font-size:10.5px;color:var(--muted);min-height:13px}.fzt-wc span{font-size:11px;color:var(--muted)}.fzt-wc.on span{color:var(--text);font-weight:700}
+@media (max-width:560px){.fzt-grid{gap:8px}.fzt-b{padding:10px 10px}.fzt-b b{font-size:28px}.fzt-l{font-size:13px}.fzt-c{font-size:11px}.fzt-bottom{grid-template-columns:1fr}.fzt-wk{align-items:flex-start}.fzt-top small{margin-left:0}}
 .fz-live{display:block;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#19c37d 14%,var(--surface)),var(--surface) 60%);transition:border-color .15s,transform .15s}
 .fz-live:hover{border-color:#19c37d;transform:translateY(-1px)}
 .fzl-top{display:flex;align-items:center;gap:8px}.fzl-k{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#19c37d}.fzl-top em{margin-left:auto;font-style:normal;font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}.fzl-top em svg{width:14px;height:14px;transform:rotate(-90deg)}
@@ -2053,7 +2091,7 @@ function render() {
   if (S.view === 'directo') S.view = 'monitor';
   if (S.view === 'movdemos') { S.view = 'movimientos'; S.logF = 'demo'; }
   const d = S.d, items = navItems();
-  if (!items.some((x) => x.v === S.view) && !(S.view === 'vendedor' && me().role !== 'sub') && !(S.view === 'srvficha' && canDo('viewServers') && S.d.servers.some((x) => x.id === S.sf.id))) S.view = S.view === 'srvficha' && canDo('viewServers') ? 'servidores' : 'resumen';
+  if (!items.some((x) => x.v === S.view) && !(S.view === 'hoy' && !noCli()) && !(S.view === 'vendedor' && me().role !== 'sub') && !(S.view === 'srvficha' && canDo('viewServers') && S.d.servers.some((x) => x.id === S.sf.id))) S.view = S.view === 'srvficha' && canDo('viewServers') ? 'servidores' : 'resumen';
   const listF = ['soon', 'expired', 'demo', 'off'].includes(S.filter) ? S.filter : 'all';
   const navTop = $('#nav').scrollTop;
   const item = (x) => {
@@ -2075,7 +2113,7 @@ function render() {
   if (d.salesEmail !== undefined) SALES = d.salesEmail || '';
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
-  const fn = { resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
+  const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = fn(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
@@ -2444,6 +2482,70 @@ function fzLiveHtml() {
       <div class="fzl-meta"><span>${ic('tv')}${plural(ses.length, 'pantalla', 'pantallas')}</span>${paused ? `<span>${ic('pause')}${paused} en pausa</span>` : ''}${trans ? `<span class="warn">${ic('alert')}${plural(trans, 'convirtiendo vídeo', 'convirtiendo vídeo')}</span>` : ''}${srvs}</div></div>
     ${ses.length ? `<div class="fzl-ps">${chips}${ses.length > 6 ? `<span class="fzl-more">y ${ses.length - 6} más</span>` : ''}</div>` : '<p class="fzl-wait">Ahora mismo nadie está viendo nada.</p>'}`;
 }
+/** Tarjeta «Hoy en tu negocio»: altas, demos y renovaciones de hoy comparadas con ayer, y las últimas que se han hecho */
+function fzTodayHtml(d) {
+  const ymd = (x) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
+  const now = new Date(), t = ymd(now), y = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  const KINDS = ['alta', 'demo', 'renovacion'];
+  const cnt = { [t]: { alta: 0, demo: 0, renovacion: 0 }, [y]: { alta: 0, demo: 0, renovacion: 0 } };
+  const todayList = [];
+  let lastAlta = null;
+  for (const l of d.log || []) {
+    if (!KINDS.includes(l.type)) continue;
+    const day = ymd(new Date(l.ts));
+    if (cnt[day]) cnt[day][l.type]++;
+    if (day === t) todayList.push(l);
+    if (l.type === 'alta' && !lastAlta) lastAlta = l;
+  }
+  const team = d.users.length > 1;
+  const cmp = (k) => { const a = cnt[t][k], b = cnt[y][k]; if (!a && !b) return '<small class="fzt-c">igual que ayer</small>'; const df = a - b; return `<small class="fzt-c ${df > 0 ? 'up' : df < 0 ? 'down' : ''}">${df > 0 ? '▲ ' + df + ' más que ayer' : df < 0 ? '▼ ' + -df + ' menos que ayer' : 'igual que ayer'}</small>`; };
+  const box = (k, emo, label, cls) => `<button type="button" class="fzt-b ${cls}" data-act="hoy" data-k="${k}"><span class="fzt-e" aria-hidden="true">${emo}</span><b>${cnt[t][k]}</b><span class="fzt-l">${label}</span>${cmp(k)}</button>`;
+  const days7 = (d.stats.days || []).slice(-7);
+  const max7 = Math.max(1, ...days7.map((x) => x.alta || 0));
+  const wd = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+  const bars = days7.length ? `<div class="fzt-w" role="img" aria-label="Altas de los últimos 7 días">${days7.map((x) => { const dt = new Date(x.d + 'T12:00:00'); return `<div class="fzt-wc${x.d === t ? ' on' : ''}" title="${x.d.split('-').reverse().join('/')}: ${x.alta || 0} altas"><em>${x.alta || ''}</em><i style="height:${Math.max(4, Math.round(((x.alta || 0) / max7) * 44))}px"></i><span>${wd[dt.getDay()]}</span></div>`; }).join('')}</div>` : '';
+  const TAG = { alta: ['Alta', 'ok'], demo: ['Demo', 'demo'], renovacion: ['Renovación', 'ren'] };
+  const hm = (ts) => { const x = new Date(ts); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+  const list = todayList.length
+    ? `<div class="fzt-list">${todayList.slice(0, 6).map((l) => `<div class="fzt-r" role="button" tabindex="0" data-act="hoy" data-k="${l.type}"><time>${hm(l.ts)}</time><span class="fzt-tag ${TAG[l.type][1]}">${TAG[l.type][0]}</span><b>${esc(l.client || l.emby || '—')}</b>${team && l.actor ? `<small>por ${esc(l.actor)}</small>` : ''}</div>`).join('')}${todayList.length > 6 ? `<button type="button" class="fzt-more" data-act="hoy" data-k="all">Ver los ${todayList.length} de hoy ${ic('chev')}</button>` : ''}</div>`
+    : `<p class="fzt-none">Todavía no hay movimientos hoy.${lastAlta ? ` La última alta fue el ${new Date(lastAlta.ts).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} a las ${hm(lastAlta.ts)} (${esc(lastAlta.client || lastAlta.emby || '')}).` : ''}</p>`;
+  return `<section class="fz-today" aria-label="Hoy en tu negocio">
+    <div class="fzt-top"><span class="fzt-k">Hoy en tu negocio</span><small>se actualiza solo cada minuto</small><button type="button" class="fzt-more" data-act="hoy" data-k="all">Ver detalle ${ic('chev')}</button></div>
+    <div class="fzt-grid">${box('alta', '✨', cnt[t].alta === 1 ? 'alta nueva' : 'altas nuevas', 'ok')}${box('demo', '🎁', cnt[t].demo === 1 ? 'demo' : 'demos', 'demo')}${box('renovacion', '🔄', cnt[t].renovacion === 1 ? 'renovación' : 'renovaciones', 'ren')}</div>
+    <div class="fzt-bottom">${list}${bars ? `<div class="fzt-wk"><span class="fzt-wt">Altas · 7 días</span>${bars}</div>` : ''}</div>
+  </section>`;
+}
+/** Pantalla «Hoy en tu negocio»: cada alta, demo y renovación de hoy (o de ayer) con sus datos */
+function vHoy() {
+  const d = S.d, k = S.hoyK || 'all', dayBack = S.hoyDay || 0;
+  const ymd = (x) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
+  const now = new Date(), day = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayBack));
+  const KINDS = ['alta', 'demo', 'renovacion'];
+  const rows = (d.log || []).filter((l) => KINDS.includes(l.type) && ymd(new Date(l.ts)) === day);
+  const n = (t) => rows.filter((l) => l.type === t).length;
+  const shown = k === 'all' ? rows : rows.filter((l) => l.type === k);
+  const TAG = { alta: ['Alta', 'ok', '✨'], demo: ['Demo', 'demo', '🎁'], renovacion: ['Renovación', 'ren', '🔄'] };
+  const hm = (ts) => { const x = new Date(ts); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+  const dmy = (v) => String(v || '').split('-').reverse().join('/');
+  const chip = (key, label, cnt) => `<button type="button" class="hoy-chip${k === key ? ' on' : ''}" data-act="hoy" data-k="${key}" data-day="${dayBack}">${label}<b>${cnt}</b></button>`;
+  const dayBtn = (b, label) => `<button type="button" class="hoy-day${dayBack === b ? ' on' : ''}" data-act="hoy" data-k="${k}" data-day="${b}">${label}</button>`;
+  const card = (l) => {
+    const c = l.clientId ? d.clients.find((x) => x.id === l.clientId) : null;
+    const srv = c ? d.servers.find((x) => x.id === c.serverId) : null, owner = c ? d.users.find((u) => u.id === c.ownerId) : null;
+    const [tl, tc, te] = TAG[l.type];
+    const fact = (label, v) => (v ? `<span><small>${label}</small><b>${v}</b></span>` : '');
+    const ends = c ? (c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires)) : '';
+    return `<article class="hoy-card ${tc}">
+      <div class="hoy-h"><span class="hoy-ic" aria-hidden="true">${te}</span><div class="hoy-n"><b>${esc(l.client || l.emby || '—')}</b><small>${c && c.embyName && c.embyName !== l.client ? 'Usuario Emby: ' + esc(c.embyName) + ' · ' : ''}${esc(l.text || '')}</small></div><span class="hoy-tag ${tc}">${tl}</span><time>${hm(l.ts)}</time></div>
+      <div class="hoy-f">${fact('Servidor', srv ? esc(srv.name) : '')}${fact('Contenido', c && c.quality ? esc(Q[c.quality] || '') : '')}${fact('Pantallas', c ? (c.screens ? String(c.screens) : 'sin límite') : '')}${fact(c && c.demo ? 'Termina' : 'Vence', ends)}${fact('Vendedor', owner ? esc(owner.name) : '')}${fact('Hecho por', l.auto ? 'Automático' : esc(l.actor || ''))}</div>
+      ${c ? `<div class="hoy-a"><button type="button" class="btn sm" data-act="al-client" data-q="${esc(c.embyName)}">${ic('users')}Ver en clientes</button>${c.status !== 'trash' ? `<button type="button" class="btn sm ghost" data-act="edit" data-id="${c.id}">${ic('edit')}Editar</button>` : ''}</div>` : '<p class="muted small" style="margin:8px 0 0">Esta cuenta ya no está en el panel.</p>'}
+    </article>`;
+  };
+  return head('Hoy en tu negocio', 'Las altas, demos y renovaciones del día, con todos sus datos. Se actualiza sola cada minuto.', `<button class="btn" data-view="resumen">${ic('grid')}Volver al Resumen</button>`)
+    + `<div class="hoy-bar"><div class="hoy-days">${dayBtn(0, 'Hoy')}${dayBtn(1, 'Ayer')}</div><div class="hoy-chips">${chip('all', 'Todo', rows.length)}${chip('alta', '✨ Altas', n('alta'))}${chip('demo', '🎁 Demos', n('demo'))}${chip('renovacion', '🔄 Renovaciones', n('renovacion'))}</div></div>`
+    + (shown.length ? `<div class="hoy-list">${shown.map(card).join('')}</div>`
+      : `<div class="panel"><div class="empty">${k === 'all' ? `No hay movimientos ${dayBack ? 'de ayer' : 'hoy todavía'}.` : `No hay ${TAG[k][0].toLowerCase()}s ${dayBack ? 'de ayer' : 'hoy todavía'}.`}</div></div>`);
+}
 /** Resumen «Fácil»: lo importante, con palabras sencillas y colores claros */
 function dashFacil(p) {
   const { d, cnt, g, urgent, greet, emoji, review, secTip } = p;
@@ -2463,6 +2565,7 @@ function dashFacil(p) {
     <section class="fz-hero"><div><p class="fz-g">${greet}, ${esc(wName)} ${emoji}</p><h1>Así está tu negocio hoy</h1><p class="fz-date">${esc(date)}</p><p class="fz-note">${note}</p></div>
       <div class="fz-ha"><button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>${credits}</div></section>
     ${d.servers.length && !noCli() ? `<button type="button" class="fz-live" id="fzLive" data-view="monitor" aria-label="Clientes viendo ahora: abrir el Monitor">${fzLiveHtml()}</button>` : ''}
+    ${noCli() ? '' : fzTodayHtml(d)}
     <div class="sec-h"><h2>Tus cuentas</h2><small>${plural(total, 'cuenta', 'cuentas')} · toca para ver la lista</small></div>
     <div class="fz-cards">
       ${big('ok', '🟢', cnt.active, 'Funcionando', 'Pueden ver Emby ahora', 'all')}
@@ -6916,6 +7019,7 @@ document.addEventListener('change', (e) => {
   if (e.target.id === 'fSort') { S.sort = e.target.value; S.page = 1; render(); }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeCombo(); hideTip(); } });
+document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('div[role=button][data-act]')) { e.preventDefault(); e.target.click(); } });
 // Ctrl+K (o Cmd+K, o la tecla /) abre el buscador
 document.addEventListener('keydown', (e) => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
@@ -7148,6 +7252,7 @@ document.addEventListener('click', (e) => {
     case 'al-read': { const ids = alertRows(S.view).filter((x) => !x.read).map((x) => x.id); api('POST', '/api/alerts/read', { ids }).then(async () => { await loadAlerts(); await reload(); toast('Marcadas como leídas'); }).catch((x) => toast(x.message, true)); break; }
     case 'al-csv': alertsCsv(S.view); break;
     case 'al-clear': { const t = AL[S.view].type; dConfirm('Vaciar historial de alertas', t ? `Se borran todas las alertas de ${AL_TYPE[t].toLowerCase()}. No se puede deshacer.` : 'Se borran todas las alertas. No se puede deshacer.', 'Vaciar historial', async () => { await api('POST', '/api/alerts/clear', t ? { type: t } : {}); S.al.data = null; }, 'Historial vaciado'); break; }
+    case 'hoy': S.view = 'hoy'; S.hoyK = el.dataset.k || 'all'; if (el.dataset.day != null) S.hoyDay = +el.dataset.day; else S.hoyDay = 0; render(); if (!el.closest('.hoy-bar')) window.scrollTo(0, 0); break;
     case 'al-client': S.view = 'cuentas'; S.filter = 'all'; S.fOwner = 0; S.fServer = 0; S.page = 1; S.q = el.dataset.q || ''; render(); window.scrollTo(0, 0); break;
     case 'combo': {
       const pop = el.nextElementSibling, open = pop.hidden;
