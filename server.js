@@ -3210,6 +3210,24 @@ route('POST', '/api/bulk/package', STAFF, ({ me, body }) => lock(async () => {
   return { ok: true, moved, skipped, failed };
 }));
 
+/* Acción masiva: cambiar el número de pantallas (no cambia la fecha ni gasta créditos) */
+route('POST', '/api/bulk/screens', STAFF, ({ me, body }) => lock(async () => {
+  const list = bulkClients(me, body);
+  const n = Number(body.screens);
+  if (!SCREENS.includes(n)) throw new HttpError(400, 'Elige 1, 2 o 4 pantallas.');
+  let moved = 0, skipped = 0;
+  const failed = [];
+  for (const c of list) {
+    if (c.screens === n || c.status === 'trash') { skipped++; continue; }
+    const was = c.screens;
+    c.screens = n;
+    try { await applyState(c); moved++; addLog('edicion', c, `Pantallas cambiadas en bloque: ${was || 'sin límite'} → ${n}`, me); }
+    catch (e) { c.screens = was; failed.push({ name: c.panelName, emby: c.embyName, error: e.message }); }
+    saveDb();
+  }
+  return { ok: true, moved, skipped, failed };
+}));
+
 /* Cobros: marca que el cliente final ya ha pagado */
 route('POST', '/api/clients/:id/paid', '*', ({ me, params }) => lock(async () => {
   const c = clientFor(me, params.id);
