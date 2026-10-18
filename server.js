@@ -322,6 +322,22 @@ function lockDown(pol) {
 }
 const polHasLibs = (pol) => !!pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0;
 const sameLibs = (a, b) => { const n = (x) => [...new Set((x || []).map((v) => String(v).toLowerCase().replace(/-/g, '')))].sort().join(','); return n(a) === n(b); };
+/** Lo que una cuenta TIENE de verdad en Emby: contenido (Básico o 4K, según las bibliotecas de los paquetes de Concha) y pantallas.
+ * Sirve para importar cuentas de otro panel sin cambiarles nada. q = null si no se puede saber (p. ej. sin bibliotecas). */
+function embyPlanOf(s, pol) {
+  pol = pol || {};
+  const lim = Number(pol.SimultaneousStreamLimit) || 0;
+  const screens = lim >= 3 ? 4 : lim === 2 ? 2 : lim === 1 ? 1 : 0;
+  if (!polHasLibs(pol)) return { q: null, screens };
+  const pk = s.packages || {}, B = pk.basico || { all: false, folders: [] }, K = pk.k4 || { all: false, folders: [] };
+  const nf = (v) => String(v).toLowerCase().replace(/-/g, '');
+  const has = new Set((pol.EnabledFolders || []).map(nf)), inB = new Set((B.folders || []).map(nf));
+  let q;
+  if (pol.EnableAllFolders) q = B.all && !K.all ? 'basico' : 'k4';
+  else if (!K.all) q = (K.folders || []).map(nf).some((f) => !inB.has(f) && has.has(f)) ? 'k4' : 'basico';
+  else q = B.all ? 'basico' : [...has].some((f) => !inB.has(f)) ? 'k4' : 'basico';
+  return { q, screens };
+}
 async function readPolicy(s, embyId) { return (await emby(s, 'GET', `/Users/${embyId}`)).Policy || {}; }
 /** Da acceso: activa la cuenta, le pone SIEMPRE las bibliotecas de su paquete y su limite de pantallas, y comprueba que Emby lo ha aplicado */
 async function grantAccess(client) {
@@ -2557,12 +2573,42 @@ route('PUT', '/api/import/map', STAFF, ({ body }) => lock(async () => {
   db.settings.importMap = cur; saveDb();
   return { ok: true };
 }));
+/** Antes de importar: mira en Emby qué contenido y pantallas tiene cada usuario del archivo, para proponer qué es cada paquete */
+route('POST', '/api/import/probe', STAFF, async ({ me, body }) => {
+  const rows = (Array.isArray(body.rows) ? body.rows : []).slice(0, 5000);
+  const norm = (v) => str(String(v == null ? '' : v), 300).toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/\/emby$/, '');
+  const list = serversFor(me), cache = new Map(), errors = [];
+  const usersOf = async (s) => {
+    if (!cache.has(s.id)) { let m = new Map(); try { m = new Map(((await emby(s, 'GET', '/Users')) || []).map((u) => [String(u.Name).toLowerCase(), u])); } catch (e) { errors.push(e.message); } cache.set(s.id, m); }
+    return cache.get(s.id);
+  };
+  const out = [];
+  for (const r of rows) {
+    const name = String((r && r.username) || '').trim().toLowerCase();
+    const want = norm(r && r.server);
+    const named = want ? list.find((x) => [x.name, x.url, x.publicUrl].some((v) => v && norm(v) === want)) : null;
+    const cand = named ? [named] : [...list].sort((a, b) => (b.id === Number(body.serverId)) - (a.id === Number(body.serverId)));
+    let hit = null;
+    for (const s of cand) {
+      const eu = name ? (await usersOf(s)).get(name) : null;
+      if (!eu) continue;
+      const inPanel = db.clients.some((c) => c.serverId === s.id && (c.embyId === eu.Id || c.embyName.toLowerCase() === name));
+      let pol = eu.Policy;
+      if (!pol && !inPanel) { try { pol = await readPolicy(s, eu.Id); } catch { pol = null; } }
+      const pl = embyPlanOf(s, pol);
+      hit = { found: true, inPanel, q: pl.q, screens: pl.screens, server: s.id };
+      if (!inPanel) break;
+    }
+    out.push(hit || { found: false });
+  }
+  return { rows: out, errors: [...new Set(errors)] };
+});
 route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
   if (isStaff(me) && paysCredits(me)) throw new HttpError(403, 'Tienes el sistema de créditos activado: la importación la hace el superadministrador.');
   const rows = Array.isArray(body.rows) ? body.rows : [];
   if (!rows.length) throw new HttpError(400, 'No hay filas que importar.');
   if (rows.length > 100) throw new HttpError(400, 'Envía como mucho 100 filas cada vez.');
-  const dry = !!body.dry, create = !!body.create, fixOwner = !!body.fixOwner;
+  const dry = !!body.dry, create = !!body.create, fixOwner = !!body.fixOwner, fromEmby = body.fromEmby !== false;
   const defServer = body.serverId ? serverById(body.serverId) : null;
   const defOwner = body.ownerId ? userById(body.ownerId) : me;
   const norm = (v) => str(String(v == null ? '' : v), 300).toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/\/emby$/, '');
@@ -2591,11 +2637,21 @@ route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
       const owner = namedOwner || defOwner;
       if (!isDate(r.expires)) throw new HttpError(400, 'La fecha de vencimiento no se entiende.');
       const n = Number(r.screens);
-      const screens = n >= 3 ? 4 : n === 2 ? 2 : 1;
-      const quality = /4k|uhd|2160/i.test(String(r.package || '')) ? 'k4' : 'basico';
-      if (!packageReady(s, quality)) throw new HttpError(400, `El contenido ${QUALITIES[quality]} aún no está configurado en ${s.name}.`);
+      let screens = n >= 3 ? 4 : n === 2 ? 2 : 1;
+      let quality = /4k|uhd|2160/i.test(String(r.package || '')) ? 'k4' : 'basico';
       const users = await embyUsers(s);
       const eu = users.get(embyName.toLowerCase());
+      // La cuenta ya existe en Emby: se copia lo que tiene allí (bibliotecas y pantallas), que es lo que le puso el panel antiguo
+      let copied = '';
+      const inPanel = db.clients.some((c) => c.serverId === s.id && ((eu && c.embyId === eu.Id) || c.embyName.toLowerCase() === embyName.toLowerCase()));
+      if (fromEmby && eu && !inPanel) {
+        let pol = eu.Policy;
+        if (!pol) { try { pol = await readPolicy(s, eu.Id); } catch { pol = null; } }
+        const pl = embyPlanOf(s, pol);
+        if (pl.q && packageReady(s, pl.q)) { quality = pl.q; copied = 'contenido'; }
+        if (pl.screens) { screens = pl.screens; copied = copied ? 'contenido y pantallas' : 'pantallas'; }
+      }
+      if (!packageReady(s, quality)) throw new HttpError(400, `El contenido ${QUALITIES[quality]} aún no está configurado en ${s.name}.`);
       const have = db.clients.find((c) => c.serverId === s.id && ((eu && c.embyId === eu.Id) || c.embyName.toLowerCase() === embyName.toLowerCase()));
       if (have) {
         if (!fixOwner) { res.status = 'skip'; res.text = 'Ya está en el panel'; continue; }
@@ -2619,7 +2675,7 @@ route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
       if (!eu && !create) throw new HttpError(400, `No existe en ${s.name}. Marca «Crear en Emby las que falten» para crearla.`);
       if (!eu && expired) { res.status = 'skip'; res.text = 'Ya caducada y no existe en Emby: no se crea'; continue; }
       if (!eu && password.length < 4) throw new HttpError(400, 'No existe en Emby y no trae contraseña (mínimo 4 caracteres) para crearla.');
-      const what = `${owner.name}, ${s.name}, ${screens} ${screens === 1 ? 'pantalla' : 'pantallas'}, ${QUALITIES[quality]}, vence el ${r.expires}`;
+      const what = `${owner.name}, ${s.name}, ${screens} ${screens === 1 ? 'pantalla' : 'pantallas'}, ${QUALITIES[quality]}, vence el ${r.expires}${copied ? ` (${copied} ${copied === 'contenido' ? 'copiado' : copied === 'pantallas' ? 'copiadas' : 'copiados'} de Emby)` : ''}`;
       if (dry) { res.status = 'ok'; res.text = (eu ? 'Se enlazará con su usuario de Emby' : 'Se creará en Emby') + (expired ? ' (caducada: sin bibliotecas)' : '') + `. ${what}`; continue; }
       const contact = readContact({ email: r.email, telegram: r.telegram, whatsapp: r.whatsapp, signal: r.signal }, null);
       const c = {
