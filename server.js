@@ -2648,7 +2648,7 @@ route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
         let pol = eu.Policy;
         if (!pol) { try { pol = await readPolicy(s, eu.Id); } catch { pol = null; } }
         const pl = embyPlanOf(s, pol);
-        if (pl.q && packageReady(s, pl.q)) { quality = pl.q; copied = 'contenido'; }
+        if (pl.q && !r.pkgFixed && packageReady(s, pl.q)) { quality = pl.q; copied = 'contenido'; } // si el código del paquete es conocido, manda el archivo
         if (pl.screens) { screens = pl.screens; copied = copied ? 'contenido y pantallas' : 'pantallas'; }
       }
       if (!packageReady(s, quality)) throw new HttpError(400, `El contenido ${QUALITIES[quality]} aún no está configurado en ${s.name}.`);

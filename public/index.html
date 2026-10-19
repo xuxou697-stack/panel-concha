@@ -708,6 +708,9 @@ button.kc{cursor:pointer} button.kc:hover{border-color:var(--ok)}
 @media (prefers-reduced-motion:reduce){ .gbg *,.gring::before,.gname{animation:none!important} }
 
 
+/* ---------- Pantalla completa en el ordenador: el contenido usa todo el ancho ---------- */
+#main{max-width:none;width:100%;box-sizing:border-box}
+@media (min-width:1600px){#main{padding-left:40px;padding-right:40px}}
 /* ---------- Vendedores: diseños nuevos ---------- */
 .vtools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.vtools #uq{flex:1 1 260px}.vpick{margin:0!important}
 .vav{--c:#8fa9b5;position:relative;flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 45%,#000));color:#fff;font-weight:800}
@@ -5052,6 +5055,8 @@ function impKnown(k, v) {
   if (k === 'owner') return S.d.users.some((u) => u.username.toLowerCase() === n || u.name.toLowerCase() === n);
   return /^(4k|uhd|2160p?|basico|básico|basic|hd|1080p?|normal|estandar|estándar|standard)$/i.test(n);
 }
+/** Códigos del panel antiguo que ya se sabe qué son: se ponen solos al importar y nada los cambia */
+const IMP_KNOWN = { package: { '2a8a0bf6-79ec-47ed-a6bc-b2d674cb1f27': 'basico|', '5a19c4ba-9899-49e1-9bd8-520ddfc4ddaa': 'k4|' } };
 function impMapBuild(rows) {
   const out = {}, saved = (S.d.settings.importMap || {});
   const byUser = new Map(S.d.clients.filter((c) => c.status !== 'trash').map((c) => [String(c.embyName).toLowerCase(), c]));
@@ -5069,10 +5074,12 @@ function impMapBuild(rows) {
       let to = '', how = '';
       const sv = (saved[k] || {})[v];
       const ok = (x) => x === 'skip' || (k === 'owner' ? S.d.users.some((u) => String(u.id) === String(x)) : k === 'server' ? S.d.servers.some((u) => String(u.id) === String(x)) : /^(basico|k4)\|[124]?$/.test(x));
-      if (sv && ok(sv)) { to = String(sv); how = 'Como la última vez'; }
+      const kn = (IMP_KNOWN[k] || {})[v];
+      if (kn) { to = kn; how = 'Código conocido'; }
+      else if (sv && ok(sv)) { to = String(sv); how = 'Como la última vez'; }
       else if (e.votes.size && k !== 'server') { const best = [...e.votes.entries()].sort((a, b) => b[1] - a[1])[0]; if (ok(best[0])) { to = best[0]; how = 'Según las cuentas que ya tienes'; } }
       if (!to && k === 'package') { const sc = (/(\d)\s*(cx|conex|pant|screen|disp)/i.exec(v) || [])[1]; if (/4k|uhd|2160/i.test(v) || sc) { to = `${/4k|uhd|2160/i.test(v) ? 'k4' : 'basico'}|${['1', '2', '4'].includes(sc) ? sc : ''}`; how = 'Por el nombre'; } }
-      return { v, n: e.n, ex: e.ex, to, how };
+      return { v, n: e.n, ex: e.ex, to, how, fixed: !!kn };
     });
   }
   return out;
@@ -5088,7 +5095,7 @@ function impMapRow(r) {
     if (hit.to === 'skip') { o._skip = 1; continue; }
     if (k === 'server') { const sv = S.d.servers.find((x) => x.id === +hit.to); o.server = sv ? sv.name : ''; }
     else if (k === 'owner') { const u = hit.to === 'me' ? me() : S.d.users.find((x) => x.id === +hit.to); o.owner = u ? u.username : ''; }
-    else { const [q, sc] = String(hit.to).split('|'); o.package = q === 'k4' ? '4K' : 'Basico'; if (sc) { o.screens = sc; o.scrSet = 1; } }
+    else { const [q, sc] = String(hit.to).split('|'); o.package = q === 'k4' ? '4K' : 'Basico'; if (hit.fixed) o.pkgFixed = 1; if (sc) { o.screens = sc; o.scrSet = 1; } }
   }
   for (const k of ['whatsapp', 'telegram', 'signal', 'email', 'notes']) if (String(o[k] || '').trim() === '-') o[k] = '';
   if (!o.screens && S.imp.screens) o.screens = String(S.imp.screens);
@@ -5156,6 +5163,7 @@ async function impProbe() {
     imp.probe = r.rows;
     const pk = (imp.map || {}).package || [];
     for (const x of pk) {
+      if (x.fixed) continue;
       const votes = new Map(); let tot = 0;
       imp.rows.forEach((row, i) => { const p = imp.probe[i]; if (String(row.package || '').trim() !== x.v || !p || !p.found || p.inPanel || !p.q) return; tot++; const key = `${p.q}|${p.screens || ''}`; votes.set(key, (votes.get(key) || 0) + 1); });
       if (!tot) continue;
@@ -5294,7 +5302,7 @@ function vImportar() {
     </div>
     <label class="f" style="max-width:340px">Pantallas para las filas que no lo indiquen<select name="screens"><option value="1">1 pantalla</option><option value="2">2 pantallas</option><option value="4">4 pantallas</option></select></label>
     <label class="check"><input type="checkbox" name="fromEmby" checked> <span><b>Copiar de Emby el contenido (Básico o 4K) y las pantallas</b> de las cuentas que ya existen allí, tal como las dejó el panel antiguo. Recomendado.</span></label>
-    <label class="check"><input type="checkbox" name="fixOwner"> Si la cuenta ya está en el panel, corregir su vendedor, paquete y pantallas según el archivo</label>
+    <label class="check"><input type="checkbox" name="fixOwner" checked> Si la cuenta ya está en el panel, corregir su vendedor, paquete y pantallas según el archivo</label>
     <label class="check"><input type="checkbox" name="create"> Crear en Emby las cuentas que no existan todavía (hace falta la contraseña en el archivo)</label>
     <div class="infobox"><b>Qué hace con cada fila</b><ul>
       <li>Si el usuario ya existe en Emby, lo enlaza. Con «Copiar de Emby» marcado, entra con el <b>mismo contenido y pantallas que ya tiene allí</b>; si no, con los del archivo. Siempre sin transcodificación y sin permisos de administrador. No le cambia la contraseña.</li>
