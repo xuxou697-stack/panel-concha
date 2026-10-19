@@ -5056,7 +5056,19 @@ function impKnown(k, v) {
   return /^(4k|uhd|2160p?|basico|básico|basic|hd|1080p?|normal|estandar|estándar|standard)$/i.test(n);
 }
 /** Códigos del panel antiguo que ya se sabe qué son: se ponen solos al importar y nada los cambia */
-const IMP_KNOWN = { package: { '2a8a0bf6-79ec-47ed-a6bc-b2d674cb1f27': 'basico|', '5a19c4ba-9899-49e1-9bd8-520ddfc4ddaa': 'k4|' } };
+const IMP_KNOWN = {
+  package: { '2a8a0bf6-79ec-47ed-a6bc-b2d674cb1f27': 'basico|', '5a19c4ba-9899-49e1-9bd8-520ddfc4ddaa': 'k4|' },
+  // vendedores del panel antiguo: se buscan en Concha por su nombre o usuario (ServiParte = el superadministrador)
+  owner: { '8a193fa6-c6f2-458a-ac0f-b89ae8f6d5cd': '@super', '904c341f-e328-4ba3-9255-29d4938fd588': 'firetvteamesp', 'b0a337b9-774c-412e-8740-4a48c4fa39e5': 'javier gb', '16a8e5d2-a90a-48c2-9058-261334d36cac': 'jesus9098', '68be20fc-ef86-4513-9cd5-7a63186604e8': 'luka modric' },
+};
+/** Pasa un código conocido a lo que entiende el desplegable (para vendedores, el id del usuario de Concha) */
+function impKnownTo(k, v) {
+  const kn = (IMP_KNOWN[k] || {})[v];
+  if (!kn || k !== 'owner') return kn || '';
+  const n = kn.toLowerCase();
+  const u = n === '@super' ? S.d.users.find((x) => x.role === 'super') : S.d.users.find((x) => x.username.toLowerCase() === n || x.name.toLowerCase() === n);
+  return u ? String(u.id) : '';
+}
 function impMapBuild(rows) {
   const out = {}, saved = (S.d.settings.importMap || {});
   const byUser = new Map(S.d.clients.filter((c) => c.status !== 'trash').map((c) => [String(c.embyName).toLowerCase(), c]));
@@ -5074,7 +5086,7 @@ function impMapBuild(rows) {
       let to = '', how = '';
       const sv = (saved[k] || {})[v];
       const ok = (x) => x === 'skip' || (k === 'owner' ? S.d.users.some((u) => String(u.id) === String(x)) : k === 'server' ? S.d.servers.some((u) => String(u.id) === String(x)) : /^(basico|k4)\|[124]?$/.test(x));
-      const kn = (IMP_KNOWN[k] || {})[v];
+      const kn = impKnownTo(k, v);
       if (kn) { to = kn; how = 'Código conocido'; }
       else if (sv && ok(sv)) { to = String(sv); how = 'Como la última vez'; }
       else if (e.votes.size && k !== 'server') { const best = [...e.votes.entries()].sort((a, b) => b[1] - a[1])[0]; if (ok(best[0])) { to = best[0]; how = 'Según las cuentas que ya tienes'; } }
