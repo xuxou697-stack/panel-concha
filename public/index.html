@@ -5057,16 +5057,46 @@ function impKnown(k, v) {
 }
 /** Códigos del panel antiguo que ya se sabe qué son: se ponen solos al importar y nada los cambia */
 const IMP_KNOWN = {
-  package: { '2a8a0bf6-79ec-47ed-a6bc-b2d674cb1f27': 'basico|', '5a19c4ba-9899-49e1-9bd8-520ddfc4ddaa': 'k4|' },
+  // paquetes del panel antiguo: solo dicen Básico o 4K; las pantallas van por cliente y se copian de Emby
+  package: {
+    '2a8a0bf6-79ec-47ed-a6bc-b2d674cb1f27': 'basico|', '5a19c4ba-9899-49e1-9bd8-520ddfc4ddaa': 'k4|',
+    '5e24ae36-a404-4182-ae38-5e56598ae48d': 'basico|', '04e6ee90-e743-4e52-b482-5beed65fe4ad': 'k4|',
+    'bdcdcbfd-653b-4008-a3b2-fdca0bc49dc8': 'basico|', '9e58ac97-f594-4c24-8f86-b08392fa3e04': 'k4|',
+    'd793ab64-3f6d-483d-8492-84c31653fb80': 'basico|', 'bfad540a-6767-4655-a06f-02fe4976b786': 'k4|',
+    'e06610fb-2742-4588-a5e9-44bcbeed5513': 'basico|', '1f70561f-03af-4074-b8f6-4129bd062bb4': 'k4|',
+  },
   // vendedores del panel antiguo: se buscan en Concha por su nombre o usuario (ServiParte = el superadministrador)
-  owner: { '8a193fa6-c6f2-458a-ac0f-b89ae8f6d5cd': '@super', '904c341f-e328-4ba3-9255-29d4938fd588': 'firetvteamesp', 'b0a337b9-774c-412e-8740-4a48c4fa39e5': 'javier gb', '16a8e5d2-a90a-48c2-9058-261334d36cac': 'jesus9098', '68be20fc-ef86-4513-9cd5-7a63186604e8': 'luka modric' },
+  owner: {
+    '8a193fa6-c6f2-458a-ac0f-b89ae8f6d5cd': '@super', // ServiParte
+    'a156fb0e-8a32-41f4-8eab-9dd961dd9dee': 'carnulo',
+    '81d8c291-8942-41ea-9944-ae27abb42483': 'susy|ricky787', // ricky787 en el panel viejo
+    '5bac6182-a0a2-429f-9cb7-c54a07df5bd0': 'demoniakv5',
+    '2fdbe6e3-a33f-4d22-819c-1e26729598c6': 'navarroo318|edu',
+    '904c341f-e328-4ba3-9255-29d4938fd588': 'javipc558|firetvteamesp',
+    '82086415-5c2e-4591-b0a7-862a13e98b7c': 'pablomartinez|pablo martinez|pablo martínez',
+    'b0a337b9-774c-412e-8740-4a48c4fa39e5': 'solucionestvdigital|javier gb',
+    '16a8e5d2-a90a-48c2-9058-261334d36cac': 'jesus9098',
+    'b833f92e-6182-4994-90d8-0c259d7d3202': 'jlcano',
+    '54505aba-a874-4d11-8e6b-d57e56f210f8': 'jovermaru',
+    '68be20fc-ef86-4513-9cd5-7a63186604e8': 'puntaumbria.2027|luka modric',
+    '12a5267a-e5f5-4f3b-9400-50cd3c312eb4': 'mcm|mcb',
+    '9445c2ba-ef89-43e2-869c-d8e9b52e8cea': 'originalmas2026',
+    'ca6788b1-f5be-4fea-98d9-b73481ed3a91': 'plataformas',
+    '110104b6-b3c0-4176-af56-6b4d42e5a746': 'sefiroz96',
+    'b3fff249-6705-4416-bdae-b9ff235bc228': 'todopremiun',
+    '3f7ca773-c72e-4bee-aed3-5d398d83d36e': '@super', // pedido por el usuario: al superadministrador
+    '6627f997-133c-4e4a-a362-f991b5fb0e9a': '@super', // Lionmax: sus clientes pasan al superadministrador
+  },
 };
 /** Pasa un código conocido a lo que entiende el desplegable (para vendedores, el id del usuario de Concha) */
 function impKnownTo(k, v) {
   const kn = (IMP_KNOWN[k] || {})[v];
   if (!kn || k !== 'owner') return kn || '';
-  const n = kn.toLowerCase();
-  const u = n === '@super' ? S.d.users.find((x) => x.role === 'super') : S.d.users.find((x) => x.username.toLowerCase() === n || x.name.toLowerCase() === n);
+  let u = null;
+  for (const n of kn.toLowerCase().split('|')) {
+    u = n === '@super' ? S.d.users.find((x) => x.role === 'super') : S.d.users.find((x) => x.username.toLowerCase() === n) || S.d.users.find((x) => x.name.trim().toLowerCase() === n);
+    if (u) break;
+  }
   return u ? String(u.id) : '';
 }
 function impMapBuild(rows) {
@@ -5102,6 +5132,7 @@ function impMapRow(r) {
   for (const k of ['server', 'package', 'owner']) {
     const v = String(o[k] || '').trim();
     if (v === '-') { o[k] = ''; continue; }
+    if (k === 'package' && v && impKnown('package', v)) o.pkgFixed = 1; // «Básico» o «4K» escrito en el archivo: manda el archivo
     const hit = (m[k] || []).find((x) => x.v === v);
     if (!hit) continue;
     if (hit.to === 'skip') { o._skip = 1; continue; }
@@ -5173,6 +5204,15 @@ async function impProbe() {
     const rows = imp.rows.map(({ rawExpires, ...r }) => { const m = impMapRow(r); return { username: r.username, server: m.server || '' }; });
     const r = await api('POST', '/api/import/probe', { rows, serverId: imp.serverId || undefined });
     imp.probe = r.rows;
+    // Servidor del panel antiguo sin elegir: el de Concha donde están de verdad esos usuarios
+    for (const x of (imp.map || {}).server || []) {
+      if (x.to) continue;
+      const votes = new Map(); let tot = 0;
+      imp.rows.forEach((row, i) => { const p = imp.probe[i]; if (String(row.server || '').trim() !== x.v || !p || !p.found) return; tot++; votes.set(String(p.server), (votes.get(String(p.server)) || 0) + 1); });
+      if (!tot) continue;
+      const [best, nb] = [...votes.entries()].sort((a, b) => b[1] - a[1])[0];
+      if (S.d.servers.some((v) => String(v.id) === best)) { x.to = best; x.how = `Según Emby (${nb} de ${tot})`; }
+    }
     const pk = (imp.map || {}).package || [];
     for (const x of pk) {
       if (x.fixed) continue;
@@ -5191,7 +5231,7 @@ const impEmbyInfo = () => {
   if (imp.probing) return '<p class="impem wait">Mirando en Emby qué contenido y pantallas tiene cada cuenta…</p>';
   if (!imp.probe) return '';
   const p = imp.probe, ex = p.filter((x) => x && x.found && !x.inPanel), inP = p.filter((x) => x && x.found && x.inPanel).length, k4 = ex.filter((x) => x.q === 'k4').length, bas = ex.filter((x) => x.q === 'basico').length;
-  return `<div class="impem"><b>${ic('check')}Mirado en Emby</b><span>${plural(ex.length, 'cuenta ya existe', 'cuentas ya existen')} en Emby y aún no está${ex.length === 1 ? '' : 'n'} en el panel: se importarán <b>con el contenido y las pantallas que ya tienen</b> (${bas} Básico, ${k4} 4K${ex.length - bas - k4 ? `, ${ex.length - bas - k4} sin bibliotecas` : ''}).${inP ? ` ${plural(inP, 'ya está', 'ya están')} en el panel.` : ''}</span></div>`;
+  return `<div class="impem"><b>${ic('check')}Mirado en Emby</b><button type="button" class="btn sm" data-act="imp-emby-csv" style="align-self:flex-start">${ic('download')}Descargar lo que tiene Emby (pantallas y contenido)</button><span>${plural(ex.length, 'cuenta ya existe', 'cuentas ya existen')} en Emby y aún no está${ex.length === 1 ? '' : 'n'} en el panel: se importarán <b>con el contenido y las pantallas que ya tienen</b> (${bas} Básico, ${k4} 4K${ex.length - bas - k4 ? `, ${ex.length - bas - k4} sin bibliotecas` : ''}).${inP ? ` ${plural(inP, 'ya está', 'ya están')} en el panel.` : ''}</span></div>`;
 };
 async function impRun(dry) {
   const imp = S.imp;
@@ -6686,13 +6726,26 @@ const EXP_COLS = [
   ['fin_suscripcion', 'Fin suscripción', (c) => (c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : c.expires.split('-').reverse().join('/'))],
   ['estado', 'Estado', (c) => STAGE[stage(c)]], ['telegram', 'Telegram', (c) => c.telegram || ''], ['whatsapp', 'WhatsApp', (c) => c.whatsapp || ''], ['signal', 'Signal', (c) => c.signal || ''],
 ];
+/** Exportación «codificada»: fuera del equipo del panel principal (resellers, subresellers y paneles alquilados),
+ * el servidor, el paquete con sus pantallas y el vendedor salen como códigos internos, igual que hace el panel antiguo */
+const expCoded = () => !(staff() && S.d.panelMaster);
+function expCode(kind, val) {
+  const str = `${S.d.expSalt || 'concha'}|${kind}|${val}`;
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0; i < str.length; i++) { const k = str.charCodeAt(i); h1 = h2 ^ Math.imul(h1 ^ k, 597399067); h2 = h3 ^ Math.imul(h2 ^ k, 2869860233); h3 = h4 ^ Math.imul(h3 ^ k, 951274213); h4 = h1 ^ Math.imul(h4 ^ k, 2716044179); }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067); h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233); h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213); h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+  const x = [h1, h2, h3, h4].map((n) => (n >>> 0).toString(16).padStart(8, '0')).join('');
+  return `${x.slice(0, 8)}-${x.slice(8, 12)}-4${x.slice(13, 16)}-a${x.slice(17, 20)}-${x.slice(20, 32)}`;
+}
+const EXP_CODED = { servidor: (c) => expCode('s', c.serverId), paquete: (c) => expCode('p', `${c.quality || 'propias'}|${c.screens || 0}`), vendedor: (c) => expCode('v', c.ownerId) };
+const expColsNow = () => (expCoded() ? EXP_COLS.filter(([k]) => k !== 'pantallas').map(([k, t, fn]) => [k, t, EXP_CODED[k] || fn]) : EXP_COLS);
 function dExport() {
   const ids = bulkIds();
   if (!ids.length) return toast('No hay ninguna cuenta que exportar en esta lista.', true);
   if (!S.expCols) S.expCols = new Set(EXP_COLS.map(([k]) => k));
   showDlg('Exportar clientes Emby', `<p class="muted small" style="margin:-8px 0 12px">Se exportan <b>${bulkScope(ids)}</b>, en el orden en que las ves.</p>
     <b>Selecciona las columnas a exportar</b>
-    <div class="expcols" style="margin-top:8px">${EXP_COLS.map(([k, t]) => `<label class="check"><input type="checkbox" name="expcol" value="${k}"${S.expCols.has(k) ? ' checked' : ''}> ${t}</label>`).join('')}</div>
+    <div class="expcols" style="margin-top:8px">${expColsNow().map(([k, t]) => `<label class="check"><input type="checkbox" name="expcol" value="${k}"${S.expCols.has(k) ? ' checked' : ''}> ${t}</label>`).join('')}</div>
     <p class="muted small" id="expCount" style="margin-bottom:16px"></p>
     <b>Formato de exportación</b>
     <div style="margin-top:8px">
@@ -6701,13 +6754,14 @@ function dExport() {
       <button type="button" class="expfmt" data-act="exp" data-f="sql"><b>Exportar como SQL</b><small>Sentencias INSERT para una base de datos</small></button>
     </div>
     <p style="border-top:1px solid var(--line);padding-top:12px;margin-top:8px"><b>Total de registros:</b> ${ids.length}</p>
+    ${expCoded() ? '<p class="muted small" style="margin-top:6px">El servidor, el paquete y el vendedor salen con los códigos internos del panel.</p>' : ''}
     ${S.expCols.has('contrasena') ? '<p class="muted small" style="margin-top:6px">El archivo incluye las contraseñas de tus clientes si dejas marcada esa columna: guárdalo en un sitio seguro.</p>' : ''}`);
   expCount();
 }
 function expCount() {
-  const n = S.expCols.size;
+  const n = expColsNow().filter(([k]) => S.expCols.has(k)).length;
   const el = $('#expCount'); if (!el) return;
-  el.textContent = `${n} de ${EXP_COLS.length} columnas seleccionadas`;
+  el.textContent = `${n} de ${expColsNow().length} columnas seleccionadas`;
   dlgForm.querySelectorAll('.expfmt').forEach((b) => { b.disabled = n === 0; });
 }
 function saveFile(name, parts, type) {
@@ -6755,7 +6809,7 @@ function xlsxParts(head, rows) {
   ]);
 }
 function runExport(fmt) {
-  const cols = EXP_COLS.filter(([k]) => S.expCols.has(k));
+  const cols = expColsNow().filter(([k]) => S.expCols.has(k));
   const byId = new Map(S.d.clients.map((c) => [c.id, c]));
   const list = bulkIds().map((id) => byId.get(id)).filter(Boolean);
   if (!cols.length || !list.length) return;
@@ -7544,6 +7598,13 @@ document.addEventListener('click', (e) => {
     case 'imp-reset': S.imp = { tab: 'uni', rows: null, results: null }; render(); break;
     case 'imp-check': impRun(true); break;
     case 'imp-go': impRun(false); break;
+    case 'imp-emby-csv': {
+      const imp = S.imp; if (!imp.rows || !imp.probe) break;
+      const Qt = { basico: 'Básico', k4: '4K' }, q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+      const lines = [['usuario', 'nombre', 'en_emby', 'contenido_en_emby', 'pantallas_en_emby', 'ya_en_el_panel'].join(';')].concat(imp.rows.map((r, i) => { const p = imp.probe[i] || {}; return [r.username, r.name || '', p.found ? 'sí' : 'no', p.found ? (Qt[p.q] || 'sin bibliotecas') : '', p.found ? (p.screens || 'sin límite') : '', p.inPanel ? 'sí' : 'no'].map(q).join(';'); }));
+      saveFile(`emby-pantallas-y-contenido-${S.d.today}.csv`, ['\ufeff' + lines.join('\n')], 'text/csv;charset=utf-8');
+      break;
+    }
     case 'imp-skiprest': for (const x of Object.values(S.imp.map || {}).flat()) if (!x.to) { x.to = 'skip'; x.how = ''; } S.imp.results = null; S.imp.dry = null; render(); break;
     case 'adm-new': dAdmin(null); break;
     case 'adm-perms': if (usr) dPerms(usr); break;

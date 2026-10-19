@@ -1776,6 +1776,8 @@ function publicData(me) {
     tvParent: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.tvNotice) || null; })(),
     parentTemplates: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
     licMaster: me.role === 'super' && !LIC_CLIENT,
+    panelMaster: !LIC_CLIENT, // el panel principal (no alquilado): solo aquí el equipo exporta los datos en claro
+    expSalt: crypto.createHash('sha256').update(String(db.secret || '') + '|exp').digest('hex').slice(0, 24),
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
     license: me.role === 'super' ? licStatus() : null,
     expDue: me.role === 'super' ? expDueCount() : 0,
