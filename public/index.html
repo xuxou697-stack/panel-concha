@@ -945,6 +945,7 @@ button.kc{cursor:pointer} button.kc:hover{border-color:var(--ok)}
 @media (max-width:860px){.ugrid{grid-template-columns:1fr} .cchart{height:140px;gap:2px} .itile b,.ktile b{font-size:22px} .ktiles,.itiles{grid-template-columns:1fr 1fr}}
 .sectip{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;margin-bottom:14px;color:#fff;background:linear-gradient(135deg,#7c3aed,#db2777)}
 .sectip>.ic{width:26px;height:26px;flex:none} .sectip div{flex:1;min-width:0} .sectip b{display:block} .sectip span{font-size:13px;opacity:.92} .sectip .btn{background:#fff;color:#7c3aed;border-color:#fff}
+.sectip-x{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:18px;line-height:1;cursor:pointer} .sectip-x:hover{background:rgba(255,255,255,.3)}
 
 /* ---------- Buscador rápido ---------- */
 .qsbtn{display:flex;align-items:center;gap:8px;margin:0 14px 12px;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer;font:inherit;font-size:13.5px;text-align:left;transition:border-color .15s,box-shadow .15s}
@@ -2497,7 +2498,8 @@ function vResumen() {
   const quick = `<div class="qa">${qa('data-act="new"', 'userplus', 'Nueva cuenta', 'pri q-sea')}${qa('data-act="demo"', 'timer', 'Nueva demo', 'q-violet')}${qa('data-view="cuentas" data-filter="soon"', 'clock', 'Por vencer', 'q-sun')}${staff() ? qa('data-act="import"', 'download', 'Importar', 'q-coral') : qa('data-view="cuentas" data-filter="all"', 'list', 'Clientes', 'q-coral')}</div>`;
   // Estados de las cuentas, cada uno lleva a su lista
   const sc = (k, n, label, hint, icon) => `<button type="button" class="sc sc-${k}" data-act="goto" data-filter="${k}"><span class="sc-i">${ic(icon)}</span><b>${n}</b><span class="sc-l">${label}</span><small>${hint}</small></button>`;
-  const secTip = isSuper() && !d.me.twoFa ? `<div class="sectip">${ic('shield')}<div><b>Protege tu cuenta de superadministrador</b><span>Activa la verificación en dos pasos: aunque te roben la contraseña, nadie podrá entrar sin tu móvil.</span></div><button class="btn primary sm" data-view="seguridad">Activar</button></div>` : '';
+  let secHide = false; try { secHide = localStorage.getItem('concha_sectip_off') === '1'; } catch (e) {}
+  const secTip = isSuper() && !d.me.twoFa && !secHide ? `<div class="sectip">${ic('shield')}<div><b>Protege tu cuenta de superadministrador</b><span>Activa la verificación en dos pasos: aunque te roben la contraseña, nadie podrá entrar sin tu móvil.</span></div><button class="btn primary sm" data-view="seguridad">Activar</button><button type="button" class="sectip-x" data-act="sectip-off" aria-label="No volver a mostrar" title="No volver a mostrar">×</button></div>` : '';
   const dsearch = `<div class="dsearch" role="search"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><input type="search" id="dq" value="${esc(S.dq || '')}" placeholder="Buscar cliente: nombre, usuario, email o teléfono…" autocomplete="off" spellcheck="false" aria-label="Buscar clientes" aria-controls="dqr"></div><div id="dqr">${dqHtml()}</div>`;
   const rv = [];
   if (S.d.teamCount) rv.push(`<button type="button" class="rvb bad" data-view="atencion">${ic('alert')}<span><b>${S.d.teamCount}</b> ${S.d.teamCount === 1 ? 'aviso de tu equipo' : 'avisos de tu equipo'}</span><em>Revisar</em></button>`);
@@ -7659,6 +7661,7 @@ document.addEventListener('click', (e) => {
       break; }
     case 'sf-sel-all': S.sf.sel = new Set(((S.sf.data || {}).libraries || []).map((l) => l.item).filter(Boolean)); render(); break;
     case 'sf-sel-none': S.sf.sel = new Set(); render(); break;
+    case 'sectip-off': try { localStorage.setItem('concha_sectip_off', '1'); } catch (e) {} toast('Listo, no volverá a salir. Puedes activarla cuando quieras en Seguridad.'); render(); break;
     case 'sf-auto-add': { const v = ($('#sfAutoH') || {}).value; if (!/^\d\d:\d\d$/.test(v || '')) break; const a = S.sf.auto; if (!a.hours.includes(v)) a.hours = [...a.hours, v].sort(); a.on = !!($('#sfAutoOn') || {}).checked || a.on; render(); break; }
     case 'sf-auto-del': S.sf.auto.hours = S.sf.auto.hours.filter((h) => h !== el.dataset.k); render(); break;
     case 'sf-auto-save': { const a = S.sf.auto, on = !!($('#sfAutoOn') || {}).checked, w = (document.querySelector('input[name=sfAutoW]:checked') || {}).value;
