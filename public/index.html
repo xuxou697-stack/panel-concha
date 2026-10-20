@@ -1586,6 +1586,9 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 @media (max-width:560px){.fzt-grid{gap:8px}.fzt-b{padding:10px 10px}.fzt-b b{font-size:28px}.fzt-l{font-size:13px}.fzt-c{font-size:11px}.fzt-bottom{grid-template-columns:1fr}.fzt-wk{align-items:flex-start}.fzt-top small{margin-left:0}}
 .fz-live{display:block;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#19c37d 14%,var(--surface)),var(--surface) 60%);transition:border-color .15s,transform .15s}
 .fz-live:hover{border-color:#19c37d;transform:translateY(-1px)}
+.ccopy{cursor:pointer;font:inherit;padding:0;transition:transform .15s,box-shadow .15s}.ccopy:hover{transform:scale(1.06)}.ccopy.copied{box-shadow:0 0 0 3px #19c37d}
+.ccopy-n{display:block;background:none;border:0;padding:0;margin:0;font:inherit;font-weight:inherit;color:inherit;text-align:left;cursor:pointer;max-width:100%}.ccopy-n:hover{text-decoration:underline dotted;text-underline-offset:4px}.ccopy-n.copied{color:#19c37d}
+.fzl-tr{display:inline-flex;align-items:center;gap:6px;text-decoration:underline dotted;text-underline-offset:3px}.fzl-tr:hover{text-decoration-style:solid}
 .fzl-top{display:flex;align-items:center;gap:8px}.fzl-k{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#19c37d}.fzl-top em{margin-left:auto;font-style:normal;font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}.fzl-top em svg{width:14px;height:14px;transform:rotate(-90deg)}
 .fzl-dot{width:10px;height:10px;border-radius:50%;background:var(--idle)}.fzl-dot.on{background:#19c37d;box-shadow:0 0 0 0 rgba(25,195,125,.6);animation:fzlp 1.8s infinite}
 @keyframes fzlp{0%{box-shadow:0 0 0 0 rgba(25,195,125,.55)}70%{box-shadow:0 0 0 10px rgba(25,195,125,0)}100%{box-shadow:0 0 0 0 rgba(25,195,125,0)}}
@@ -2391,7 +2394,7 @@ function clientRow(c, compact) {
   if (S.d.users.length > 1 && c.ownerId !== me().id) sub.push('de ' + esc(userName(c.ownerId)));
   const extra = st === 'expired' ? `<div class="small muted">a la papelera el ${fmt(trashDate(c))}</div>` : '';
   return `<tr>
-    <td><div class="name">${esc(c.panelName)}</div><div class="small muted">${sub.join(', ')}</div>${compact ? '' : contactHtml(c)}${c.note && !compact ? `<div class="small muted">${esc(c.note)}</div>` : ''}</td>
+    <td><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">${sub.join(', ')}</div>${compact ? '' : contactHtml(c)}${c.note && !compact ? `<div class="small muted">${esc(c.note)}</div>` : ''}</td>
     <td>${planText(c)}${compact ? '' : `<div class="small muted">Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span></div>`}</td>
     <td><div>${c.demo ? fmtTs(c.expiresAt) : fmt(c.expires)}</div><div class="small muted">${when(c)}</div>${extra}</td>
     <td><span class="badge ${st}">${STAGE[st]}</span>${c.paid === false ? '<div class="due">Cobro pendiente</div>' : ''}${c.lastError ? `<div class="err">No se pudo aplicar en Emby: ${esc(c.lastError)}</div>` : ''}</td>
@@ -2455,8 +2458,8 @@ function clientCard(c) {
   return `<article class="ccard ${st}${picked ? ' picked' : ''}${mine || S.d.users.length < 2 ? '' : ' notmine'}">
     <header>
       ${staff() ? `<input type="checkbox" class="pick" data-sel="${c.id}"${picked ? ' checked' : ''} aria-label="Seleccionar a ${esc(c.panelName)}">` : ''}
-      <span class="cav st-${st}" aria-hidden="true">${esc((c.panelName || c.embyName || '?').trim().charAt(0).toUpperCase())}</span>
-      <div class="who" style="flex:1"><div class="name">${esc(c.panelName)}</div><div class="small muted">@${esc(c.embyName)} <span class="cst st-${st}">${STAGE_SHORT[st] || STAGE[st]}</span>${mine ? '' : ` <span class="cown" title="Cuenta de ${esc(userName(c.ownerId) || '—')}">${ic('user')}${esc(userName(c.ownerId) || '—')}</span>`}</div></div>
+      <button type="button" class="cav st-${st} ccopy" data-act="c-copy" data-id="${c.id}" title="Copiar los datos de la cuenta" aria-label="Copiar los datos de ${esc(c.panelName)}">${esc((c.panelName || c.embyName || '?').trim().charAt(0).toUpperCase())}</button>
+      <div class="who" style="flex:1"><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">@${esc(c.embyName)} <span class="cst st-${st}">${STAGE_SHORT[st] || STAGE[st]}</span>${mine ? '' : ` <span class="cown" title="Cuenta de ${esc(userName(c.ownerId) || '—')}">${ic('user')}${esc(userName(c.ownerId) || '—')}</span>`}</div></div>
       <div class="hd">${ib('edit', 'edit', 'Editar')}${ib('renew', 'clock', renewLabel, 'pri')}${ib('more', 'more', 'Más opciones')}<button type="button" class="ib plain" data-act="toggle" data-id="${c.id}" aria-expanded="${open}" aria-label="${open ? 'Ocultar detalles' : 'Ver detalles'}" title="${open ? 'Ocultar detalles' : 'Ver detalles'}">${ic('chev')}</button></div>
     </header>
     <div class="kv">${ic('mail')}<em>Email:</em><span>${c.email ? esc(c.email) : '—'}</span></div>
@@ -2565,13 +2568,13 @@ function fzLiveHtml() {
   const L = S.live;
   if (!L) return `<div class="fzl-top"><span class="fzl-dot"></span><span class="fzl-k">En directo</span></div><p class="fzl-wait">Mirando quién está viendo…</p>`;
   const ses = L.sessions || [], people = new Set(ses.map((x) => (x.clientId || x.user || '').toString().toLowerCase())).size;
-  const paused = ses.filter((x) => x.paused).length, trans = ses.filter((x) => x.method === 'Transcode').length;
+  const paused = ses.filter((x) => x.paused).length, trans = ses.filter((x) => x.trVideo).length, lite = ses.filter((x) => !x.trVideo && x.method === 'Transcode').length;
   const bySrv = {}; ses.forEach((x) => { bySrv[x.server] = (bySrv[x.server] || 0) + 1; });
   const srvs = S.d.servers.length > 1 ? Object.entries(bySrv).sort((a, b) => b[1] - a[1]).map(([n, k]) => `<span class="fzl-s">${ic('server')}${esc(n)} <b>${k}</b></span>`).join('') : '';
   const chips = ses.slice(0, 6).map((x) => `<span class="fzl-p${x.paused ? ' pz' : ''}"><i>${esc((x.user || '?').charAt(0).toUpperCase())}</i><span><b>${esc(x.user)}</b><small>${x.paused ? 'En pausa · ' : ''}${esc(x.title || '')}</small></span></span>`).join('');
   return `<div class="fzl-top"><span class="fzl-dot${ses.length ? ' on' : ''}"></span><span class="fzl-k">En directo ahora</span><em>Abrir el Monitor ${ic('chev')}</em></div>
     <div class="fzl-main"><div class="fzl-n"><b>${people}</b><span>${people === 1 ? 'cliente viendo' : 'clientes viendo'}</span></div>
-      <div class="fzl-meta"><span>${ic('tv')}${plural(ses.length, 'pantalla', 'pantallas')}</span>${paused ? `<span>${ic('pause')}${paused} en pausa</span>` : ''}${trans ? `<span class="warn">${ic('alert')}${plural(trans, 'convirtiendo vídeo', 'convirtiendo vídeo')}</span>` : ''}${srvs}</div></div>
+      <div class="fzl-meta"><span>${ic('tv')}${plural(ses.length, 'pantalla', 'pantallas')}</span>${paused ? `<span>${ic('pause')}${paused} en pausa</span>` : ''}${trans ? `<span class="fzl-tr warn" data-view="monitor" data-montr="video" title="Ver quiénes son en el Monitor">${ic('alert')}${trans} convirtiendo la imagen</span>` : ''}${lite ? `<span class="fzl-tr" data-view="monitor" data-montr="yes" title="Ver quiénes son en el Monitor">${ic('bolt')}${lite} solo sonido o formato</span>` : ''}${srvs}</div></div>
     ${ses.length ? `<div class="fzl-ps">${chips}${ses.length > 6 ? `<span class="fzl-more">y ${ses.length - 6} más</span>` : ''}</div>` : '<p class="fzl-wait">Ahora mismo nadie está viendo nada.</p>'}`;
 }
 /** Tarjeta «Hoy en tu negocio»: altas, demos y renovaciones de hoy comparadas con ayer, y las últimas que se han hecho */
@@ -2976,7 +2979,7 @@ function vAvisos() {
     const text = encodeURIComponent(fillTpl('expiring', c, ''));
     const tgUser = (c.telegram || '').replace(/^@/, '');
     return `<tr>
-      <td><div class="name">${esc(c.panelName)}</div><div class="small muted">@${esc(c.embyName)}${S.d.users.length > 1 ? ', de ' + esc(userName(c.ownerId)) : ''}</div></td>
+      <td><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">@${esc(c.embyName)}${S.d.users.length > 1 ? ', de ' + esc(userName(c.ownerId)) : ''}</div></td>
       <td><div>${fmt(c.expires)}</div><div class="small muted">${when(c)}</div></td>
       <td>${done ? '<span class="badge active">Avisado</span>' : '<span class="badge soon">Pendiente</span>'}<div class="small muted">${c.tgLinked ? (tgOn ? 'Telegram enlazado: se envía solo' : 'Telegram enlazado') : 'Sin Telegram enlazado'}</div></td>
       <td class="r"><div class="acts">
@@ -3038,7 +3041,7 @@ function vCobros() {
   const sub = 'Cuentas que ya tienen servicio pero el cliente aún no te ha pagado. Al crear o renovar eliges «Pendiente de cobro» y aparecen aquí.';
   if (!rows.length) return head('Cobros pendientes', sub) + '<div class="panel"><div class="empty">No tienes ningún cobro pendiente.</div></div>';
   return head('Cobros pendientes', sub) + `<div class="panel"><table><thead><tr><th>Cuenta</th><th>Plan</th><th>Vence</th><th class="r">Acciones</th></tr></thead><tbody>${rows.map((c) => `<tr>
-    <td><div class="name">${esc(c.panelName)}</div><div class="small muted">${esc(c.embyName)}${S.d.users.length > 1 && c.ownerId !== me().id ? ', de ' + esc(userName(c.ownerId)) : ''}</div>${contactHtml(c)}</td>
+    <td><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">${esc(c.embyName)}${S.d.users.length > 1 && c.ownerId !== me().id ? ', de ' + esc(userName(c.ownerId)) : ''}</div>${contactHtml(c)}</td>
     <td>${planText(c)}</td>
     <td><div>${fmt(c.expires)}</div><div class="small muted">${when(c)}</div></td>
     <td class="r"><div class="acts"><button class="btn sm primary" data-act="paid" data-id="${c.id}">Marcar como cobrado</button></div></td></tr>`).join('')}</tbody></table></div>`;
@@ -3256,7 +3259,7 @@ function papeleraTable(rows) {
     const sub2 = [esc(c.embyName)];
     if (S.d.users.length > 1 && c.ownerId !== me().id) sub2.push('de ' + esc(userName(c.ownerId)));
     return `<tr>
-      <td><div class="name">${esc(c.panelName)}</div><div class="small muted">${sub2.join(', ')}</div></td>
+      <td><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">${sub2.join(', ')}</div></td>
       <td>${esc(c.trashReason || '')}${c.demo ? '' : `<div class="small muted">${valid ? 'pagado hasta el ' + fmt(c.expires) : 'venció el ' + fmt(c.expires)}</div>`}${c.lastError ? `<div class="err">${esc(c.lastError)}</div>` : ''}</td>
       <td>${fmt(c.trashedAt)}</td><td>${del}</td>
       <td class="r"><div class="acts">
@@ -3304,7 +3307,7 @@ function monRows() {
   const f = S.mon, q = f.q.trim().toLowerCase();
   return (S.mon.data ? S.mon.data.sessions : []).filter((x) => (!f.srv || x.serverId === f.srv)
     && (f.st === 'all' || (f.st === 'play' ? !x.paused : x.paused))
-    && (f.tr === 'all' || (f.tr === 'yes' ? x.transcode : !x.transcode))
+    && (f.tr === 'all' || (f.tr === 'video' ? x.trVideo : f.tr === 'yes' ? x.transcode : !x.transcode))
     && (f.res === 'all' || x.res === f.res)
     && (f.kind === 'all' || x.kind === f.kind)
     && (!q || [x.user, x.client, x.title, x.sub, x.device, x.app, x.owner].join(' ').toLowerCase().includes(q)));
@@ -3332,6 +3335,7 @@ function monBody() {
     ${k('play', play.length, 'Reproduciendo', 'play', '#19c37d', f.st === 'play')}
     ${k('pause', all.length - play.length, 'En pausa', 'pause', '#f5a524', f.st === 'pause')}
     ${k('tr', all.filter((x) => x.transcode).length, 'Transcode', 'bolt', '#ff7a3d', f.tr === 'yes')}
+    ${k('trv', all.filter((x) => x.trVideo).length, 'Convierte imagen', 'alert', '#e2457a', f.tr === 'video')}
     ${k('pelicula', all.filter((x) => x.kind === 'pelicula').length, 'Películas', 'film', '#e2457a', f.kind === 'pelicula')}
     ${k('serie', all.filter((x) => x.kind === 'serie').length, 'Series', 'tv', '#14b8c4', f.kind === 'serie')}
     ${k('all', bw >= 1e9 ? (bw / 1e9).toFixed(2) + '<small> Gbps</small>' : Math.round(bw / 1e6) + '<small> Mbps</small>', 'Consumo aprox.', 'wifi', '#a46bff', false)}</div>`;
@@ -3340,7 +3344,7 @@ function monBody() {
   const fil = `<div class="mfil"><label><span>Buscar</span><input type="search" id="monQ" placeholder="Cliente, usuario Emby, título o aparato…" value="${esc(f.q)}"></label>
     ${sel('monSrv', f.srv, [[0, 'Todos los servidores'], ...S.d.servers.map((s) => [s.id, s.name])], 'Servidor')}
     ${sel('monSt', f.st, [['all', 'Todos los estados'], ['play', 'Reproduciendo'], ['pause', 'En pausa']], 'Estado')}
-    ${sel('monTr', f.tr, [['all', 'Directo y transcode'], ['yes', 'Solo transcode'], ['no', 'Solo directo']], 'Transcode')}
+    ${sel('monTr', f.tr, [['all', 'Directo y transcode'], ['yes', 'Solo transcode'], ['video', 'Solo convierte la imagen'], ['no', 'Solo directo']], 'Transcode')}
     ${sel('monRes', f.res, [['all', 'Todas las calidades'], ['4K', '4K'], ['1080p', '1080p'], ['720p', '720p'], ['SD', 'SD']], 'Resolución')}
     ${sel('monKind', f.kind, [['all', 'Películas y series'], ['pelicula', 'Películas'], ['serie', 'Series'], ['tv', 'TV en directo']], 'Tipo')}</div>`;
   const errs = d.errors.map((e) => `<p class="err" style="max-width:none;margin-bottom:10px">${esc(e)}</p>`).join('');
@@ -3724,7 +3728,7 @@ function vInactivos() {
     <div class="itiles">${tile(rows.length, `sin ver nada en ${days} días o más`, '#f59e0b')}${tile(never, 'no se han conectado nunca', '#f0616d')}${tile(live().filter((c) => !c.demo && ['active', 'soon'].includes(stage(c))).length - rows.length, 'activos de verdad', '#10b981')}</div>
     <div class="tools"><span class="muted small">Sin conectarse desde hace:</span>${[3, 7, 15, 30, 60].map(chip).join('')}</div>
     ${!S.seen ? '<div class="panel"><div class="empty">Consultando Emby…</div></div>' : rows.length ? `<div class="panel"><table class="cards"><thead><tr><th>Cliente</th><th>Última conexión</th><th>Vence</th><th class="r">Acciones</th></tr></thead><tbody>${rows.map(({ c, d, ago }) => `<tr>
-      <td><div class="name">${esc(c.panelName)}</div><div class="small muted">${esc(c.embyName)}${S.d.servers.length > 1 ? ', en ' + esc(serverName(c.serverId)) : ''}${S.d.users.length > 1 && c.ownerId !== me().id ? ', de ' + esc(userName(c.ownerId)) : ''}</div>${contactHtml(c)}</td>
+      <td><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">${esc(c.embyName)}${S.d.servers.length > 1 ? ', en ' + esc(serverName(c.serverId)) : ''}${S.d.users.length > 1 && c.ownerId !== me().id ? ', de ' + esc(userName(c.ownerId)) : ''}</div>${contactHtml(c)}</td>
       <td><span class="ago ${ago === Infinity ? 'never' : ago > 30 ? 'old' : 'mid'}">${ago === Infinity ? 'Nunca' : `hace ${ago} días`}</span>${d ? `<div class="small muted">${fmtTs(d.toISOString(), true)}</div>` : ''}</td>
       <td>${fmt(c.expires)}<div class="small muted">${when(c)}</div></td>
       <td class="r"><div class="acts"><button class="btn sm" data-act="msg" data-id="${c.id}">Mensaje</button><button class="btn sm ghost" data-act="edit" data-id="${c.id}">Ver ficha</button></div></td></tr>`).join('')}</tbody></table></div>`
@@ -7355,6 +7359,7 @@ document.addEventListener('click', (e) => {
     if (AL[S.view]) { Object.assign(S.al, { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 }); }
     if (S.view === 'auditoria') S.audit = null;
     if (S.view === 'monitor') S.mon.data = null;
+    if (S.view === 'monitor' && nav.dataset.montr) Object.assign(S.mon, { tr: nav.dataset.montr, st: 'all', kind: 'all', res: 'all', q: '', srv: 0 });
     if (S.view === 'seguridad') S.sec = null;
     if (S.view === 'pagos' || S.view === 'creditos') S.pay = null;
     if (S.view === 'copias') S.bk = null;
@@ -7371,6 +7376,13 @@ document.addEventListener('click', (e) => {
     render(); return;
   }
   if (a === 'buy') { buyGo(el); return; }
+  if (a === 'c-copy') { const c = S.d.clients.find((x) => String(x.id) === el.dataset.id); if (!c) return;
+    const srv = S.d.servers.find((x) => x.id === c.serverId) || {}, dmy = (d) => (d || '').split('-').reverse().join('/');
+    const vence = c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires);
+    const t = [srv.publicUrl ? `Servidor: ${srv.publicUrl}` : '', `Usuario: ${c.embyName}`, `Contraseña: ${c.password || '(la que ya tienes)'}`, `Caduca: ${vence}`].filter(Boolean).join('\n');
+    const done = () => { el.classList.add('copied'); setTimeout(() => el.classList.remove('copied'), 1200); toast(c.password ? `Datos de ${c.panelName} copiados: pégalos en el chat` : `Copiado. Ojo: el panel no tiene guardada la contraseña de ${c.panelName}`, !c.password); };
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done, () => { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); ok ? done() : toast('No se pudo copiar', true); });
+    return; }
   if (a === 'copy-txt') { navigator.clipboard.writeText(el.dataset.t).then(() => toast('Copiado'), () => toast('No se pudo copiar', true)); return; }
   if (a === 'pay-stripe') { const c = S.pay.cfg.stripe; openDlg({ title: 'Claves de Stripe', submit: 'Guardar y probar', body: `<label class="f">Clave secreta (sk_live_… o sk_test_… para pruebas)<input name="key" autocomplete="off" spellcheck="false" placeholder="${c.hasKey ? 'Vacío = no cambiarla' : 'sk_live_…'}"></label><label class="f">Secreto del webhook (whsec_…, opcional)<input name="wh" autocomplete="off" spellcheck="false" placeholder="${c.hasWh ? 'Vacío = no cambiarlo' : 'whsec_…'}"></label><p class="muted small">No la compartas con nadie ni la pegues en chats.</p>`, onSubmit: async (fd) => { await api('PUT', '/api/pay/config', { stripe: { key: fd.get('key'), whsec: fd.get('wh'), on: true } }); return 'Stripe conectado y activado'; }, after: () => { S.pay = null; loadPay(); } }); return; }
   if (a === 'pay-now') { const c = S.pay.cfg.nowpay; openDlg({ title: 'Claves de NOWPayments', submit: 'Guardar y probar', body: `<label class="f">API key<input name="key" autocomplete="off" spellcheck="false" placeholder="${c.hasKey ? 'Vacío = no cambiarla' : ''}"></label><label class="f">IPN secret<input name="ipn" autocomplete="off" spellcheck="false" placeholder="${c.hasIpn ? 'Vacío = no cambiarlo' : ''}"></label>`, onSubmit: async (fd) => { await api('PUT', '/api/pay/config', { nowpay: { key: fd.get('key'), ipn: fd.get('ipn'), on: true } }); return 'NOWPayments conectado y activado'; }, after: () => { S.pay = null; loadPay(); } }); return; }
@@ -7426,7 +7438,7 @@ document.addEventListener('click', (e) => {
   if (a === 'sec-close' || a === 'sec-closeall') { api('POST', '/api/security/sessions/close', a === 'sec-closeall' ? { all: true } : { sid: el.dataset.sid }).then((r) => { toast(r.closed === 1 ? 'Sesión cerrada' : `${r.closed} sesiones cerradas`); loadSec(); }, (x) => toast(x.message, true)); return; }
   if (a === 'mon-reload') { loadMon(); return; }
   if (a === 'mon-auto') { S.mon.auto = !S.mon.auto; S.mon.left = S.mon.every; el.setAttribute('aria-pressed', S.mon.auto); el.textContent = S.mon.auto ? '⏸ Pausar monitorización' : '▶ Iniciar monitorización'; if (S.mon.auto) loadMon(); const l = $('#monLeft'); if (l) l.textContent = S.mon.auto ? S.mon.left + ' s' : 'pausa'; return; }
-  if (a === 'mon-k') { const k = el.dataset.k, f = S.mon; if (k === 'all') Object.assign(f, { st: 'all', tr: 'all', kind: 'all' }); else if (k === 'play' || k === 'pause') f.st = f.st === k ? 'all' : k; else if (k === 'tr') f.tr = f.tr === 'yes' ? 'all' : 'yes'; else f.kind = f.kind === k ? 'all' : k; monPaint(); return; }
+  if (a === 'mon-k') { const k = el.dataset.k, f = S.mon; if (k === 'all') Object.assign(f, { st: 'all', tr: 'all', kind: 'all' }); else if (k === 'play' || k === 'pause') f.st = f.st === k ? 'all' : k; else if (k === 'tr') f.tr = f.tr === 'yes' ? 'all' : 'yes'; else if (k === 'trv') f.tr = f.tr === 'video' ? 'all' : 'video'; else f.kind = f.kind === k ? 'all' : k; monPaint(); return; }
   if (a === 'mon-srv') { S.mon.srv = S.mon.srv === id ? 0 : id; monPaint(); return; }
   if (a === 'mon-stop') { monStop(el); return; }
   if (a === 'mon-msg') { monMsg(el); return; }

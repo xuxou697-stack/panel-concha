@@ -3865,7 +3865,7 @@ route('GET', '/api/sessions', '*', async ({ me }) => {
           const ep = it.ParentIndexNumber != null && it.IndexNumber != null ? ` ${it.ParentIndexNumber}x${pad(it.IndexNumber)}` : '';
           title = `${it.SeriesName}${ep} – ${it.Name}`;
         }
-        out.push({ server: s.name, clientId: byEmby.get(x.UserId) || null, user: x.UserName || '', device: x.DeviceName || '', app: x.Client || '', title, paused: !!ps.IsPaused, method: ps.PlayMethod || '', position: ps.PositionTicks || 0, duration: it.RunTimeTicks || 0 });
+        out.push({ server: s.name, clientId: byEmby.get(x.UserId) || null, user: x.UserName || '', device: x.DeviceName || '', app: x.Client || '', title, paused: !!ps.IsPaused, method: ps.PlayMethod || '', position: ps.PositionTicks || 0, duration: it.RunTimeTicks || 0, trVideo: !!x.TranscodingInfo && x.TranscodingInfo.IsVideoDirect === false, trAudio: !!x.TranscodingInfo && x.TranscodingInfo.IsAudioDirect === false });
       }
     } catch (e) { if (isStaff(me)) errors.push(e.message); else errors.push('No se pudo consultar el servidor.'); }
   }));
