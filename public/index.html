@@ -750,6 +750,52 @@ button.kc{cursor:pointer} button.kc:hover{border-color:var(--ok)}
   .vr2-head{display:none}.vr2-who{grid-area:who}.vr2>.vr2-c:nth-child(2){grid-area:c1}.vr2>.vr2-c:nth-child(3){grid-area:c2}.vr2>.vr2-c:nth-child(4){display:none}.vr2-last{grid-area:last}.vr2-a{grid-area:a;justify-content:flex-start}
   .vt2-h .vc2-n{flex-basis:calc(100% - 64px)}.vt2-n{width:100%}
 }
+
+/* ---------- Ficha del servidor v118: cabecera con números, menú lateral y tarjetas ---------- */
+.sf2-hero{position:relative;overflow:hidden;margin:6px 0 16px;padding:20px 22px;border-radius:22px;border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line));background:radial-gradient(900px 260px at 0% 0%,color-mix(in srgb,var(--brand) 18%,transparent),transparent 60%),linear-gradient(135deg,color-mix(in srgb,#7c5cff 10%,var(--surface)),var(--surface))}
+.sf2-id{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.sf2-ic{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand),#7c5cff);color:#fff}.sf2-ic .ic{width:26px;height:26px;margin:0}
+.sf2-tt{flex:1;min-width:200px}.sf2-tt h1{margin:0;font-size:24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.sf2-tt p{margin:2px 0 0;color:var(--muted);font-size:14px}.sf2-url{font-family:ui-monospace,Consolas,monospace;font-size:12.5px!important}
+.sf2-acts{display:flex;gap:8px;flex-wrap:wrap}
+.sf2-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:16px}
+.sf2-k{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--raised) 85%,transparent);border:1px solid var(--line)}
+.sf2-k .ic{width:16px;height:16px;margin:0 0 2px;color:var(--brand)}.sf2-k b{font-size:22px;font-weight:800;line-height:1.1}.sf2-k span{font-size:12px;color:var(--muted)}
+.sf2-k.warn b,.sf2-k.warn .ic{color:var(--warn)}.sf2-k.bad b,.sf2-k.bad .ic{color:var(--bad)}
+.sf2-body{display:grid;grid-template-columns:210px minmax(0,1fr);gap:16px;align-items:start}
+.sf2-rail{position:sticky;top:12px;display:flex;flex-direction:column;gap:4px;padding:8px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.sf2-rail button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:12px;background:none;color:var(--muted);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.sf2-rail button .ic{width:18px;height:18px;margin:0}.sf2-rail button em{margin-left:auto;font-style:normal;font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--raised);color:var(--text)}
+.sf2-rail button:hover{background:var(--raised);color:var(--text)}.sf2-rail button[aria-selected=true]{background:color-mix(in srgb,var(--brand) 16%,var(--raised));color:var(--text);box-shadow:inset 3px 0 0 var(--brand)}
+.sf2-main{min-width:0}.sf2-main>.panel:first-child{margin-top:0}
+.sf2-libs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));gap:12px}
+.sf2-lib{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);min-width:0}
+.sf2-lib header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.sf2-lib header b{font-size:15px;word-break:break-word}
+.sf2-type{flex:none;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--raised);color:var(--muted)}
+.sf2-lnum{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}.sf2-lnum b{font-size:24px;font-weight:800}.sf2-lnum span{color:var(--muted);font-size:13px}
+.sf2-pk{display:flex;gap:6px;flex-wrap:wrap}
+.sf2-more summary{cursor:pointer;font-size:13px;color:var(--brand);display:flex;align-items:center;gap:6px;list-style:none}.sf2-more summary::-webkit-details-marker{display:none}.sf2-more summary .ic{width:14px;height:14px;margin:0}
+.sf2-more dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;margin:10px 0 6px;font-size:12.5px}.sf2-more dt{color:var(--muted)}.sf2-more dd{margin:0;min-width:0}.sf2-more code{word-break:break-all;font-size:12px}
+.sf2-paths{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}.sf2-paths li{padding:5px 8px;border-radius:8px;background:var(--raised);font-size:12px;word-break:break-all}
+.sf2-sel{margin-top:14px;display:flex;flex-direction:column;gap:6px}.sf2-sel-h{display:flex;gap:6px}
+.sf2-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--raised)}
+.sf2-row input{width:18px;height:18px;accent-color:var(--brand)}.sf2-rn{display:flex;flex-direction:column;min-width:0;font-weight:600}.sf2-rn small{font-weight:400;color:var(--muted);font-size:12px}
+.sf2-auto{margin-top:14px}.sf2-auto-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.sf2-auto-h b{display:inline-flex;align-items:center;gap:6px}
+.sf2-hours{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}.sf2-x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 0 0 4px}.sf2-x:hover{color:var(--bad)}
+.sf2-add{display:inline-flex;gap:6px;align-items:center}.sf2-add input{width:auto;min-height:0;padding:6px 8px}
+.sf2-which{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.sf2-accl{margin-top:14px}.sf2-accl-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}.sf2-accl-h b{display:inline-flex;gap:6px;align-items:center}.sf2-accl-h input{flex:1 1 240px;max-width:380px}
+.sf2-acc-list{display:flex;flex-direction:column;gap:6px;max-height:520px;overflow:auto}
+.sf2-acc{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--raised)}
+.sf2-acc>div{display:flex;flex-direction:column;min-width:0}.sf2-acc b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sf2-acc small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf2-st{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--k,#8c9aa6) 18%,transparent);color:var(--k,#8c9aa6)}.sf2-st.st-active{--k:#19c37d}.sf2-st.st-soon{--k:#f5a524}.sf2-st.st-expired{--k:#f0616d}.sf2-st.st-demo{--k:#b67cff}
+.sf2-miss{margin-top:14px}.sf2-miss>b{display:inline-flex;gap:6px;align-items:center}
+@media (max-width:900px){
+  .sf2-body{grid-template-columns:minmax(0,1fr)}
+  .sf2-rail{position:static;flex-direction:row;overflow-x:auto;padding:6px}.sf2-rail button{width:auto;flex:none;padding:8px 12px}
+  .sf2-hero{padding:16px}.sf2-tt h1{font-size:20px}.sf2-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sf2-row{grid-template-columns:auto minmax(0,1fr) auto}.sf2-row>.muted,.sf2-row>.pillst{display:none}
+  .sf2-acc{grid-template-columns:minmax(0,1fr) auto}.sf2-acc>.muted{display:none}
+}
 /* ---------- Monitor ---------- */
 .mon-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .mon-clock{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:5px 6px 5px 10px}
@@ -4611,11 +4657,19 @@ function vSrvFicha() {
   const f = S.sf, s = S.d.servers.find((x) => x.id === f.id), d = f.data, can = canDo('servers');
   if (!s) return head('Servidor', '') + '<div class="panel"><div class="empty">Ese servidor ya no existe.</div></div>';
   const st = !d ? '<span class="pillst">Comprobando…</span>' : d.error && !d.online ? '<span class="pillst off">Sin conexión</span>' : s.off ? '<span class="pillst mid">Pausado</span>' : '<span class="pillst on">En línea</span>';
-  const tabs = [['cfg', 'Configuración'], ['lib', 'Bibliotecas'], ['scan', 'Escaneo'], ['acc', 'Cuentas del panel'], ['nr', 'No registrados'], ['pkg', 'Paquetes']];
-  const top = `<div class="sf-top"><button class="btn sm ghost" data-view="servidores">← Servidores</button></div>` +
-    head(`${esc(s.name)} ${st}`, d && d.online ? `${esc(d.info.name || 'Emby')} · Emby ${esc(d.info.version)} · responde en ${d.ms} ms` : 'Todo lo de este servidor en un sitio.',
-      `<button class="btn" data-act="sf-refresh"${f.busy ? ' disabled' : ''}>${ic('refresh')}Refrescar</button>${can ? `<button class="btn" data-act="server-edit" data-id="${s.id}">Editar</button>` : ''}`) +
-    `<div class="tabs" role="tablist">${tabs.map(([k, t]) => `<button role="tab" data-act="sf-tab" data-k="${k}" aria-selected="${f.tab === k}">${t}${k === 'nr' && d && d.emby && d.emby.notInPanel ? ` <span class="n">${d.emby.notInPanel}</span>` : ''}</button>`).join('')}</div>`;
+  const mine = S.d.clients.filter((c) => c.serverId === s.id && c.status !== 'trash');
+  const act = mine.filter((c) => !c.demo && !c.off && stage(c) !== 'expired');
+  const libs = (d && d.libraries) || [], titles = libs.reduce((a, l) => a + (l.count || 0), 0);
+  const nOnlyEmby = d && d.emby ? d.emby.notInPanel : null, nMissing = d && d.missing ? d.missing.length : null;
+  const kpi = (icon, n, t, cls = '') => `<div class="sf2-k ${cls}">${ic(icon)}<b>${n}</b><span>${t}</span></div>`;
+  const hero = `<section class="sf2-hero">
+    <div class="sf2-id"><span class="sf2-ic">${ic('server')}</span><div class="sf2-tt"><h1>${esc(s.name)} ${st}</h1>
+      <p>${d && d.online ? `${esc(d.info.name || 'Emby')} · Emby ${esc(d.info.version)} · responde en ${d.ms} ms` : 'Todo lo de este servidor en un sitio.'}</p>${s.publicUrl ? `<p class="sf2-url">${esc(s.publicUrl)}</p>` : ''}</div>
+      <div class="sf2-acts"><button class="btn" data-act="sf-refresh"${f.busy ? ' disabled' : ''}>${ic('refresh')}Refrescar</button>${can ? `<button class="btn" data-act="server-edit" data-id="${s.id}">${ic('edit')}Editar</button>` : ''}</div></div>
+    <div class="sf2-kpis">${kpi('users', mine.filter((c) => !c.demo).length, 'cuentas')}${kpi('screen', act.reduce((a, c) => a + (c.screens || 0), 0), 'pantallas activas')}${kpi('grid', d ? libs.length : '…', 'bibliotecas')}${kpi('film', d ? titles.toLocaleString('es-ES') : '…', 'títulos')}${kpi('alert', nOnlyEmby == null ? '…' : nOnlyEmby, 'solo en Emby', nOnlyEmby ? 'warn' : '')}${kpi('xc', nMissing == null ? '…' : nMissing, 'faltan en Emby', nMissing ? 'bad' : '')}${s.maxClients ? kpi('chart', `${s.used}/${s.maxClients}`, 'del máximo', s.full ? 'bad' : '') : ''}</div>
+  </section>`;
+  const tabs = [['cfg', 'Resumen', 'info'], ['lib', 'Bibliotecas', 'grid'], ['scan', 'Escaneo', 'refresh'], ['acc', 'Cuentas', 'users', mine.length], ['nr', 'Diferencias', 'alert', (nOnlyEmby || 0) + (nMissing || 0)], ['pkg', 'Paquetes', 'box']];
+  const rail = `<nav class="sf2-rail" role="tablist" aria-label="Secciones del servidor">${tabs.map(([k, t, icon, n]) => `<button type="button" role="tab" data-act="sf-tab" data-k="${k}" aria-selected="${f.tab === k}">${ic(icon)}<span>${t}</span>${n ? `<em>${n}</em>` : ''}</button>`).join('')}</nav>`;
   const wait = '<div class="panel"><div class="empty">Consultando a Emby…</div></div>';
   const fail = d && d.error && !d.online ? `<div class="panel pad"><p class="err" style="max-width:none">${esc(d.error)}</p><p class="muted small" style="margin-top:8px">Mira «Estado del servidor» o pulsa Editar si cambiaste la dirección o la API key.</p></div>` : '';
   let body = '';
@@ -4626,7 +4680,7 @@ function vSrvFicha() {
   else if (!d) body = wait;
   else if (fail) body = fail;
   else body = f.tab === 'lib' ? sfLib(d) : sfScan(d);
-  return top + body;
+  return `<div class="sf-top"><button class="btn sm ghost" data-view="servidores">← Servidores</button></div>${hero}<div class="sf2-body">${rail}<div class="sf2-main">${body}</div></div>`;
 }
 function sfCfg(s, d) {
   const can = canDo('servers'), job = S.sf.job;
@@ -4662,24 +4716,42 @@ function sfCfg(s, d) {
 function sfLib(d) {
   if (!d.libraries.length) return '<div class="panel"><div class="empty">Este servidor no tiene bibliotecas.</div></div>';
   const tot = d.libraries.reduce((a, l) => a + (l.count || 0), 0);
-  return `<div class="panel"><table><thead><tr><th>Biblioteca</th><th>Tipo</th><th class="r">Títulos</th><th>Paquete</th><th>Estado</th></tr></thead><tbody>${d.libraries.map((l) => `<tr>
-    <td class="name">${esc(l.name)}</td><td class="muted">${esc(SF_TYPES[l.type] || (l.type ? l.type : '—'))}</td><td class="r">${l.count == null ? '—' : l.count.toLocaleString('es-ES')}</td>
-    <td>${l.basico ? '<span class="pillst on">Básico</span> ' : ''}${l.k4 ? '<span class="pillst on">4K</span>' : ''}${!l.basico && !l.k4 ? '<span class="muted small">En ninguno</span>' : ''}</td>
-    <td>${l.refreshing ? `<span class="pillst mid">Escaneando${l.progress != null ? ' ' + l.progress + '%' : '…'}</span>` : '<span class="muted small">Al día</span>'}</td></tr>`).join('')}</tbody></table>
-    <p class="muted small" style="padding:10px 14px">${plural(d.libraries.length, 'biblioteca', 'bibliotecas')} · ${tot.toLocaleString('es-ES')} títulos (películas, series y vídeos). Lo que va en cada paquete se cambia en la pestaña Paquetes.</p></div>`;
+  return `<p class="muted small" style="margin:0 0 12px">${plural(d.libraries.length, 'biblioteca', 'bibliotecas')} · ${tot.toLocaleString('es-ES')} títulos. Lo que va en cada paquete se cambia en «Paquetes».</p>
+  <div class="sf2-libs">${d.libraries.map((l) => `<article class="sf2-lib">
+    <header><b>${esc(l.name)}</b><span class="sf2-type">${esc(SF_TYPES[l.type] || (l.type ? l.type : 'Biblioteca'))}</span></header>
+    <div class="sf2-lnum"><b>${l.count == null ? '—' : l.count.toLocaleString('es-ES')}</b><span>títulos</span>${l.refreshing ? `<span class="pillst mid">Escaneando${l.progress != null ? ' ' + l.progress + '%' : '…'}</span>` : ''}</div>
+    <div class="sf2-pk">${l.basico ? '<span class="pillst on">Básico</span>' : ''}${l.k4 ? '<span class="pillst on">4K</span>' : ''}${!l.basico && !l.k4 ? '<span class="muted small">En ningún paquete</span>' : ''}</div>
+    <details class="sf2-more"><summary>${ic('note')}Carpetas e identificadores</summary>
+      <dl><dt>Identificador</dt><dd><code>${esc(l.id || '—')}</code></dd><dt>Identificador corto</dt><dd><code>${esc(l.item || '—')}</code></dd></dl>
+      ${(l.locations || []).length ? `<ul class="sf2-paths">${l.locations.map((p) => `<li><code>${esc(p)}</code></li>`).join('')}</ul>` : `<p class="muted small">${l.paths ? plural(l.paths, 'carpeta', 'carpetas') : 'Emby no dice sus carpetas.'}</p>`}
+    </details>
+  </article>`).join('')}</div>`;
 }
 function sfScan(d) {
-  const sc = d.scan, can = canDo('servers'), running = sc && sc.running;
+  const sc = d.scan, can = canDo('servers'), running = sc && sc.running, f = S.sf;
+  if (!f.sel) f.sel = new Set();
   const stTxt = sc ? (sc.status === 'Completed' ? 'terminó bien' : sc.status === 'Failed' ? 'terminó con errores' : sc.status === 'Cancelled' || sc.status === 'Aborted' ? 'se canceló' : '') : '';
+  const a = f.auto || (f.auto = JSON.parse(JSON.stringify(d.autoScan || { on: false, hours: [], items: [] })));
+  const nameOf = (it) => (d.libraries.find((l) => l.item === it) || {}).name || it;
   return `<div class="panel pad sf-scan">
-    <div class="sf-scan-h"><div><b>${running ? `Escaneando bibliotecas${sc.progress != null ? ' · ' + sc.progress + '%' : '…'}` : 'Escaneo de bibliotecas'}</b>
-      <p class="muted small">${sc && sc.last ? `Último escaneo completo: ${fmtTs(sc.last)}${stTxt ? ', ' + stTxt : ''}.` : 'Emby no ha dicho cuándo fue el último escaneo.'} Escanea cuando hayas subido películas o series nuevas para que aparezcan a los clientes.</p></div>
-      ${can ? `<button class="btn primary" data-act="sf-scan"${running ? ' disabled' : ''}>${ic('refresh')}Escanear todas</button>` : ''}</div>
+    <div class="sf-scan-h"><div><b>${running ? `Escaneando bibliotecas${sc.progress != null ? ' · ' + sc.progress + '%' : '…'}` : 'Escanear ahora'}</b>
+      <p class="muted small">${sc && sc.last ? `Último escaneo completo: ${fmtTs(sc.last)}${stTxt ? ', ' + stTxt : ''}.` : 'Emby no ha dicho cuándo fue el último escaneo.'} Escanea cuando subas películas o series nuevas para que las vean los clientes.</p></div>
+      ${can ? `<div class="acts"><button class="btn primary" data-act="sf-scan"${running ? ' disabled' : ''}>${ic('refresh')}Escanear todas</button><button class="btn" data-act="sf-scan-sel" id="sfScanSel"${f.sel.size ? '' : ' disabled'}>${ic('check')}<span>Escanear marcadas (${f.sel.size})</span></button></div>` : ''}</div>
     ${running && sc.progress != null ? `<div class="sf-bar"><i style="width:${sc.progress}%"></i></div>` : ''}
+    <div class="sf2-sel">${can ? `<div class="sf2-sel-h"><button type="button" class="btn sm ghost" data-act="sf-sel-all">Marcar todas</button><button type="button" class="btn sm ghost" data-act="sf-sel-none">Ninguna</button></div>` : ''}
+    ${d.libraries.map((l) => `<div class="sf2-row">${can && l.item ? `<input type="checkbox" name="sfsel" value="${esc(l.item)}" aria-label="Marcar ${esc(l.name)}"${f.sel.has(l.item) ? ' checked' : ''}>` : ''}<span class="sf2-rn">${esc(l.name)}<small>${esc(SF_TYPES[l.type] || '')}${l.paths ? ' · ' + plural(l.paths, 'carpeta', 'carpetas') : ''}</small></span>
+      ${l.refreshing ? `<span class="pillst mid">Escaneando${l.progress != null ? ' ' + l.progress + '%' : '…'}</span>` : '<span class="muted small">Al día</span>'}
+      ${can && l.item ? `<button type="button" class="btn sm" data-act="sf-scan" data-item="${esc(l.item)}" data-name="${esc(l.name)}"${l.refreshing ? ' disabled' : ''}>Escanear</button>` : ''}</div>`).join('')}</div>
   </div>
-  <div class="panel"><table><thead><tr><th>Biblioteca</th><th>Estado</th><th class="r"></th></tr></thead><tbody>${d.libraries.map((l) => `<tr><td class="name">${esc(l.name)}</td>
-    <td>${l.refreshing ? `<span class="pillst mid">Escaneando${l.progress != null ? ' ' + l.progress + '%' : '…'}</span>` : '<span class="muted small">Al día</span>'}</td>
-    <td class="r">${can && l.item ? `<button class="btn sm" data-act="sf-scan" data-item="${esc(l.item)}" data-name="${esc(l.name)}"${l.refreshing ? ' disabled' : ''}>Escanear</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+  ${can ? `<div class="panel pad sf2-auto">
+    <div class="sf2-auto-h"><div><b>${ic('clock')}Escaneo automático</b><p class="muted small">El panel le pide a Emby que escanee solo, todos los días a las horas que elijas.</p></div>
+      <label class="check"><input type="checkbox" id="sfAutoOn"${a.on ? ' checked' : ''}> Encendido</label></div>
+    <div class="sf2-hours">${(a.hours || []).map((h) => `<span class="sf-chip">${esc(h)} <button type="button" class="sf2-x" data-act="sf-auto-del" data-k="${esc(h)}" aria-label="Quitar ${esc(h)}">×</button></span>`).join('') || '<span class="muted small">Todavía no hay horas.</span>'}
+      <span class="sf2-add"><input type="time" id="sfAutoH" value="04:00" aria-label="Hora"><button type="button" class="btn sm" data-act="sf-auto-add">${ic('plus')}Añadir hora</button></span></div>
+    <div class="sf2-which"><label class="check"><input type="radio" name="sfAutoW" value="all"${(a.items || []).length ? '' : ' checked'}> Todas las bibliotecas</label>
+      <label class="check"><input type="radio" name="sfAutoW" value="sel"${(a.items || []).length ? ' checked' : ''}> Solo las marcadas arriba${(a.items || []).length ? `: <span class="muted small">${a.items.map((x) => esc(nameOf(x))).join(', ')}</span>` : ''}</label></div>
+    <button class="btn primary" data-act="sf-auto-save">${ic('check')}Guardar escaneo automático</button>
+  </div>` : ''}`;
 }
 function sfAcc(s) {
   const mine = S.d.clients.filter((c) => c.serverId === s.id);
@@ -4695,11 +4767,21 @@ function sfAcc(s) {
   const tile = (n, t, cls) => `<div class="sf-t ${cls}"><b>${n}</b><span>${t}</span></div>`;
   return `<div class="sf-tiles">${tile(tot.active, 'Activas', 'ok')}${tile(tot.demo, 'Demos', '')}${tile(tot.expired, 'Caducadas', 'warn')}${tile(tot.off, 'Desactivadas', '')}${tile(tot.trash, 'En papelera', 'muted')}</div>
   <div class="panel"><table><thead><tr><th>Vendedor</th><th class="r">Activas</th><th class="r">Demos</th><th class="r">Caducadas</th><th class="r">Total</th></tr></thead><tbody>${rows.map(([uid, r]) => `<tr><td class="name">${esc(userName(uid) || '—')}</td><td class="r">${r.active}</td><td class="r">${r.demo}</td><td class="r">${r.expired}</td><td class="r"><b>${r.all}</b></td></tr>`).join('')}</tbody></table>
-  <div style="padding:10px 14px"><button class="btn sm" data-act="sf-clients">Ver estas cuentas en Clientes</button></div></div>`;
+  <div style="padding:10px 14px"><button class="btn sm" data-act="sf-clients">Ver estas cuentas en Clientes</button></div></div>
+  <div class="panel pad sf2-accl"><div class="sf2-accl-h"><b>${ic('users')}Todas las cuentas de este servidor</b><input type="search" id="sfAccQ" placeholder="Buscar por nombre, usuario, email o vendedor" aria-label="Buscar cuentas"></div>
+    <div class="sf2-acc-list">${mine.filter((c) => c.status !== 'trash').sort((a, b) => a.panelName.localeCompare(b.panelName)).map((c) => { const k = stage(c); return `<div class="sf2-acc" data-q="${esc((c.panelName + ' ' + c.embyName + ' ' + (c.email || '') + ' ' + (userName(c.ownerId) || '')).toLowerCase())}">
+      <div><b>${esc(c.panelName)}</b><small>${esc(c.embyName)}${c.email ? ' · ' + esc(c.email) : ''}</small></div><span class="muted small">${esc(userName(c.ownerId) || '—')}</span><span class="sf2-st st-${k}">${esc(STAGE[k] || k)}</span></div>`; }).join('')}</div></div>`;
 }
 function sfNr(s) {
+  const d = S.sf.data || {}, miss = d.missing;
+  const missBox = `<div class="panel pad sf2-miss"><b>${ic('xc')}Están en el panel pero no en Emby</b>
+    <p class="muted small" style="margin:4px 0 10px">Cuentas del panel en este servidor que Emby ya no tiene: alguien las borró en Emby o se reinstaló el servidor. «Reparar» la vuelve a crear con su contraseña, pantallas y paquete.</p>
+    ${miss == null ? '<p class="muted">Consultando Emby…</p>' : miss.length ? `<div class="sf2-acc-list">${miss.map((c) => `<div class="sf2-acc"><div><b>${esc(c.name)}</b><small>${esc(c.emby)}${c.email ? ' · ' + esc(c.email) : ''}</small></div><span class="muted small">${esc(c.owner || '—')}</span>${canDo('clients') ? `<button class="btn sm" data-act="m-repair" data-id="${c.id}">${ic('wrench')}Reparar</button>` : ''}</div>`).join('')}</div>` : `<p class="sf-note ok" style="margin:0">${ic('check')} Todas las cuentas del panel existen en Emby.</p>`}</div>`;
+  return sfNrEmby(s) + missBox;
+}
+function sfNrEmby(s) {
   const u = S.sf.users;
-  const intro = '<p class="muted small" style="margin-bottom:10px">Usuarios que existen en Emby pero no están en el panel: los creaste a mano en Emby o vienen de otro panel. Puedes traerlos al panel sin gastar créditos.</p>';
+  const intro = '<b style="display:block;margin-bottom:4px">Están en Emby pero no en el panel</b><p class="muted small" style="margin-bottom:10px">Usuarios que existen en Emby pero no están en el panel: los creaste a mano en Emby o vienen de otro panel. Puedes traerlos al panel sin gastar créditos.</p>';
   if (u == null || u === 'busy') return `<div class="panel pad">${intro}<p class="muted">Consultando Emby…</p></div>`;
   if (u.error) return `<div class="panel pad">${intro}<p class="err" style="max-width:none">${esc(u.error)}</p></div>`;
   const list = u.filter((x) => !x.admin);
@@ -5309,6 +5391,8 @@ async function ivLoad(file) {
 function ivCsvText(list) { return '﻿' + [['usuario', 'nombre', 'tipo', 'depende de', 'creditos', 'contraseña'], ...list.map((x) => [x.username, x.name, /^sub/.test(x.role) ? 'subreseller' : 'reseller', x.parent || '', x.credits, x.password])].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n'); }
 function ivDownload(text, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 document.addEventListener('change', (e) => { if (e.target.id === 'ivFile' && e.target.files[0]) ivLoad(e.target.files[0]); });
+document.addEventListener('change', (e) => { if (e.target.name !== 'sfsel') return; const st = S.sf.sel || (S.sf.sel = new Set()); if (e.target.checked) st.add(e.target.value); else st.delete(e.target.value); const b = $('#sfScanSel'); if (b) { b.disabled = !st.size; b.lastChild.textContent = `Escanear marcadas (${st.size})`; } });
+document.addEventListener('input', (e) => { if (e.target.id !== 'sfAccQ') return; const q = e.target.value.trim().toLowerCase(); document.querySelectorAll('.sf2-accl .sf2-acc').forEach((r) => { r.hidden = !!q && !r.dataset.q.includes(q); }); });
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act^="iv-"]'); if (!el) return;
   const a = el.dataset.act, v = S.iv || (S.iv = {});
@@ -7569,6 +7653,19 @@ document.addEventListener('click', (e) => {
     case 'sf-pause': { const s2 = S.d.servers.find((x) => x.id === S.sf.id); if (!s2) break; const off = el.dataset.k === 'off';
       if (off) dConfirm(`Pausar ${s2.name}`, 'Nadie podrá crear cuentas ni demos nuevas en este servidor. Las cuentas que ya tiene siguen funcionando con normalidad.', 'Pausar', () => api('POST', `/api/servers/${s2.id}/pause`, { off: true }), 'Servidor pausado');
       else api('POST', `/api/servers/${s2.id}/pause`, { off: false }).then(() => { toast('Servidor activo para cuentas nuevas'); return reload(); }).catch((x) => toast(x.message, true));
+      break; }
+    case 'sf-scan-sel': { const items = [...(S.sf.sel || [])]; if (!items.length) break; el.disabled = true;
+      api('POST', `/api/servers/${S.sf.id}/scan`, { items }).then(() => { toast(`Escaneando ${plural(items.length, 'biblioteca', 'bibliotecas')}`); S.sf.sel = new Set(); setTimeout(() => sfLoad(true), 1500); }).catch((x) => { el.disabled = false; toast(x.message, true); });
+      break; }
+    case 'sf-sel-all': S.sf.sel = new Set(((S.sf.data || {}).libraries || []).map((l) => l.item).filter(Boolean)); render(); break;
+    case 'sf-sel-none': S.sf.sel = new Set(); render(); break;
+    case 'sf-auto-add': { const v = ($('#sfAutoH') || {}).value; if (!/^\d\d:\d\d$/.test(v || '')) break; const a = S.sf.auto; if (!a.hours.includes(v)) a.hours = [...a.hours, v].sort(); a.on = !!($('#sfAutoOn') || {}).checked || a.on; render(); break; }
+    case 'sf-auto-del': S.sf.auto.hours = S.sf.auto.hours.filter((h) => h !== el.dataset.k); render(); break;
+    case 'sf-auto-save': { const a = S.sf.auto, on = !!($('#sfAutoOn') || {}).checked, w = (document.querySelector('input[name=sfAutoW]:checked') || {}).value;
+      const items = w === 'sel' ? ((S.sf.sel || new Set()).size ? [...S.sf.sel] : (a.items || [])) : [];
+      if (on && !a.hours.length) { toast('Añade al menos una hora.', true); break; }
+      if (w === 'sel' && !items.length) { toast('Marca arriba las bibliotecas que quieres escanear.', true); break; }
+      api('PUT', `/api/servers/${S.sf.id}/autoscan`, { on, hours: a.hours, items }).then((r) => { S.sf.auto = r.autoScan; if (S.sf.data) S.sf.data.autoScan = r.autoScan; toast(r.autoScan.on ? `Escaneo automático a las ${r.autoScan.hours.join(', ')}` : 'Escaneo automático apagado'); render(); }).catch((x) => toast(x.message, true));
       break; }
     case 'sf-scan': { const it = el.dataset.item || '', nm = el.dataset.name || ''; el.disabled = true;
       api('POST', `/api/servers/${S.sf.id}/scan`, { item: it, name: nm }).then(() => { toast(it ? `Escaneando «${nm}»` : 'Escaneo de todas las bibliotecas en marcha'); setTimeout(() => sfLoad(true), 1500); }).catch((x) => { el.disabled = false; toast(x.message, true); });

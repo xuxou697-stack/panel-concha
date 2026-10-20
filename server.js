@@ -2459,7 +2459,7 @@ route('GET', '/api/servers/:id/details', STAFF, async ({ params }) => {
     emby(s, 'GET', '/ScheduledTasks?IsHidden=false').catch(() => null),
     emby(s, 'GET', '/Users').catch(() => null),
   ]);
-  const libs = Array.isArray(vf) ? vf.map((f) => ({ id: String(f.Guid || f.ItemId || f.Id || ''), item: String(f.ItemId || f.Id || ''), name: f.Name, type: f.CollectionType || '', paths: (f.Locations || []).length, refreshing: f.RefreshStatus === 'Active', progress: f.RefreshProgress != null ? Math.round(f.RefreshProgress) : null }))
+  const libs = Array.isArray(vf) ? vf.map((f) => ({ id: String(f.Guid || f.ItemId || f.Id || ''), item: String(f.ItemId || f.Id || ''), name: f.Name, type: f.CollectionType || '', paths: (f.Locations || []).length, locations: (f.Locations || []).slice(0, 40).map(String), refreshing: f.RefreshStatus === 'Active', progress: f.RefreshProgress != null ? Math.round(f.RefreshProgress) : null }))
     : (await embyLibraries(s).catch(() => [])).map((l) => ({ ...l, item: l.id, type: '', paths: 0 }));
   await Promise.all(libs.map(async (l) => {
     l.basico = inPk('basico', l.id); l.k4 = inPk('k4', l.id);
@@ -2476,12 +2476,23 @@ route('GET', '/api/servers/:id/details', STAFF, async ({ params }) => {
     const known = new Set(db.clients.filter((c) => c.serverId === s.id).map((c) => c.embyId));
     const normal = users.filter((u) => !(u.Policy && u.Policy.IsAdministrator));
     out.emby = { users: normal.length, admins: users.length - normal.length, notInPanel: normal.filter((u) => !known.has(u.Id)).length };
+    // al revés: cuentas del panel en este servidor que Emby ya no tiene
+    const inEmby = new Set(users.map((u) => u.Id)), names = new Set(users.map((u) => String(u.Name).toLowerCase()));
+    out.missing = db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash' && !inEmby.has(c.embyId) && !names.has(String(c.embyName).toLowerCase()))
+      .slice(0, 500).map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, email: c.email || '', owner: (db.users.find((u) => u.id === c.ownerId) || {}).name || '' }));
   }
+  out.autoScan = s.autoScan || { on: false, hours: [], items: [] };
   return out;
 });
 /* Escanear bibliotecas: todas, o solo una */
 route('POST', '/api/servers/:id/scan', STAFF, async ({ me, params, body }) => {
   const s = serverById(params.id), lib = str(body.item, 80);
+  const many = Array.isArray(body.items) ? body.items.map((x) => str(String(x), 80)).filter((x) => /^[\w-]+$/.test(x)).slice(0, 60) : [];
+  if (many.length) {
+    for (const it of many) await emby(s, 'POST', `/Items/${it}/Refresh?Recursive=true&MetadataRefreshMode=Default&ImageRefreshMode=Default&ReplaceAllMetadata=false&ReplaceAllImages=false`);
+    await lock(async () => { addLog('servidor', null, `Escaneo de ${plural(many.length, 'biblioteca', 'bibliotecas')} en "${s.name}"`, me); saveDb(); });
+    return { ok: true };
+  }
   if (lib) {
     if (!/^[\w-]+$/.test(lib)) throw new HttpError(400, 'Biblioteca no válida.');
     await emby(s, 'POST', `/Items/${lib}/Refresh?Recursive=true&MetadataRefreshMode=Default&ImageRefreshMode=Default&ReplaceAllMetadata=false&ReplaceAllImages=false`);
@@ -2489,6 +2500,34 @@ route('POST', '/api/servers/:id/scan', STAFF, async ({ me, params, body }) => {
   await lock(async () => { addLog('servidor', null, `Escaneo de ${lib ? 'la biblioteca «' + str(body.name, 60) + '»' : 'todas las bibliotecas'} en "${s.name}"`, me); saveDb(); });
   return { ok: true };
 });
+/* Escaneo automático: a las horas que elijas, todas las bibliotecas o solo algunas */
+route('PUT', '/api/servers/:id/autoscan', STAFF, ({ me, params, body }) => lock(async () => {
+  const s = serverById(params.id);
+  const hours = [...new Set((Array.isArray(body.hours) ? body.hours : []).map(String).filter((h) => /^([01]\d|2[0-3]):[0-5]\d$/.test(h)))].sort().slice(0, 12);
+  const items = (Array.isArray(body.items) ? body.items : []).map((x) => str(String(x), 80)).filter((x) => /^[\w-]+$/.test(x)).slice(0, 60);
+  const on = !!body.on && hours.length > 0;
+  s.autoScan = { on, hours, items };
+  addLog('servidor', null, on ? `Escaneo automático en "${s.name}" a las ${hours.join(', ')} (${items.length ? plural(items.length, 'biblioteca', 'bibliotecas') : 'todas las bibliotecas'})` : `Escaneo automático apagado en "${s.name}"`, me);
+  saveDb();
+  return { ok: true, autoScan: s.autoScan };
+}));
+const autoScanDone = new Map();
+async function autoScanTick() {
+  const hm = new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false });
+  for (const s of db.servers) {
+    const a = s.autoScan;
+    if (!a || !a.on || !(a.hours || []).includes(hm)) continue;
+    const key = `${today()} ${hm}`;
+    if (autoScanDone.get(s.id) === key) continue;
+    autoScanDone.set(s.id, key);
+    try {
+      if ((a.items || []).length) { for (const it of a.items) await emby(s, 'POST', `/Items/${it}/Refresh?Recursive=true&MetadataRefreshMode=Default&ImageRefreshMode=Default&ReplaceAllMetadata=false&ReplaceAllImages=false`); }
+      else await emby(s, 'POST', '/Library/Refresh');
+      await lock(async () => { addLog('servidor', null, `Escaneo automático de las ${hm} en "${s.name}"`, null); saveDb(); });
+    } catch (e) { console.error('Escaneo automático:', s.name, e.message); }
+  }
+}
+setInterval(() => { autoScanTick().catch(() => {}); }, 30000).unref();
 /* Pausar un servidor: sigue funcionando para quien ya tiene cuenta, pero no se crean cuentas nuevas en él */
 route('POST', '/api/servers/:id/pause', STAFF, ({ me, params, body }) => lock(async () => {
   const s = serverById(params.id), off = !!body.off;
