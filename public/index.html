@@ -2272,7 +2272,7 @@ function navSync() {
   if (!st.k) { history.replaceState(navState(), '', '#/' + k); return; }
   if (st.dlg || st.k === k) return; // con una ventana abierta decide su cierre
   // El historial solo tiene dos pasos: la lista de clientes y la pantalla actual. Así «Atrás» siempre vuelve a la lista.
-  if (k === home) { if (st.sub) { NAV.fromPop = false; history.back(); } else history.replaceState(navState(), '', '#/' + k); return; }
+  if (k === home) { if (st.sub) { NAV.fromPop = false; NAV.backPending = true; history.back(); } else history.replaceState(navState(), '', '#/' + k); return; }
   if (st.sub) history.replaceState(navState({ sub: 1 }), '', '#/' + k);
   else history.pushState(navState({ sub: 1 }), '', '#/' + k);
 }
@@ -2289,7 +2289,15 @@ function navDlgClosed() {
     else history.replaceState(navState({ sub: navKey() !== homeKey() ? 1 : undefined }), '', '#/' + navKey()); // la ventana llevó a otra pantalla: ese paso pasa a ser la pantalla nueva
   }, 0);
 }
+/** Abre una ventana cuando termina el cambio de pantalla (si no, el «Atrás» automático la cerraría nada más abrirse) */
+function afterNav(fn) {
+  if (!NAV.backPending) { fn(); return; }
+  let done = false;
+  const go = () => { if (done) return; done = true; window.removeEventListener('popstate', go); NAV.backPending = false; setTimeout(fn, 0); };
+  window.addEventListener('popstate', go); setTimeout(go, 600);
+}
 window.addEventListener('popstate', (e) => {
+  NAV.backPending = false;
   if (NAV.skip) { NAV.skip = false; return; }
   if (dlg.open) { NAV.closing = true; dlg.close(); NAV.closing = false; }
   closeMenu();
@@ -7824,7 +7832,7 @@ document.addEventListener('submit', (e) => {
         S.view = 'cuentas'; S.filter = demo ? 'demo' : 'all'; S.q = ''; S.fOwner = 0; S.fServer = 0;
         await reload(); window.scrollTo(0, 0); toast(demo ? 'Demo creada en Emby' : 'Cliente creado en Emby');
         const created = S.d.clients.find((x) => x.id === r.id);
-        if (created) dMessage(created, common.password, demo ? 'demo' : 'created');
+        if (created) afterNav(() => dMessage(created, common.password, demo ? 'demo' : 'created'));
       })
       .catch((x) => { toast(x.message, true); btn.disabled = false; });
   }
