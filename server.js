@@ -137,6 +137,12 @@ function loadDb() {
     if (c.screens == null) c.screens = 0;
     if (c.quality === undefined) c.quality = null;
   }
+  // Fecha en que cada cliente aceptó el bot de Telegram (para las cuentas enlazadas antes de guardarla, se saca del registro)
+  if (db.clients.some((c) => c.tgChat && !c.tgAt)) {
+    const when = new Map();
+    for (const l of db.log || []) if (l.clientId && l.type === 'aviso' && /^Telegram enlazado para/.test(l.text || '') && !when.has(l.clientId)) when.set(l.clientId, l.ts);
+    for (const c of db.clients) if (c.tgChat && !c.tgAt && when.has(c.id)) c.tgAt = when.get(c.id);
+  }
 }
 /* API keys de Emby cifradas en el disco (AES-256-GCM). La clave vive en data/clave-servidores.key
    (o en la variable SERVER_KEY). En memoria se usan en claro; nunca se mandan al navegador ni a los registros. */
@@ -2217,6 +2223,7 @@ async function telegramPoll() {
           const m = /^\/start\s+(c(\d+)_[0-9a-f]{10})$/i.exec(text);
           const c = m && db.clients.find((x) => x.id === Number(m[2]));
           if (c && tgCode(c) === m[1].toLowerCase()) {
+            if (c.tgChat !== chat || !c.tgAt) c.tgAt = new Date().toISOString();
             c.tgChat = chat;
             addLog('aviso', c, 'Telegram enlazado para recibir avisos', null);
             reply = `Listo, ${c.panelName}. Te avisaré por aquí unos días antes de que caduque tu cuenta. Escribe /stop si no quieres más avisos.`;

@@ -1567,6 +1567,14 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .fz-today{margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#f5a524 30%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#f5a524 10%,var(--surface)),var(--surface) 60%)}
 .fzt-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}.fzt-k{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#f5a524}.fzt-top small{color:var(--muted);font-size:12.5px;margin-left:auto}
 .fzt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fztg{display:flex;align-items:center;gap:14px;width:100%;margin-top:14px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,#2aa1de 40%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#2aa1de 16%,var(--surface)),var(--surface) 70%);color:var(--text);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s}
+.fztg:hover{border-color:#2aa1de}.fztg-i{font-size:26px;flex:none}.fztg-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.fztg-k{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#2aa1de}.fztg-n{font-size:14px}.fztg-n b{font-size:22px;color:#2aa1de;margin-right:2px}.fztg-n small{margin-left:4px}
+.fztg-who{display:flex;flex-wrap:wrap;gap:4px}.fztg-p{font-size:12px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,#2aa1de 18%,transparent)}.fztg-p.more{opacity:.8}
+.fztg-t{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:110px}.fztg-t b{font-size:26px;line-height:1}.fztg-t small{font-size:11px;color:var(--muted)}
+.fztg-bar{width:100%;height:6px;border-radius:9px;background:var(--raised);overflow:hidden}.fztg-bar i{display:block;height:100%;background:#2aa1de;border-radius:9px}
+.fztg-list{display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow:auto}.fztg-r{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:8px 10px;border-radius:10px;background:var(--raised)}.fztg-r small{grid-column:1;color:var(--muted);font-size:12px}.fztg-r time{grid-column:2;grid-row:1/3;align-self:center;font-size:12px;color:var(--muted)}
+@media (max-width:560px){.fztg{gap:10px;padding:10px 12px}.fztg-t{min-width:84px}.fztg-i{font-size:22px}}
 .fzt-b{--c:#19c37d;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));background:color-mix(in srgb,var(--c) 9%,var(--raised));color:var(--text);font:inherit;text-align:left;cursor:pointer;min-width:0}
 .fzt-b:hover{border-color:var(--c)}.fzt-b.demo{--c:#a46bff}.fzt-b.ren{--c:#3fa9f5}
 .fzt-e{font-size:20px;line-height:1}.fzt-b b{font-size:34px;font-weight:800;line-height:1.1;color:var(--c);margin-top:4px}.fzt-l{font-weight:700;font-size:14.5px}
@@ -2616,7 +2624,41 @@ function fzTodayHtml(d) {
     <div class="fzt-top"><span class="fzt-k">Hoy en tu negocio</span><small>se actualiza solo cada minuto</small><button type="button" class="fzt-more" data-act="hoy" data-k="all">Ver detalle ${ic('chev')}</button></div>
     <div class="fzt-grid">${box('alta', '✨', cnt[t].alta === 1 ? 'alta nueva' : 'altas nuevas', 'ok')}${box('demo', '🎁', cnt[t].demo === 1 ? 'demo' : 'demos', 'demo')}${box('renovacion', '🔄', cnt[t].renovacion === 1 ? 'renovación' : 'renovaciones', 'ren')}</div>
     <div class="fzt-bottom">${list}${bars ? `<div class="fzt-wk"><span class="fzt-wt">Altas · 7 días</span>${bars}</div>` : ''}</div>
+    ${fzTgHtml(d, t, y)}
   </section>`;
+}
+/** Bot de Telegram: cuántos clientes lo han aceptado hoy y cuántos lo tienen en total (cada uno ve solo los suyos) */
+function tgStats(d, t, y) {
+  const ymd = (ts) => { const x = new Date(ts); return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`; };
+  const live = d.clients.filter((c) => c.status !== 'trash');
+  const linked = live.filter((c) => c.tgLinked);
+  const base = live.filter((c) => !c.demo);
+  const today = linked.filter((c) => c.tgAt && ymd(c.tgAt) === t), yday = linked.filter((c) => c.tgAt && ymd(c.tgAt) === y);
+  return { linked, today, yday, base: base.length, pct: base.length ? Math.round((linked.filter((c) => !c.demo).length / base.length) * 100) : 0 };
+}
+function fzTgHtml(d, t, y) {
+  if (!(d.settings.notices && d.settings.notices.telegram && d.settings.notices.telegram.bot) || noCli()) return '';
+  const x = tgStats(d, t, y), df = x.today.length - x.yday.length;
+  const cmp = !x.today.length && !x.yday.length ? 'igual que ayer' : df > 0 ? `▲ ${df} más que ayer` : df < 0 ? `▼ ${-df} menos que ayer` : 'igual que ayer';
+  const who = x.today.slice(0, 4).map((c) => `<span class="fztg-p">${esc(c.panelName)}</span>`).join('') + (x.today.length > 4 ? `<span class="fztg-p more">+${x.today.length - 4}</span>` : '');
+  return `<button type="button" class="fztg" data-act="tg-stats" aria-label="Clientes con el bot de Telegram: ver quiénes">
+    <span class="fztg-i" aria-hidden="true">📲</span>
+    <span class="fztg-m"><span class="fztg-k">Bot de Telegram</span>
+      <span class="fztg-n"><b>${x.today.length ? '+' + x.today.length : 0}</b> ${x.today.length === 1 ? 'lo ha aceptado hoy' : 'lo han aceptado hoy'} <small class="fzt-c ${df > 0 ? 'up' : df < 0 ? 'down' : ''}">${cmp}</small></span>
+      ${who ? `<span class="fztg-who">${who}</span>` : ''}</span>
+    <span class="fztg-t"><b>${x.linked.length}</b><small>lo tienen en total</small><span class="fztg-bar" title="${x.pct}% de tus cuentas"><i style="width:${x.pct}%"></i></span><small>${x.pct}% de ${plural(x.base, 'cuenta', 'cuentas')}</small></span>
+  </button>`;
+}
+function dTgStats() {
+  const ymd = (x) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`, now = new Date();
+  const x = tgStats(S.d, ymd(now), ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)));
+  const team = S.d.users.length > 1;
+  const list = [...x.linked].sort((a, b) => String(b.tgAt || '').localeCompare(String(a.tgAt || '')));
+  const when = (c) => c.tgAt ? new Date(c.tgAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'hace tiempo';
+  openDlg({ title: 'Bot de Telegram', submit: 'Cerrar',
+    body: `<p class="muted small" style="margin:0 0 10px">${plural(x.linked.length, 'cliente lo tiene', 'clientes lo tienen')} enlazado (${x.pct}% de tus cuentas). Les llegan solos los avisos antes de caducar. Los más recientes, arriba.</p>
+      <div class="fztg-list">${list.slice(0, 200).map((c) => `<div class="fztg-r"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)}${team && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small><time>${when(c)}</time></div>`).join('') || '<p class="muted">Todavía nadie lo ha aceptado. Al crear una cuenta, en el mensaje para el cliente puedes añadir su enlace de Telegram.</p>'}</div>`,
+    onSubmit: async () => '' });
 }
 /** Pantalla «Hoy en tu negocio»: cada alta, demo y renovación de hoy (o de ayer) con sus datos */
 function vHoy() {
@@ -7581,6 +7623,7 @@ document.addEventListener('click', (e) => {
     case 'al-read': { const ids = alertRows(S.view).filter((x) => !x.read).map((x) => x.id); api('POST', '/api/alerts/read', { ids }).then(async () => { await loadAlerts(); await reload(); toast('Marcadas como leídas'); }).catch((x) => toast(x.message, true)); break; }
     case 'al-csv': alertsCsv(S.view); break;
     case 'al-clear': { const t = AL[S.view].type; dConfirm('Vaciar historial de alertas', t ? `Se borran todas las alertas de ${AL_TYPE[t].toLowerCase()}. No se puede deshacer.` : 'Se borran todas las alertas. No se puede deshacer.', 'Vaciar historial', async () => { await api('POST', '/api/alerts/clear', t ? { type: t } : {}); S.al.data = null; }, 'Historial vaciado'); break; }
+    case 'tg-stats': dTgStats(); break;
     case 'hoy': S.view = 'hoy'; S.hoyK = el.dataset.k || 'all'; if (el.dataset.day != null) S.hoyDay = +el.dataset.day; else S.hoyDay = 0; render(); if (!el.closest('.hoy-bar')) window.scrollTo(0, 0); break;
     case 'al-client': S.view = 'cuentas'; S.filter = 'all'; S.fOwner = 0; S.fServer = 0; S.page = 1; S.q = el.dataset.q || ''; render(); window.scrollTo(0, 0); break;
     case 'combo': {
