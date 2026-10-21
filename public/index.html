@@ -1567,6 +1567,7 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .fz-today{margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#f5a524 30%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#f5a524 10%,var(--surface)),var(--surface) 60%)}
 .fzt-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}.fzt-k{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#f5a524}.fzt-top small{color:var(--muted);font-size:12.5px;margin-left:auto}
 .fzt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.dnw{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;background:color-mix(in srgb,#2aa1de 14%,var(--raised));margin-bottom:12px}.dnw>span{font-size:24px}.dnw b{display:block}.dnw small{color:var(--muted)}.dnw code{word-break:break-all}
 .fztg{display:flex;align-items:center;gap:14px;width:100%;margin-top:14px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,#2aa1de 40%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#2aa1de 16%,var(--surface)),var(--surface) 70%);color:var(--text);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s}
 .fztg:hover{border-color:#2aa1de}.fztg-i{font-size:26px;flex:none}.fztg-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .fztg-k{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#2aa1de}.fztg-n{font-size:14px}.fztg-n b{font-size:22px;color:#2aa1de;margin-right:2px}.fztg-n small{margin-left:4px}
@@ -1901,7 +1902,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-pkg': 'box', 'bulk-scr': 'screen', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -4480,6 +4481,7 @@ function dUserMore(u) {
   const n = S.d.clients.filter((c) => c.ownerId === u.id).length;
   showDlg(u.name, `<div class="mlist">
     ${it('user-info', 'Copiar información', 'Mensaje con sus datos de acceso al panel')}
+    ${it('user-pass', 'Cambiar contraseña', 'Si se le ha olvidado: le pones una nueva')}
     ${it('user-stats', 'Ver estadísticas')}
     ${hasCredits(u) ? it('user-ledger', 'Historial de créditos') + it('user-credits', 'Asignar créditos') + it('user-statement', 'Extracto de cuenta', 'Recargas, pagos, gastos y lo que debe') : ''}
     ${it('user-edit', 'Editar perfil', u.role === 'admin' ? 'Nombre, correo, contraseña, precio y créditos' : staff() ? 'Nombre, contraseña, precio, demos y servidores' : 'Nombre, contraseña y acceso')}
@@ -4490,6 +4492,15 @@ function dUserMore(u) {
     ${it('user-toggle', u.disabled ? 'Activar' : 'Desactivar', u.disabled ? 'Vuelve a dejarle entrar al panel (y, si quieres, a sus cuentas)' : 'Por ejemplo, si no paga: bloquea su acceso y, si quieres, apaga sus cuentas', 'sep')}
     ${it('user-del', 'Eliminar', 'Solo si ya no tiene cuentas ni subresellers', 'bad')}
   </div>`);
+}
+/** Poner una contraseña nueva a un vendedor que la ha olvidado; luego sale el mensaje con sus datos para mandárselo */
+function dUserPass(u) {
+  let pw = '';
+  openDlg({ title: `Contraseña nueva para ${u.name}`, submit: 'Cambiar contraseña',
+    body: `<p class="muted small" style="margin:0 0 10px">Usuario del panel: <b>${esc(u.username)}</b>. Al entrar con ella, el panel le pedirá que se ponga una suya. Se cerrarán las sesiones que tenga abiertas.</p>
+      <label class="f">Contraseña nueva (mínimo 8)<span class="inrow"><input name="password" required minlength="8" autocomplete="off"><button type="button" class="btn" data-act="gen">Generar</button></span></label>`,
+    onSubmit: async (fd) => { pw = fd.get('password'); await api('PUT', `/api/users/${u.id}`, { password: pw }); return `Contraseña de ${u.name} cambiada`; },
+    after: () => { const now = S.d.users.find((x) => x.id === u.id) || u; dVendorMsg(now, pw); } });
 }
 /** Apagar o encender a un admin, reseller o subreseller (por ejemplo, porque no paga) */
 function dUserPower(u) {
@@ -4721,7 +4732,7 @@ function vSrvFicha() {
   const hero = `<section class="sf2-hero">
     <div class="sf2-id"><span class="sf2-ic">${ic('server')}</span><div class="sf2-tt"><h1>${esc(s.name)} ${st}</h1>
       <p>${d && d.online ? `${esc(d.info.name || 'Emby')} · Emby ${esc(d.info.version)} · responde en ${d.ms} ms` : 'Todo lo de este servidor en un sitio.'}</p>${s.publicUrl ? `<p class="sf2-url">${esc(s.publicUrl)}</p>` : ''}</div>
-      <div class="sf2-acts"><button class="btn" data-act="sf-refresh"${f.busy ? ' disabled' : ''}>${ic('refresh')}Refrescar</button>${can ? `<button class="btn" data-act="server-edit" data-id="${s.id}">${ic('edit')}Editar</button>` : ''}</div></div>
+      <div class="sf2-acts"><button class="btn" data-act="sf-refresh"${f.busy ? ' disabled' : ''}>${ic('refresh')}Refrescar</button>${can ? `<button class="btn" data-act="server-edit" data-id="${s.id}">${ic('edit')}Editar</button>` : ''}${staff() && s.publicUrl ? `<button class="btn" data-act="sf-domain" data-id="${s.id}" title="Mandar la dirección nueva por Telegram a los clientes de este servidor">${ic('send')}Avisar del dominio</button>` : ''}</div></div>
     <div class="sf2-kpis">${kpi('users', mine.filter((c) => !c.demo).length, 'cuentas')}${kpi('screen', act.reduce((a, c) => a + (c.screens || 0), 0), 'pantallas activas')}${kpi('grid', d ? libs.length : '…', 'bibliotecas')}${kpi('film', d ? titles.toLocaleString('es-ES') : '…', 'títulos')}${kpi('alert', nOnlyEmby == null ? '…' : nOnlyEmby, 'solo en Emby', nOnlyEmby ? 'warn' : '')}${kpi('xc', nMissing == null ? '…' : nMissing, 'faltan en Emby', nMissing ? 'bad' : '')}${s.maxClients ? kpi('chart', `${s.used}/${s.maxClients}`, 'del máximo', s.full ? 'bad' : '') : ''}</div>
   </section>`;
   const tabs = [['cfg', 'Resumen', 'info'], ['lib', 'Bibliotecas', 'grid'], ['scan', 'Escaneo', 'refresh'], ['acc', 'Cuentas', 'users', mine.length], ['nr', 'Diferencias', 'alert', (nOnlyEmby || 0) + (nMissing || 0)], ['pkg', 'Paquetes', 'box']];
@@ -6561,7 +6572,7 @@ function dMore(c) {
   const grp = (title, items, cls = '') => { const html = items.filter(Boolean).join(''); return html ? `<div class="mgrp ${cls}"><h4>${title}</h4><div class="mgrid2">${html}</div></div>` : ''; };
   showDlg(c.panelName, `<div class="mlist2">
     ${grp('Enviar al cliente', [it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
-    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', staff() && others ? it('m-move', 'Servidor') : ''])}
+    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : ''])}
     ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
     ${grp('Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
       it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'A la papelera'),
@@ -6978,7 +6989,8 @@ function runExport(fmt) {
 const fmt2 = (d) => d.split('-').reverse().join('/');
 
 function dMove(c) {
-  const others = S.d.servers.filter((x) => x.id !== c.serverId);
+  const others = S.d.servers.filter((x) => x.id !== c.serverId && (staff() || !x.off));
+  if (!others.length) { toast('No tienes otro servidor disponible al que pasarla.', true); return; }
   openDlg({
     title: `Transferir ${c.panelName} a otro servidor`, submit: 'Transferir', danger: true,
     body: `<label class="f">Servidor de destino<select name="serverId">${others.map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></label>
@@ -7186,7 +7198,30 @@ function dServer(s) {
       } else await api('POST', '/api/servers', body);
       return 'Conexión con Emby correcta';
     },
+    // si ha cambiado la dirección para clientes, ofrece avisarles al momento
+    after: () => { const np = String(dServer.lastUrl || '').trim(); if (s && np && np !== String(s.publicUrl || '').trim()) { const now = S.d.servers.find((x) => x.id === s.id); if (now) setTimeout(() => dDomainNotice(now, true), 150); } },
   });
+  const prevIn = dlgForm.oninput; dlgForm.oninput = (e) => { dServer.lastUrl = (dlgForm.elements.publicUrl || {}).value; if (prevIn) prevIn(e); };
+  dServer.lastUrl = s ? s.publicUrl || '' : '';
+}
+const DOMAIN_TXT = 'Hola {nombre} 👋\n\nHemos cambiado la dirección del servidor. A partir de ahora entra con esta:\n\n{direccion}\n\nTu usuario ({usuario}) y tu contraseña son los mismos. Si la app te da error, cierra sesión y vuelve a entrar con la dirección nueva.\n\n¡Gracias!';
+/** Avisar a los clientes de un servidor (los que tienen el bot de Telegram) de la dirección nueva */
+async function dDomainNotice(s, justChanged) {
+  if (!s.publicUrl) { toast('Pon primero la «Dirección que das a los clientes» en Editar.', true); return; }
+  let pv = null;
+  try { pv = await api('POST', '/api/broadcast/preview', { who: 'all', serverId: s.id }); } catch (e) { toast(e.message, true); return; }
+  if (!pv.bot) { toast('Configura primero el bot de Telegram en Ajustes › Notificaciones.', true); return; }
+  const n = pv.targets;
+  openDlg({ title: `Avisar del dominio nuevo · ${s.name}`, submit: n ? `Enviar a ${plural(n, 'cliente', 'clientes')}` : 'Enviar',
+    body: `${justChanged ? `<p class="okmsg" style="margin:0 0 10px">Has cambiado la dirección de <b>${esc(s.name)}</b>. ¿Se lo decimos ya a sus clientes?</p>` : ''}
+      <div class="dnw"><span>📢</span><div><b>${n ? plural(n, 'cliente recibirá', 'clientes recibirán') + ' el aviso' : 'Ningún cliente de este servidor tiene el bot de Telegram'}</b><small>Por Telegram, a los clientes de ${esc(s.name)} que tienen el bot enlazado (cuentas y demos en curso). Dirección nueva: <code>${esc(s.publicUrl)}</code></small></div></div>
+      <label class="f">Mensaje (puedes retocarlo)<textarea name="text" rows="9" maxlength="2000">${esc(DOMAIN_TXT)}</textarea></label>
+      <p class="muted small">{nombre}, {usuario} y {direccion} se cambian solos por los datos de cada cliente. A los que no tienen Telegram, tócales el nombre en la lista para copiar sus datos con la dirección nueva.</p>`,
+    onSubmit: async (fd) => {
+      if (!n) throw new Error('No hay a quién enviarlo: ningún cliente de este servidor tiene el bot de Telegram.');
+      const r = await api('POST', '/api/broadcast', { who: 'all', serverId: s.id, text: fd.get('text') });
+      return `Enviando el aviso a ${plural(r.total, 'cliente', 'clientes')}…`;
+    } });
 }
 
 function dPackages(s) {
@@ -7624,6 +7659,7 @@ document.addEventListener('click', (e) => {
     case 'al-csv': alertsCsv(S.view); break;
     case 'al-clear': { const t = AL[S.view].type; dConfirm('Vaciar historial de alertas', t ? `Se borran todas las alertas de ${AL_TYPE[t].toLowerCase()}. No se puede deshacer.` : 'Se borran todas las alertas. No se puede deshacer.', 'Vaciar historial', async () => { await api('POST', '/api/alerts/clear', t ? { type: t } : {}); S.al.data = null; }, 'Historial vaciado'); break; }
     case 'tg-stats': dTgStats(); break;
+    case 'sf-domain': { const sv = S.d.servers.find((x) => x.id === +el.dataset.id); if (sv) dDomainNotice(sv); break; }
     case 'hoy': S.view = 'hoy'; S.hoyK = el.dataset.k || 'all'; if (el.dataset.day != null) S.hoyDay = +el.dataset.day; else S.hoyDay = 0; render(); if (!el.closest('.hoy-bar')) window.scrollTo(0, 0); break;
     case 'al-client': S.view = 'cuentas'; S.filter = 'all'; S.fOwner = 0; S.fServer = 0; S.page = 1; S.q = el.dataset.q || ''; render(); window.scrollTo(0, 0); break;
     case 'combo': {
@@ -7741,6 +7777,7 @@ document.addEventListener('click', (e) => {
     case 'user-new': if (dlg.open) dlg.close(); S.vendorId = 0; S.view = 'vendedor'; render(); window.scrollTo(0, 0); break;
     case 'user-edit': if (usr && usr.role === 'admin') dAdmin(usr); else if (usr) { if (dlg.open) dlg.close(); S.vendorId = usr.id; S.view = 'vendedor'; render(); window.scrollTo(0, 0); } break;
     case 'user-info': if (usr) dVendorMsg(usr, ''); break;
+    case 'user-pass': if (usr) dUserPass(usr); break;
     case 'user-2fa': if (usr) dConfirm(`Quitar la verificación a ${usr.name}`, 'Podrá entrar solo con su contraseña y se cerrarán sus sesiones. Pídele que la vuelva a activar en Ajustes › Seguridad.', 'Quitar verificación', () => api('POST', `/api/users/${usr.id}/reset2fa`, {}), 'Verificación quitada'); break;
     case 'ven-cfg': if (usr) dVenCfg(usr); break;
     case 'user-stats': if (usr) dUserStats(usr); break;

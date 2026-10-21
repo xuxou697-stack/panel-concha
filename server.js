@@ -450,7 +450,39 @@ async function lifecycle() {
 function runLifecycle() { return lock(lifecycle).then(() => lock(telegramNotices)).catch((e) => console.error('Error en la revisión automática:', e.message)); }
 
 /* ---------- Usuarios del panel y permisos ---------- */
-const sessions = new Map(); // token -> { userId, exp }
+const sessions = new Map(); // huella del token -> { userId, exp }
+/* Las sesiones se guardan en data/sesiones.json (solo la huella SHA-256 de cada token, nunca el token):
+   así, al actualizar o reiniciar el panel, nadie tiene que volver a entrar */
+const SES_FILE = path.join(DATA_DIR, 'sesiones.json');
+const tokHash = (t) => crypto.createHash('sha256').update(String(t)).digest('hex');
+let sesTimer = null;
+function saveSessions(now) {
+  if (sesTimer) { clearTimeout(sesTimer); sesTimer = null; }
+  const write = () => {
+    sesTimer = null;
+    try {
+      const out = {}, t = Date.now();
+      for (const [k, v] of sessions) if (v.exp > t) out[k] = v;
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(SES_FILE + '.tmp', JSON.stringify(out), { mode: 0o600 });
+      fs.renameSync(SES_FILE + '.tmp', SES_FILE);
+    } catch (e) { console.error('No se pudieron guardar las sesiones:', e.message); }
+  };
+  if (now) write(); else sesTimer = setTimeout(write, 1500);
+}
+function loadSessions() {
+  try {
+    if (!fs.existsSync(SES_FILE)) return;
+    const data = JSON.parse(fs.readFileSync(SES_FILE, 'utf8')), t = Date.now();
+    for (const [k, v] of Object.entries(data || {})) if (/^[a-f0-9]{64}$/.test(k) && v && v.exp > t && v.userId != null) sessions.set(k, v);
+  } catch (e) { console.error('No se pudieron leer las sesiones guardadas:', e.message); }
+}
+// cualquier alta o baja de sesión se guarda sola en el disco
+{ const set = sessions.set.bind(sessions), del = sessions.delete.bind(sessions), clr = sessions.clear.bind(sessions);
+  sessions.set = (k, v) => { const r = set(k, v); saveSessions(); return r; };
+  sessions.delete = (k) => { const r = del(k); if (r) saveSessions(); return r; };
+  sessions.clear = () => { clr(); saveSessions(); }; }
+setInterval(() => { if (sessions.size) saveSessions(); }, 5 * 60000).unref(); // para guardar también la última actividad
 const loginFails = new Map(); // usuario -> { count, until }
 const isStaff = (u) => u.role === 'super' || u.role === 'admin';
 /* Permisos de cada administrador. El superadministrador los tiene todos.
@@ -516,13 +548,13 @@ const isHttps = (req) => String(req.headers['x-forwarded-proto'] || '').split(',
 function startSession(res, user, secure, req) {
   const token = crypto.randomBytes(32).toString('hex');
   const maxAge = 7 * 24 * 3600;
-  sessions.set(token, { userId: user.id, exp: Date.now() + maxAge * 1000, sid: crypto.randomBytes(6).toString('hex'), created: Date.now(), seen: Date.now(),
+  sessions.set(tokHash(token), { userId: user.id, exp: Date.now() + maxAge * 1000, sid: crypto.randomBytes(6).toString('hex'), created: Date.now(), seen: Date.now(),
     ip: req ? clientIp(req) : '', ua: req ? uaShort(req.headers['user-agent']) : '' });
   res.setHeader('Set-Cookie', `sid=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${maxAge}${secure ? '; Secure' : ''}`); // Secure cuando se entra por HTTPS
 }
 function sessionToken(req) {
   const m = /(?:^|;\s*)sid=([a-f0-9]{64})/.exec(req.headers.cookie || '');
-  return m ? m[1] : null;
+  return m ? tokHash(m[1]) : null; // en memoria y en disco solo se usa la huella
 }
 function currentUser(req) {
   const tok = sessionToken(req);
@@ -3144,9 +3176,15 @@ async function moveClient(me, c, to, passwordIn) {
   addLog('transferida', c, `Transferida de "${from.name}" a "${to.name}".${leftover}`, me);
   return leftover.trim();
 }
-route('POST', '/api/clients/:id/move', STAFF, ({ me, params, body }) => lock(async () => {
+route('POST', '/api/clients/:id/move', '*', ({ me, params, body }) => lock(async () => {
   const c = clientFor(me, params.id);
-  const warning = await moveClient(me, c, serverById(body.serverId), typeof body.password === 'string' ? body.password : '');
+  const to = serverById(body.serverId);
+  if (!isStaff(me)) { // resellers y subresellers: solo a los servidores que tienen asignados, y no cuentas en la papelera
+    if (!serverAllowed(me, to)) throw new HttpError(403, `No tienes permiso para usar el servidor "${to.name}".`);
+    if (to.off) throw new HttpError(400, `El servidor "${to.name}" está pausado ahora mismo.`);
+    if (c.status === 'trash') throw new HttpError(400, 'Está en la papelera: renuévala antes de cambiarla de servidor.');
+  }
+  const warning = await moveClient(me, c, to, typeof body.password === 'string' ? body.password : '');
   saveDb();
   return { ok: true, warning };
 }));
@@ -6335,6 +6373,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 loadDb();
+loadSessions();
 /* Rescate desde la terminal (Coolify › Terminal, o la ventana del servidor):
  *   node server.js clave NUEVACLAVE [usuario]   -> pone una contraseña nueva (por defecto al superadministrador)
  *   node server.js sin2fa [usuario]             -> quita la verificacion en dos pasos (si perdiste el movil)
@@ -6388,7 +6427,7 @@ server.listen(PORT, HOST, () => {
   setInterval(() => { if (++ticks % 60 === 0) { backupDb(); lock(async () => pruneRecords()).catch(() => {}); } if (live()) runLifecycle(); }, CHECK_EVERY_MS);
   if (LIC_CLIENT) { const lLoop = () => { licCheck().finally(() => { const s = licStatus(); setTimeout(lLoop, Number(process.env.LICENSE_MS) || (s && s.state !== 'ok' ? 5 * 60000 : 3600e3)); }); }; setTimeout(lLoop, 2000); }
   // Al apagar (Redeploy en Coolify) se guarda lo pendiente del historial de conexiones
-  for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveConn(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } process.exit(0); });
+  for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveSessions(true); } catch { /* nada */ } try { saveConn(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } process.exit(0); });
   const dLoop = () => { try { licDaily(); } catch (e) { console.error('Licencias:', e.message); } if (live()) try { vpayDaily(); } catch (e) { console.error('Cobros:', e.message); } if (live()) try { dailySummary(); } catch (e) { console.error('Resumen diario:', e.message); } try { expDaily(); } catch (e) { console.error('Gastos:', e.message); } setTimeout(dLoop, Number(process.env.DAILY_MS) || 60000); };
   setTimeout(dLoop, Number(process.env.DAILY_MS) || 30000);
   const qLoop = () => { (live() ? qualityDaily() : Promise.resolve()).catch((e) => console.error('Revisión de calidad:', e.message)).finally(() => setTimeout(qLoop, Number(process.env.QDAILY_MS) || 60000)); };
