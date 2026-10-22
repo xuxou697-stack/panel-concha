@@ -245,6 +245,7 @@ function addLedger(user, delta, text, by, kind, paid) {
 /* ---------- Emby ---------- */
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 async function emby(server, method, p, body) {
+  if (server && server.kind === 'jellyfin') return jelly(server, method, p, body); // Jellyfin va por su propio camino; Emby sigue igual
   let res;
   try {
     // La clave va en la cabecera y también en la dirección (api_key): algunos proxys delante de Emby quitan las cabeceras
@@ -286,6 +287,76 @@ async function emby(server, method, p, body) {
   }
   return data;
 }
+/* ---------- Jellyfin ----------
+ * Jellyfin nació de Emby y su API es casi igual. Aquí se traducen las pocas diferencias para que el resto del panel
+ * (crear, renovar, caducar, reparar, monitor…) funcione igual sin tocar nada de lo que usa Emby:
+ *  - sin el prefijo /emby y con la cabecera Authorization: MediaBrowser Token="…"
+ *  - el límite de pantallas se llama MaxActiveSessions (en Emby, SimultaneousStreamLimit)
+ *  - las bibliotecas se identifican por ItemId (en Emby, Guid)
+ */
+const JF_LISTS = /^\/(Users|Sessions|Library\/VirtualFolders|Library\/SelectableMediaFolders|Library\/MediaFolders)(\?|$)/;
+function jfUserIn(u) { if (u && u.Policy && u.Policy.SimultaneousStreamLimit === undefined) u.Policy.SimultaneousStreamLimit = Number(u.Policy.MaxActiveSessions) || 0; return u; }
+async function jelly(server, method, p, body) {
+  // Jellyfin no tiene /Users/Query: se pide la lista entera y se da por páginas
+  const uq = method === 'GET' && /^\/Users\/Query\?/.exec(p);
+  if (uq) {
+    const q = new URLSearchParams(p.split('?')[1]), start = Number(q.get('StartIndex')) || 0, lim = Number(q.get('Limit')) || 1000;
+    const all = (await jelly(server, 'GET', '/Users')) || [];
+    return { Items: all.slice(start, start + lim), TotalRecordCount: all.length };
+  }
+  let out = body;
+  if (method === 'POST' && /^\/Users\/[^/]+\/Policy$/.test(p) && body) {
+    out = { ...body };
+    if (out.SimultaneousStreamLimit !== undefined) { out.MaxActiveSessions = Number(out.SimultaneousStreamLimit) || 0; delete out.SimultaneousStreamLimit; }
+    delete out.AutoRemoteQuality; // ajuste que solo tiene Emby
+    // Jellyfin exige estos dos campos al guardar la política: si faltan, se ponen los de por defecto
+    if (!out.AuthenticationProviderId) out.AuthenticationProviderId = 'Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider';
+    if (!out.PasswordResetProviderId) out.PasswordResetProviderId = 'Jellyfin.Server.Implementations.Users.DefaultPasswordResetProvider';
+  }
+  let res;
+  const auth = `MediaBrowser Client="Concha", Device="Panel", DeviceId="concha-panel", Version="1.0", Token="${server.apiKey || ''}"`;
+  try {
+    res = await fetch(server.url + p, {
+      method,
+      headers: { Authorization: auth, 'X-Emby-Authorization': auth, 'X-Emby-Token': server.apiKey || '', 'User-Agent': 'Mozilla/5.0 (Concha panel)', Accept: 'application/json', ...(out ? { 'Content-Type': 'application/json' } : {}) },
+      body: out ? JSON.stringify(out) : undefined,
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (e) {
+    const why = e.name === 'TimeoutError' ? 'no responde' : ((e.cause && e.cause.code) || 'sin conexión');
+    const err = new Error(`No se pudo conectar con "${server.name}" (${why}). Revisa que Jellyfin esté encendido y la dirección sea correcta.`);
+    err.embyStatus = 0;
+    throw err;
+  }
+  const text = await res.text();
+  if (!res.ok) {
+    let msg;
+    const web = /<html|<!doctype|cloudflare|nginx|access denied/i.test(text);
+    if ((res.status === 401 || res.status === 403) && web) msg = `Algo delante de "${server.name}" (un cortafuegos o Cloudflare) bloquea al panel antes de llegar a Jellyfin. Usa en «Dirección para el panel» la IP con el puerto (http://IP:8096).`;
+    else if (res.status === 401 || res.status === 403) msg = `"${server.name}" ha rechazado la API key. Crea una nueva en Jellyfin (Panel de control › Claves de API) y pégala aquí.`;
+    else if (res.status === 404) msg = `Jellyfin no encuentra ese usuario o recurso en "${server.name}".`;
+    else msg = `Jellyfin respondió con error ${res.status}${text ? ': ' + text.slice(0, 200) : ''}`;
+    const err = new Error(msg);
+    err.embyStatus = res.status;
+    throw err;
+  }
+  if (!text) return null;
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  if (method === 'GET' && JF_LISTS.test(p) && !Array.isArray(data)) {
+    if (data && Array.isArray(data.Items)) data = data.Items;
+    else { const err = new Error(`"${server.name}" no ha contestado como Jellyfin. Revisa que la «Dirección para el panel» lleve directamente a Jellyfin (mejor la IP con el puerto, por ejemplo http://IP:8096).`); err.embyStatus = 502; throw err; }
+  }
+  // Respuestas con la forma que espera el resto del panel
+  if (method === 'GET' && /^\/Users(\/[^/?]+)?(\?|$)/.test(p)) { if (Array.isArray(data)) data.forEach(jfUserIn); else jfUserIn(data); }
+  if (method === 'GET' && /^\/Library\/VirtualFolders/.test(p) && Array.isArray(data)) data.forEach((f) => { if (!f.Guid && f.ItemId) f.Guid = f.ItemId; });
+  if (method === 'GET' && /^\/Sessions(\?|$)/.test(p) && Array.isArray(data)) data.forEach((x) => { const ti = x && x.TranscodingInfo; if (ti && typeof ti.TranscodeReasons === 'string') ti.TranscodeReasons = ti.TranscodeReasons.split(/\s*,\s*/).filter(Boolean); });
+  if (method === 'POST' && p === '/Users/New') jfUserIn(data);
+  return data;
+}
+const srvKind = (s) => (s && s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby');
+/** Pestaña desde la que se pide algo «para todos» (Emby o Jellyfin). Sin pestaña, vale todo, como siempre */
+const kindMatch = (kind, s) => !(kind === 'emby' || kind === 'jellyfin') || (s && s.kind === 'jellyfin' ? 'jellyfin' : 'emby') === kind;
 function serverById(id) {
   const s = db.servers.find((x) => x.id === Number(id));
   if (!s) throw new HttpError(404, 'Ese servidor ya no existe.');
@@ -1614,7 +1685,7 @@ function userById(id) {
 function clientFor(me, id) {
   const c = db.clients.find((x) => x.id === Number(id));
   const vis = visibleOwners(me);
-  if (!c || (vis && !vis.has(c.ownerId))) throw new HttpError(404, 'Esa cuenta ya no existe en el panel.');
+  if (!c || (vis && !vis.has(c.ownerId)) || jfHidden(me, db.servers.find((x) => x.id === c.serverId))) throw new HttpError(404, 'Esa cuenta ya no existe en el panel.');
   return c;
 }
 
@@ -1688,7 +1759,7 @@ function assertEmbyNameFree(server, embyName) {
 const pubUser = (u) => ({
   id: u.id, username: u.username, name: u.name, role: u.role, mustPw: !!u.mustPw, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, offBy: u.offBy || null, offAt: u.offAt || null, createdAt: u.createdAt,
   lastLogin: u.lastLogin || null, lastSeen: u.lastSeen || null, online: !!u.lastSeen && Date.now() - Date.parse(u.lastSeen) < 3 * 60000 && !(u.lastOut && u.lastOut >= u.lastSeen), renew: u.role === 'reseller' || u.role === 'sub' ? renewRate([u.id]) : null, debt: u.role === 'reseller' || u.role === 'sub' ? debtOf(u).amount : 0,
-  creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [],
+  creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [], platforms: kindsOf(u),
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
   twoFa: !!(u.totp && u.totp.on), tgLinked: !!u.tgChat,
   perms: permsOf(u), useCredits: u.role === 'admin' && !!u.useCredits, tech: !!u.tech, email: u.email || '', currency: u.currency || 'EUR', xtreme: u.xtreme || null,
@@ -1728,7 +1799,17 @@ function readAdminOptions(me, body, u) {
 /** Servidores en los que un usuario puede crear cuentas: lista vacia = todos */
 /** Servidores que un vendedor puede ver: los que tiene asignados (si no tiene, los de su reseller)
  * y aquellos donde ya tenga alguna cuenta suya. El equipo (super y administradores) los ve todos. */
-function serversFor(me) {
+/** Qué puede vender cada usuario: Emby, Jellyfin o los dos. Lo decide el superadministrador en su perfil.
+ *  Por defecto, solo Emby (como siempre). El superadministrador lo ve todo. Un subreseller sin ajuste propio usa el de su reseller. */
+function kindsOf(me) {
+  if (!me || me.role === 'super') return ['emby', 'jellyfin'];
+  let k = Array.isArray(me.platforms) && me.platforms.length ? me.platforms : null;
+  if (!k && me.parentId) { const p = db.users.find((x) => x.id === me.parentId); if (p && Array.isArray(p.platforms) && p.platforms.length) k = p.platforms; }
+  return k || ['emby'];
+}
+const jfHidden = (me, s) => !!s && !kindsOf(me).includes(s.kind === 'jellyfin' ? 'jellyfin' : 'emby');
+function serversFor(me) { return serversFor0(me).filter((s) => !jfHidden(me, s)); }
+function serversFor0(me) {
   if (!me || isStaff(me)) return db.servers;
   let ids = Array.isArray(me.serverIds) && me.serverIds.length ? me.serverIds : null;
   if (!ids && me.parentId) { const p = db.users.find((x) => x.id === me.parentId); if (p && Array.isArray(p.serverIds) && p.serverIds.length) ids = p.serverIds; }
@@ -1736,7 +1817,7 @@ function serversFor(me) {
   const vis = visibleOwners(me), used = new Set(db.clients.filter((c) => c.status !== 'trash' && (!vis || vis.has(c.ownerId))).map((c) => c.serverId));
   return db.servers.filter((x) => ids.includes(x.id) || used.has(x.id));
 }
-function serverAllowed(u, s) { return isStaff(u) || !u.serverIds || !u.serverIds.length || u.serverIds.includes(s.id); }
+function serverAllowed(u, s) { if (jfHidden(u, s)) return false; return isStaff(u) || !u.serverIds || !u.serverIds.length || u.serverIds.includes(s.id); }
 /** Clientes que ocupan sitio en un servidor (todo menos la papelera; las demos también cuentan) */
 const srvLoad = (s) => db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash').length;
 const srvMax = (s) => Math.max(0, Number(s.maxClients) || 0);
@@ -1769,6 +1850,11 @@ function readVendorOptions(me, body, u) {
     u.subCost = n;
   }
   if (body.serverIds !== undefined) u.serverIds = (Array.isArray(body.serverIds) ? body.serverIds.map(Number) : []).filter((id) => db.servers.some((x) => x.id === id));
+  if (body.platforms !== undefined && me.role === 'super') { // solo el superadministrador decide si vende Emby, Jellyfin o los dos
+    const k = (Array.isArray(body.platforms) ? body.platforms : []).filter((x) => x === 'emby' || x === 'jellyfin');
+    if (!k.length) throw new HttpError(400, 'Marca al menos Emby o Jellyfin.');
+    if (k.length === 1 && k[0] === 'emby') delete u.platforms; else u.platforms = [...new Set(k)];
+  }
 }
 function publicData(me) {
   const vis = visibleOwners(me);
@@ -1794,6 +1880,30 @@ function publicData(me) {
     stats.month[l.type][1]++; if (own) stats.month[l.type][0]++;
     if (d === t) { stats.today[l.type][1]++; if (own) stats.today[l.type][0]++; }
     if (l.type !== 'demo' && l.actorId != null) sales.set(l.actorId, (sales.get(l.actorId) || 0) + 1);
+  }
+  // Con servidores Jellyfin, además, las mismas cuentas separadas por Emby y por Jellyfin (para cada pestaña)
+  if (db.servers.some((x) => x.kind === 'jellyfin')) {
+    const kindOfClient = new Map(db.clients.map((c) => [c.id, (db.servers.find((x) => x.id === c.serverId) || {}).kind === 'jellyfin' ? 'jellyfin' : 'emby']));
+    stats.byKind = {};
+    for (const kind of ['emby', 'jellyfin']) {
+      const st = { today: {}, month: {} }, bd = new Map();
+      for (const k of ['alta', 'renovacion', 'demo']) { st.today[k] = [0, 0]; st.month[k] = [0, 0]; }
+      for (let k = 0; k < 30; k++) bd.set(addDays(from, k), { d: addDays(from, k), alta: 0, renovacion: 0 });
+      st.days = [...bd.values()];
+      for (const l of db.log) {
+        const d = localDate(new Date(l.ts));
+        if (d < oldest) break;
+        if (!st.month[l.type]) continue;
+        if (vis && !((l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)) continue;
+        if ((kindOfClient.get(l.clientId) || 'emby') !== kind) continue;
+        if (l.type !== 'demo' && bd.has(d)) bd.get(d)[l.type]++;
+        if (d.slice(0, 7) !== month) continue;
+        const own = l.actorId === me.id;
+        st.month[l.type][1]++; if (own) st.month[l.type][0]++;
+        if (d === t) { st.today[l.type][1]++; if (own) st.today[l.type][0]++; }
+      }
+      stats.byKind[kind] = st;
+    }
   }
   const spent = new Map();
   for (const l of db.ledger) {
@@ -1827,10 +1937,10 @@ function publicData(me) {
     expDue: me.role === 'super' ? expDueCount() : 0,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } } },
     servers: serversFor(me).map((s) => (seeServers
-      ? { id: s.id, name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
-      : { id: s.id, name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
+      ? { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
+      : { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
-    clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId))).map((c) => ({ ...c, tgChat: undefined, tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
+    clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId)) && !jfHidden(me, db.servers.find((x) => x.id === c.serverId))).map((c) => ({ ...c, tgChat: undefined, tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
     log: db.log.filter((l) => l.type !== 'login' && seeClients && (!vis ? true : (l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)).slice(0, 500),
     ledger: db.ledger.filter((l) => (adm && !P.reports ? l.userId === me.id : !vis || vis.has(l.userId))).slice(0, 500),
     lastRun: db.lastRun,
@@ -2150,7 +2260,8 @@ function fillText(text, c) {
     cuando: leftWords(left), dias: String(Math.max(0, left)), pantallas: c.screens ? String(c.screens) : 'sin límite', contenido: c.quality ? QUALITIES[c.quality] : '', 'contraseña': 'la que ya tienes' };
   // Vale {nombre} y también [nombre]; «fecha», «caducidad» y «cliente» se entienden como {vence} y {nombre}
   const alias = { contrasena: 'contraseña', 'dirección': 'direccion', fecha: 'vence', caducidad: 'vence', vencimiento: 'vence', cliente: 'nombre', user: 'usuario' };
-  return String(text || '').replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
+  const out = String(text || '').replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
+  return s.kind === 'jellyfin' ? out.replace(/\bEmby\b/g, 'Jellyfin') : out; // cliente de Jellyfin: el mensaje habla de Jellyfin
 }
 const dueSoon = (c, days, t) => { if (c.demo || c.status !== 'active') return false; const left = diffDays(c.expires, t); return left >= 0 && left <= days; };
 /* 1) Mensaje en la pantalla de Emby, cuando el cliente esta viendo.
@@ -2432,13 +2543,14 @@ route('PUT', '/api/templates', SUPER, ({ body }) => lock(async () => {
 /* Servidores (solo superadministrador) */
 route('POST', '/api/servers', SUPER, ({ me, body }) => lock(async () => {
   const s = { id: 0, name: str(body.name, 60), url: cleanUrl(body.url), publicUrl: str(body.publicUrl, 200), apiKey: str(body.apiKey, 200), packages: {}, maxClients: readMaxClients(body.maxClients, 0) };
+  if (body.kind === 'jellyfin') s.kind = 'jellyfin'; // los servidores Emby no llevan marca: quedan exactamente igual que siempre
   if (!s.name) throw new HttpError(400, 'Ponle un nombre al servidor.');
   if (!s.apiKey) throw new HttpError(400, 'Falta la API key.');
   const info = await emby(s, 'GET', '/System/Info');
   if (info && info.Id) s.embyServerId = String(info.Id).slice(0, 64);
   s.id = newId();
   db.servers.push(s);
-  addLog('servidor', null, `Servidor "${s.name}" conectado (Emby ${info && info.Version ? info.Version : '?'})`, me);
+  addLog('servidor', null, `Servidor "${s.name}" conectado (${srvKind(s)} ${info && info.Version ? info.Version : '?'})`, me);
   saveDb();
   return { ok: true, id: s.id };
 }));
@@ -3109,7 +3221,7 @@ async function repairClient(me, c) {
   const report = [];
   const say = (ok, text) => report.push({ ok, text });
   const info = await emby(s, 'GET', '/System/Info');
-  say(true, `El servidor "${s.name}" responde (Emby ${(info && info.Version) || '?'}).`);
+  say(true, `El servidor "${s.name}" responde (${srvKind(s)} ${(info && info.Version) || '?'}).`);
   const libs = await embyLibraries(s);
   const libName = new Map(libs.map((l) => [l.id, l.name]));
   const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
@@ -3935,6 +4047,7 @@ route('POST', '/api/monitor/broadcast', '*', async ({ me, body }) => {
   let sent = 0, failed = 0;
   for (const s of serversFor(me)) {
     if (only && s.id !== only) continue;
+    if (!kindMatch(body.tab, s)) continue;
     const mine = new Map(db.clients.filter((c) => c.serverId === s.id && c.status !== 'trash' && (!vis || vis.has(c.ownerId))).map((c) => [c.embyId, c]));
     let list;
     try { list = await emby(s, 'GET', '/Sessions?ActiveWithinSeconds=600'); } catch { failed++; continue; }
@@ -4167,7 +4280,8 @@ function bcTargets(me, body) {
   const vis = visibleOwners(me), who = body.who || 'active';
   return db.clients.filter((c) => c.tgChat && (!vis || vis.has(c.ownerId))
     && (who === 'all' ? c.status !== 'trash' || c.demo : who === 'demo' ? c.demo && c.status === 'active' : !c.demo && c.status !== 'trash' && (who !== 'active' || c.status === 'active'))
-    && (!Number(body.serverId) || c.serverId === Number(body.serverId)) && (!Number(body.ownerId) || c.ownerId === Number(body.ownerId)));
+    && (!Number(body.serverId) || c.serverId === Number(body.serverId)) && (!Number(body.ownerId) || c.ownerId === Number(body.ownerId))
+    && kindMatch(body.tab, db.servers.find((x) => x.id === c.serverId)));
 }
 route('POST', '/api/broadcast/preview', '*', ({ me, body }) => {
   const vis = visibleOwners(me);

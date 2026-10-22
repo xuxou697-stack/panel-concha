@@ -1597,6 +1597,19 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 @media (max-width:560px){.fzt-grid{gap:8px}.fzt-b{padding:10px 10px}.fzt-b b{font-size:28px}.fzt-l{font-size:13px}.fzt-c{font-size:11px}.fzt-bottom{grid-template-columns:1fr}.fzt-wk{align-items:flex-start}.fzt-top small{margin-left:0}}
 .fz-live{display:block;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#19c37d 14%,var(--surface)),var(--surface) 60%);transition:border-color .15s,transform .15s}
 .fz-live:hover{border-color:#19c37d;transform:translateY(-1px)}
+.ksw{display:flex;gap:5px;padding:5px;margin:0 0 12px;border-radius:14px;background:var(--raised);border:1px solid var(--line)}
+.ks-b{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 6px;border-radius:10px;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s,color .15s}
+.ks-i{width:14px;height:14px;flex:none}.ks-b.em .ks-i{background:#52b54b;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}.ks-b.jf .ks-i{background:linear-gradient(135deg,#a46bff,#00a4dc);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.ks-b.em[aria-pressed="true"]{background:color-mix(in srgb,#52b54b 22%,transparent);color:#8ee086;box-shadow:inset 0 0 0 1px #52b54b}
+.ks-b.jf[aria-pressed="true"]{background:linear-gradient(120deg,color-mix(in srgb,#a46bff 30%,transparent),color-mix(in srgb,#00a4dc 20%,transparent));color:#d6bfff;box-shadow:inset 0 0 0 1px #a46bff}
+body.jf #main{box-shadow:inset 0 3px 0 #a46bff}
+.ksw.ksw-m{display:none}@media (max-width:860px){.ksw.ksw-m{display:flex;margin:0 0 14px}}
+.kpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.kpick input{position:absolute;opacity:0;pointer-events:none}
+.kp{display:flex;flex-direction:column;align-items:center;gap:3px;padding:14px 8px;border-radius:14px;border:1px solid var(--line);background:var(--raised);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.kp i{width:22px;height:22px;margin-bottom:4px}.kp.em i{background:#52b54b;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}.kp.jf i{background:linear-gradient(135deg,#a46bff,#00a4dc);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.kp small{font-size:12px;color:var(--muted)}
+.kpick input:checked+.kp.em{border-color:#52b54b;box-shadow:0 0 0 2px color-mix(in srgb,#52b54b 40%,transparent)}.kpick input:checked+.kp.jf{border-color:#a46bff;box-shadow:0 0 0 2px color-mix(in srgb,#a46bff 40%,transparent)}
+.kpick input:focus-visible+.kp{outline:2px solid var(--text)}
 .tpt{font:inherit;cursor:pointer;transition:filter .15s,box-shadow .15s,transform .1s}.tpt:hover{filter:brightness(1.18)}.tpt:active{transform:scale(.97)}.tpt.on{box-shadow:0 0 0 2px var(--brand,#3fa9f5)}
 .tpt .tpc{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.65;margin-left:1px;transition:transform .15s}.tpt.on .tpc{transform:rotate(180deg)}
 .tpop{position:fixed;z-index:60;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.45);animation:tpIn .14s ease-out;color:var(--text)}
@@ -1884,6 +1897,8 @@ const RANK = { super: 0, admin: 1, reseller: 2, sub: 3 };
 async function api(method, url, body, opt) {
   // opt.timeout: al arrancar no se espera para siempre (si el servidor no contesta, se avisa y se reintenta)
   let r;
+  // Con Emby y Jellyfin a la vez, lo que se pide «para todos» va solo a la pestaña abierta (sin Jellyfin no se añade nada)
+  if (body && typeof body === 'object' && !Array.isArray(body) && body.tab === undefined && typeof hasJf === 'function' && hasJf()) body = { ...body, tab: kindTab() };
   try { r = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', ...(opt && opt.timeout ? { signal: AbortSignal.timeout(opt.timeout) } : {}) }); }
   catch (e) { throw new Error(e && (e.name === 'TimeoutError' || e.name === 'AbortError') ? 'El servidor tarda demasiado en responder.' : 'No hay conexión con el panel. Revisa tu internet.'); }
   const j = await r.json().catch(() => ({}));
@@ -1896,7 +1911,7 @@ async function api(method, url, body, opt) {
 let toastTimer;
 function toast(msg, bad) {
   const t = $('#toast');
-  t.textContent = msg; t.className = bad ? 'bad' : ''; t.hidden = false;
+  t.textContent = kindTab() === 'jellyfin' ? String(msg).replace(/\bEmby\b/g, 'Jellyfin') : msg; t.className = bad ? 'bad' : ''; t.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, bad ? 6000 : 3200);
 }
 
@@ -2162,7 +2177,7 @@ async function boot() {
 }
 async function start() {
   bootLoading(true);
-  try { S.d = await api('GET', '/api/data', null, { timeout: 30000 }); } // primera carga: con límite de tiempo
+  try { S.d = kindView(await api('GET', '/api/data', null, { timeout: 30000 })); } // primera carga: con límite de tiempo
   finally { bootLoading(false); }
   if (S.d.me.mustPw) return showMustPw();
   $('#gate').hidden = true; $('#app').hidden = false; goHome(); try { history.replaceState(null, '', location.pathname + location.search + '#/' + homeKey()); } catch (e) { /* nada */ } render(); payReturn();
@@ -2206,7 +2221,54 @@ function bootLoading(on) {
   document.body.appendChild(el);
   setTimeout(() => { const t = document.getElementById('bootLdTxt'); if (t) t.textContent = 'Está tardando más de lo normal. Espera un momento…'; }, 6000);
 }
-async function reload() { S.d = await api('GET', '/api/data'); render(); }
+async function reload() { S.d = kindView(await api('GET', '/api/data')); render(); }
+/* ---------- Emby y Jellyfin: dos pestañas con la misma vista ----------
+   Si no hay ningún servidor Jellyfin, el panel es exactamente el de siempre (S.d son los datos tal cual).
+   Si lo hay, cada pestaña ve solo sus servidores, sus clientes y sus movimientos. */
+/* El servidor ya solo manda lo que cada usuario puede vender. Si hay de los dos tipos, salen las pestañas;
+   si solo hay de uno (por ejemplo, un vendedor solo de Jellyfin), se ve ese, sin pestañas. */
+const kindsHere = () => new Set(((S.dAll || {}).servers || []).map((x) => (x.kind === 'jellyfin' ? 'jellyfin' : 'emby')));
+const hasJf = () => kindsHere().size > 1;
+function kindTab() {
+  if (!hasJf()) return kindsHere().has('jellyfin') ? 'jellyfin' : 'emby';
+  if (!S.tab) { try { S.tab = localStorage.getItem('concha_tab') || 'emby'; } catch (e) { S.tab = 'emby'; } }
+  return S.tab === 'jellyfin' ? 'jellyfin' : 'emby';
+}
+function kindView(d) {
+  S.dAll = d;
+  if (!d.servers.some((x) => x.kind === 'jellyfin')) { document.body.classList.remove('jf'); return d; }
+  if (!hasJf()) { document.body.classList.add('jf'); return d; } // solo Jellyfin: todo es suyo
+  const k = kindTab(), mine = (x) => (x.kind || 'emby') === k;
+  const ids = new Set(d.servers.filter(mine).map((x) => x.id));
+  const other = new Set(d.clients.filter((c) => !ids.has(c.serverId)).map((c) => c.id));
+  document.body.classList.toggle('jf', k === 'jellyfin');
+  return { ...d, servers: d.servers.filter(mine), clients: d.clients.filter((c) => ids.has(c.serverId)), log: (d.log || []).filter((l) => !l.clientId || !other.has(l.clientId)), stats: (d.stats && d.stats.byKind && d.stats.byKind[k]) || d.stats };
+}
+/** En la pestaña Jellyfin, los textos que dicen «Emby» pasan a decir «Jellyfin» (en Emby no se toca nada) */
+function jfWords(root) {
+  if (!root || kindTab() !== 'jellyfin') return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentElement && (n.parentElement.closest('.ksw') || n.parentElement.closest('textarea')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+  for (let n = w.nextNode(); n; n = w.nextNode()) if (/Emby/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/\bEmby\b/g, 'Jellyfin');
+  root.querySelectorAll('[placeholder*="Emby"],[title*="Emby"],[aria-label*="Emby"]').forEach((e) => ['placeholder', 'title', 'aria-label'].forEach((a) => { const v = e.getAttribute(a); if (v) e.setAttribute(a, v.replace(/\bEmby\b/g, 'Jellyfin')); }));
+}
+function kindSwitchHtml() {
+  if (!hasJf()) return '';
+  const k = kindTab(), b = (v, t, cls) => `<button type="button" class="ks-b ${cls}" data-act="kind" data-k="${v}" aria-pressed="${k === v}"><span class="ks-i"></span>${t}</button>`;
+  return `<div class="ksw" role="group" aria-label="Emby o Jellyfin">${b('emby', 'Emby', 'em')}${b('jellyfin', 'Jellyfin', 'jf')}</div>`;
+}
+function setKind(k) {
+  S.tab = k === 'jellyfin' ? 'jellyfin' : 'emby';
+  try { localStorage.setItem('concha_tab', S.tab); } catch (e) { /* nada */ }
+  S.d = kindView(S.dAll); S.mon.data = null; S.live = null; S.liveAt = 0; S.fServer = 0; S.mon.srv = 0; S.page = 1; S.sel = new Set();
+  render(); window.scrollTo(0, 0);
+  toast(S.tab === 'jellyfin' ? 'Estás en Jellyfin' : 'Estás en Emby');
+}
+/** Sesiones solo de los servidores de la pestaña abierta */
+function kindSessions(list, byName) {
+  if (!hasJf()) return list;
+  const ids = new Set(S.d.servers.map((x) => x.id)), names = new Set(S.d.servers.map((x) => x.name));
+  return (list || []).filter((x) => (byName ? names.has(x.server) : ids.has(x.serverId)));
+}
 
 /* ---------- Pintado ---------- */
 function render() {
@@ -2221,7 +2283,7 @@ function render() {
     const cur = x.v === S.view && (!x.f || x.f === listF);
     return `<button type="button" data-view="${x.v}"${x.f ? ` data-filter="${x.f}"` : ''}${cur ? ' aria-current="page"' : ''}>${ic(x.i)}<span class="t">${x.t}</span>${x.n ? `<span class="n${x.hot ? ' hot' : ''}">${x.n}</span>` : ''}</button>`;
   };
-  $('#nav').innerHTML = navGroups().map((g) => {
+  $('#nav').innerHTML = kindSwitchHtml() + navGroups().map((g) => {
     if (!g.t) return g.items.map(item).join('');
     const here = g.items.some((x) => x.v === S.view && (!x.f || x.f === listF));
     const open = NAV_OPEN.has(g.k);
@@ -2238,13 +2300,14 @@ function render() {
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
-  try { $('#main').innerHTML = fn(); }
+  try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
     $('#main').innerHTML = `<div class="panel pad" style="max-width:720px"><h2>Esta pantalla no se ha podido mostrar</h2><p class="err" style="max-width:none;margin:10px 0">${esc(ex && ex.message)}</p>
       <p class="muted small">Haz una captura de este mensaje y mándasela a quien te mantiene el panel. El resto del panel sigue funcionando.</p>
       <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" data-view="cuentas" data-filter="all">Ir a Clientes</button>${S.view !== 'resumen' ? '<button class="btn" data-view="resumen">Ir al Resumen</button>' : ''}</div></div>`;
   }
+  document.querySelectorAll('.brand .sub').forEach((x) => { if (/\b(Emby|Jellyfin)\b/.test(x.textContent)) x.textContent = x.textContent.replace(/\b(Emby|Jellyfin)\b/g, kindTab() === 'jellyfin' ? 'Jellyfin' : 'Emby'); });
   if ((S.view === 'pagos' || S.view === 'creditos') && !S.pay && !S.payBusy) loadPay();
   if (S.view === 'seguridad' && !S.sec && !S.secBusy) loadSec();
   if (S.view === 'copias' && !S.bk && !S.bkBusy) loadBk();
@@ -3428,7 +3491,7 @@ function liveHtml() {
 }
 async function loadLive() {
   if (!S.d.servers.length) return;
-  try { S.live = await api('GET', '/api/sessions'); } catch (e) { S.live = { sessions: [], errors: [e.message] }; }
+  try { S.live = await api('GET', '/api/sessions'); S.live.sessions = kindSessions(S.live.sessions, true); } catch (e) { S.live = { sessions: [], errors: [e.message] }; }
   const el = $('#live'); if (el) el.innerHTML = liveHtml();
   const np = $('#nowPlaying'); if (np) np.textContent = S.live.sessions.length;
   const fl = $('#fzLive'); if (fl) fl.innerHTML = fzLiveHtml();
@@ -3584,7 +3647,7 @@ function monPaint() { const el = $('#monBody'); if (!el) return; const a = docum
 async function loadMon() {
   if (S.mon.busy || !S.d.servers.length) return;
   S.mon.busy = true;
-  try { S.mon.data = await api('GET', '/api/monitor'); } catch (e) { S.mon.data = { sessions: [], servers: [], errors: [e.message] }; }
+  try { S.mon.data = await api('GET', '/api/monitor'); if (hasJf()) { const ids = new Set(S.d.servers.map((x) => x.id)); S.mon.data.sessions = kindSessions(S.mon.data.sessions); S.mon.data.servers = (S.mon.data.servers || []).filter((x) => ids.has(x.id)); } } catch (e) { S.mon.data = { sessions: [], servers: [], errors: [e.message] }; }
   S.mon.busy = false; S.mon.left = S.mon.every;
   if (S.view === 'monitor') monPaint();
 }
@@ -4517,8 +4580,11 @@ function vVendedor() {
     <h2 class="sep">Créditos y demos</h2>
     ${chk('allowNegative', u && u.allowNegative, 'Permitir créditos negativos (puede seguir vendiendo sin saldo y te lo debe)')}
     ${chk('allowDemos', u ? u.allowDemos : true, 'Permitir crear demos gratuitas')}
+    ${isSuper() ? `<h2 class="sep">Qué puede vender</h2>
+    <div class="kpick kpick-v"><label><input type="checkbox" name="plat" value="emby"${!u || (u.platforms || ['emby']).includes('emby') ? ' checked' : ''}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="checkbox" name="plat" value="jellyfin"${u && (u.platforms || []).includes('jellyfin') ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Su propia pestaña</small></span></label></div>
+    <p class="muted small" style="margin:-6px 0 12px">Marca uno o los dos. Solo verá los servidores y clientes de lo que marques. Un subreseller usa lo mismo que su reseller.</p>` : ''}
     <h2 class="sep">Servidores disponibles</h2>
-    ${S.d.servers.length ? S.d.servers.map((x) => chk('srv', u && u.serverIds.includes(x.id), esc(x.name)).replace('name="srv"', `name="srv" value="${x.id}"`)).join('') + '<p class="muted small" style="margin-top:6px">Si no marcas ninguno, puede crear cuentas en todos.</p>'
+    ${(S.dAll || S.d).servers.length ? (S.dAll || S.d).servers.map((x) => chk('srv', u && u.serverIds.includes(x.id), esc(x.name)).replace('name="srv"', `name="srv" value="${x.id}"`)).join('') + '<p class="muted small" style="margin-top:6px">Si no marcas ninguno, puede crear cuentas en todos.</p>'
       : '<p class="muted small">Todavía no hay servidores conectados.</p>'}
     </div>`;
   return head(u ? `Perfil de ${esc(u.name)}` : staff() ? 'Crear nuevo vendedor' : 'Crear nuevo subreseller', u ? `${ROLE[u.role]}, entra al panel como ${esc(u.username)}.` : (!staff() && me().subCost ? `Crear un subreseller te cuesta ${plural(me().subCost, 'crédito', 'créditos')}; tienes ${me().credits}. ` : '') + 'Completa sus datos. Empieza con 0 créditos; después se los asignas desde su tarjeta.') + `
@@ -6474,7 +6540,7 @@ function openDlg({ title, body, submit, danger, onSubmit, onOpen, after }) {
   };
   dlgForm.onchange = null; dlgForm.oninput = null;
   if (dlg.open) dlg.close();
-  dlg.showModal(); navDlgOpened();
+  dlg.showModal(); navDlgOpened(); jfWords(dlgForm);
   if (onOpen) onOpen();
 }
 const serverSelect = (sel) => (S.d.servers.length > 1
@@ -6652,7 +6718,7 @@ function showDlg(title, body) {
   dlgForm.onchange = null; dlgForm.oninput = null; dlgForm.onsubmit = (e) => e.preventDefault();
   dlgForm.innerHTML = `<h2>${esc(title)}</h2>${body}<div class="dfoot"><button type="button" class="btn ghost" data-act="close">Cerrar</button></div>`;
   if (dlg.open) dlg.close();
-  dlg.showModal(); navDlgOpened();
+  dlg.showModal(); navDlgOpened(); jfWords(dlgForm);
 }
 function dMore(c) {
   const it = (act, label, hint, cls = '') => `<button type="button" class="mitem ${cls}" data-act="${act}" data-id="${c.id}">${ic(ICON_ACT[act])}<span>${label}${hint ? `<small>${hint}</small>` : ''}</span></button>`;
@@ -7130,7 +7196,8 @@ function fillTpl(key, c, password) {
     vence: c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires),
   };
   const alias = { contrasena: 'contraseña', 'dirección': 'direccion', fecha: 'vence', caducidad: 'vence', vencimiento: 'vence', cliente: 'nombre', user: 'usuario' };
-  return tplText(key).replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
+  const txt = tplText(key).replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
+  return srv.kind === 'jellyfin' ? txt.replace(/\bEmby\b/g, 'Jellyfin') : txt; // cliente de Jellyfin: el mensaje habla de Jellyfin
 }
 async function copyText(text, el) {
   try { await navigator.clipboard.writeText(text); }
@@ -7280,15 +7347,16 @@ function poWire() {
 }
 function dServer(s) {
   openDlg({
-    title: s ? `Editar ${s.name}` : 'Conectar servidor Emby', submit: s ? 'Guardar y probar' : 'Conectar',
-    body: `<label class="f">Nombre<input name="name" required maxlength="60" value="${esc(s ? s.name : 'Emby')}"></label>
+    title: s ? `Editar ${s.name}` : 'Conectar servidor', submit: s ? 'Guardar y probar' : 'Conectar',
+    body: `${s ? '' : `<div class="kpick" role="radiogroup" aria-label="Tipo de servidor"><label><input type="radio" name="kind" value="emby"${kindTab() === 'jellyfin' ? '' : ' checked'}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="radio" name="kind" value="jellyfin"${kindTab() === 'jellyfin' ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Va en su propia pestaña</small></span></label></div>`}
+      <label class="f">Nombre<input name="name" required maxlength="60" value="${esc(s ? s.name : kindTab() === 'jellyfin' ? 'Jellyfin' : 'Emby')}"></label>
       <label class="f">Dirección para el panel<input name="url" required placeholder="http://192.168.0.29:8096" value="${esc(s ? s.url : '')}"></label>
       <label class="f">Dirección que das a los clientes (opcional)<input name="publicUrl" maxlength="200" placeholder="https://emby.tudominio.com" value="${esc(s ? s.publicUrl || '' : '')}"></label>
       <label class="f">API key${s ? ' (vacío = mantener la actual)' : ''}<input name="apiKey" type="password" ${s ? '' : 'required'} autocomplete="off"></label>
       <label class="f">Máximo de clientes (0 = sin límite)<input name="maxClients" type="number" min="0" max="100000" step="1" value="${s ? s.maxClients || 0 : 0}" inputmode="numeric"></label>
-      <p class="muted small">La API key se crea en Emby: Ajustes, Avanzado, Claves de API. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,
+      <p class="muted small">La API key se crea en ${s && s.kind === 'jellyfin' ? 'Jellyfin: Panel de control, Claves de API' : s ? 'Emby: Ajustes, Avanzado, Claves de API' : 'Emby (Ajustes, Avanzado, Claves de API) o en Jellyfin (Panel de control, Claves de API)'}. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,
     onSubmit: async (fd) => {
-      const body = { name: fd.get('name'), url: fd.get('url'), publicUrl: fd.get('publicUrl'), apiKey: fd.get('apiKey'), maxClients: +fd.get('maxClients') || 0 };
+      const body = { name: fd.get('name'), url: fd.get('url'), publicUrl: fd.get('publicUrl'), apiKey: fd.get('apiKey'), maxClients: +fd.get('maxClients') || 0, ...(!s && fd.get('kind') === 'jellyfin' ? { kind: 'jellyfin' } : {}) };
       if (s) {
         try { await api('PUT', `/api/servers/${s.id}`, body); }
         catch (e) { if (e.status !== 409 || !window.confirm(e.message + '\n\n¿Seguro que quieres cambiarlo? Las cuentas del panel están creadas en el servidor anterior.')) throw e; await api('PUT', `/api/servers/${s.id}`, { ...body, confirmOther: true }); }
@@ -7764,6 +7832,7 @@ document.addEventListener('click', (e) => {
     case 'al-csv': alertsCsv(S.view); break;
     case 'al-clear': { const t = AL[S.view].type; dConfirm('Vaciar historial de alertas', t ? `Se borran todas las alertas de ${AL_TYPE[t].toLowerCase()}. No se puede deshacer.` : 'Se borran todas las alertas. No se puede deshacer.', 'Vaciar historial', async () => { await api('POST', '/api/alerts/clear', t ? { type: t } : {}); S.al.data = null; }, 'Historial vaciado'); break; }
     case 'tg-stats': dTgStats(); break;
+    case 'kind': setKind(el.dataset.k); break;
     case 'sf-domain': { const sv = S.d.servers.find((x) => x.id === +el.dataset.id); if (sv) dDomainNotice(sv); break; }
     case 'hoy': S.view = 'hoy'; S.hoyK = el.dataset.k || 'all'; if (el.dataset.day != null) S.hoyDay = +el.dataset.day; else S.hoyDay = 0; render(); if (!el.closest('.hoy-bar')) window.scrollTo(0, 0); break;
     case 'al-client': S.view = 'cuentas'; S.filter = 'all'; S.fOwner = 0; S.fServer = 0; S.page = 1; S.q = el.dataset.q || ''; render(); window.scrollTo(0, 0); break;
@@ -8029,7 +8098,7 @@ document.addEventListener('submit', (e) => {
     if (fd.get('password')) body.password = fd.get('password');
     if (staff()) {
       if (f.elements.parentId && fd.get('parentId') && (editing ? true : role === 'sub')) body.parentId = +fd.get('parentId');
-      Object.assign(body, { creditPrice: +(fd.get('creditPrice') || 0), allowNegative: fd.get('allowNegative') === 'on', allowDemos: fd.get('allowDemos') === 'on', serverIds: fd.getAll('srv').map(Number) });
+      Object.assign(body, { creditPrice: +(fd.get('creditPrice') || 0), allowNegative: fd.get('allowNegative') === 'on', allowDemos: fd.get('allowDemos') === 'on', serverIds: fd.getAll('srv').map(Number), ...(isSuper() && f.querySelector('[name=plat]') ? { platforms: fd.getAll('plat') } : {}) });
     }
     if (editing) body.disabled = fd.get('disabled') === 'on';
     else { body.username = fd.get('username'); body.role = role; }
