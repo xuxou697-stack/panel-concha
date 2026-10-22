@@ -4911,7 +4911,7 @@ route('GET', '/api/monitor', '*', async ({ me }) => {
         const posterId = it.SeriesId && it.SeriesPrimaryImageTag ? it.SeriesId : (it.ImageTags && it.ImageTags.Primary ? it.Id : (it.SeriesId || it.Id || ''));
         out.push({
           id: String(x.Id || ''), serverId: s.id, server: s.name,
-          user: x.UserName || '', client: c ? c.panelName : '', clientId: c ? c.id : null, demo: !!(c && c.demo),
+          user: x.UserName || '', client: c ? c.panelName : '', clientId: c ? c.id : null, demo: !!(c && c.demo), ownerId: c ? c.ownerId : null,
           owner: c && isStaff(me) ? (db.users.find((u) => u.id === c.ownerId) || {}).name || '' : '',
           screens: c ? c.screens || 0 : 0, expires: c ? c.expires || '' : '',
           device: x.DeviceName || '', app: x.Client || '', version: x.ApplicationVersion || '',
@@ -6363,7 +6363,29 @@ route('DELETE', '/api/licenses/:id', SUPER, ({ me, params }) => lock(async () =>
   saveDb(); return { ok: true };
 }));
 /* Lo llaman los paneles alquilados (sin sesión, con su clave) */
-route('POST', '/api/license/check', null, ({ req }) => {
+/** Resumen (solo números y nombres de servidores, sin datos de clientes) que un panel alquilado manda al principal */
+function licStatsOut() {
+  const live = db.clients.filter((c) => c.status !== 'trash');
+  const kind = (s) => (s.kind === 'jellyfin' ? 'jellyfin' : 'emby');
+  return {
+    servers: db.servers.slice(0, 30).map((s) => ({ name: String(s.name || '').slice(0, 40), kind: kind(s), off: !!s.off })),
+    active: live.filter((c) => !c.demo && c.status === 'active').length,
+    expired: live.filter((c) => !c.demo && c.status !== 'active').length,
+    demos: live.filter((c) => c.demo && c.status === 'active').length,
+    vendors: db.users.filter((u) => u.role === 'reseller' || u.role === 'sub').length,
+    admins: db.users.filter((u) => u.role === 'admin').length,
+    newMonth: db.log.filter((l) => l.type === 'alta' && String(l.ts).slice(0, 7) === today().slice(0, 7)).length,
+  };
+}
+function licStatsIn(x) {
+  if (!x || typeof x !== 'object') return null;
+  const n = (v) => Math.max(0, Math.min(1e6, Math.round(Number(v) || 0)));
+  return {
+    servers: (Array.isArray(x.servers) ? x.servers : []).slice(0, 30).map((s) => ({ name: str(String((s && s.name) || ''), 40), kind: s && s.kind === 'jellyfin' ? 'jellyfin' : 'emby', off: !!(s && s.off) })),
+    active: n(x.active), expired: n(x.expired), demos: n(x.demos), vendors: n(x.vendors), admins: n(x.admins), newMonth: n(x.newMonth), at: new Date().toISOString(),
+  };
+}
+route('POST', '/api/license/check', null, ({ req, body }) => {
   const ip = clientIp(req);
   if (LIC_CLIENT) throw new HttpError(404, 'No encontrado.');
   if (ipBlocked(ip)) throw new HttpError(429, 'Demasiados intentos. Espera un rato.');
@@ -6372,6 +6394,7 @@ route('POST', '/api/license/check', null, ({ req }) => {
   if (!l) { ipFail(ip); throw new HttpError(404, 'Clave de licencia no válida.'); }
   const first = !l.lastCheck;
   l.lastCheck = new Date().toISOString(); l.lastIp = ip.slice(0, 45);
+  const st = licStatsIn(body && body.stats); if (st) l.stats = st;
   if (first || !l._saved || Date.now() - l._saved > 3600e3) { l._saved = Date.now(); saveDb(); }
   return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
 });
@@ -6415,7 +6438,7 @@ async function licCheck() {
   if (!LIC_CLIENT || licBusy) return;
   licBusy = true; licTry = Date.now();
   try {
-    const r = await fetch(LIC_SERVER + '/api/license/check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-License-Token': LIC_TOKEN }, body: '{}', signal: AbortSignal.timeout(15000) });
+    const r = await fetch(LIC_SERVER + '/api/license/check', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-License-Token': LIC_TOKEN }, body: JSON.stringify({ stats: licStatsOut() }), signal: AbortSignal.timeout(15000) });
     const j = await r.json().catch(() => ({}));
     const before = licStatus();
     if (r.ok && j.ok && /^\d{4}-\d{2}-\d{2}$/.test(String(j.until))) {

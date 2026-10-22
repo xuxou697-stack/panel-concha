@@ -1570,6 +1570,44 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .dnw{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;background:color-mix(in srgb,#2aa1de 14%,var(--raised));margin-bottom:12px}.dnw>span{font-size:24px}.dnw b{display:block}.dnw small{color:var(--muted)}.dnw code{word-break:break-all}
 .tplro{border:1px solid var(--line);border-radius:12px;margin:0 0 8px;background:var(--raised)}.tplro summary{padding:10px 12px;cursor:pointer;font-weight:600}.tplro pre{margin:0;padding:0 12px 12px;white-space:pre-wrap;font:inherit;font-size:13px;line-height:1.5;color:var(--muted)}
 .tpllock{padding:12px;border-radius:12px;background:color-mix(in srgb,#19c37d 10%,var(--raised));margin-bottom:16px;align-items:flex-start}
+.lst{margin:10px 0 2px;border:1px solid var(--line);border-radius:14px;background:var(--raised);padding:0 12px}.lst summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;cursor:pointer;list-style:none}.lst summary::-webkit-details-marker{display:none}
+.lst-h{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px}.lst-h .ic{width:16px;height:16px;color:#7dd3fc}.lst summary small{color:var(--muted);font-size:12px}.lst[open]{padding-bottom:12px}
+.lst.empty{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12.5px;color:var(--muted);text-align:left}.lst.empty .ic{width:16px;height:16px;flex:none}
+.lks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.lk{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:10px;background:var(--surface);text-align:center}.lk span{font-size:16px}.lk b{font-size:20px;line-height:1.1}.lk small{font-size:11px;color:var(--muted)}.lk.ok b{color:#19c37d}
+.lsv{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.lsv span{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,#52b54b 18%,transparent);color:#8ee086}.lsv span.jf{background:color-mix(in srgb,#a46bff 20%,transparent);color:#d6bfff}.lsv span.off{opacity:.55;text-decoration:line-through}
+.monwho{margin:0 0 14px}
+/* Ticket animado al renovar o crear, antes de la tarjeta del mensaje */
+.cele{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:16px;background:rgba(4,12,13,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:celeIn .25s ease both}
+.cele.out{animation:celeOut .3s ease both}
+.ctk{position:relative;width:min(300px,100%);padding:18px 18px 16px;border-radius:22px;background:linear-gradient(160deg,#16303f,#0f1d27);border:1px solid #2b4a5e;color:#e8f0f6;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden;animation:ctkIn .55s cubic-bezier(.2,1.25,.35,1) both}
+.ctk::after{content:"";position:absolute;inset:-40%;background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.16) 50%,transparent 58%);transform:translateX(-70%);animation:ctkShine 1s ease 1.35s both;pointer-events:none}
+.ctk.go{animation:ctkOut .4s cubic-bezier(.5,0,.8,.3) forwards}
+.ctk-h{display:flex;align-items:center;gap:10px;min-width:0}
+.ctk-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#38bdf8;border:2px solid #38bdf8;background:rgba(56,189,248,.14);flex:none}
+.ctk-h div{min-width:0}.ctk-h b{font-size:16px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ctk-h small{font-size:12px;color:#8ea3b4;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctk-chip{margin-left:auto;flex:none;font-size:11px;font-weight:800;letter-spacing:.04em;padding:4px 9px;border-radius:999px;color:#19c37d;background:rgba(25,195,125,.16);opacity:0;transform:scale(.4);animation:ctkChip .45s cubic-bezier(.2,1.6,.4,1) 1.25s forwards}
+.ctk-l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8ea3b4;margin:16px 0 6px;font-weight:700}
+.ctk-odo{display:flex;font:800 38px/1 ui-monospace,Menlo,Consolas,monospace;height:40px}
+.ctk-odo>span{height:40px;overflow:hidden;width:.62em;text-align:center}
+.ctk-odo>span.sep{width:.5em;color:#8ea3b4}
+.ctk-odo>span.chg{color:#7ff0bb;text-shadow:0 0 16px rgba(25,195,125,.6)}
+.ctk-odo i{display:flex;flex-direction:column;font-style:normal;transition:transform 1s cubic-bezier(.15,.85,.25,1)}
+.ctk-odo i b{height:40px;display:block;font-weight:800}
+.ctk-bar{height:8px;border-radius:99px;background:#1b2b38;margin-top:16px;overflow:hidden;display:flex}
+.ctk-bar i{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#19c37d);transform-origin:left;animation:ctkBar .9s cubic-bezier(.3,.9,.3,1) .5s both}
+.ctk-bar i+i{background:linear-gradient(90deg,#19c37d,#7ff0bb);animation-delay:1.05s;animation-duration:.7s}
+.ctk-p{margin-top:8px;font-size:12.5px;color:#8ea3b4;display:flex;justify-content:space-between}
+.ctk-p b{color:#7ff0bb}
+dialog.pop[open]{animation:ctkUnfold .55s cubic-bezier(.2,1,.3,1) both}
+textarea.typing{caret-color:transparent}
+@keyframes celeIn{from{opacity:0}}@keyframes celeOut{to{opacity:0}}
+@keyframes ctkIn{from{opacity:0;transform:translateY(40px) scale(.85) rotate(-3deg)}}
+@keyframes ctkOut{to{opacity:0;transform:translateY(-30px) scale(1.08);filter:blur(6px)}}
+@keyframes ctkShine{to{transform:translateX(70%)}}
+@keyframes ctkChip{to{opacity:1;transform:scale(1)}}
+@keyframes ctkBar{from{transform:scaleX(0)}}
+@keyframes ctkUnfold{from{clip-path:inset(38% 20% 38% 20% round 22px);opacity:.3;transform:scale(.96)}to{clip-path:inset(0 0 0 0 round 10px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.cele,.cele *,dialog.pop[open]{animation:none!important;transition:none!important}.ctk::after{display:none}.ctk-chip{opacity:1;transform:none}}
 .fztg{display:flex;align-items:center;gap:14px;width:100%;margin-top:14px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,#2aa1de 40%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#2aa1de 16%,var(--surface)),var(--surface) 70%);color:var(--text);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s}
 .fztg:hover{border-color:#2aa1de}.fztg-i{font-size:26px;flex:none}.fztg-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .fztg-k{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#2aa1de}.fztg-n{font-size:14px}.fztg-n b{font-size:22px;color:#2aa1de;margin-right:2px}.fztg-n small{margin-left:4px}
@@ -3507,9 +3545,21 @@ const RES_COLOR = { '4K': '#c27bff', '1080p': '#3fa9f5', '720p': '#14b8c4', SD: 
 const hms = (ticks) => { const t = Math.floor((ticks || 0) / 1e7), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), x = t % 60; return (h ? h + ':' + pad2(m) : m) + ':' + pad2(x); };
 const pad2 = (n) => String(n).padStart(2, '0');
 const mbps = (b) => (b ? (b / 1e6 >= 10 ? Math.round(b / 1e6) : (b / 1e6).toFixed(1)) + ' Mbps' : '—');
+/** Mías / De mis subresellers (o vendedores): para ver solo lo de uno mismo */
+function monWho(list) {
+  const w = S.mon.who || 'all', id = me().id;
+  return w === 'mine' ? list.filter((x) => x.ownerId === id) : w === 'subs' ? list.filter((x) => x.ownerId != null && x.ownerId !== id) : list;
+}
+function monWhoBar(all) {
+  const id = me().id, mine = all.filter((x) => x.ownerId === id).length, other = all.filter((x) => x.ownerId != null && x.ownerId !== id).length;
+  if (!other && (S.mon.who || 'all') === 'all') return '';
+  const w = S.mon.who || 'all', lbl = staff() ? 'De mis vendedores' : 'De mis subresellers';
+  const b = (k, t, n) => `<button type="button" data-act="mon-who" data-k="${k}" aria-pressed="${w === k}">${t}<em>${n}</em></button>`;
+  return `<div class="whobar monwho" role="group" aria-label="De quién son las reproducciones">${b('all', 'Todas', all.length)}${b('mine', 'Mías', mine)}${b('subs', lbl, other)}</div>`;
+}
 function monRows() {
   const f = S.mon, q = f.q.trim().toLowerCase();
-  return (S.mon.data ? S.mon.data.sessions : []).filter((x) => (!f.srv || x.serverId === f.srv)
+  return monWho(S.mon.data ? S.mon.data.sessions : []).filter((x) => (!f.srv || x.serverId === f.srv)
     && (f.st === 'all' || (f.st === 'play' ? !x.paused : x.paused))
     && (f.tr === 'all' || (f.tr === 'video' ? x.trVideo : f.tr === 'yes' ? x.transcode : !x.transcode))
     && (f.res === 'all' || x.res === f.res)
@@ -3530,7 +3580,7 @@ function vMonitor() {
 function monBody() {
   const f = S.mon, d = f.data;
   if (!d) return '<div class="panel"><div class="empty">Consultando Emby…</div></div>';
-  const all = d.sessions, rows = monRows();
+  const everyone = d.sessions, all = monWho(everyone), rows = monRows();
   const play = all.filter((x) => !x.paused), bw = play.reduce((n, x) => n + (x.bitrate || 0), 0);
   const okSrv = d.servers.filter((s) => s.ok).length;
   const k = (key, val, label, icon, c, on) => `<button type="button" data-act="mon-k" data-k="${key}" style="--c:${c}" aria-pressed="${!!on}">${ic(icon)}<b>${val}</b><span>${label}</span></button>`;
@@ -3553,7 +3603,7 @@ function monBody() {
     ${sel('monKind', f.kind, [['all', 'Películas y series'], ['pelicula', 'Películas'], ['serie', 'Series'], ['tv', 'TV en directo']], 'Tipo')}</div>`;
   const errs = d.errors.map((e) => `<p class="err" style="max-width:none;margin-bottom:10px">${esc(e)}</p>`).join('');
   const empty = !all.length ? 'Nadie está reproduciendo nada ahora mismo.' : 'Ninguna reproducción coincide con los filtros.';
-  return errs + kpis + srv + fil + (rows.length ? `<div class="mgrid">${rows.map(monCard).join('')}</div>` : `<div class="panel"><div class="empty">${empty}</div></div>`);
+  return errs + monWhoBar(everyone) + kpis + srv + fil + (rows.length ? `<div class="mgrid">${rows.map(monCard).join('')}</div>` : `<div class="panel"><div class="empty">${empty}</div></div>`);
 }
 /* Por qué convierte Emby una reproducción: lo traduce y da un consejo */
 const TR_REASON = {
@@ -6143,6 +6193,7 @@ function vLicencias() {
       <div class="lbig"><div><small>Pagado hasta</small><b>${fmt(l.until)}</b></div><div class="r"><small>${l.price ? eur(l.price) + ' / mes' : 'sin precio'}</small><em class="${stCls}">${licLeftTxt(l)}</em></div></div>
       <div class="lbar"><i class="${stCls}" style="width:${l.state === 'ok' || l.state === 'soon' ? done : 100}%"></i></div>
       <div class="lmeta">${l.contact ? `<span>${ic('send')}${esc(l.contact)}</span>` : ''}<span class="${l.online ? 'on' : ''}">${ic('signal')}${l.lastCheck ? (l.online ? 'Conectado' : 'Última conexión ' + whenShort(l.lastCheck)) : 'Aún no se ha conectado'}</span></div>
+      ${licStatsHtml(l)}
       ${l.notes ? `<p class="lnote">${esc(l.notes)}</p>` : ''}
       <div class="acts"><button class="btn sm primary" data-act="lic-renew" data-id="${l.id}">${ic('refresh')}Renovar</button><button class="btn sm" data-act="lic-edit" data-id="${l.id}">${ic('edit')}Editar</button><button class="btn sm" data-act="lic-msg" data-id="${l.id}">${ic('copy')}Datos de acceso</button><button class="btn sm ghost" data-act="lic-more" data-id="${l.id}">Más…</button></div>
     </article>`;
@@ -6214,6 +6265,17 @@ function licMore(id) {
   showDlg(l.name, `<div class="mgrid2">${it('lic-block', l.blocked ? 'play' : 'pause', l.blocked ? 'Desbloquear' : 'Bloquear ya', l.blocked ? 'vuelve a funcionar al momento' : 'su panel se pausa en unos minutos')}${it('lic-token', 'key', 'Clave nueva', 'si la perdiste; hay que cambiarla en Coolify')}${it('lic-del', 'trash', 'Borrar licencia', 'su panel se pausará', 'danger')}</div>
     <h3 style="margin:16px 0 8px">Pagos</h3><div class="ctl">${pays.length ? pays.map((p) => `<div class="strow"><span class="d">${whenShort(p.at)}</span><span class="t">${plural(p.months, 'mes', 'meses')}${p.method ? ' · ' + esc(p.method) : ''} · hasta el ${fmt(p.until)}</span><b class="plus">${eur(p.amount || 0)}</b></div>`).join('') : '<div class="empty" style="padding:14px 0">Sin pagos apuntados.</div>'}</div>
     ${l.lastIp ? `<p class="small muted" style="margin-top:10px">Última conexión de su panel: ${whenShort(l.lastCheck)}</p>` : ''}`);
+}
+/** Lo que hay dentro de un panel alquilado (solo números y nombres de servidores, lo manda su panel cada hora) */
+function licStatsHtml(l) {
+  const x = l.stats;
+  if (!x) return `<div class="lst empty">${ic('chart')}<span>Sin datos de su panel todavía. Aparecen cuando su panel tenga la última versión (Redeploy en Coolify).</span></div>`;
+  const em = x.servers.filter((s) => s.kind !== 'jellyfin').length, jf = x.servers.length - em;
+  const k = (icon, n, t, cls = '') => `<div class="lk ${cls}"><span>${icon}</span><b>${n}</b><small>${t}</small></div>`;
+  return `<details class="lst"><summary><span class="lst-h">${ic('chart')}Su panel por dentro</span><small>actualizado ${whenShort(x.at)}</small></summary>
+    <div class="lks">${k('🖥️', x.servers.length, x.servers.length === 1 ? 'servidor' : 'servidores')}${k('👥', x.active, x.active === 1 ? 'cuenta activa' : 'cuentas activas', 'ok')}${k('⏳', x.expired, x.expired === 1 ? 'caducada' : 'caducadas')}${k('🎁', x.demos, x.demos === 1 ? 'demo' : 'demos')}${k('🧑‍💼', x.vendors, x.vendors === 1 ? 'vendedor' : 'vendedores')}${k('✨', x.newMonth, 'altas este mes')}</div>
+    ${x.servers.length ? `<div class="lsv">${x.servers.map((s) => `<span class="${s.kind === 'jellyfin' ? 'jf' : 'em'}${s.off ? ' off' : ''}" title="${s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby'}${s.off ? ' · pausado' : ''}">${esc(s.name)}</span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${em ? plural(em, 'servidor Emby', 'servidores Emby') : ''}${em && jf ? ' · ' : ''}${jf ? plural(jf, 'servidor Jellyfin', 'servidores Jellyfin') : ''}${x.admins ? ' · ' + plural(x.admins, 'administrador', 'administradores') : ''}</p>` : '<p class="small muted" style="margin:6px 0 0">Todavía no ha conectado ningún servidor.</p>'}
+  </details>`;
 }
 /** Mensaje con la dirección, el usuario y la contraseña de su panel, listo para copiar y mandar al cliente.
     La contraseña se escribe aquí solo para el mensaje: el panel no la guarda. */
@@ -6652,6 +6714,7 @@ function dDemo() {
 }
 
 function dRenew(c) {
+  const prevExp = c.expires;
   const fromToday = c.demo || diff(c.expires, S.d.today) < 0;
   const base = fromToday ? S.d.today : c.expires;
   const from = c.demo ? 'Cuenta desde hoy.' : fromToday ? 'Ya venció, así que cuenta desde hoy.' : 'Se suma a su vencimiento actual.';
@@ -6687,7 +6750,7 @@ function dRenew(c) {
       return `${c.demo ? 'Convertida en cuenta' : 'Extendida'} hasta el ${fmt(r.expires)}`;
     },
     // Al terminar, el mensaje listo para enviar al cliente
-    after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) dMessage(now, '', 'renewed'); },
+    after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) celebrateThen('renew', now, () => dMessage(now, '', 'renewed'), prevExp); },
   });
 }
 
@@ -7224,6 +7287,63 @@ async function copyText(text, el) {
   catch (e) { el.focus(); el.select(); if (!document.execCommand('copy')) throw new Error('No se pudo copiar solo. El texto está seleccionado: cópialo a mano.'); }
 }
 /** Mensaje listo para enviar al cliente. La contraseña solo se conoce justo al crear la cuenta. */
+/** Ticket animado (opción A): la fecha rueda hasta la nueva, se llena la barra y luego se abre el mensaje escribiéndose solo */
+function celeDate(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; }
+function celePlus(days, demo) {
+  if (demo) return 'Demo';
+  if (days < 28) return `+${plural(days, 'día', 'días')}`;
+  const m = Math.round(days / 30.4); return `+${m} ${m === 1 ? 'mes' : 'meses'}`;
+}
+function celebrate(kind, c, prevExp) {
+  return new Promise((res) => {
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const today = S.d.today, to = celeDate(c.expires) || celeDate(today);
+    const base = prevExp && diff(prevExp, today) > 0 ? prevExp : today;
+    const before = Math.max(0, diff(base, today)), added = Math.max(1, diff(c.expires, base));
+    const frac = kind === 'renew' ? Math.min(.8, before / (before + added)) : 0;
+    const from = kind === 'renew' && prevExp ? celeDate(prevExp) : to.replace(/\d/g, '0');
+    const srv = (S.d.servers.find((x) => x.id === c.serverId) || {}).name || '';
+    const chip = kind === 'renew' ? 'RENOVADA' : kind === 'demo' ? 'DEMO' : 'CREADA';
+    const odo = [...to].map((ch, i) => {
+      if (!/\d/.test(ch)) return `<span class="sep">${esc(ch)}</span>`;
+      const f = /\d/.test(from[i] || '') ? from[i] : '0', seq = [f];
+      if (!reduce) for (let k = 1; k < 6 + i * 2; k++) seq.push(String(Math.floor(Math.random() * 10)));
+      seq.push(ch);
+      return `<span${f !== ch ? ' class="chg"' : ''}><i>${seq.map((d) => `<b>${d}</b>`).join('')}</i></span>`;
+    }).join('');
+    const el = document.createElement('div');
+    el.className = 'cele'; el.setAttribute('role', 'status');
+    el.innerHTML = `<div class="ctk"><div class="ctk-h"><span class="ctk-av">${esc((c.panelName || '?').trim().charAt(0).toUpperCase())}</span><div><b>${esc(c.panelName || '')}</b><small>${esc([c.embyName, srv].filter(Boolean).join(' · '))}</small></div><span class="ctk-chip">✔ ${chip}</span></div>
+      <div class="ctk-l">${kind === 'renew' ? 'Nuevo vencimiento' : 'Vence'}</div><div class="ctk-odo">${odo}</div>
+      <div class="ctk-bar">${frac ? `<i style="width:${Math.round(frac * 100)}%"></i>` : ''}<i style="width:${Math.round((1 - frac) * 100)}%"></i></div>
+      <div class="ctk-p"><span>Hoy</span><b>${celePlus(added, kind === 'demo')}</b></div></div>`;
+    document.body.appendChild(el);
+    const cols = el.querySelectorAll('.ctk-odo i');
+    const roll = () => cols.forEach((x, i) => { x.style.transitionDelay = (i * 60) + 'ms'; x.style.transform = `translateY(-${(x.children.length - 1) * 40}px)`; });
+    if (reduce) { roll(); setTimeout(() => { el.remove(); res(); }, 900); return; }
+    setTimeout(roll, 380);
+    setTimeout(() => el.querySelector('.ctk').classList.add('go'), 2350);
+    setTimeout(() => { el.classList.add('out'); }, 2450);
+    setTimeout(() => { el.remove(); res(); }, 2700);
+  });
+}
+/** El mensaje se escribe solo (rápido). Si tocas el texto o copias, se completa al momento. */
+function typeMsg() {
+  const ta = $('textarea[name=msg]', dlgForm);
+  if (!ta || !ta.value || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  const full = ta.value, stepN = Math.max(2, Math.ceil(full.length / 45));
+  let i = 0, stop = false;
+  const finish = () => { if (stop) return; stop = true; ta.value = full; ta.classList.remove('typing'); };
+  ['focus', 'pointerdown', 'keydown'].forEach((e) => ta.addEventListener(e, finish, { once: true }));
+  dlgForm.addEventListener('submit', finish, { once: true, capture: true });
+  dlgForm.addEventListener('change', finish, { once: true, capture: true });
+  ta.classList.add('typing'); ta.value = '';
+  const step = () => { if (stop) return; i += stepN; ta.value = full.slice(0, i); if (i < full.length) setTimeout(step, 16); else finish(); };
+  setTimeout(step, 280);
+}
+function celebrateThen(kind, c, fn, prevExp) {
+  celebrate(kind, c, prevExp).then(() => { fn(); dlg.classList.add('pop'); setTimeout(() => dlg.classList.remove('pop'), 600); setTimeout(typeMsg, 30); });
+}
 function dMessage(c, password, key) {
   const srv = S.d.servers.find((x) => x.id === c.serverId) || {};
   const wa = waNum(c.whatsapp);
@@ -7716,6 +7836,7 @@ document.addEventListener('click', (e) => {
   if (a === 'sec-close' || a === 'sec-closeall') { api('POST', '/api/security/sessions/close', a === 'sec-closeall' ? { all: true } : { sid: el.dataset.sid }).then((r) => { toast(r.closed === 1 ? 'Sesión cerrada' : `${r.closed} sesiones cerradas`); loadSec(); }, (x) => toast(x.message, true)); return; }
   if (a === 'mon-reload') { loadMon(); return; }
   if (a === 'mon-auto') { S.mon.auto = !S.mon.auto; S.mon.left = S.mon.every; el.setAttribute('aria-pressed', S.mon.auto); el.textContent = S.mon.auto ? '⏸ Pausar monitorización' : '▶ Iniciar monitorización'; if (S.mon.auto) loadMon(); const l = $('#monLeft'); if (l) l.textContent = S.mon.auto ? S.mon.left + ' s' : 'pausa'; return; }
+  if (a === 'mon-who') { S.mon.who = el.dataset.k; monPaint(); return; }
   if (a === 'mon-k') { const k = el.dataset.k, f = S.mon; if (k === 'all') Object.assign(f, { st: 'all', tr: 'all', kind: 'all' }); else if (k === 'play' || k === 'pause') f.st = f.st === k ? 'all' : k; else if (k === 'tr') f.tr = f.tr === 'yes' ? 'all' : 'yes'; else if (k === 'trv') f.tr = f.tr === 'video' ? 'all' : 'video'; else f.kind = f.kind === k ? 'all' : k; monPaint(); return; }
   if (a === 'mon-srv') { S.mon.srv = S.mon.srv === id ? 0 : id; monPaint(); return; }
   if (a === 'mon-stop') { monStop(el); return; }
@@ -8107,7 +8228,7 @@ document.addEventListener('submit', (e) => {
         S.view = 'cuentas'; S.filter = demo ? 'demo' : 'all'; S.q = ''; S.fOwner = 0; S.fServer = 0;
         await reload(); window.scrollTo(0, 0); toast(demo ? 'Demo creada en Emby' : 'Cliente creado en Emby');
         const created = S.d.clients.find((x) => x.id === r.id);
-        if (created) afterNav(() => dMessage(created, common.password, demo ? 'demo' : 'created'));
+        if (created) afterNav(() => celebrateThen(demo ? 'demo' : 'created', created, () => dMessage(created, common.password, demo ? 'demo' : 'created')));
       })
       .catch((x) => { toast(x.message, true); btn.disabled = false; });
   }
