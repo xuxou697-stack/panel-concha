@@ -137,6 +137,12 @@ function loadDb() {
     if (c.screens == null) c.screens = 0;
     if (c.quality === undefined) c.quality = null;
   }
+  // Una sola vez (v130): los mensajes propios de los vendedores vuelven a ser los del superadministrador.
+  // Los suyos se guardan aparte (templatesOld) por si acaso; pueden volver a personalizarlos cuando quieran.
+  if (!db.settings.tplReset1) {
+    for (const u of db.users) if (u.role !== 'super' && u.templates) { u.templatesOld = u.templates; delete u.templates; }
+    db.settings.tplReset1 = true;
+  }
   // Fecha en que cada cliente aceptó el bot de Telegram (para las cuentas enlazadas antes de guardarla, se saca del registro)
   if (db.clients.some((c) => c.tgChat && !c.tgAt)) {
     const when = new Map();
@@ -1806,13 +1812,13 @@ function publicData(me) {
   return {
     today: today(), now: new Date().toISOString(),
     me: pubUser(me),
-    myTemplates: me.templates || {},
+    myTemplates: tplLocked() ? {} : me.templates || {}, // con «mismos mensajes para todos» se guardan, pero no se usan
     myPayOffer: me.payOffer || null,
     salesEmail: salesEmail(),
     parentPayOffer: me.parentId ? payOfferFor(me.parentId) : null,
     tvMine: me.tvNotice || null,
     tvParent: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.tvNotice) || null; })(),
-    parentTemplates: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
+    parentTemplates: tplLocked() ? {} : (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
     licMaster: me.role === 'super' && !LIC_CLIENT,
     panelMaster: !LIC_CLIENT, // el panel principal (no alquilado): solo aquí el equipo exporta los datos en claro
     expSalt: crypto.createHash('sha256').update(String(db.secret || '') + '|exp').digest('hex').slice(0, 24),
@@ -2130,7 +2136,9 @@ function leftWords(left) { return left <= 0 ? 'hoy' : left === 1 ? 'mañana' : `
 /** Rellena una plantilla con los datos de la cuenta (sin la contraseña) */
 /** Plantilla que toca para las cuentas de un vendedor: la suya, si no la de su reseller, si no la del panel */
 const MY_TPL_KEYS = ['created', 'demo', 'renewed', 'expiring', 'quality', 'followup', 'vendor'];
+const tplLocked = () => db.settings.tplLock === true; // solo si el superadministrador lo activa en Plantillas
 function tplFor(ownerId, key) {
+  if (tplLocked()) return db.settings.templates[key] || DEFAULT_TEMPLATES[key] || '';
   let u = db.users.find((x) => x.id === ownerId), hops = 0;
   while (u && hops++ < 3) { const t = u.templates && u.templates[key]; if (t) return t; u = u.parentId ? db.users.find((x) => x.id === u.parentId) : null; }
   return db.settings.templates[key] || DEFAULT_TEMPLATES[key] || '';
@@ -2398,6 +2406,7 @@ route('POST', '/api/clients/:id/tg-unlink', '*', ({ me, params }) => lock(async 
 
 /* Mis mensajes: cada usuario puede tener los suyos. Vacío = usar el de su reseller o el del panel */
 route('PUT', '/api/my-templates', '*', ({ me, body }) => lock(async () => {
+  if (tplLocked() && me.role !== 'super') throw new HttpError(403, 'El superadministrador ha puesto los mismos mensajes para todo el panel.');
   const next = {};
   for (const k of MY_TPL_KEYS) {
     const v = typeof body[k] === 'string' ? body[k].replace(/\r\n/g, '\n').slice(0, 2000).trim() : '';
@@ -2415,6 +2424,7 @@ route('PUT', '/api/templates', SUPER, ({ body }) => lock(async () => {
     next[k] = v || DEFAULT_TEMPLATES[k]; // vacio = volver al texto original
   }
   db.settings.templates = next;
+  if (body.lock !== undefined) db.settings.tplLock = !!body.lock;
   saveDb();
   return { ok: true };
 }));

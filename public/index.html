@@ -1568,6 +1568,8 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .fzt-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}.fzt-k{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#f5a524}.fzt-top small{color:var(--muted);font-size:12.5px;margin-left:auto}
 .fzt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .dnw{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:12px;background:color-mix(in srgb,#2aa1de 14%,var(--raised));margin-bottom:12px}.dnw>span{font-size:24px}.dnw b{display:block}.dnw small{color:var(--muted)}.dnw code{word-break:break-all}
+.tplro{border:1px solid var(--line);border-radius:12px;margin:0 0 8px;background:var(--raised)}.tplro summary{padding:10px 12px;cursor:pointer;font-weight:600}.tplro pre{margin:0;padding:0 12px 12px;white-space:pre-wrap;font:inherit;font-size:13px;line-height:1.5;color:var(--muted)}
+.tpllock{padding:12px;border-radius:12px;background:color-mix(in srgb,#19c37d 10%,var(--raised));margin-bottom:16px;align-items:flex-start}
 .fztg{display:flex;align-items:center;gap:14px;width:100%;margin-top:14px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,#2aa1de 40%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#2aa1de 16%,var(--surface)),var(--surface) 70%);color:var(--text);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s}
 .fztg:hover{border-color:#2aa1de}.fztg-i{font-size:26px;flex:none}.fztg-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .fztg-k{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#2aa1de}.fztg-n{font-size:14px}.fztg-n b{font-size:22px;color:#2aa1de;margin-right:2px}.fztg-n small{margin-left:4px}
@@ -1595,6 +1597,24 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 @media (max-width:560px){.fzt-grid{gap:8px}.fzt-b{padding:10px 10px}.fzt-b b{font-size:28px}.fzt-l{font-size:13px}.fzt-c{font-size:11px}.fzt-bottom{grid-template-columns:1fr}.fzt-wk{align-items:flex-start}.fzt-top small{margin-left:0}}
 .fz-live{display:block;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;margin:0 0 18px;padding:16px 18px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#19c37d 14%,var(--surface)),var(--surface) 60%);transition:border-color .15s,transform .15s}
 .fz-live:hover{border-color:#19c37d;transform:translateY(-1px)}
+.tpt{font:inherit;cursor:pointer;transition:filter .15s,box-shadow .15s,transform .1s}.tpt:hover{filter:brightness(1.18)}.tpt:active{transform:scale(.97)}.tpt.on{box-shadow:0 0 0 2px var(--brand,#3fa9f5)}
+.tpt .tpc{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.65;margin-left:1px;transition:transform .15s}.tpt.on .tpc{transform:rotate(180deg)}
+.tpop{position:fixed;z-index:60;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.45);animation:tpIn .14s ease-out;color:var(--text)}
+.tpop.up{animation-name:tpUp}@keyframes tpIn{from{opacity:0;transform:translateY(-6px)}}@keyframes tpUp{from{opacity:0;transform:translateY(6px)}}
+.tp-h{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:14px}.tp-h .ic{width:18px;height:18px;color:var(--brand,#3fa9f5)}
+.tp-l{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto}
+.tp-o{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--raised);color:var(--text);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
+.tp-o:hover:not(:disabled){border-color:var(--brand,#3fa9f5);background:color-mix(in srgb,var(--brand,#3fa9f5) 10%,var(--raised))}
+.tp-o.cur{opacity:.75;cursor:default;border-style:dashed}.tp-oi{font-size:20px;flex:none}.tp-ot{flex:1;min-width:0}.tp-ot b{display:block}.tp-ot small{color:var(--muted);font-size:12px}
+.tp-now,.tp-sc em{font-size:11px;font-style:normal;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,#19c37d 20%,transparent);color:#19c37d}
+.tp-g{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tp-sc{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 4px;border-radius:14px;border:1px solid var(--line);background:var(--raised);color:var(--text);font:inherit;cursor:pointer;transition:border-color .15s,transform .1s}
+.tp-sc b{font-size:24px;line-height:1}.tp-sc small{font-size:11px;color:var(--muted)}.tp-sc:hover:not(:disabled){border-color:var(--brand,#3fa9f5);transform:translateY(-1px)}.tp-sc.cur{border-color:#19c37d;cursor:default}
+.tp-f,.tp-x{margin:10px 0 0;font-size:12px;color:var(--muted);line-height:1.45}.tp-x{font-size:13px;margin:0 0 4px}.tp-x b{color:var(--text)}
+.tp-cost{display:flex;flex-direction:column;align-items:center;padding:12px;border-radius:12px;background:color-mix(in srgb,#a46bff 16%,var(--raised));margin-bottom:4px}.tp-cost b{font-size:20px}.tp-cost small{font-size:12px;color:var(--muted)}.tp-cost.free{background:color-mix(in srgb,#19c37d 14%,var(--raised))}
+.tp-b{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.tp-err{margin:0;color:#ff6b6b;font-size:13px}
+.tp-busy{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:13px;color:var(--muted)}.tp-busy i{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--brand,#3fa9f5);animation:tpSpin .7s linear infinite}@keyframes tpSpin{to{transform:rotate(360deg)}}
 .ccopy{cursor:pointer;font:inherit;padding:0;transition:transform .15s,box-shadow .15s}.ccopy:hover{transform:scale(1.06)}.ccopy.copied{box-shadow:0 0 0 3px #19c37d}
 .ccopy-n{display:block;background:none;border:0;padding:0;margin:0;font:inherit;font-weight:inherit;color:inherit;text-align:left;cursor:pointer;max-width:100%}.ccopy-n:hover{text-decoration:underline dotted;text-underline-offset:4px}.ccopy-n.copied{color:#19c37d}
 .fzl-tr{display:inline-flex;align-items:center;gap:6px;text-decoration:underline dotted;text-underline-offset:3px}.fzl-tr:hover{text-decoration-style:solid}
@@ -2420,6 +2440,76 @@ function clientRow(c, compact) {
       ${compact ? '' : `<button class="btn sm" data-act="msg" data-id="${c.id}">Mensaje</button><button class="btn sm" data-act="edit" data-id="${c.id}">Editar</button>${c.status === 'trash' ? '' : c.off ? `<button class="btn sm" data-act="c-on" data-id="${c.id}">Activar</button>` : `<button class="btn sm" data-act="c-off" data-id="${c.id}">Desactivar</button>`}<button class="btn sm ghost" data-act="trash" data-id="${c.id}">${c.demo ? 'Cancelar' : 'Dar de baja'}</button>`}
     </div></td></tr>`;
 }
+/* ---------- Cambios rápidos tocando las etiquetas de la tarjeta (servidor, paquete y pantallas) ---------- */
+function tpCan(c, k) {
+  if (k === 'srv') return c.status !== 'trash' && S.d.servers.some((x) => x.id !== c.serverId && (staff() || !x.off));
+  if (k === 'q') return c.status !== 'trash';
+  return !c.demo && c.status !== 'trash' && (!pays() || diff(c.expires, S.d.today) >= 0); // caducada: las pantallas se eligen al renovar
+}
+const TP_TIP = { srv: 'Toca para cambiar de servidor', q: 'Toca para cambiar el contenido', scr: 'Toca para cambiar las pantallas' };
+const tpTag = (c, k, inner, cls) => tpCan(c, k)
+  ? `<button type="button" class="${cls} tpt" data-act="tp-open" data-k="${k}" data-id="${c.id}" title="${TP_TIP[k]}" aria-haspopup="true">${inner}<svg class="tpc" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`
+  : `<span class="${cls}">${inner}</span>`;
+const TP = { el: null, c: null, k: null, anchor: null };
+function tpClose() { if (TP.el) { TP.el.remove(); TP.el = null; } if (TP.anchor) TP.anchor.classList.remove('on'); TP.anchor = null; TP.c = null; }
+function tpPlace() {
+  if (!TP.el || !TP.anchor) return;
+  if (!document.body.contains(TP.anchor)) { tpClose(); return; }
+  const r = TP.anchor.getBoundingClientRect(), w = Math.min(300, window.innerWidth - 24), h = TP.el.offsetHeight;
+  const left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12));
+  const below = r.bottom + 8 + h < window.innerHeight - 70 || r.top < h + 16;
+  Object.assign(TP.el.style, { width: w + 'px', left: left + 'px', top: (below ? r.bottom + 8 : r.top - h - 8) + 'px' });
+  TP.el.classList.toggle('up', !below);
+}
+function tpOpt(v, title, sub, cur, icon) {
+  return `<button type="button" class="tp-o${cur ? ' cur' : ''}" data-act="tp-pick" data-v="${esc(String(v))}"${cur ? ' disabled aria-current="true"' : ''}><span class="tp-oi">${icon}</span><span class="tp-ot"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>${cur ? '<span class="tp-now">Ahora</span>' : ''}</button>`;
+}
+function tpBody(c, k) {
+  if (k === 'srv') {
+    const list = S.d.servers.filter((x) => staff() || !x.off || x.id === c.serverId);
+    return `<div class="tp-h">${ic('server')}<b>Cambiar de servidor</b></div><div class="tp-l">${list.map((x) => tpOpt(x.id, esc(x.name), x.id === c.serverId ? 'Está aquí' : x.off ? 'Pausado' : x.full ? 'Lleno' : (c.password ? 'Mismo usuario y contraseña' : 'Mismo usuario; te pedirá contraseña'), x.id === c.serverId, '🖥️')).join('')}</div>`;
+  }
+  if (k === 'q') return `<div class="tp-h">${ic('box')}<b>Cambiar el contenido</b></div><div class="tp-l">${tpOpt('basico', 'Básico', 'Películas y series en HD', c.quality === 'basico', '📺')}${tpOpt('k4', '4K', 'Incluye las bibliotecas 4K', c.quality === 'k4', '✨')}</div><p class="tp-f">Cambia en Emby al momento. No cuesta créditos.</p>`;
+  return `<div class="tp-h">${ic('screen')}<b>Cambiar las pantallas</b></div><div class="tp-g">${SCREEN_OPTS.map(([n]) => `<button type="button" class="tp-sc${(c.screens || 1) === n ? ' cur' : ''}" data-act="tp-pick" data-v="${n}"${(c.screens || 1) === n ? ' disabled aria-current="true"' : ''}><b>${n}</b><small>${n === 1 ? 'pantalla' : 'pantallas'}</small>${(c.screens || 1) === n ? '<em>Ahora</em>' : ''}</button>`).join('')}</div><p class="tp-f">${pays() ? 'Subir cuesta la diferencia por el tiempo que le queda. Bajar es gratis.' : 'Sin coste de créditos para ti.'}</p>`;
+}
+function tpOpen(anchor, c, k) {
+  const same = TP.anchor === anchor; tpClose(); if (same) return;
+  TP.c = c; TP.k = k; TP.anchor = anchor; anchor.classList.add('on');
+  TP.el = document.createElement('div'); TP.el.id = 'tpop'; TP.el.className = 'tpop'; TP.el.setAttribute('role', 'dialog');
+  TP.el.innerHTML = tpBody(c, k); document.body.appendChild(TP.el); tpPlace();
+}
+function tpConfirm(html) { if (!TP.el) return; TP.el.innerHTML = html; tpPlace(); }
+async function tpPick(v) {
+  const c = TP.c, k = TP.k; if (!c) return;
+  const done = async (msg) => { tpClose(); await reload(); toast(msg); };
+  try {
+    if (k === 'q') { tpConfirm(`<div class="tp-busy"><i></i>Cambiando el contenido…</div>`); await putClient(c, { quality: v }); return done(`${c.panelName}: contenido ${Q[v]}`); }
+    if (k === 'srv') {
+      const to = S.d.servers.find((x) => x.id === +v); if (!to) return;
+      if (!c.password) { tpClose(); dMove(c); return; } // sin contraseña guardada: hace falta escribir una
+      TP.pending = { k, v };
+      return tpConfirm(`<div class="tp-h">${ic('server')}<b>¿Pasar a ${esc(to.name)}?</b></div><p class="tp-x">Se crea en <b>${esc(to.name)}</b> con el mismo usuario y contraseña, y se borra de ${esc(serverName(c.serverId))}. La fecha no cambia.</p><div class="tp-b"><button type="button" class="btn sm ghost" data-act="tp-back">Volver</button><button type="button" class="btn sm primary" data-act="tp-ok">Sí, cambiar</button></div>`);
+    }
+    if (k === 'scr') {
+      const n = +v; let cost = 0;
+      if (pays()) { tpConfirm(`<div class="tp-busy"><i></i>Calculando el precio…</div>`); cost = (await api('POST', `/api/clients/${c.id}/screens`, { screens: n, preview: true })).cost; }
+      TP.pending = { k, v: n, cost };
+      const left = me().credits - cost;
+      return tpConfirm(`<div class="tp-h">${ic('screen')}<b>${c.screens || 1} → ${plural(n, 'pantalla', 'pantallas')}</b></div>${pays() ? `<div class="tp-cost ${cost ? '' : 'free'}">${cost ? `<b>${plural(cost, 'crédito', 'créditos')}</b><small>Te quedarán ${left}</small>` : `<b>Sin coste</b><small>${n < (c.screens || 1) ? 'Bajar no devuelve créditos' : ''}</small>`}</div>` : '<p class="tp-x">Sin coste de créditos.</p>'}<div class="tp-b"><button type="button" class="btn sm ghost" data-act="tp-back">Volver</button><button type="button" class="btn sm primary" data-act="tp-ok">${cost ? `Cobrar y cambiar` : 'Cambiar'}</button></div>`);
+    }
+  } catch (e) { tpConfirm(`<p class="tp-err">${esc(e.message)}</p><div class="tp-b"><button type="button" class="btn sm ghost" data-act="tp-back">Volver</button></div>`); }
+}
+async function tpOk() {
+  const c = TP.c, p = TP.pending; if (!c || !p) return;
+  tpConfirm(`<div class="tp-busy"><i></i>${p.k === 'srv' ? 'Cambiando de servidor… puede tardar unos segundos' : 'Aplicando en Emby…'}</div>`);
+  try {
+    if (p.k === 'srv') { const r = await api('POST', `/api/clients/${c.id}/move`, { serverId: +p.v }); tpClose(); await reload(); toast(r.warning || `${c.panelName} ya está en ${serverName(+p.v)}`); }
+    else { const r = await api('POST', `/api/clients/${c.id}/screens`, { screens: p.v, ...(pays() ? { expect: p.cost } : {}) }); tpClose(); await reload(); toast(r.cost ? `${c.panelName}: ${plural(p.v, 'pantalla', 'pantallas')} · ${plural(r.cost, 'crédito', 'créditos')}` : `${c.panelName}: ${plural(p.v, 'pantalla', 'pantallas')}`); }
+  } catch (e) { tpConfirm(`<p class="tp-err">${esc(e.message)}</p><div class="tp-b"><button type="button" class="btn sm ghost" data-act="tp-back">Volver</button></div>`); }
+}
+window.addEventListener('resize', tpPlace);
+window.addEventListener('scroll', () => { if (TP.el) tpPlace(); }, { passive: true, capture: true });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && TP.el) tpClose(); });
 /** Tiempo que le queda, al estilo "4m 17d" */
 function leftText(c) {
   if (c.demo) return when(c);
@@ -2482,7 +2572,7 @@ function clientCard(c) {
     <div class="kv">${ic('mail')}<em>Email:</em><span>${c.email ? esc(c.email) : '—'}</span></div>
     <div class="kv">${ic('lock')}<em>Pass:</em><span>${c.password ? (shown ? esc(c.password) : '••••••••') : 'Contraseña no guardada'}</span>${c.password ? `<button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}" title="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}">${ic('eye')}</button>` : ''}</div>
     <div class="foot">
-      <div class="tags"><span class="tag">${ic('server')}${esc(serverName(c.serverId))}</span><span class="tag q">${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}</span><span class="tag">${ic('screen')}${c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite'}</span></div>
+      <div class="tags">${tpTag(c, 'srv', `${ic('server')}${esc(serverName(c.serverId))}`, 'tag')}${tpTag(c, 'q', `${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}`, 'tag q')}${tpTag(c, 'scr', `${ic('screen')}${c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite'}`, 'tag')}</div>
       <span class="tag left ${st}" title="Tiempo restante">${ic('clock')}${leftText(c)}</span>
     </div>
     ${leftBar(c)}
@@ -7124,6 +7214,12 @@ function tvPreview() {
   $('#tvPrev').textContent = msg.replace(/\{nombre\}/gi, n).replace(/\{cuando\}/gi, 'en 3 días').replace(/\{dias\}/gi, '3').replace(/\{vence\}/gi, fmt(addDays(S.d.today, 3)));
 }
 function vMisPlantillas() {
+  if (S.d.settings.tplLock === true) {
+    const t = S.d.settings.templates || {}, keys = TPL_ALL.filter(([k]) => k !== 'vendor' || me().role === 'reseller' || staff());
+    return head('Mis mensajes', 'Los textos que el panel te prepara para mandar a tus clientes.') + `
+    <div class="panel pad" style="max-width:760px"><p class="okmsg" style="margin:0 0 14px">${ic('check')} Los mensajes son los mismos para todo el panel y ya vienen preparados. Al crear, renovar o hacer una demo te salen solos, listos para copiar.</p>
+      ${keys.map(([k, name]) => `<details class="tplro"><summary>${name}</summary><pre>${esc(t[k] || '')}</pre></details>`).join('')}</div>` + payOfferHtml();
+  }
   const mine = S.d.myTemplates || {}, base = (k) => (S.d.parentTemplates || {})[k] || (S.d.settings.templates || {})[k] || '';
   const keys = TPL_ALL.filter(([k]) => k !== 'vendor' || me().role === 'reseller' || staff());
   return head('Mis mensajes', 'Los textos que el panel te prepara para mandar a tus clientes. Déjalos a tu manera: solo cambian para ti y tus cuentas.') + `
@@ -7139,6 +7235,7 @@ function vPlantillas() {
   const t = S.d.settings.templates || {};
   return head('Plantillas de mensajes', 'Los textos que el panel prepara para enviar a tus clientes al crear, renovar o avisar de un vencimiento.') + `
   <form id="tpls" class="panel pad formpage" style="max-width:760px">
+    <label class="check tpllock"><input type="checkbox" name="tplLock"${S.d.settings.tplLock === true ? ' checked' : ''}> <span><b>No dejar que los vendedores cambien los mensajes</b><br><small class="muted">Desmarcado (normal): cada reseller y subreseller puede poner los suyos en «Mis mensajes»; si no pone nada, usa estos.</small></span></label>
     <p class="muted small" style="margin-bottom:16px">Variables que se rellenan solas: {nombre} {usuario} {contraseña} {servidor} {direccion} {pantallas} {contenido} {vence} {cuando} {dias} {enlace_telegram}. Si dejas una plantilla vacía, vuelve al texto original.</p>
     ${TPL_ALL.map(([k, name]) => `<label class="f">${name}${k === 'vendor' ? ' <span class="small">(variables: {nombre} {usuario} {contraseña} {tipo} {creditos} {direccion} {panel})</span>' : ''}<textarea name="${k}" rows="${k === 'created' || k === 'demo' || k === 'vendor' ? 12 : 6}" maxlength="2000">${esc(t[k] || '')}</textarea></label>`).join('')}
     <div class="dfoot"><button type="submit" class="btn primary">Guardar plantillas</button></div>
@@ -7433,6 +7530,14 @@ document.addEventListener('focusin', (e) => { const t = e.target.closest && e.ta
 document.addEventListener('focusout', (e) => { if (e.target.closest && e.target.closest('[data-tip]')) hideTip(); });
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.combo')) closeCombo();
+  if (TP.el && !e.target.closest('#tpop') && !e.target.closest('[data-act="tp-open"]')) tpClose();
+  { const t = e.target.closest('[data-act^="tp-"]');
+    if (t) { const a = t.dataset.act;
+      if (a === 'tp-open') { const c = S.d.clients.find((x) => String(x.id) === t.dataset.id); if (c) tpOpen(t, c, t.dataset.k); }
+      else if (a === 'tp-pick') tpPick(t.dataset.v);
+      else if (a === 'tp-ok') tpOk();
+      else if (a === 'tp-back' && TP.c) { TP.pending = null; tpConfirm(tpBody(TP.c, TP.k)); }
+      return; } }
   const nav = e.target.closest('[data-view]');
   if (nav) {
     closeMenu();
@@ -7969,7 +8074,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'tpls') {
     e.preventDefault();
     const fd = new FormData(e.target);
-    act(() => api('PUT', '/api/templates', Object.fromEntries(TPL_ALL.map(([k]) => [k, fd.get(k)]))), 'Plantillas guardadas');
+    act(() => api('PUT', '/api/templates', { ...Object.fromEntries(TPL_ALL.map(([k]) => [k, fd.get(k)])), lock: fd.get('tplLock') === 'on' }), 'Plantillas guardadas');
   }
   if (e.target.id === 'profileForm') {
     e.preventDefault();
