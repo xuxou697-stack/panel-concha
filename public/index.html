@@ -1576,6 +1576,19 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .lks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.lk{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:10px;background:var(--surface);text-align:center}.lk span{font-size:16px}.lk b{font-size:20px;line-height:1.1}.lk small{font-size:11px;color:var(--muted)}.lk.ok b{color:#19c37d}
 .lsv{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.lsv span{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,#52b54b 18%,transparent);color:#8ee086}.lsv span.jf{background:color-mix(in srgb,#a46bff 20%,transparent);color:#d6bfff}.lsv span.off{opacity:.55;text-decoration:line-through}
 .monwho{margin:0 0 14px}
+.lplat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 12px}
+.lplat label{position:relative}.lplat input{position:absolute;opacity:0;pointer-events:none}
+.lplat span{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2,rgba(255,255,255,.03));font-weight:700;font-size:13px;text-align:center;cursor:pointer}
+.lplat i,.lplc i{width:16px;height:16px;display:inline-block;flex:none}
+.lplat .em i,.lplc.em i{background:#52b54b;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.lplat .jf i,.lplc.jf i{background:linear-gradient(135deg,#a46bff,#00a4dc);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.lplat .bo i,.lplc.bo i{background:linear-gradient(135deg,#52b54b 50%,#a46bff 50%);border-radius:50%}
+.lplat input:checked+.em{border-color:#52b54b;box-shadow:0 0 0 2px color-mix(in srgb,#52b54b 40%,transparent)}
+.lplat input:checked+.jf{border-color:#a46bff;box-shadow:0 0 0 2px color-mix(in srgb,#a46bff 40%,transparent)}
+.lplat input:checked+.bo{border-color:#38bdf8;box-shadow:0 0 0 2px color-mix(in srgb,#38bdf8 40%,transparent)}
+.lplat input:focus-visible+span{outline:2px solid var(--text)}
+.lplc{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.lplc.em{color:#7fd677}.lplc.jf{color:#c9a8ff}.lplc.bo{color:#7dd3fc}
 /* Ticket animado al renovar o crear, antes de la tarjeta del mensaje */
 .cele{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:16px;background:rgba(4,12,13,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:celeIn .25s ease both}
 .cele.out{animation:celeOut .3s ease both}
@@ -2051,7 +2064,7 @@ function navGroups() {
   const emby = [];
   if (canDo('viewServers')) emby.push({ v: 'servidores', t: 'Servidores', i: 'server' }, { v: 'estado', t: 'Estado del servidor', i: 'chart' });
   if (canDo('system')) emby.push({ v: 'plantillas', t: 'Plantillas de mensajes', i: 'msg' });
-  if (staff() && canDo('servers')) emby.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' });
+  if (staff() && canDo('servers') && kindTab() !== 'jellyfin') emby.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' }); // ajuste que solo tiene Emby
   // «En directo» se quitó del menú: el Monitor muestra lo mismo y más. El Calendario pasó a Clientes.
   let g = [
     { k: 'ini', items: [{ v: 'resumen', t: 'Resumen', i: 'grid' }] },
@@ -2267,14 +2280,17 @@ async function reload() { S.d = kindView(await api('GET', '/api/data')); render(
    si solo hay de uno (por ejemplo, un vendedor solo de Jellyfin), se ve ese, sin pestañas. */
 const kindsHere = () => new Set(((S.dAll || {}).servers || []).map((x) => (x.kind === 'jellyfin' ? 'jellyfin' : 'emby')));
 const hasJf = () => kindsHere().size > 1;
+/** Lo que incluye la licencia de este panel (Emby, Jellyfin o los dos) */
+const licKinds = () => { const k = (S.dAll || S.d || {}).kinds; return Array.isArray(k) && k.length ? k : ['emby', 'jellyfin']; };
+const jfOnly = () => licKinds().length === 1 && licKinds()[0] === 'jellyfin';
 function kindTab() {
-  if (!hasJf()) return kindsHere().has('jellyfin') ? 'jellyfin' : 'emby';
+  if (!hasJf()) return kindsHere().has('jellyfin') || jfOnly() ? 'jellyfin' : 'emby';
   if (!S.tab) { try { S.tab = localStorage.getItem('concha_tab') || 'emby'; } catch (e) { S.tab = 'emby'; } }
   return S.tab === 'jellyfin' ? 'jellyfin' : 'emby';
 }
 function kindView(d) {
   S.dAll = d;
-  if (!d.servers.some((x) => x.kind === 'jellyfin')) { document.body.classList.remove('jf'); return d; }
+  if (!d.servers.some((x) => x.kind === 'jellyfin')) { document.body.classList.toggle('jf', jfOnly()); return d; }
   if (!hasJf()) { document.body.classList.add('jf'); return d; } // solo Jellyfin: todo es suyo
   const k = kindTab(), mine = (x) => (x.kind || 'emby') === k;
   const ids = new Set(d.servers.filter(mine).map((x) => x.id));
@@ -2285,9 +2301,18 @@ function kindView(d) {
 /** En la pestaña Jellyfin, los textos que dicen «Emby» pasan a decir «Jellyfin» (en Emby no se toca nada) */
 function jfWords(root) {
   if (!root || kindTab() !== 'jellyfin') return;
-  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentElement && (n.parentElement.closest('.ksw') || n.parentElement.closest('textarea')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentElement && (n.parentElement.closest('.ksw') || n.parentElement.closest('textarea') || n.parentElement.closest('.nojf')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
   for (let n = w.nextNode(); n; n = w.nextNode()) if (/Emby/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/\bEmby\b/g, 'Jellyfin');
   root.querySelectorAll('[placeholder*="Emby"],[title*="Emby"],[aria-label*="Emby"]').forEach((e) => ['placeholder', 'title', 'aria-label'].forEach((a) => { const v = e.getAttribute(a); if (v) e.setAttribute(a, v.replace(/\bEmby\b/g, 'Jellyfin')); }));
+}
+let jfObs = null, jfRaf = 0;
+function jfWatch() {
+  if (jfObs || typeof MutationObserver === 'undefined') return;
+  jfObs = new MutationObserver(() => {
+    if (jfRaf || kindTab() !== 'jellyfin') return;
+    jfRaf = requestAnimationFrame(() => { jfRaf = 0; jfWords($('#main')); jfWords($('#nav')); if (dlg.open) jfWords(dlgForm); const tp = document.getElementById('tpop'); if (tp) jfWords(tp); });
+  });
+  jfObs.observe(document.body, { childList: true, subtree: true });
 }
 function kindSwitchHtml() {
   if (!hasJf()) return '';
@@ -2338,7 +2363,7 @@ function render() {
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
-  try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); }
+  try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() === 'jellyfin') jfWatch(); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
     $('#main').innerHTML = `<div class="panel pad" style="max-width:720px"><h2>Esta pantalla no se ha podido mostrar</h2><p class="err" style="max-width:none;margin:10px 0">${esc(ex && ex.message)}</p>
@@ -4630,7 +4655,7 @@ function vVendedor() {
     <h2 class="sep">Créditos y demos</h2>
     ${chk('allowNegative', u && u.allowNegative, 'Permitir créditos negativos (puede seguir vendiendo sin saldo y te lo debe)')}
     ${chk('allowDemos', u ? u.allowDemos : true, 'Permitir crear demos gratuitas')}
-    ${isSuper() ? `<h2 class="sep">Qué puede vender</h2>
+    ${isSuper() && licKinds().length > 1 ? `<h2 class="sep">Qué puede vender</h2>
     <div class="kpick kpick-v"><label><input type="checkbox" name="plat" value="emby"${!u || (u.platforms || ['emby']).includes('emby') ? ' checked' : ''}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="checkbox" name="plat" value="jellyfin"${u && (u.platforms || []).includes('jellyfin') ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Su propia pestaña</small></span></label></div>
     <p class="muted small" style="margin:-6px 0 12px">Marca uno o los dos. Solo verá los servidores y clientes de lo que marques. Un subreseller usa lo mismo que su reseller.</p>` : ''}
     <h2 class="sep">Servidores disponibles</h2>
@@ -5935,7 +5960,9 @@ function vEstado() {
         ${agRing(L.disk, 'Disco', (disk[0] ? `${agBytes(disk[0].size - disk[0].used)} libres` : '') + (s.diskDays != null && s.diskDays < 90 ? `<br><span class="ag-fc">se llena en ~${plural(s.diskDays, 'día', 'días')}</span>` : ''), agLvl(L.disk, 80, 90))}
         <div class="agg net"><div class="ag-net"><span>${ic('download')}<b>${L.down}</b><small>Mbit/s</small></span><span class="upl">${ic('send')}<b>${L.up}</b><small>Mbit/s</small></span></div><span>Internet</span><em>bajada · subida</em></div>
       </div>
-      <div class="ag-facts"><span class="${L.emby ? 'okf' : 'badf'}">${ic(L.emby ? 'check' : 'alert')}${L.emby ? 'Emby en marcha' : 'Emby no encontrado'}</span><span>${ic('clock')}Encendido ${agUptime(L.uptime)}</span><span>${ic('refresh')}Último dato ${agAgo(L.at)}</span></div>
+      <div class="ag-facts">${(() => { const jf = ((S.dAll || S.d).servers.find((x) => x.id === s.id) || {}).kind === 'jellyfin', nm = jf ? 'Jellyfin' : 'Emby';
+        if (jf && !L.emby && Number(L.ver) < 4) return `<span class="badf">${ic('refresh')}Vuelve a instalar el agente para que vigile Jellyfin</span>`;
+        return `<span class="${L.emby ? 'okf' : 'badf'}">${ic(L.emby ? 'check' : 'alert')}${L.emby ? nm + ' en marcha' : nm + ' no encontrado'}</span>`; })()}<span>${ic('clock')}Encendido ${agUptime(L.uptime)}</span><span>${ic('refresh')}Último dato ${agAgo(L.at)}</span></div>
       ${disk.length > 1 ? `<div class="ag-disks">${disk.map((x) => { const p = Math.round((x.used / x.size) * 100); return `<div><span>${esc(x.mount)}</span><i><b class="${agLvl(p, 80, 90)}" style="width:${p}%"></b></i><em>${p}% · ${agBytes(x.size - x.used)} libres de ${agBytes(x.size)}</em></div>`; }).join('')}</div>` : ''}
       <details class="ag-more"><summary>Gráficas de las últimas 24 horas</summary><div class="ag-charts">
         ${agChart(s.hist, [['cpu', '#3fa9f5', 'Procesador'], ['mem', '#a46bff', 'Memoria']], 'Procesador y memoria', '%', 100)}
@@ -6192,7 +6219,7 @@ function vLicencias() {
       <header><span class="cav">${esc(l.name.charAt(0).toUpperCase())}</span><div class="who"><b>${esc(l.name)}</b>${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.url.replace(/^https?:\/\//, ''))}</a>` : '<small class="muted">sin dirección</small>'}</div><span class="lpill ${stCls}">${stTxt}</span></header>
       <div class="lbig"><div><small>Pagado hasta</small><b>${fmt(l.until)}</b></div><div class="r"><small>${l.price ? eur(l.price) + ' / mes' : 'sin precio'}</small><em class="${stCls}">${licLeftTxt(l)}</em></div></div>
       <div class="lbar"><i class="${stCls}" style="width:${l.state === 'ok' || l.state === 'soon' ? done : 100}%"></i></div>
-      <div class="lmeta">${l.contact ? `<span>${ic('send')}${esc(l.contact)}</span>` : ''}<span class="${l.online ? 'on' : ''}">${ic('signal')}${l.lastCheck ? (l.online ? 'Conectado' : 'Última conexión ' + whenShort(l.lastCheck)) : 'Aún no se ha conectado'}</span></div>
+      <div class="lmeta">${licPlatChip(l)}${l.contact ? `<span>${ic('send')}${esc(l.contact)}</span>` : ''}<span class="${l.online ? 'on' : ''}">${ic('signal')}${l.lastCheck ? (l.online ? 'Conectado' : 'Última conexión ' + whenShort(l.lastCheck)) : 'Aún no se ha conectado'}</span></div>
       ${licStatsHtml(l)}
       ${l.notes ? `<p class="lnote">${esc(l.notes)}</p>` : ''}
       <div class="acts"><button class="btn sm primary" data-act="lic-renew" data-id="${l.id}">${ic('refresh')}Renovar</button><button class="btn sm" data-act="lic-edit" data-id="${l.id}">${ic('edit')}Editar</button><button class="btn sm" data-act="lic-msg" data-id="${l.id}">${ic('copy')}Datos de acceso</button><button class="btn sm ghost" data-act="lic-more" data-id="${l.id}">Más…</button></div>
@@ -6213,6 +6240,13 @@ function vLicencias() {
   return head('Licencias', sub, acts) + tiles + list + cal + cfg;
 }
 const licOf = (id) => S.lic.data.list.find((x) => x.id === id);
+/** Qué incluye cada panel alquilado: Emby, Jellyfin o los dos */
+const LIC_PLAT = [['emby', 'Solo Emby', 'em'], ['jellyfin', 'Solo Jellyfin', 'jf'], ['both', 'Emby y Jellyfin', 'bo']];
+const licPlatKey = (l) => { const p = (l && l.platforms) || ['emby']; return p.length > 1 ? 'both' : p[0]; };
+const licPlatArr = (k) => (k === 'both' ? ['emby', 'jellyfin'] : [k]);
+const licPlatPick = (sel) => `<span class="flabel">Qué incluye su panel</span><div class="lplat" role="radiogroup">${LIC_PLAT.map(([k, t, c]) => `<label><input type="radio" name="plat" value="${k}"${k === sel ? ' checked' : ''}><span class="${c}"><i></i>${t}</span></label>`).join('')}</div>
+  <p class="small muted" style="margin:-4px 0 12px">Solo podrá conectar servidores de lo que marques. Puedes cambiarlo cuando quieras: su panel se entera en menos de una hora.</p>`;
+const licPlatChip = (l) => { const k = licPlatKey(l), x = LIC_PLAT.find((p) => p[0] === k); return `<span class="lplc ${x[2]}"><i></i>${x[1]}</span>`; };
 const licMonths = (name, sel = 1) => `<div class="pmeth lmon">${[1, 3, 6, 12].map((n) => `<label><input type="radio" name="${name}" value="${n}"${n === sel ? ' checked' : ''}><span>${plural(n, 'mes', 'meses')}</span></label>`).join('')}</div>`;
 const licMethods = () => `<div class="pmeth">${PAY_METHODS.filter((x) => x !== 'Sin cobro').map((x, i) => `<label><input type="radio" name="method" value="${x}"${i === 0 ? ' checked' : ''}><span>${x}</span></label>`).join('')}</div>`;
 function licShowToken(name, token) {
@@ -6226,6 +6260,7 @@ function licNew() {
     body: `<label class="f">Nombre de quien alquila<input name="name" required maxlength="60" placeholder="Juanito"></label>
       <div class="row2"><label class="f">Dirección de su panel (opcional)<input name="url" maxlength="200" placeholder="https://juanito.duckdns.org"></label><label class="f">Su contacto (opcional)<input name="contact" maxlength="80" placeholder="Telegram @juanito"></label></div>
       <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="0"></label><label class="f">Empieza el<input type="date" name="start" value="${S.d.today}"></label></div>
+      ${licPlatPick('emby')}
       <span class="flabel">Meses pagados</span>${licMonths('months')}
       <p class="small muted" id="licUntil" style="margin:8px 0"></p>
       <label class="check"><input type="checkbox" name="paid" checked> Ya me ha pagado (se apunta el cobro)</label>
@@ -6233,7 +6268,7 @@ function licNew() {
       <label class="f">Notas (opcional)<input name="notes" maxlength="300"></label>`,
     onOpen: () => { const f = dlgForm, upd = () => { const mo = +f.elements.months.value || 1, st = f.elements.start.value || S.d.today; $('#licUntil').innerHTML = `Pagado hasta el <b>${fmt(addMonths(st, mo))}</b>${+f.elements.price.value ? ` · ${eur(+f.elements.price.value * mo)}` : ''}`; $('#licPay').hidden = !f.elements.paid.checked; }; f.oninput = upd; f.onchange = upd; upd(); },
     onSubmit: async (fd) => {
-      const r = await api('POST', '/api/licenses', { name: fd.get('name'), url: fd.get('url'), contact: fd.get('contact'), price: +fd.get('price') || 0, start: fd.get('start'), months: +fd.get('months'), paid: !!fd.get('paid'), method: fd.get('method') || '', notes: fd.get('notes') });
+      const r = await api('POST', '/api/licenses', { name: fd.get('name'), url: fd.get('url'), contact: fd.get('contact'), price: +fd.get('price') || 0, start: fd.get('start'), months: +fd.get('months'), paid: !!fd.get('paid'), method: fd.get('method') || '', notes: fd.get('notes'), platforms: licPlatArr(fd.get('plat') || 'emby') });
       S.lic.tok = { name: r.lic.name, token: r.token }; S.lic.data = null; loadLic(); return 'Licencia creada';
     }, after: () => { if (S.lic.tok) { licShowToken(S.lic.tok.name, S.lic.tok.token); S.lic.tok = null; } } });
 }
@@ -6255,8 +6290,9 @@ function licEdit(id) {
     body: `<label class="f">Nombre<input name="name" required maxlength="60" value="${esc(l.name)}"></label>
       <div class="row2"><label class="f">Dirección de su panel<input name="url" maxlength="200" value="${esc(l.url)}"></label><label class="f">Su contacto<input name="contact" maxlength="80" value="${esc(l.contact)}"></label></div>
       <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="${l.price || 0}"></label><label class="f">Pagado hasta (cambiar a mano)<input type="date" name="until" value="${l.until}" required></label></div>
+      ${licPlatPick(licPlatKey(l))}
       <label class="f">Notas<input name="notes" maxlength="300" value="${esc(l.notes)}"></label>`,
-    onSubmit: async (fd) => { await api('PUT', `/api/licenses/${id}`, Object.fromEntries(['name', 'url', 'contact', 'notes', 'until'].map((k) => [k, fd.get(k)]).concat([['price', +fd.get('price') || 0]]))); S.lic.data = null; loadLic(); return 'Cambios guardados'; } });
+    onSubmit: async (fd) => { await api('PUT', `/api/licenses/${id}`, Object.fromEntries(['name', 'url', 'contact', 'notes', 'until'].map((k) => [k, fd.get(k)]).concat([['price', +fd.get('price') || 0], ['platforms', licPlatArr(fd.get('plat') || 'emby')]]))); S.lic.data = null; loadLic(); return 'Cambios guardados'; } });
 }
 function licMore(id) {
   const l = licOf(id); if (!l) return;
@@ -6285,7 +6321,7 @@ function licMsg(id) {
   const brand = (S.d.settings.brand || {}).name || 'Concha';
   const build = (f) => {
     const u = f.elements.user.value.trim() || '(tu usuario)', pw = f.elements.pw.value || '(tu contraseña)', link = f.elements.url.value.trim() || '(dirección)';
-    return `👋 ¡Hola, ${l.name}!\n\nTu panel ${brand} ya está listo. 🎉\n\n🌐 DIRECCIÓN DEL PANEL:\n${link}\n\n🔐 TUS DATOS DE ACCESO:\n• Usuario: ${u}\n• Contraseña: ${pw}\n\n📌 PRIMEROS PASOS:\n1. Entra en la dirección y pon tu usuario y contraseña.\n2. Cambia la contraseña por una tuya en Ajustes › Seguridad.\n3. Ve a Servidores › Conectar servidor y añade tu Emby o Jellyfin con su API key.\n4. Elige qué bibliotecas son Básico y 4K, ¡y ya puedes crear cuentas!\n\n📅 Tu suscripción está pagada hasta el ${fmt(l.until)}.${d0().contact ? `\n\n💬 Para renovar o cualquier duda: ${d0().contact}` : ''}\n\n¡Gracias por confiar en nosotros! 🙌`;
+    return `👋 ¡Hola, ${l.name}!\n\nTu panel ${brand} ya está listo. 🎉\n\n🌐 DIRECCIÓN DEL PANEL:\n${link}\n\n🔐 TUS DATOS DE ACCESO:\n• Usuario: ${u}\n• Contraseña: ${pw}\n\n📌 PRIMEROS PASOS:\n1. Entra en la dirección y pon tu usuario y contraseña.\n2. Cambia la contraseña por una tuya en Ajustes › Seguridad.\n3. Ve a Servidores › Conectar servidor y añade tu ${{ emby: 'Emby', jellyfin: 'Jellyfin' }[licPlatKey(l)] || 'Emby o Jellyfin'} con su API key.\n4. Elige qué bibliotecas son Básico y 4K, ¡y ya puedes crear cuentas!\n\n📅 Tu suscripción está pagada hasta el ${fmt(l.until)}.${d0().contact ? `\n\n💬 Para renovar o cualquier duda: ${d0().contact}` : ''}\n\n¡Gracias por confiar en nosotros! 🙌`;
   };
   const d0 = () => S.lic.data || {};
   openDlg({ title: `Datos de acceso · ${l.name}`, submit: 'Copiar mensaje',
@@ -7443,7 +7479,7 @@ function vPlantillas() {
   return head('Plantillas de mensajes', 'Los textos que el panel prepara para enviar a tus clientes al crear, renovar o avisar de un vencimiento.') + `
   <form id="tpls" class="panel pad formpage" style="max-width:760px">
     <label class="check tpllock"><input type="checkbox" name="tplLock"${S.d.settings.tplLock === true ? ' checked' : ''}> <span><b>No dejar que los vendedores cambien los mensajes</b><br><small class="muted">Desmarcado (normal): cada reseller y subreseller puede poner los suyos en «Mis mensajes»; si no pone nada, usa estos.</small></span></label>
-    <p class="muted small" style="margin-bottom:16px">Variables que se rellenan solas: {nombre} {usuario} {contraseña} {servidor} {direccion} {pantallas} {contenido} {vence} {cuando} {dias} {enlace_telegram}. Si dejas una plantilla vacía, vuelve al texto original.</p>
+    <p class="muted small" style="margin-bottom:16px">Variables que se rellenan solas: {nombre} {usuario} {contraseña} {servidor} {direccion} {pantallas} {contenido} {vence} {cuando} {dias} {enlace_telegram}. Si dejas una plantilla vacía, vuelve al texto original.</p>${kindsHere().has('jellyfin') || jfOnly() ? `<p class="infobox small nojf" style="margin:0 0 16px;max-width:none">🟣 <b>Clientes de Jellyfin:</b> donde pone «Emby», al enviar el mensaje se cambia solo por «Jellyfin». No hace falta tener plantillas aparte.</p>` : ''}
     ${TPL_ALL.map(([k, name]) => `<label class="f">${name}${k === 'vendor' ? ' <span class="small">(variables: {nombre} {usuario} {contraseña} {tipo} {creditos} {direccion} {panel})</span>' : ''}<textarea name="${k}" rows="${k === 'created' || k === 'demo' || k === 'vendor' ? 12 : 6}" maxlength="2000">${esc(t[k] || '')}</textarea></label>`).join('')}
     <div class="dfoot"><button type="submit" class="btn primary">Guardar plantillas</button></div>
   </form>` + payOfferHtml();
@@ -7488,10 +7524,10 @@ function poWire() {
 function dServer(s) {
   openDlg({
     title: s ? `Editar ${s.name}` : 'Conectar servidor', submit: s ? 'Guardar y probar' : 'Conectar',
-    body: `${s ? '' : `<div class="kpick" role="radiogroup" aria-label="Tipo de servidor"><label><input type="radio" name="kind" value="emby"${kindTab() === 'jellyfin' ? '' : ' checked'}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="radio" name="kind" value="jellyfin"${kindTab() === 'jellyfin' ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Va en su propia pestaña</small></span></label></div>`}
+    body: `${s ? '' : licKinds().length < 2 ? `<input type="hidden" name="kind" value="${licKinds()[0]}">` : `<div class="kpick" role="radiogroup" aria-label="Tipo de servidor"><label><input type="radio" name="kind" value="emby"${kindTab() === 'jellyfin' ? '' : ' checked'}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="radio" name="kind" value="jellyfin"${kindTab() === 'jellyfin' ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Va en su propia pestaña</small></span></label></div>`}
       <label class="f">Nombre<input name="name" required maxlength="60" value="${esc(s ? s.name : kindTab() === 'jellyfin' ? 'Jellyfin' : 'Emby')}"></label>
       <label class="f">Dirección para el panel<input name="url" required placeholder="http://192.168.0.29:8096" value="${esc(s ? s.url : '')}"></label>
-      <label class="f">Dirección que das a los clientes (opcional)<input name="publicUrl" maxlength="200" placeholder="https://emby.tudominio.com" value="${esc(s ? s.publicUrl || '' : '')}"></label>
+      <label class="f">Dirección que das a los clientes (opcional)<input name="publicUrl" maxlength="200" placeholder="https://${kindTab() === 'jellyfin' ? 'jellyfin' : 'emby'}.tudominio.com" value="${esc(s ? s.publicUrl || '' : '')}"></label>
       <label class="f">API key${s ? ' (vacío = mantener la actual)' : ''}<input name="apiKey" type="password" ${s ? '' : 'required'} autocomplete="off"></label>
       <label class="f">Máximo de clientes (0 = sin límite)<input name="maxClients" type="number" min="0" max="100000" step="1" value="${s ? s.maxClients || 0 : 0}" inputmode="numeric"></label>
       <p class="muted small">La API key se crea en ${s && s.kind === 'jellyfin' ? 'Jellyfin: Panel de control, Claves de API' : s ? 'Emby: Ajustes, Avanzado, Claves de API' : 'Emby (Ajustes, Avanzado, Claves de API) o en Jellyfin (Panel de control, Claves de API)'}. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,

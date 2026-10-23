@@ -296,7 +296,15 @@ async function emby(server, method, p, body) {
  */
 const JF_LISTS = /^\/(Users|Sessions|Library\/VirtualFolders|Library\/SelectableMediaFolders|Library\/MediaFolders)(\?|$)/;
 function jfUserIn(u) { if (u && u.Policy && u.Policy.SimultaneousStreamLimit === undefined) u.Policy.SimultaneousStreamLimit = Number(u.Policy.MaxActiveSessions) || 0; return u; }
-async function jelly(server, method, p, body) {
+/* Pantallas en Jellyfin: su límite (MaxActiveSessions) cuenta los aparatos con la sesión abierta y solo se mira al entrar.
+   Con el número justo, un cliente que reinstala la app o cambia de aparato sin cerrar sesión se queda fuera.
+   Por eso se deja 1 aparato de margen al entrar; lo que se vea de más lo corta el control de pantallas del panel. */
+const JF_MARGIN = 1;
+/** ¿El límite que tiene el servidor es el que toca para esas pantallas? (en Jellyfin vale con margen o sin él, el de antes) */
+function scrOk(s, pol, screens) { const v = Number(pol && pol.SimultaneousStreamLimit) || 0; return s && s.kind === 'jellyfin' ? v === screens + JF_MARGIN || v === screens : v === screens; }
+/** Pantallas que equivalen al límite del servidor (en Jellyfin se descuenta el margen) */
+const scrOf = (s, pol) => { const v = Number(pol && pol.SimultaneousStreamLimit) || 0; return s && s.kind === 'jellyfin' && v > 1 ? v - JF_MARGIN : v; };
+async function jelly(server, method, p, body, raw) {
   // Jellyfin no tiene /Users/Query: se pide la lista entera y se da por páginas
   const uq = method === 'GET' && /^\/Users\/Query\?/.exec(p);
   if (uq) {
@@ -304,10 +312,19 @@ async function jelly(server, method, p, body) {
     const all = (await jelly(server, 'GET', '/Users')) || [];
     return { Items: all.slice(start, start + lim), TotalRecordCount: all.length };
   }
+  // Contraseña: la ruta /Users/{id}/Password está «en retirada» en Jellyfin; si un día desaparece, se usa la nueva
+  const pw = !raw && method === 'POST' && /^\/Users\/([^/?]+)\/Password$/.exec(p);
+  if (pw) {
+    try { return await jelly(server, 'POST', p, body, true); }
+    catch (e) {
+      if (e.embyStatus !== 404 && e.embyStatus !== 405) throw e;
+      return jelly(server, 'POST', `/Users/Password?userId=${encodeURIComponent(pw[1])}`, body, true);
+    }
+  }
   let out = body;
   if (method === 'POST' && /^\/Users\/[^/]+\/Policy$/.test(p) && body) {
     out = { ...body };
-    if (out.SimultaneousStreamLimit !== undefined) { out.MaxActiveSessions = Number(out.SimultaneousStreamLimit) || 0; delete out.SimultaneousStreamLimit; }
+    if (out.SimultaneousStreamLimit !== undefined) { const n = Number(out.SimultaneousStreamLimit) || 0; out.MaxActiveSessions = n > 0 ? n + JF_MARGIN : 0; delete out.SimultaneousStreamLimit; }
     delete out.AutoRemoteQuality; // ajuste que solo tiene Emby
     // Jellyfin exige estos dos campos al guardar la política: si faltan, se ponen los de por defecto
     if (!out.AuthenticationProviderId) out.AuthenticationProviderId = 'Jellyfin.Server.Implementations.Users.DefaultAuthenticationProvider';
@@ -335,6 +352,8 @@ async function jelly(server, method, p, body) {
     if ((res.status === 401 || res.status === 403) && web) msg = `Algo delante de "${server.name}" (un cortafuegos o Cloudflare) bloquea al panel antes de llegar a Jellyfin. Usa en «Dirección para el panel» la IP con el puerto (http://IP:8096).`;
     else if (res.status === 401 || res.status === 403) msg = `"${server.name}" ha rechazado la API key. Crea una nueva en Jellyfin (Panel de control › Claves de API) y pégala aquí.`;
     else if (res.status === 404) msg = `Jellyfin no encuentra ese usuario o recurso en "${server.name}".`;
+    else if (res.status === 400 && p === '/Users/New' && /already exists/i.test(text)) msg = `Ese nombre de usuario ya existe en "${server.name}". Elige otro.`;
+    else if (res.status === 400 && p === '/Users/New' && /usernames can contain/i.test(text)) msg = 'Jellyfin no acepta ese nombre de usuario. Usa solo letras, números, guiones (-), guiones bajos (_), puntos (.) o arroba (@), sin espacios al principio ni al final.';
     else msg = `Jellyfin respondió con error ${res.status}${text ? ': ' + text.slice(0, 200) : ''}`;
     const err = new Error(msg);
     err.embyStatus = res.status;
@@ -353,6 +372,26 @@ async function jelly(server, method, p, body) {
   if (method === 'GET' && /^\/Sessions(\?|$)/.test(p) && Array.isArray(data)) data.forEach((x) => { const ti = x && x.TranscodingInfo; if (ti && typeof ti.TranscodeReasons === 'string') ti.TranscodeReasons = ti.TranscodeReasons.split(/\s*,\s*/).filter(Boolean); });
   if (method === 'POST' && p === '/Users/New') jfUserIn(data);
   return data;
+}
+/** Una sola vez: a las cuentas de Jellyfin que tenían el límite justo se les pone el margen de 1 aparato (solo ese ajuste) */
+async function jfMarginOnce() {
+  if (db.settings.jfMargin1 || !db.servers.some((x) => x.kind === 'jellyfin')) return;
+  let done = 0, failed = 0;
+  for (const c of db.clients) {
+    const s = db.servers.find((x) => x.id === c.serverId);
+    if (!s || s.kind !== 'jellyfin' || s.off || c.status !== 'active' || c.off || !(c.screens > 0)) continue;
+    try {
+      const pol = await readPolicy(s, c.embyId);
+      if ((Number(pol.MaxActiveSessions) || 0) !== c.screens) continue; // ya tiene margen, o algo distinto que no se toca
+      pol.SimultaneousStreamLimit = c.screens;
+      await emby(s, 'POST', `/Users/${c.embyId}/Policy`, pol);
+      done++;
+    } catch { failed++; }
+  }
+  if (failed) return; // se vuelve a intentar en el próximo arranque
+  db.settings.jfMargin1 = true;
+  if (done) addLog('servidor', null, `Jellyfin: margen de 1 aparato al entrar puesto en ${done} ${done === 1 ? 'cuenta' : 'cuentas'}`, null);
+  saveDb();
 }
 const srvKind = (s) => (s && s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby');
 /** Pestaña desde la que se pide algo «para todos» (Emby o Jellyfin). Sin pestaña, vale todo, como siempre */
@@ -409,7 +448,7 @@ const sameLibs = (a, b) => { const n = (x) => [...new Set((x || []).map((v) => S
  * Sirve para importar cuentas de otro panel sin cambiarles nada. q = null si no se puede saber (p. ej. sin bibliotecas). */
 function embyPlanOf(s, pol) {
   pol = pol || {};
-  const lim = Number(pol.SimultaneousStreamLimit) || 0;
+  const lim = scrOf(s, pol);
   const screens = lim >= 3 ? 4 : lim === 2 ? 2 : lim === 1 ? 1 : 0;
   if (!polHasLibs(pol)) return { q: null, screens };
   const pk = s.packages || {}, B = pk.basico || { all: false, folders: [] }, K = pk.k4 || { all: false, folders: [] };
@@ -1802,10 +1841,20 @@ function readAdminOptions(me, body, u) {
 /** Qué puede vender cada usuario: Emby, Jellyfin o los dos. Lo decide el superadministrador en su perfil.
  *  Por defecto, solo Emby (como siempre). El superadministrador lo ve todo. Un subreseller sin ajuste propio usa el de su reseller. */
 function kindsOf(me) {
-  if (!me || me.role === 'super') return ['emby', 'jellyfin'];
+  const lic = licKinds();
+  if (!me || me.role === 'super') return lic;
   let k = Array.isArray(me.platforms) && me.platforms.length ? me.platforms : null;
   if (!k && me.parentId) { const p = db.users.find((x) => x.id === me.parentId); if (p && Array.isArray(p.platforms) && p.platforms.length) k = p.platforms; }
-  return k || ['emby'];
+  const out = (k || ['emby']).filter((x) => lic.includes(x));
+  return out.length ? out : lic; // en un panel alquilado solo de Jellyfin, los vendedores venden Jellyfin
+}
+/** Lo que incluye la licencia de este panel: Emby, Jellyfin o los dos (el panel principal, siempre los dos) */
+const KINDS_ALL = ['emby', 'jellyfin'];
+const kindsClean = (v) => (Array.isArray(v) ? KINDS_ALL.filter((k) => v.includes(k)) : []);
+function licKinds() {
+  if (!LIC_CLIENT) return KINDS_ALL;
+  const k = kindsClean((db.licState || {}).platforms);
+  return k.length ? k : KINDS_ALL;
 }
 const jfHidden = (me, s) => !!s && !kindsOf(me).includes(s.kind === 'jellyfin' ? 'jellyfin' : 'emby');
 function serversFor(me) { return serversFor0(me).filter((s) => !jfHidden(me, s)); }
@@ -1930,6 +1979,7 @@ function publicData(me) {
     tvParent: (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.tvNotice) || null; })(),
     parentTemplates: tplLocked() ? {} : (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
     licMaster: me.role === 'super' && !LIC_CLIENT,
+    kinds: licKinds(),
     panelMaster: !LIC_CLIENT, // el panel principal (no alquilado): solo aquí el equipo exporta los datos en claro
     expSalt: crypto.createHash('sha256').update(String(db.secret || '') + '|exp').digest('hex').slice(0, 24),
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
@@ -2544,6 +2594,7 @@ route('PUT', '/api/templates', SUPER, ({ body }) => lock(async () => {
 route('POST', '/api/servers', SUPER, ({ me, body }) => lock(async () => {
   const s = { id: 0, name: str(body.name, 60), url: cleanUrl(body.url), publicUrl: str(body.publicUrl, 200), apiKey: str(body.apiKey, 200), packages: {}, maxClients: readMaxClients(body.maxClients, 0) };
   if (body.kind === 'jellyfin') s.kind = 'jellyfin'; // los servidores Emby no llevan marca: quedan exactamente igual que siempre
+  if (!licKinds().includes(s.kind === 'jellyfin' ? 'jellyfin' : 'emby')) throw new HttpError(403, `Tu panel no incluye ${s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby'}. Si lo quieres, pídelo a quien te alquila el panel.`);
   if (!s.name) throw new HttpError(400, 'Ponle un nombre al servidor.');
   if (!s.apiKey) throw new HttpError(400, 'Falta la API key.');
   const info = await emby(s, 'GET', '/System/Info');
@@ -3254,7 +3305,7 @@ async function repairClient(me, c) {
     const wasRight = before && !before.IsDisabled && !!before.EnableAllFolders === !!wanted.all && (wanted.all || sameLibs(before.EnabledFolders, wanted.folders));
     say(wasRight, `${wasRight ? 'Las bibliotecas ya eran las correctas' : 'Bibliotecas corregidas'}${c.quality ? ` (paquete ${QUALITIES[c.quality]})` : ''}: ${names || 'ninguna'}.`);
     if (before && before.IsDisabled) say(false, 'Estaba desactivada en Emby: se ha vuelto a activar.');
-    if (c.screens > 0) say(!before || before.SimultaneousStreamLimit === c.screens, `Pantallas a la vez: ${c.screens}${before && before.SimultaneousStreamLimit !== c.screens ? ' (corregido)' : ''}.`);
+    if (c.screens > 0) say(!before || scrOk(s, before, c.screens), `Pantallas a la vez: ${c.screens}${before && !scrOk(s, before, c.screens) ? ' (corregido)' : ''}.`);
   } else {
     const had = before && polHasLibs(before);
     say(!had, `${c.status === 'trash' ? 'Está en la papelera' : c.off ? 'La desactivaste tú' : c.demo ? 'La demo ha terminado' : 'Está caducada'}: ${had ? 'tenía bibliotecas y se le han retirado' : 'no tiene bibliotecas, como debe ser'}.`);
@@ -3477,7 +3528,7 @@ route('GET', '/api/audit', STAFF, async () => {
       } else if (c.status === 'active') {
         if (pol.IsDisabled) problems.push('en el panel está activa, pero en Emby está desactivada');
         else if (!hasLibs) problems.push('en el panel está activa, pero en Emby no tiene bibliotecas');
-        if (c.screens > 0 && pol.SimultaneousStreamLimit !== c.screens) problems.push(`tiene ${c.screens} ${c.screens === 1 ? 'pantalla' : 'pantallas'} en el panel y ${pol.SimultaneousStreamLimit || 'sin límite'} en Emby`);
+        if (c.screens > 0 && !scrOk(s, pol, c.screens)) problems.push(`tiene ${c.screens} ${c.screens === 1 ? 'pantalla' : 'pantallas'} en el panel y ${scrOf(s, pol) || 'sin límite'} en ${srvKind(s)}`);
       } else if (c.status === 'expired') {
         if (hasLibs) problems.push('está caducada, pero en Emby conserva bibliotecas');
       } else if (c.status === 'trash') {
@@ -4102,6 +4153,7 @@ route('GET', '/api/health', '*', ({ me }) => ({ servers: serversFor(me).map((s) 
 /* ---------- Estadísticas de uso: el panel apunta cada minuto lo que se está viendo ---------- */
 const PLAY_MS = Number(process.env.PLAY_MS) || 60000;
 const seenToday = { day: '', keys: new Set() };
+const multiStreak = new Map(); // cuentas vistas en varios aparatos en la revisión anterior
 let usageDirty = 0, usageBusy = false;
 async function recordUsage() {
   if (usageBusy || !db.servers.length) return;
@@ -4112,13 +4164,15 @@ async function recordUsage() {
     const day = db.usage.days[t] || (db.usage.days[t] = { m: 0, peak: 0, peakAt: '', hours: Array(24).fill(0), titles: {}, servers: {}, clients: {}, apps: {} });
     if (seenToday.day !== t) { seenToday.day = t; seenToday.keys = new Set(); }
     let now = 0;
+    const multiNow = new Map(); // cuenta -> aparatos viendo a la vez en esta revisión
     for (const s of db.servers) {
       let list;
       try { list = await emby(s, 'GET', '/Sessions'); } catch { continue; }
       const byEmby = new Map(db.clients.filter((c) => c.serverId === s.id).map((c) => [c.embyId, c]));
       const playing = new Map(); // cuenta -> aparatos reproduciendo ahora mismo
-      for (const x of list || []) if (x.NowPlayingItem && byEmby.has(x.UserId)) { const c = byEmby.get(x.UserId); if (!playing.has(c)) playing.set(c, new Set()); playing.get(c).add(x.DeviceId || x.Id); }
-      for (const [c, devs] of playing) if (devs.size > 1) recordPeak(c, devs.size);
+      // Solo cuenta lo que se está viendo de verdad: una película en pausa en otro aparato no suma
+      for (const x of list || []) if (x.NowPlayingItem && !(x.PlayState || {}).IsPaused && byEmby.has(x.UserId)) { const c = byEmby.get(x.UserId); if (!playing.has(c)) playing.set(c, new Set()); playing.get(c).add(x.DeviceId || x.Id); }
+      for (const [c, devs] of playing) if (devs.size > 1) multiNow.set(c.id, devs.size);
       for (const x of list || []) {
         recordConn(byEmby.get(x.UserId), x);
         const it = x.NowPlayingItem;
@@ -4137,6 +4191,9 @@ async function recordUsage() {
         day.apps[app] = (day.apps[app] || 0) + mins;
       }
     }
+    // «A la vez» solo cuenta si se ve en 2 revisiones seguidas (unos 2 minutos): así no salta al cambiar de aparato
+    for (const [id, n] of multiNow) { const prev = multiStreak.get(id); if (prev) recordPeak({ id }, Math.min(n, prev)); }
+    multiStreak.clear(); for (const [id, n] of multiNow) multiStreak.set(id, n);
     if (now > day.peak) { day.peak = now; day.peakAt = new Date().toISOString(); }
     // Se guardan 120 dias
     const keys = Object.keys(db.usage.days).sort();
@@ -4169,7 +4226,7 @@ function recordPeak(c, n) {
   const all = connLoad(), pk = all._peaks || (all._peaks = {}), list = pk[c.id] || (pk[c.id] = []);
   const last = list[list.length - 1], nowIso = new Date().toISOString();
   if (last && Date.now() - Date.parse(last[0]) < 10 * 60000 && last[2] >= 0) { last[0] = nowIso; if (n > last[1]) last[1] = n; last[2]++; }
-  else list.push([nowIso, n, 1]);
+  else list.push([nowIso, n, 2]); // 2 = ya visto en dos revisiones seguidas
   if (list.length > 100) pk[c.id] = list.slice(-100);
   connDirty = true;
 }
@@ -4199,7 +4256,8 @@ function shareInfo(c, days = 7) {
   // Aparatos a la vez: solo cuenta cuando Emby los ve REPRODUCIENDO en el mismo minuto.
   // (Antes se contaban también apps abiertas sin ver nada o el cambio de un aparato a otro, y daba avisos falsos.)
   let maxAt = Math.min(1, rows.filter((r) => r[6]).length);
-  for (const p of ((connLoad()._peaks || {})[c.id] || [])) if (Date.parse(p[0]) >= lim && p[1] > maxAt) maxAt = p[1];
+  // Solo momentos vistos al menos en 2 revisiones (los de un solo instante solían ser un cambio de aparato)
+  for (const p of ((connLoad()._peaks || {})[c.id] || [])) if (Date.parse(p[0]) >= lim && (p[2] || 0) >= 2 && p[1] > maxAt) maxAt = p[1];
   const screens = c.screens || 1, reasons = [];
   if (devs.size >= Math.max(4, screens * 2 + 1)) reasons.push(`${devs.size} aparatos distintos`);
   if (zones.size >= 3) reasons.push(`desde ${zones.size} sitios diferentes`);
@@ -4950,7 +5008,9 @@ route('GET', '/api/poster/:sid/:item', '*', async ({ params }) => {
   if (!hit || Date.now() - hit.at > 6 * 3600000) {
     let r;
     try {
-      r = await fetch(`${s.url}/emby/Items/${params.item}/Images/Primary?maxHeight=330&quality=80`, { headers: { 'X-Emby-Token': s.apiKey }, signal: AbortSignal.timeout(15000) });
+      // Jellyfin no lleva el prefijo /emby y la clave va en la cabecera Authorization
+      const jf = s.kind === 'jellyfin';
+      r = await fetch(`${s.url}${jf ? '' : '/emby'}/Items/${params.item}/Images/Primary?maxHeight=330&quality=80`, { headers: jf ? { Authorization: `MediaBrowser Client="Concha", Device="Panel", DeviceId="concha-panel", Version="1.0", Token="${s.apiKey || ''}"` } : { 'X-Emby-Token': s.apiKey }, signal: AbortSignal.timeout(15000) });
     } catch { throw new HttpError(502, 'Sin carátula.'); }
     const type = (r.headers.get('content-type') || '').split(';')[0];
     if (!r.ok || !/^image\/(jpeg|png|webp|gif)$/.test(type)) {
@@ -6182,10 +6242,11 @@ function agentAlert(s, d, kind, text, gap = 3600e3) {
 }
 function agentCheck(s, d) {
   const L = d.last, recent = d.samples.slice(-5);
-  if (L.disk >= 90) agentAlert(s, d, 'disk', `💾 El disco del servidor «${s.name}» está al ${L.disk}%. Si se llena, Emby puede dejar de funcionar.`, 6 * 3600e3);
+  if (L.disk >= 90) agentAlert(s, d, 'disk', `💾 El disco del servidor «${s.name}» está al ${L.disk}%. Si se llena, ${srvKind(s)} puede dejar de funcionar.`, 6 * 3600e3);
   if (recent.length === 5 && recent.every((x) => x.cpu >= 90)) agentAlert(s, d, 'cpu', `🔥 El procesador de «${s.name}» lleva 5 minutos por encima del 90%. Puede que haya demasiadas conversiones de vídeo a la vez.`);
   if (recent.length === 5 && recent.every((x) => x.mem >= 92)) agentAlert(s, d, 'mem', `🧠 La memoria de «${s.name}» lleva 5 minutos por encima del 92%.`);
-  if (!L.emby && d.prevEmby !== false) agentAlert(s, d, 'emby', `⚠️ En «${s.name}» no se encuentra Emby funcionando. Revisa el servidor.`, 3600e3);
+  // El agente busca Emby y también Jellyfin (desde su versión 4); los agentes viejos solo sabían buscar Emby
+  if (!L.emby && d.prevEmby !== false && !(s.kind === 'jellyfin' && Number(L.ver) < 4)) agentAlert(s, d, 'emby', `⚠️ En «${s.name}» no se encuentra ${srvKind(s)} funcionando. Revisa el servidor.`, 3600e3);
   d.prevEmby = L.emby;
 }
 /* Si un agente deja de informar más de 5 minutos, aviso (una vez) */
@@ -6223,16 +6284,17 @@ while true; do
   LOAD=$(cut -d' ' -f1 /proc/loadavg)
   UPT=$(cut -d. -f1 /proc/uptime)
   DISKS=$(df -P -B1 -x tmpfs -x devtmpfs -x overlay -x squashfs -x efivarfs 2>/dev/null | awk 'NR>1 && $2>1000000000 {printf "%s{\"mount\":\"%s\",\"size\":%s,\"used\":%s}", (n++?",":""), $6, $2, $3}')
-  if pgrep -f -i 'EmbyServer|emby-server|embyserver' >/dev/null 2>&1; then EMBY=true; else EMBY=false; fi
+  if pgrep -f -i 'EmbyServer|emby-server|embyserver|jellyfin' >/dev/null 2>&1; then EMBY=true; else EMBY=false; fi
   set -- $MEM
-  JSON="{\"cpu\":$CPU,\"mem\":$1,\"memTotal\":$2,\"load\":$LOAD,\"cores\":$CORES,\"up\":$UP,\"down\":$DOWN,\"uptime\":$UPT,\"emby\":$EMBY,\"disks\":[$DISKS],\"host\":\"$HOST\",\"os\":\"$OS\",\"ver\":\"3\"}"
+  JSON="{\"cpu\":$CPU,\"mem\":$1,\"memTotal\":$2,\"load\":$LOAD,\"cores\":$CORES,\"up\":$UP,\"down\":$DOWN,\"uptime\":$UPT,\"emby\":$EMBY,\"disks\":[$DISKS],\"host\":\"$HOST\",\"os\":\"$OS\",\"ver\":\"4\"}"
   RESP=$(curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -H "X-Agent-Token: $TOKEN" --data "$JSON" "$PANEL/api/agent/report" 2>/dev/null || true)
   # Única orden que acepta: reiniciar la máquina, pedida por el superadministrador desde el panel
   case "$RESP" in
     *'"cmd":"reboot"'*) logger -t panel-agente "Reinicio del VPS pedido desde el panel"; sleep 3; systemctl reboot ;;
     *'"cmd":"restart-emby"'*) logger -t panel-agente "Reinicio de Emby pedido desde el panel"
       if systemctl list-units --all --type=service 2>/dev/null | grep -q 'emby-server'; then systemctl restart emby-server
-      elif command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' | grep -qi emby; then docker restart $(docker ps -a --format '{{.Names}}' | grep -i emby | head -n1)
+      elif systemctl list-units --all --type=service 2>/dev/null | grep -q 'jellyfin'; then systemctl restart jellyfin
+      elif command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' | grep -qiE 'emby|jellyfin'; then docker restart $(docker ps -a --format '{{.Names}}' | grep -iE 'emby|jellyfin' | head -n1)
       fi ;;
   esac
 done
@@ -6300,7 +6362,7 @@ function licView(l) {
   const { tokenHash, ...rest } = l; // la clave nunca sale del panel
   const left = diffDays(l.until, today());
   const state = l.blocked ? 'blocked' : left < -LIC_GRACE ? 'locked' : left < 0 ? 'grace' : left <= 7 ? 'soon' : 'ok';
-  return { ...rest, left, state, online: !!l.lastCheck && Date.now() - Date.parse(l.lastCheck) < 3 * 3600e3 };
+  return { ...rest, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : KINDS_ALL, left, state, online: !!l.lastCheck && Date.now() - Date.parse(l.lastCheck) < 3 * 3600e3 };
 }
 function licFind(id) { const l = db.licenses.find((x) => x.id === Number(id)); if (!l) throw new HttpError(404, 'Esa licencia no existe.'); return l; }
 function licGuard() { if (LIC_CLIENT) throw new HttpError(403, 'Este es un panel alquilado: las licencias se llevan desde el panel principal.'); }
@@ -6311,6 +6373,7 @@ function licFields(l, body) {
   if (body.contact !== undefined) l.contact = str(body.contact, 80);
   if (body.notes !== undefined) l.notes = str(body.notes, 300);
   if (body.price !== undefined) { const p = Math.round(Number(body.price) * 100) / 100; if (!(p >= 0) || p > 100000) throw new HttpError(400, 'El precio no es válido.'); l.price = p; }
+  if (body.platforms !== undefined) { const k = kindsClean(body.platforms); if (!k.length) throw new HttpError(400, 'Elige Emby, Jellyfin o los dos.'); l.platforms = k; }
   if (body.until !== undefined) { const d = str(body.until, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new HttpError(400, 'La fecha no es válida.'); l.until = d; }
 }
 route('GET', '/api/licenses', SUPER, () => { licGuard(); return { list: db.licenses.map(licView), contact: db.settings.licContact, grace: LIC_GRACE, today: today() }; });
@@ -6320,7 +6383,7 @@ route('POST', '/api/licenses', SUPER, ({ me, body }) => lock(async () => {
   if (!(months >= 0 && months <= 36)) throw new HttpError(400, 'Los meses no son válidos.');
   const start = /^\d{4}-\d{2}-\d{2}$/.test(String(body.start || '')) ? body.start : today();
   const token = licToken(), id = (db.licenses.reduce((m, x) => Math.max(m, x.id), 0) || 0) + 1;
-  const l = { id, name: '', url: '', contact: '', notes: '', price: 0, start, until: months ? addMonths(start, months) : addDays(start, 0), blocked: false, payments: [], createdAt: new Date().toISOString(), tokenHash: licHash(token) };
+  const l = { id, name: '', url: '', contact: '', notes: '', price: 0, platforms: ['emby'], start, until: months ? addMonths(start, months) : addDays(start, 0), blocked: false, payments: [], createdAt: new Date().toISOString(), tokenHash: licHash(token) };
   licFields(l, { ...body, until: undefined });
   if (months && body.paid !== false) l.payments.push({ at: new Date().toISOString(), months, amount: Math.round((Number(body.amount ?? l.price * months) || 0) * 100) / 100, until: l.until, method: str(body.method, 30) });
   db.licenses.push(l);
@@ -6396,7 +6459,7 @@ route('POST', '/api/license/check', null, ({ req, body }) => {
   l.lastCheck = new Date().toISOString(); l.lastIp = ip.slice(0, 45);
   const st = licStatsIn(body && body.stats); if (st) l.stats = st;
   if (first || !l._saved || Date.now() - l._saved > 3600e3) { l._saved = Date.now(); saveDb(); }
-  return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
+  return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : KINDS_ALL, grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
 });
 /* Avisos diarios en el panel principal: 7, 3 y 1 día antes, el día que vence y cuando se pausa */
 function licDaily() {
@@ -6423,7 +6486,7 @@ function licDaily() {
 function licStatus() {
   if (!LIC_CLIENT) return null;
   const st = db.licState || {};
-  const base = { contact: st.contact || '', until: st.until || null, lastOk: st.lastOk || null };
+  const base = { contact: st.contact || '', until: st.until || null, lastOk: st.lastOk || null, kinds: licKinds() };
   if (st.invalid) return { ...base, state: 'locked', reason: 'invalid' };
   if (!st.until) return { ...base, state: 'pending' };
   if (st.blocked) return { ...base, state: 'locked', reason: 'blocked' };
@@ -6442,6 +6505,7 @@ async function licCheck() {
     const j = await r.json().catch(() => ({}));
     const before = licStatus();
     if (r.ok && j.ok && /^\d{4}-\d{2}-\d{2}$/.test(String(j.until))) {
+      if (kindsClean(j.platforms).length) db.licState.platforms = kindsClean(j.platforms);
       db.licState = { ...db.licState, until: j.until, blocked: !!j.blocked, grace: Number(j.grace) || LIC_GRACE, contact: str(j.contact, 120), invalid: false, lastOk: new Date().toISOString(), err: '' };
     } else if (r.status === 404) { // la clave no existe en el panel principal (borrada o mal copiada)
       db.licState = { ...db.licState, invalid: true, lastOk: new Date().toISOString(), err: 'clave' };
@@ -6569,6 +6633,7 @@ server.listen(PORT, HOST, () => {
   console.log('  Deja esta ventana abierta. Para parar el panel, cierrala.');
   console.log('');
   const live = () => !licLocked(); // en pausa el panel no toca nada de Emby: las cuentas se quedan como estaban
+  setTimeout(() => { if (live()) jfMarginOnce().catch((e) => console.error('Margen Jellyfin:', e.message)); }, 60000);
   if (live()) runLifecycle();
   let ticks = 0;
   setInterval(() => { if (++ticks % 60 === 0) { backupDb(); lock(async () => pruneRecords()).catch(() => {}); } if (live()) runLifecycle(); }, CHECK_EVERY_MS);
