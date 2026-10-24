@@ -4115,7 +4115,8 @@ route('POST', '/api/monitor/broadcast', '*', async ({ me, body }) => {
 /* ---------- Vigilancia de servidores: aviso si se cae y cuando vuelve ---------- */
 const health = new Map(); // serverId -> { fails, down, since, checked, ok }
 async function watchServers() {
-  for (const s of serversFor(me)) {
+  // Todos los servidores (antes ponía serversFor(me), y aquí no hay «me»: daba error y no vigilaba nada)
+  for (const s of db.servers) {
     const h = health.get(s.id) || { fails: 0, down: false, since: null, checked: null, ok: true };
     let ok = true, why = '';
     const t0 = Date.now();
@@ -6653,7 +6654,7 @@ server.listen(PORT, HOST, () => {
   setInterval(() => { backupJob().catch(() => {}); }, Number(process.env.BACKUP_MS) || 10 * 60000);
   const usageLoop = () => { (live() ? recordUsage() : Promise.resolve()).catch((e) => console.error('Estadísticas:', e.message)).finally(() => setTimeout(usageLoop, PLAY_MS)); };
   setTimeout(usageLoop, 8000);
-  const watchLoop = () => { (live() ? watchServers() : Promise.resolve()).catch(() => {}).finally(() => setTimeout(watchLoop, Number(process.env.WATCH_MS) || 60000)); };
+  const watchLoop = () => { (live() ? watchServers() : Promise.resolve()).catch((e) => console.error('Vigilancia de servidores:', e.message)).finally(() => setTimeout(watchLoop, Number(process.env.WATCH_MS) || 60000)); };
   setTimeout(watchLoop, 5000);
   setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000); // mensajes que llegan al bot de Telegram
 });
