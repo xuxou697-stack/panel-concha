@@ -381,17 +381,113 @@ async function jfMarginOnce() {
     const s = db.servers.find((x) => x.id === c.serverId);
     if (!s || s.kind !== 'jellyfin' || s.off || c.status !== 'active' || c.off || !(c.screens > 0)) continue;
     try {
-      const pol = await readPolicy(s, c.embyId);
-      if ((Number(pol.MaxActiveSessions) || 0) !== c.screens) continue; // ya tiene margen, o algo distinto que no se toca
-      pol.SimultaneousStreamLimit = c.screens;
-      await emby(s, 'POST', `/Users/${c.embyId}/Policy`, pol);
-      done++;
+      await lock(async () => { // leer-cambiar-escribir sin que nadie toque la cuenta a la vez
+        if (c.status !== 'active' || c.off) return;
+        const pol = await readPolicy(s, c.embyId);
+        if ((Number(pol.MaxActiveSessions) || 0) !== c.screens) return; // ya tiene margen, o algo distinto que no se toca
+        pol.SimultaneousStreamLimit = c.screens;
+        await emby(s, 'POST', `/Users/${c.embyId}/Policy`, pol);
+        done++;
+      });
     } catch { failed++; }
   }
   if (failed) return; // se vuelve a intentar en el próximo arranque
   db.settings.jfMargin1 = true;
   if (done) addLog('servidor', null, `Jellyfin: margen de 1 aparato al entrar puesto en ${done} ${done === 1 ? 'cuenta' : 'cuentas'}`, null);
   saveDb();
+}
+/** Guardián de bibliotecas: cada 15 minutos mira en cada servidor si alguna cuenta ACTIVA del panel se ha quedado
+    sin bibliotecas o desactivada (por otro programa, a mano en Emby…). Si es así, se las vuelve a poner sola y lo apunta. */
+let libGuardBusy = false;
+async function libGuard() {
+  if (libGuardBusy) return;
+  libGuardBusy = true;
+  const fixed = [], failed = [];
+  try {
+    for (const s of db.servers) {
+      const mine = db.clients.filter((c) => c.serverId === s.id && c.status === 'active' && !c.off);
+      if (!mine.length) continue;
+      let users;
+      try { ({ users } = await embyAllUsers(s)); } catch { continue; } // servidor caído: ya avisa la vigilancia
+      const byId = new Map(users.map((u) => [u.Id, u]));
+      for (const c of mine) {
+        const u = byId.get(c.embyId), pol = u && u.Policy;
+        if (!pol) continue; // usuario borrado o sin datos: eso lo trata Reparar / Auditoría
+        if (polHasLibs(pol) && !pol.IsDisabled) continue;
+        try {
+          await lock(async () => {
+            // dentro del cerrojo se vuelve a mirar todo: puede haber cambiado mientras tanto
+            const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
+            if (c.status !== 'active' || c.off || !valid || c.serverId !== s.id) return;
+            if (c.quality && !packageReady(s, c.quality)) throw new Error(`el contenido ${QUALITIES[c.quality]} no está configurado en el servidor (Servidores › Contenido)`);
+            const acc = c.quality ? s.packages[c.quality] : c.access;
+            if (!acc || (!acc.all && !(acc.folders || []).length)) throw new Error('no tiene contenido asignado: elige Básico o 4K en la cuenta'); // no sabe qué ponerle
+            const now = await readPolicy(s, c.embyId);
+            if (polHasLibs(now) && !now.IsDisabled) return;
+            await grantAccess(c);
+            delete c.guardErr;
+            addLog('reparada', c, `Se había quedado ${now.IsDisabled ? 'desactivada' : 'sin bibliotecas'} en ${srvKind(s)} estando activa: el panel lo ha corregido solo`, null);
+            fixed.push(`${c.panelName} (${s.name})`);
+          });
+        } catch (e) {
+          console.error('Guardián de bibliotecas:', c.embyName, e.message);
+          // Avisar una sola vez por cuenta y error (cada 15 minutos sería pesado)
+          const key = 'g:' + e.message;
+          if (c.guardErr !== key) {
+            c.guardErr = key;
+            addLog('error', c, `El guardián vio la cuenta sin bibliotecas o desactivada y no pudo corregirla: ${e.message}. Pulsa Reparar.`, null);
+            failed.push(`${c.panelName} (${s.name}): ${e.message}`);
+          }
+        }
+      }
+    }
+  } finally { libGuardBusy = false; }
+  if (failed.length) {
+    saveDb();
+    notifyStaff('servers', `⚠️ ${failed.length === 1 ? 'Hay 1 cuenta activa' : `Hay ${failed.length} cuentas activas`} sin bibliotecas o desactivada${failed.length === 1 ? '' : 's'} que el panel NO ha podido arreglar. Entra y pulsa Reparar:\n${failed.slice(0, 15).join('\n')}${failed.length > 15 ? `\n… y ${failed.length - 15} más` : ''}\n${whenTxt()}`);
+  }
+  if (fixed.length) {
+    saveDb();
+    notifyStaff('servers', `🛠️ ${fixed.length === 1 ? '1 cuenta activa se había quedado' : fixed.length + ' cuentas activas se habían quedado'} sin bibliotecas en el servidor. El panel ${fixed.length === 1 ? 'la ha' : 'las ha'} arreglado solo:\n${fixed.slice(0, 15).join('\n')}${fixed.length > 15 ? `\n… y ${fixed.length - 15} más` : ''}\n${whenTxt()}`);
+  }
+}
+/** Comprobación al minuto: tras crear, renovar, demo, restaurar o activar, se mira en el servidor que la cuenta tiene
+    sus bibliotecas y pantallas. Si algo no cuadra, se corrige en el momento, se apunta y se avisa. */
+const libChecks = new Map(); // cuenta -> temporizador
+function libCheckLater(c) {
+  if (!c) return;
+  clearTimeout(libChecks.get(c.id));
+  const t = setTimeout(() => { libChecks.delete(c.id); libCheckNow(c.id).catch((e) => console.error('Comprobación al minuto:', e.message)); }, Number(process.env.LIBCHECK_MS) || 60000);
+  if (t.unref) t.unref();
+  libChecks.set(c.id, t);
+}
+async function libCheckNow(id) {
+  let note = '';
+  await lock(async () => {
+    const c = db.clients.find((x) => x.id === id);
+    if (!c || c.status !== 'active' || c.off) return;
+    const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
+    const s = db.servers.find((x) => x.id === c.serverId);
+    if (!valid || !s) return;
+    let acc; try { acc = accessOf(c); } catch { return; }
+    if (!acc.all && !(acc.folders || []).length) return;
+    let pol;
+    try { pol = await readPolicy(s, c.embyId); }
+    catch (e) { addLog('error', c, `Comprobación al minuto: no se pudo leer la cuenta en ${srvKind(s)} (${e.message}). Pulsa Reparar si el cliente no ve nada.`, null); saveDb(); return; }
+    const nf = (v) => String(v).toLowerCase().replace(/-/g, '');
+    const want = new Set((acc.folders || []).map(nf)), has = (pol.EnabledFolders || []).map(nf);
+    // Bien = las del paquete (o una parte, si alguna biblioteca ya no existe) y ninguna de más
+    const libsOk = acc.all ? !!pol.EnableAllFolders : (!pol.EnableAllFolders && has.length > 0 && has.every((f) => want.has(f)));
+    const scrOkNow = !(c.screens > 0) || scrOk(s, pol, c.screens);
+    if (libsOk && !pol.IsDisabled && scrOkNow) { addLog('comprobada', c, 'Comprobado al minuto: bibliotecas y pantallas correctas ✓', null); saveDb(); return; }
+    const what = [!libsOk && (has.length || pol.EnableAllFolders ? 'con bibliotecas que no eran las suyas' : 'sin bibliotecas'), pol.IsDisabled && 'desactivada', !scrOkNow && 'con las pantallas mal'].filter(Boolean).join(', ');
+    try { await grantAccess(c); }
+    catch (e) { addLog('error', c, `Comprobación al minuto: estaba ${what} y no se pudo corregir (${e.message}). Pulsa Reparar.`, null); saveDb(); note = `⚠️ ${c.panelName} (${s.name}): estaba ${what} y NO se pudo corregir. Pulsa Reparar.`; return; }
+    addLog('reparada', c, `Comprobación al minuto: estaba ${what} en ${srvKind(s)}. Corregido ✓`, null);
+    saveDb();
+    note = `🛠️ ${c.panelName} (${s.name}): al minuto de crearla o renovarla estaba ${what}. El panel lo ha corregido solo.`;
+  });
+  if (note) notifyStaff('servers', `${note}\n${whenTxt()}`);
 }
 const srvKind = (s) => (s && s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby');
 /** Pestaña desde la que se pide algo «para todos» (Emby o Jellyfin). Sin pestaña, vale todo, como siempre */
@@ -467,6 +563,8 @@ async function grantAccess(client) {
   if (client.off) { await removeAccess(client, true); return; }
   const s = serverOf(client);
   const acc = accessOf(client);
+  // Cuenta sin contenido (por ejemplo, importada de otro panel cuando ya no tenía bibliotecas): mejor avisar que dejarla vacía
+  if (!acc.all && !(acc.folders || []).length) throw new HttpError(400, 'Esta cuenta no tiene contenido asignado. Elige Básico o 4K en «Contenido» y vuelve a intentarlo.');
   const pol = lockDown(await readPolicy(s, client.embyId));
   pol.IsDisabled = false;
   pol.EnableAllFolders = !!acc.all;
@@ -2988,6 +3086,7 @@ route('POST', '/api/clients', '*', ({ me, body }) => lock(async () => {
   spend(me, cost, `Alta de ${c.embyName} (${what})`);
   if (cost > 0) c.charges = [{ ts: new Date().toISOString(), userId: me.id, credits: cost, from: c.createdAt, to: c.expires, kind: 'alta' }];
   addLog('alta', c, `Alta: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
+  libCheckLater(c);
   saveDb();
   return { ok: true, id: c.id };
 }));
@@ -3020,6 +3119,7 @@ route('POST', '/api/demos', '*', ({ me, body }) => lock(async () => {
   c.password = password;
   db.clients.push(c);
   addLog('demo', c, `Demo de ${hours} horas, ${QUALITIES[c.quality]}`, me);
+  libCheckLater(c);
   saveDb();
   return { ok: true, id: c.id };
 }));
@@ -3103,6 +3203,7 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   if (cost > 0) { c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: me.id, credits: cost, from: base, to: c.expires, kind: before.demo ? 'alta' : 'renovacion' }].slice(-24); }
   if (!before.demo) addChurn(c.ownerId, 'ren');
   addLog('renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
+  libCheckLater(c);
   saveDb();
   return { ok: true, expires: c.expires };
 }));
@@ -3160,6 +3261,7 @@ async function setOff(me, c, off) {
     const was = c.off; delete c.off; delete c.offBy;
     try { await applyState(c); } catch (e) { c.off = was; throw e; }
     const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
+    libCheckLater(c);
     addLog('activada', c, valid ? 'Activada de nuevo: vuelve a tener acceso en Emby' : 'Activada de nuevo, pero está vencida: renuévala para que tenga acceso', me);
   }
   return true;
@@ -3177,6 +3279,7 @@ route('POST', '/api/clients/:id/restore', '*', ({ me, params }) => lock(async ()
   c.status = 'active';
   delete c.trashedAt; delete c.trashReason;
   addLog('restaurada', c, 'Restaurada desde la papelera', me);
+  libCheckLater(c);
   saveDb();
   return { ok: true };
 }));
@@ -6635,6 +6738,8 @@ server.listen(PORT, HOST, () => {
   console.log('');
   const live = () => !licLocked(); // en pausa el panel no toca nada de Emby: las cuentas se quedan como estaban
   setTimeout(() => { if (live()) jfMarginOnce().catch((e) => console.error('Margen Jellyfin:', e.message)); }, 60000);
+  const guardLoop = () => { (live() ? libGuard() : Promise.resolve()).catch((e) => console.error('Guardián de bibliotecas:', e.message)).finally(() => setTimeout(guardLoop, Number(process.env.GUARD_MS) || 15 * 60000)); };
+  setTimeout(guardLoop, Number(process.env.GUARD_FIRST_MS) || 3 * 60000);
   if (live()) runLifecycle();
   let ticks = 0;
   setInterval(() => { if (++ticks % 60 === 0) { backupDb(); lock(async () => pruneRecords()).catch(() => {}); } if (live()) runLifecycle(); }, CHECK_EVERY_MS);

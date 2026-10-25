@@ -5769,7 +5769,7 @@ function vImportar() {
   </div>`;
 }
 /* ---------- Ajustes: Logs de actividad ---------- */
-const LOG_KIND = { seguridad: ['login', 'Seguridad'], monitor: ['edit', 'Monitor'],  alta: ['new', 'Cuenta creada'], demo: ['new', 'Demo creada'], importada: ['new', 'Cuenta importada'], renovacion: ['edit', 'Renovación'], edicion: ['edit', 'Datos editados'], transferida: ['edit', 'Transferida'], reparada: ['edit', 'Reparada'],
+const LOG_KIND = { seguridad: ['login', 'Seguridad'], monitor: ['edit', 'Monitor'],  alta: ['new', 'Cuenta creada'], demo: ['new', 'Demo creada'], importada: ['new', 'Cuenta importada'], renovacion: ['edit', 'Renovación'], edicion: ['edit', 'Datos editados'], transferida: ['edit', 'Transferida'], reparada: ['edit', 'Reparada'], comprobada: ['edit', 'Comprobada'],
   restaurada: ['edit', 'Restaurada'], cobro: ['edit', 'Cobro'], aviso: ['edit', 'Aviso enviado'], ajustes: ['edit', 'Ajustes'], servidor: ['edit', 'Servidor'], alertas: ['edit', 'Alertas'], usuario: ['edit', 'Usuario del panel'],
   baja: ['del', 'A la papelera'], papelera: ['del', 'A la papelera'], caducada: ['del', 'Caducada'], eliminada: ['del', 'Cuenta eliminada'], login: ['login', 'Inicio de sesión'], error: ['warn', 'Error'] };
 const logKind = (l) => (l.type === 'usuario' ? [/^Nuevo/.test(l.text) ? 'new' : /eliminado/.test(l.text) ? 'del' : 'edit', 'Usuario del panel'] : LOG_KIND[l.type] || ['edit', l.type]);
