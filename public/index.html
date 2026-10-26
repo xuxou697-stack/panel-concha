@@ -2412,9 +2412,10 @@ function navGroups() {
   g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []), ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(isSuper() ? [{ v: 'gastos', t: 'Gastos', i: 'calendar', n: S.d.expDue || 0, hot: true }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
   g.push({ k: 'aj', t: 'Ajustes', i: 'sliders', items: [
     { v: 'perfil', t: 'Perfil', i: 'user' },
+    ...(!isStandalone() ? [{ v: 'appinst', t: 'Instalar el panel', i: 'download' }] : []),
     ...(!canDo('system') ? [{ v: 'plantillas', t: 'Mis mensajes', i: 'msg' }] : []),
     ...(!noCli() ? [{ v: 'avisotv', t: 'Aviso en la tele', i: 'tv' }] : []),
-    ...(isSuper() ? [{ v: 'appcli', t: 'App de clientes', i: 'screen' }] : []),
+    ...(isSuper() || appHas() ? [{ v: 'appcli', t: 'App de clientes', i: 'screen' }] : []),
     { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
     ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
     ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
@@ -2779,7 +2780,7 @@ function render() {
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() === 'jellyfin') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -6367,6 +6368,7 @@ const appBlock = () => `📲 Descarga nuestra app ${appName()}:\n${appUrl()}\n${
 const appGuide = () => `📲 Cómo instalar la app ${appName()}\n\n📱 En el móvil Android:\n1. Abre este enlace: ${appUrl()}\n2. Toca «Descargar» y luego «Instalar».\n3. Si pide permiso para instalar apps, actívalo y vuelve atrás.\n\n📺 En Fire Stick o TV Box:\n1. Instala la app «Downloader» desde la tienda.\n2. Ajustes › Mi Fire TV › Opciones para desarrolladores › Instalar apps desconocidas › activa Downloader.\n3. Abre Downloader, escribe ${appCode() ? `el código ${appCode()}` : appUrl()} y pulsa «Go».\n4. Pulsa «Instalar». ¡Listo!\n\nAl abrir la app, entra con tu usuario y contraseña de siempre.`;
 const fmtMB = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.round(b / 1024) + ' KB');
 function vAppCli() {
+  if (!isSuper()) return vAppCliLite();
   const a = S.d.settings.app || {}, o = a.only || {}, has = appHas();
   const sw = (name, on, title, sub) => `<label class="ap-sw"><input type="checkbox" name="${name}"${on ? ' checked' : ''}><span class="ap-tg"></span><span><b>${title}</b><small>${sub}</small></span></label>`;
   const hero = `<section class="ap-hero"><span class="ap-ic">📲</span><div><h1>App de clientes</h1><p>Tu app ${esc(a.name || '')} para móviles Android, Fire Stick y TV Box: súbela aquí y tus clientes la descargan desde tu panel.</p></div></section>`;
@@ -6386,7 +6388,7 @@ function vAppCli() {
       ${sw('inMsg', a.inMsg !== false, 'Enlace en los mensajes', 'Al copiar el mensaje de alta, demo o renovación, se añade el enlace para descargar la app.')}
       ${sw('tag', a.tag !== false, 'Ver quién usa la app', `En Monitor y en la ficha de cada cliente sale la etiqueta 📲 ${esc(a.name || '')}.`)}
       <label class="f">Código de Downloader <span class="muted small">(opcional)</span><input name="dlCode" inputmode="numeric" maxlength="12" placeholder="Ejemplo: 123456" value="${esc(a.dlCode || '')}"></label>
-      <div class="row2"><label class="f">Nombre de la app<input name="name" maxlength="40" value="${esc(a.name || '')}"></label><label class="f">Nombre con el que se conecta<input name="client" maxlength="60" value="${esc(a.client || '')}"><small class="muted">Es el nombre que ve Emby. No lo cambies si no sabes cuál es.</small></label></div></section>`;
+      <div class="row2"><label class="f">Nombre de la app<input name="name" maxlength="40" value="${esc(a.name || '')}"></label><label class="f">Nombre con el que se conecta<input name="client" maxlength="60" value="${esc(a.client || '')}"><small class="muted">Es el nombre que ven Emby y Jellyfin. No lo cambies si no sabes cuál es.</small></label></div></section>`;
   const only = `<section class="ap-card ap-only${o.on ? ' on' : ''}"><h2>🔒 Solo mi app <span class="ap-st">${o.on ? 'ACTIVADO' : 'DESACTIVADO'}</span></h2>
       <p class="muted small" style="margin:-4px 0 12px">Si un cliente reproduce con otra app, el panel corta esa reproducción y le dice en la pantalla que use ${esc(a.name || 'tu app')}. Déjalo configurado y actívalo o desactívalo cuando quieras.</p>
       ${sw('onlyOn', !!o.on, 'Activar «Solo mi app»', has ? 'Se aplica en menos de un minuto. Las cuentas de administrador no se tocan.' : 'Primero sube la app.')}
@@ -6396,6 +6398,31 @@ function vAppCli() {
       <p class="muted small">Si algún cliente necesita otra app, ábrele su ficha y en «App» pulsa «Cambiar».</p></section>`;
   const hist = (a.history || []).length ? `<section class="ap-card"><h2>🕓 Versiones subidas</h2>${a.history.map((h, i) => `<div class="ap-h${i ? '' : ' cur'}"><b>${esc(h.version || '—')}</b><span>${fmtTs(h.at, true)} · ${fmtMB(h.size || 0)}${h.by ? ' · ' + esc(h.by) : ''}</span>${i ? '' : '<em>actual</em>'}</div>`).join('')}</section>` : '';
   return hero + `<div class="ap-grid"><section class="ap-card">${file}${up}</section>${link}<form id="appForm" class="ap-form">${opts}${only}<div class="ap-save"><button class="btn primary" type="submit">💾 Guardar opciones</button></div></form>${hist}</div>`;
+}
+/* Instalar el panel como app: para todos (super, administradores, resellers y subresellers) */
+function vAppInst() {
+  const step = (n, t) => `<div class="ig-s"><span>${n}</span><p>${t}</p></div>`;
+  return `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#0ea5e9 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#312e81)"><span class="ap-ic"><img src="/icon-192.png" alt="" style="width:46px;height:46px;border-radius:12px"></span><div><h1>Instalar el panel</h1><p>Ten ${esc(BRAND.name || 'el panel')} como una app en tu móvil o en tu ordenador: se abre a pantalla completa y se actualiza solo.</p></div></section>
+    <div class="ap-grid">
+      <section class="ap-card" style="text-align:center"><button type="button" class="btn primary" data-act="app-install" style="font-size:16px;padding:14px 22px">📲 Instalar ahora</button>
+        <p class="muted small" style="margin:10px 0 0">${isStandalone() ? 'Ya lo estás usando como app 👍' : APP.prompt ? 'Tu navegador lo puede instalar directamente.' : 'Si no se abre la ventana de instalar, sigue los pasos de abajo.'}</p></section>
+      <section class="ap-card ig"><h2>🤖 Android (Chrome)</h2>${step(1, 'Toca el menú <b>⋮</b> arriba a la derecha.')}${step(2, 'Toca <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.')}${step(3, 'Confirma con <b>«Instalar»</b>. ¡Listo!')}</section>
+      <section class="ap-card ig"><h2>🍎 iPhone o iPad (Safari)</h2>${step(1, 'Toca <b>Compartir</b> <span class="ig-k">⬆️</span> abajo en la pantalla.')}${step(2, 'Toca <b>«Añadir a pantalla de inicio»</b> <span class="ig-k">➕</span>.')}${step(3, 'Toca <b>«Añadir»</b>. ¡Listo!')}</section>
+      <section class="ap-card ig"><h2>💻 Ordenador (Chrome o Edge)</h2>${step(1, 'Pulsa el icono <span class="ig-k">⊕</span> a la derecha de la dirección.')}${step(2, 'Pulsa <b>«Instalar»</b>. Te queda un icono en el escritorio.')}</section>
+    </div>`;
+}
+/* App de clientes para vendedores: solo descargar, copiar el enlace y las instrucciones */
+function vAppCliLite() {
+  const a = S.d.settings.app || {};
+  if (!appHas()) return `<section class="ap-hero"><span class="ap-ic">📲</span><div><h1>App de clientes</h1><p>Todavía no hay app disponible.</p></div></section>`;
+  return `<section class="ap-hero"><span class="ap-ic">📲</span><div><h1>App de clientes</h1><p>La app ${esc(a.name)} para tus clientes: móviles Android, Fire Stick y TV Box. Funciona con Emby y Jellyfin.</p></div></section>
+    <div class="ap-grid">
+      <section class="ap-card"><div class="ap-file"><div class="ap-v"><b>${esc(a.name)}</b><span>Versión ${esc(a.version || '—')} · ${fmtMB(a.size || 0)}</span></div>
+        <div class="ap-acts" style="margin-top:12px"><a class="btn primary" href="/app" download style="text-decoration:none">⬇️ Descargar la app</a><button type="button" class="btn" data-act="app-guide">📋 Copiar instrucciones para el cliente</button></div></div></section>
+      ${appCode() ? `<section class="ap-card"><h2>🔢 Código para Downloader</h2><div class="ap-code"><b>${esc(appCode())}</b><span>En la Fire Stick: abre Downloader y escribe este número.</span></div></section>` : ''}
+      <section class="ap-card"><h2>🔗 Enlace de descarga</h2><div class="ap-link"><code>${esc(appUrl())}</code><button type="button" class="btn sm" data-act="app-copy">Copiar</button></div>
+        <p class="muted small">Siempre da la última versión. Al copiar el mensaje de alta o renovación de un cliente, este enlace ya va dentro.</p></section>
+    </div>`;
 }
 function appUploadFile(f) {
   if (!f) return;
@@ -6431,6 +6458,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 162, d: '2026-10-26', items: ['📲 «Instalar el panel» en Ajustes para todos: el superadministrador, los administradores, los resellers y los subresellers'] },
+  { v: 161, d: '2026-10-26', items: ['📲 Los vendedores también ven «App de clientes» en Ajustes para descargar la app y copiar el enlace o el código'] },
   { v: 159, d: '2026-10-26', items: ['📲 App de clientes: sube tu app, tus clientes la descargan desde tu panel y el enlace sale en los mensajes', '🏷️ En Monitor y en la ficha ves quién usa tu app', '🔒 «Solo mi app»: opción para que solo se pueda ver con tu app (la activas y desactivas cuando quieras)', '🔢 Código de Downloader: tus clientes escriben solo un número en la Fire Stick'] },
   { v: 158, d: '2026-10-26', items: ['🎬 Entrada al panel nueva: un muro de carátulas que se mueve y todo centrado, en el ordenador y en el móvil'] },
   { v: 157, d: '2026-10-26', items: ['✨ Este botón de Novedades: aquí verás cada mejora del panel'] },
@@ -6468,7 +6497,8 @@ function dNews() {
 const APP = { prompt: null };
 const isStandalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const canInstall = () => !isStandalone() && (!!APP.prompt || isIOS());
+const isMobile = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) || isIOS();
+const canInstall = () => !isStandalone() && (!!APP.prompt || isMobile());
 try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch (e) { /* sin app */ }
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); APP.prompt = e; if (S.d) instBanner(); });
 window.addEventListener('appinstalled', () => { APP.prompt = null; const b = $('#instBar'); if (b) b.remove(); toast('¡App instalada! Ya la tienes en la pantalla de inicio 📲'); });
