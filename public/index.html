@@ -8838,7 +8838,7 @@ document.addEventListener('click', (e) => {
     case 'app-pick': { const i = $('#appFile'); if (i) i.click(); } break;
     case 'app-copy': copyText(appUrl()).then(() => toast('Enlace copiado')); break;
     case 'app-guide': copyText(appGuide()).then(() => toast('Instrucciones copiadas: pégalas en el chat del cliente')); break;
-    case 'app-del': dConfirm('Quitar la app del panel', 'El enlace de descarga dejará de funcionar y «Solo mi app» se desactiva. Podrás volver a subirla cuando quieras.', 'Quitar', () => api('POST', '/api/app-delete'), 'App quitada'); break;
+    case 'app-del': dConfirm('Quitar la app del panel', 'El enlace de descarga dejará de funcionar y «Solo mi app» se desactiva. Podrás volver a subirla cuando quieras.', 'Quitar', () => api('POST', '/api/app-delete', {}), 'App quitada'); break;
     case 'app-tell': { const a = S.d.settings.app; S.bc.text = `Hola {nombre} 👋\n\n📲 Hay una versión nueva de nuestra app ${a.name}${a.version ? ' (' + a.version + ')' : ''}.\n\nDescárgala aquí: ${appUrl()}\nEn Fire Stick: abre la app «Downloader» y escribe esa dirección.\n\nSe instala encima de la anterior, no pierdes nada.`; S.view = 'mensajecli'; render(); window.scrollTo(0, 0); } break;
     case 'app-install': appInstall(); break;
     case 'app-hide': try { localStorage.setItem('instHide', String(Date.now() + 14 * 86400000)); } catch (e) { /* nada */ } { const b = $('#instBar'); if (b) b.remove(); } break;
