@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Concha</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b1a23">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>try { document.documentElement.dataset.theme = localStorage.getItem('tema') === 'light' ? 'light' : 'dark'; } catch (e) { document.documentElement.dataset.theme = 'dark'; }</script>
 <style>
 :root{
@@ -1576,6 +1582,281 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .lks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.lk{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:10px;background:var(--surface);text-align:center}.lk span{font-size:16px}.lk b{font-size:20px;line-height:1.1}.lk small{font-size:11px;color:var(--muted)}.lk.ok b{color:#19c37d}
 .lsv{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.lsv span{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,#52b54b 18%,transparent);color:#8ee086}.lsv span.jf{background:color-mix(in srgb,#a46bff 20%,transparent);color:#d6bfff}.lsv span.off{opacity:.55;text-decoration:line-through}
 .monwho{margin:0 0 14px}
+
+/* Renovar (diseño nuevo) */
+/* App de clientes */
+.ap-hero{display:flex;gap:16px;align-items:center;padding:20px;border-radius:22px;margin:0 0 16px;color:#fff;background:radial-gradient(120% 140% at 0% 0%,#22c55e 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#0ea5e9 0%,transparent 55%),linear-gradient(135deg,#052e2b,#0c4a6e)}
+.ap-hero h1{margin:0;font-size:24px;color:#fff}.ap-hero p{margin:4px 0 0;opacity:.9;font-size:14px}.ap-ic{flex:none;width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:30px;background:rgba(255,255,255,.16)}
+.ap-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;max-width:860px}.ap-form{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}.ap-grid section.ap-card{margin:0;min-width:0}.ap-card .btn{white-space:normal;max-width:100%;text-align:center}
+.ap-card{border-radius:18px;padding:16px;background:var(--card,var(--surface));border:1px solid var(--line)}.ap-card h2{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:16px}
+.ap-file .ap-v{display:flex;align-items:baseline;gap:10px}.ap-v b{font-size:20px}.ap-v span{color:var(--muted)}
+.ap-ks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.ap-ks div{min-width:0;padding:10px;border-radius:14px;background:color-mix(in srgb,#22c55e 9%,transparent)}.ap-ks b{display:block;font-size:16px;overflow-wrap:anywhere}.ap-ks small{color:var(--muted);font-size:12px}
+.ap-acts{display:flex;flex-wrap:wrap;gap:8px}
+.ap-empty{text-align:center;padding:14px 6px}.ap-empty>div{font-size:40px}.ap-empty b{display:block;font-size:16px;margin:6px 0 2px}
+.ap-prog{margin-top:12px}.ap-prog>div{height:10px;border-radius:99px;background:var(--raised);overflow:hidden}.ap-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22c55e,#0ea5e9);transition:width .2s}.ap-prog span{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+.ap-link{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--raised);margin-bottom:8px}.ap-link code{flex:1;min-width:0;word-break:break-all;font-size:15px;font-weight:700}
+.ap-sw{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px dashed var(--line);cursor:pointer}.ap-sw:first-of-type{border-top:0}
+.ap-sw input{position:absolute;opacity:0;pointer-events:none}.ap-tg{flex:none;position:relative;width:46px;height:26px;border-radius:99px;background:var(--raised);border:1px solid var(--line);transition:background .2s;margin-top:2px}
+.ap-tg::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.ap-sw input:checked+.ap-tg{background:linear-gradient(90deg,#22c55e,#0ea5e9);border-color:transparent}.ap-sw input:checked+.ap-tg::after{transform:translateX(20px)}
+.ap-sw b{display:block;font-size:14px}.ap-sw small{display:block;color:var(--muted);font-size:12.5px}
+.ap-only.on{border-color:color-mix(in srgb,#22c55e 55%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#22c55e 9%,transparent),color-mix(in srgb,#0ea5e9 7%,transparent))}
+.ap-st{margin-left:auto;font-size:11px;font-weight:900;padding:3px 9px;border-radius:99px;background:var(--raised);color:var(--muted)}.ap-only.on .ap-st{background:#16a34a;color:#fff}
+.ap-save{display:flex;justify-content:flex-end}
+.ap-h{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-top:1px dashed var(--line)}.ap-h:first-of-type{border-top:0}.ap-h span{color:var(--muted);font-size:12.5px}.ap-h em{margin-left:auto;font-style:normal;font-size:11px;font-weight:800;color:#16a34a}
+.ap-code{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px;border-radius:16px;margin-bottom:12px;background:linear-gradient(120deg,color-mix(in srgb,#f97316 16%,transparent),color-mix(in srgb,#ec4899 14%,transparent))}.ap-code b{font-size:38px;letter-spacing:.12em;font-variant-numeric:tabular-nums}.ap-code span{font-size:13px;color:var(--muted);text-align:center}
+.ap-steps p{margin:0 0 6px;font-size:13.5px}.ap-steps code{word-break:break-all}
+.myapp{display:inline-block;font-size:11px;font-weight:800;padding:1px 7px;border-radius:99px;color:#fff;background:linear-gradient(90deg,#22c55e,#0ea5e9);vertical-align:1px}.myapp.no{background:var(--raised);color:var(--muted)}
+
+/* Novedades */
+.newsbtn{position:relative;display:flex;align-items:center;gap:8px;margin:0 14px 10px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(120deg,color-mix(in srgb,#0ea5e9 10%,transparent),color-mix(in srgb,#ec4899 9%,transparent));color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:left}
+.newsm{display:none}
+.newsdot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 2px var(--surface,#11242f)}.newsbtn .newsdot{top:50%;right:12px;transform:translateY(-50%)}
+.newsdot[hidden]{display:none}
+@media (max-width:860px){.newsm{display:grid;place-items:center;position:fixed;top:9px;right:160px;z-index:26;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:17px;cursor:pointer;padding:0}}
+.nw-d{margin:14px 0 8px;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.nw-d:first-child{margin-top:0}
+.nw-v{border-radius:14px;padding:10px 12px;margin:0 0 8px;border:1px solid var(--line);background:color-mix(in srgb,var(--raised,#183240) 50%,transparent)}
+.nw-v.new{border-color:color-mix(in srgb,#8b5cf6 55%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#0ea5e9 12%,transparent),color-mix(in srgb,#ec4899 10%,transparent))}
+.nw-h{display:flex;align-items:center;gap:8px;margin-bottom:4px}.nw-h b{font-size:13.5px}
+.nw-new{font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:99px;color:#fff;background:linear-gradient(90deg,#8b5cf6,#ec4899)}
+.nw-v ul{margin:0;padding:0;list-style:none}.nw-v li{font-size:13.5px;padding:3px 0;line-height:1.4}
+
+/* App en el móvil */
+.instbar{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 12px 12px 14px;border-radius:18px;border:1px solid color-mix(in srgb,#8b5cf6 40%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#0ea5e9 16%,transparent),color-mix(in srgb,#ec4899 13%,transparent))}
+.instbar .ib-ic img{width:42px;height:42px;border-radius:12px;display:block}
+.instbar>div{flex:1;min-width:0}.instbar b{display:block;font-size:14.5px}.instbar small{display:block;font-size:12px;color:var(--muted)}
+.instbar .ib-go{flex:none;border:0;border-radius:12px;padding:9px 12px;font:inherit;font-weight:800;font-size:13px;color:#fff;cursor:pointer;background:linear-gradient(90deg,#0ea5e9,#8b5cf6,#ec4899)}
+.instbar .ib-x{flex:none;border:0;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
+.ig-hero{display:flex;gap:12px;align-items:center;padding:12px;border-radius:16px;background:linear-gradient(120deg,color-mix(in srgb,#0ea5e9 14%,transparent),color-mix(in srgb,#ec4899 12%,transparent));margin-bottom:6px}
+.ig-hero img{width:56px;height:56px;border-radius:14px}.ig-hero b{display:block;font-size:16px}.ig-hero small{color:var(--muted);font-size:12.5px}
+.ig h4{margin:14px 0 8px;font-size:14px}
+.ig-s{display:flex;gap:10px;align-items:flex-start;margin:0 0 8px}.ig-s>span{flex:none;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-weight:900;font-size:13px;color:#fff;background:linear-gradient(135deg,#0ea5e9,#8b5cf6)}.ig-s p{margin:4px 0 0;font-size:13.5px}
+.ig-k{display:inline-block;padding:0 5px;border-radius:6px;background:var(--raised,#183240)}
+
+/* Ficha del cliente */
+.cf-back{margin:0 0 10px}
+.cf-hero{position:relative;overflow:hidden;border-radius:22px;padding:18px;margin:0 0 14px;color:#fff;background:radial-gradient(120% 140% at 0% 0%,#0ea5e9 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#312e81);box-shadow:0 14px 34px rgba(49,46,129,.35)}
+.cf-hero.st-expired,.cf-hero.st-trash{background:radial-gradient(120% 140% at 0% 0%,#f97316 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ef4444 0%,transparent 55%),linear-gradient(135deg,#3b0a0a,#7f1d1d)}
+.cf-hero.st-soon{background:radial-gradient(120% 140% at 0% 0%,#f59e0b 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#3b1d0a,#7c2d12)}
+.cf-hero.st-demo{background:radial-gradient(120% 140% at 0% 0%,#a855f7 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#06b6d4 0%,transparent 55%),linear-gradient(135deg,#2e1065,#4c1d95)}
+.cf-id{display:flex;gap:14px;align-items:center}
+.cf-av{flex:none;width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:26px;font-weight:900;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3)}
+.cf-nm h1{margin:0;font-size:22px;line-height:1.15;color:#fff}.cf-nm p{margin:3px 0 6px;font-size:13px;opacity:.85;word-break:break-word}
+.cf-st{display:inline-block;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.18);margin-right:6px}.cf-st.due{background:rgba(251,191,36,.3)}
+.cf-left{display:flex;align-items:baseline;gap:10px;margin:16px 0 6px}.cf-left b{font-size:44px;line-height:1;font-weight:900;letter-spacing:-1px}.cf-left span{font-size:13.5px;opacity:.9}
+.cf-hero .lbar,.cf-hero [class*=bar]{opacity:.95}
+.cf-more{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:900;cursor:pointer;line-height:1}.cf-id{padding-right:40px}
+.cf-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.cf-a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);color:#fff;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-align:center}
+.cf-a>span{font-size:20px}.cf-a small{display:block;font-size:10.5px;font-weight:600;opacity:.85}
+.cf-a.pri{grid-column:span 2;flex-direction:row;justify-content:center;gap:10px;font-size:15px;background:linear-gradient(90deg,#0ea5e9,#8b5cf6,#ec4899);border:0;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.cf-a:active{transform:scale(.97)}
+.cf-ks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 14px}
+@media(max-width:640px){.cf-ks{grid-template-columns:repeat(2,1fr)}}
+.cf-k{border-radius:16px;padding:12px;background:var(--card,#111827);border:1px solid var(--line,#1f2937);display:flex;flex-direction:column;gap:2px}
+.cf-k>span{font-size:18px}.cf-k b{font-size:22px;font-weight:900}.cf-k small{font-size:11.5px;color:var(--muted)}
+.cf-k.b b{color:#38bdf8}.cf-k.v b{color:#a78bfa}.cf-k.a b{color:#fbbf24}.cf-k.g b{color:#34d399}.cf-k.r b{color:#f87171}
+.cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:820px){.cf-grid{grid-template-columns:1fr}}
+.cf-card{border-radius:18px;padding:14px 16px;background:var(--card,#111827);border:1px solid var(--line,#1f2937)}.cf-wide{grid-column:1/-1}
+.cf-card h3{display:flex;align-items:center;gap:6px;margin:0 0 10px;font-size:15px}.cf-ed{margin-left:auto;font-size:12.5px}
+.cf-r{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed var(--line,#1f2937)}.cf-r:first-of-type{border-top:0}
+.cf-r em{font-style:normal;color:var(--muted);font-size:13px}.cf-r b{margin-left:auto;font-size:13.5px;text-align:right;word-break:break-all}.cf-r .bad{color:#f87171}
+.cf-cs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.cf-c{display:flex;flex-direction:column;padding:10px 12px;border-radius:14px;font-weight:800;font-size:13.5px;text-decoration:none;color:inherit;border:1px solid var(--line,#1f2937);background:color-mix(in srgb,#38bdf8 8%,transparent);font-family:inherit;text-align:left;cursor:pointer}
+.cf-c small{font-weight:500;color:var(--muted);font-size:12px;word-break:break-all}.cf-c.wa{background:color-mix(in srgb,#22c55e 12%,transparent)}.cf-c.tg{background:color-mix(in srgb,#0ea5e9 12%,transparent)}.cf-c.em{background:color-mix(in srgb,#a78bfa 12%,transparent)}.cf-c.add{border-style:dashed}
+.cf-note{margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,#fbbf24 10%,transparent);font-size:13px;white-space:pre-wrap}
+.cf-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.cf-mini .cf-k{padding:8px 10px;background:color-mix(in srgb,#38bdf8 6%,transparent)}.cf-mini .cf-k b{font-size:18px}
+.cf-devs>div{display:grid;grid-template-columns:26px 1fr;column-gap:8px;padding:7px 0;border-top:1px dashed var(--line,#1f2937)}.cf-devs>div>span{grid-row:span 2;font-size:18px}.cf-devs b{font-size:13.5px}.cf-devs small{color:var(--muted);font-size:11.5px}
+.cf-tl{position:relative;padding-left:4px}
+.cf-ti{position:relative;display:grid;grid-template-columns:34px 1fr;gap:10px;padding:0 0 14px}
+.cf-ti:not(:last-child)::before{content:"";position:absolute;left:16px;top:32px;bottom:2px;width:2px;background:var(--line,#1f2937)}
+.cf-dot{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-size:16px;background:color-mix(in srgb,#94a3b8 14%,transparent)}
+.cf-ti.g .cf-dot{background:color-mix(in srgb,#22c55e 18%,transparent)}.cf-ti.b .cf-dot{background:color-mix(in srgb,#38bdf8 18%,transparent)}.cf-ti.v .cf-dot{background:color-mix(in srgb,#a78bfa 18%,transparent)}.cf-ti.a .cf-dot{background:color-mix(in srgb,#fbbf24 18%,transparent)}.cf-ti.r .cf-dot{background:color-mix(in srgb,#ef4444 18%,transparent)}.cf-ti.t .cf-dot{background:color-mix(in srgb,#14b8a6 18%,transparent)}
+.cf-tt{display:flex;gap:8px;align-items:baseline}.cf-tt time{margin-left:auto;font-size:11.5px;color:var(--muted)}.cf-ti p{margin:2px 0;font-size:13px}.cf-ti small{font-size:11.5px;color:var(--muted)}
+.cf-open{display:flex;flex-direction:column;align-items:flex-start;width:100%;margin:0 0 12px;padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,#8b5cf6 45%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#0ea5e9 14%,transparent),color-mix(in srgb,#ec4899 12%,transparent));color:inherit;font:inherit;font-size:14px;cursor:pointer;text-align:left}
+.cf-open small{color:var(--muted);font-size:12px}.cf-open.sm{margin:10px 0 0;flex-direction:row;gap:6px;align-items:center;justify-content:center}
+
+.rsame{display:flex;align-items:center;gap:8px;width:calc(100% - 4px);margin:10px 2px 2px;padding:10px 14px;border:0;border-radius:14px;cursor:pointer;color:#fff;font:inherit;font-size:14px;text-align:left;background:linear-gradient(90deg,#0ea5e9,#8b5cf6,#ec4899);box-shadow:0 6px 16px rgba(139,92,246,.28)}
+.rsame span{margin-left:auto;font-size:12px;opacity:.9;font-weight:600}.rsame:active{transform:scale(.98)}
+.btn.rsame-mini{background:linear-gradient(90deg,#8b5cf6,#ec4899);color:#fff;border:0;margin-right:6px}
+
+.rnhero{padding:10px!important;margin:0 0 12px!important}.rnhero .bztk{margin-top:0}
+.rnfrom{margin:8px 0 0;font-size:12px;color:#cfe2ea}
+.rnf{margin:0 0 12px}.rnl{display:block;font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:2px}
+.rnf label.f{margin:0}.rnhide>select{margin-top:0}
+.rnf label.rnhide{font-size:0}
+.rnprev{border-radius:14px;background:linear-gradient(120deg,color-mix(in srgb,#fbbf24 15%,transparent),color-mix(in srgb,#f472b6 11%,transparent));border:1px solid color-mix(in srgb,#fbbf24 38%,transparent)}
+.rnprev::before{content:"🪙 "}
+#dlgForm .dfoot .btn.primary{border:0;border-radius:14px;color:#fff;font-weight:800;background:linear-gradient(90deg,#0ea5e9,#8b5cf6,#ec4899);box-shadow:0 8px 20px rgba(139,92,246,.35)}
+#dlgForm .dfoot .btn.primary.danger,#dlgForm .dfoot .btn.danger{background:var(--bad,#ef4444);box-shadow:none}
+
+/* ===== Movimientos (línea de tiempo) ===== */
+.mv-ks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 14px}
+.mv-k{display:flex;align-items:center;gap:8px;border-radius:16px;padding:9px 12px;border:1px solid var(--line);background:var(--surface);position:relative;overflow:hidden}
+.mv-k::before{content:"";position:absolute;inset:0;opacity:.18;background:var(--kc)}
+.mv-k.g{--kc:linear-gradient(135deg,#10b981,#34d399)}.mv-k.b{--kc:linear-gradient(135deg,#0ea5e9,#6366f1)}.mv-k.v{--kc:linear-gradient(135deg,#8b5cf6,#ec4899)}.mv-k.r{--kc:linear-gradient(135deg,#ef4444,#f97316)}
+.mv-k>*{position:relative}.mv-k span{font-size:17px}.mv-k b{font-size:20px;line-height:1}.mv-k small{color:var(--muted);font-size:12px;line-height:1.15}
+.mv-tools{display:flex;flex-direction:column;gap:10px;margin:0 0 6px}
+.mv-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.mv-chips::-webkit-scrollbar{display:none}
+.mv-chips button{flex:none;font:inherit;font-size:13.5px;font-weight:700;padding:8px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer;white-space:nowrap}
+.mv-chips button em{font-style:normal;margin-left:6px;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--raised);color:var(--muted)}
+.mv-chips button[aria-pressed=true]{color:#fff;border-color:transparent;background:linear-gradient(135deg,#7c3aed,#db2777);box-shadow:0 6px 16px rgba(219,39,119,.25)}
+.mv-chips button[aria-pressed=true] em{background:rgba(255,255,255,.22);color:#fff}
+.mv-q{display:flex;align-items:center;gap:8px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);padding:0 12px}
+.mv-q input{flex:1;border:0;background:none;color:var(--text);padding:11px 0;font-size:15px;min-width:0}.mv-q input:focus{outline:none}
+.mv-q:focus-within{border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.2)}
+.mv-day{display:flex;align-items:center;gap:8px;font-size:14px;margin:18px 4px 8px;color:var(--muted)}
+.mv-day small{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--raised);text-transform:none}
+.mv-items{display:flex;flex-direction:column;gap:8px}
+.mv-it{--mc:#64748b;display:flex;gap:12px;padding:12px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:inset 3px 0 0 var(--mc)}
+.mv-it.g{--mc:#10b981}.mv-it.b{--mc:#0ea5e9}.mv-it.v{--mc:#a78bfa}.mv-it.a{--mc:#f59e0b}.mv-it.r{--mc:#ef4444}.mv-it.t{--mc:#14b8a6}.mv-it.i{--mc:#6366f1}.mv-it.c{--mc:#06b6d4}
+.mv-ic{flex:none;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-size:19px;background:color-mix(in srgb,var(--mc) 18%,var(--bg));border:1px solid color-mix(in srgb,var(--mc) 40%,transparent)}
+.mv-b{flex:1;min-width:0}
+.mv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mv-name{font:inherit;font-weight:800;font-size:15.5px;color:var(--text);background:none;border:0;padding:0;cursor:pointer;text-align:left}.mv-name:hover{text-decoration:underline}.mv-name.panel{cursor:default;color:var(--muted)}
+.mv-t{font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;color:var(--mc);background:color-mix(in srgb,var(--mc) 15%,transparent)}
+.mv-top time{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600}
+.mv-sub{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:2px}
+.mv-own{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--raised);color:var(--text)}.mv-own.v{background:color-mix(in srgb,#a78bfa 20%,transparent);color:#c4b5fd}
+.mv-x{margin:6px 0 6px;font-size:13.5px;line-height:1.4;color:color-mix(in srgb,var(--text) 85%,var(--muted));word-break:break-word}.mv-x.bad{color:#f87171}
+.mv-by{display:inline-block;font-size:11.5px;font-weight:700;color:var(--muted)}.mv-by.auto{color:#8b9cf5}
+.mv-more{display:block;width:100%;margin:14px 0 0;border-radius:14px;padding:12px}
+@media (max-width:560px){.mv-ks{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== Precios y paquetes (diseño nuevo) ===== */
+.pz-hero{position:relative;overflow:hidden;border-radius:24px;padding:18px;margin:0 0 16px;color:#fff;background:linear-gradient(135deg,#065f46,#0e4a6b 50%,#3b2a78);box-shadow:0 18px 40px rgba(0,0,0,.28)}
+.pz-hero::after{content:"";position:absolute;right:-50px;top:-50px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,rgba(251,191,36,.42),transparent 65%);pointer-events:none}
+.pz-hero h2{margin:0;font-size:22px;position:relative}.pz-hero p{margin:4px 0 0;color:#d6e8ee;font-size:14px;position:relative}
+.pz-kpis{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.pz-kpis span{border-radius:14px;padding:10px;background:rgba(8,18,26,.4);border:1px solid rgba(255,255,255,.14)}
+.pz-kpis b{display:block;font-size:17px}.pz-kpis small{color:#cfe2ea;font-size:11.5px}
+.pz-form{margin:0}
+.pz-hint{color:var(--muted);font-size:13px;margin:0 0 12px;line-height:1.45}
+.pz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.pz-card{--c:#38bdf8;border-radius:18px;padding:12px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 14%,var(--bg)),var(--bg));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}
+.pz-card.c1{--c:#38bdf8}.pz-card.c2{--c:#a78bfa}.pz-card.c3{--c:#34d399}.pz-card.c4{--c:#fbbf24}
+.pz-ch{display:flex;align-items:center;gap:8px;margin-bottom:8px}.pz-ch b{font-size:16px}.pz-e{font-size:20px}
+.pp-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed color-mix(in srgb,var(--c) 25%,var(--line))}
+.pp-row:first-of-type{border-top:0}
+.pp-l{flex:1;font-size:13.5px;font-weight:600;min-width:0}.pp-u{font-size:12px;color:var(--muted);width:36px}
+.stp{display:flex;align-items:center;border-radius:12px;background:var(--bg);border:1.5px solid color-mix(in srgb,var(--c) 40%,var(--line));overflow:hidden}
+.stp input{width:46px;text-align:center;border:0;background:none;color:var(--text);font-weight:800;font-size:16px;padding:8px 0;-moz-appearance:textfield}
+.stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stp-b{width:34px;height:36px;border:0;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--text);font-size:18px;font-weight:800;cursor:pointer}
+.stp-b:hover{background:color-mix(in srgb,var(--c) 30%,transparent)}
+.stp:focus-within{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent)}
+.pz-acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.pz-acts .btn{border-radius:14px}
+.pz-big{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-weight:700;font-size:14px;margin-bottom:6px}
+.pz-big small{color:var(--muted);font-weight:500}
+.pz-money{display:inline-flex;align-items:center;border-radius:14px;background:var(--bg);border:1.5px solid var(--line);padding:0 12px}
+.pz-money:focus-within{border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 20%,transparent)}
+.pz-money input{width:90px;border:0;background:none;color:var(--text);font-weight:800;font-size:20px;padding:10px 0}
+.pz-money em{font-style:normal;color:var(--muted);font-weight:700}
+.pz-money.sm input{width:64px;font-size:15px;padding:8px 0}
+.pz-h3{font-size:15px;margin:16px 0 10px}
+.pz-tiers{display:flex;flex-direction:column;gap:8px}
+.pz-tier{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:var(--bg);border:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+.pz-tier input[name=tfrom]{width:70px;border-radius:10px;background:var(--surface);border:1.5px solid var(--line);color:var(--text);font-weight:800;padding:7px 8px}
+.pz-tier b{color:var(--c)}
+.pz-tn{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-weight:900;font-size:12px;color:#0b1a23;background:var(--c)}
+.pz-stairs{display:flex!important;flex-direction:row!important;align-items:flex-end;gap:8px!important;margin:14px 0 10px!important}
+.pz-stairs span{flex:1;border-radius:12px!important;padding:10px!important;font-size:12.5px;color:#fff;background:linear-gradient(160deg,#7c3aed,#db2777)!important;box-shadow:0 8px 18px rgba(124,58,237,.25)}
+.pz-stairs span:nth-child(2){background:linear-gradient(160deg,#0ea5e9,#6366f1)!important;transform:translateY(-8px)}
+.pz-stairs span:nth-child(3){background:linear-gradient(160deg,#10b981,#0ea5e9)!important;transform:translateY(-16px)}
+.pz-stairs span b{display:block;font-size:16px}
+.pz-packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.pz-pack{position:relative;border-radius:18px;padding:12px;background:linear-gradient(160deg,color-mix(in srgb,var(--pc) 18%,var(--bg)),var(--bg));border:1px solid color-mix(in srgb,var(--pc) 40%,var(--line));overflow:hidden}
+.pz-pack::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--pc)}
+.pz-pack.empty{background:var(--bg);border-style:dashed;opacity:.8}.pz-pack.empty::before{display:none}
+.pz-pt{font-size:12px;color:var(--muted);font-weight:700;min-height:16px}
+.pz-pn{width:100%;margin:4px 0 8px;border:0;border-bottom:1.5px solid color-mix(in srgb,var(--pc) 40%,var(--line));background:none;color:var(--text);font-weight:800;font-size:16px;padding:4px 0}
+.pz-pn:focus{outline:none;border-color:var(--pc)}
+.pz-pr{display:flex;flex-direction:column;gap:6px}.pz-pr .pz-money{display:flex;padding:0 10px;--c:var(--pc)}.pz-pr .pz-money input{flex:1;width:auto;min-width:0}
+.pz-pv{display:block;margin-top:8px;color:var(--muted);font-size:12px}
+@media (max-width:420px){.pz-packs{grid-template-columns:1fr 1fr}.pz-kpis b{font-size:15px}.pz-tier input[name=tfrom]{width:60px}}
+.dpill{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;font-weight:700;padding:7px 12px;border-radius:999px;cursor:pointer;margin:0 0 12px;border:1px solid}
+.dpill.bad{color:#fff;background:linear-gradient(135deg,#b91c1c,#be185d);border-color:transparent;box-shadow:0 6px 16px rgba(185,28,28,.3)}
+.dpill.ok{color:var(--text);background:color-mix(in srgb,#10b981 12%,var(--surface));border-color:color-mix(in srgb,#10b981 40%,var(--line))}
+.dpill .chev{opacity:.8;transition:transform .2s;display:inline-block}.dpill[aria-expanded=true] .chev{transform:rotate(90deg)}
+.dpill .db-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:dbPulse 1.6s infinite}
+@keyframes dbPulse{70%{box-shadow:0 0 0 8px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+.dpanel{margin:-4px 0 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);padding:4px 12px}
+.dpanel .db-r{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.dpanel .db-r:first-child{border-top:0}
+.dpanel .db-r>div{flex:1;min-width:0}.dpanel .db-r b{display:block}.dpanel .db-r small{display:block;color:var(--muted);margin-top:2px}
+.dpanel .db-r.bad b{color:#f87171}
+@media (prefers-reduced-motion:reduce){.dpill .db-dot,.dpill .chev{animation:none;transition:none}}
+
+/* ===== Formularios con color (estilo «pasos»): lo aplica bzForm() a cada form.formpage ===== */
+form.formpage.bz{background:none!important;border:0!important;padding:0!important;box-shadow:none!important;max-width:760px}
+.bzs{--c:#38bdf8;position:relative;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:inset 3px 0 0 var(--c);padding:16px 16px 6px;margin:0 0 16px}
+.bzs.c1{--c:#38bdf8}.bzs.c2{--c:#a78bfa}.bzs.c3{--c:#fbbf24}.bzs.c4{--c:#f472b6}.bzs.c5{--c:#34d399}.bzs.c6{--c:#fb923c}
+form.formpage.bz .bzs>h2{display:flex;align-items:center;gap:10px;font-size:17px;margin:0 0 14px!important;padding:0!important;border:0!important}
+.bzn{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-weight:900;font-size:15px;color:#0b1a23;background:var(--c);box-shadow:0 6px 16px color-mix(in srgb,var(--c) 40%,transparent)}
+.bzs label.f{font-weight:700;font-size:12.5px}
+.bzs label.f>input,.bzs label.f>select,.bzs label.f>textarea,.bzs .bzin{border-radius:14px!important;border:1.5px solid var(--line)!important;background:var(--bg)!important;min-height:46px;padding:10px 13px!important;font-size:15px;color:var(--text);transition:border-color .15s,box-shadow .15s}
+.bzs .bzin{padding:0 6px 0 12px!important;min-height:48px}
+.panel:has(> form.formpage.bz),section.bzs>.panel{background:none;border:0;padding:0;box-shadow:none}
+section.bzs>h2{display:flex;align-items:center;gap:10px;font-size:17px;margin:0 0 14px}
+.bzs .bzin>input{padding:12px 0!important}
+.bzs input:focus,.bzs select:focus,.bzs textarea:focus{outline:none;border-color:var(--c)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 20%,transparent)}
+.bzin{display:flex!important;align-items:center;gap:8px;margin-top:5px;padding:0 6px 0 12px!important}
+.bzin>i{font-style:normal;font-size:17px;flex:none}
+.bzs .bzin>input,.bzs .bzin.inrow>input{flex:1;min-width:0;border:0!important;background:none!important;padding:10px 0!important;margin:0!important;min-height:0!important;box-shadow:none!important;color:var(--text);font-size:15px}
+.bzin:focus-within{border-color:var(--c)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 20%,transparent)}
+.bzin .btn[data-act=gen]{flex:none;width:38px;height:38px;padding:0;border-radius:11px;font-size:18px;display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in srgb,#38bdf8 28%,transparent),color-mix(in srgb,#a78bfa 28%,transparent));border:1px solid color-mix(in srgb,#a78bfa 40%,transparent)}
+select.bz-hid{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;margin:0!important;padding:0!important;border:0!important;min-height:0!important}
+.bzc{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.bzc button{flex:1 1 auto;min-width:64px;white-space:nowrap;font:inherit;font-weight:700;font-size:14px;padding:11px 8px;border-radius:14px;background:var(--bg);border:1.5px solid var(--line);color:var(--text);cursor:pointer;line-height:1.15}
+.bzc button small{display:block;font-weight:600;font-size:11px;color:var(--muted);margin-top:2px}
+.bzc button[aria-pressed=true]{color:#fff;border-color:transparent;background:linear-gradient(135deg,#7c3aed,#db2777);box-shadow:0 8px 20px rgba(219,39,119,.28)}
+.bzc button[aria-pressed=true] small{color:#fde7f3}
+.bzc button:disabled{opacity:.4;cursor:not-allowed}
+.bzc button:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.bzc.srv button{flex:0 0 auto;padding:10px 14px}
+.bzc.srv button::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#34d399;margin-right:7px;vertical-align:1px}
+.bzc.srv button[aria-pressed=true]{background:linear-gradient(135deg,#0ea5e9,#6366f1);box-shadow:0 8px 20px rgba(99,102,241,.3)}
+.bzc.big button{text-align:left;padding:12px 14px;font-size:15px}
+.bzc.big button .e{display:block;font-size:22px;margin-bottom:4px}
+.bzc.big button[aria-pressed=true]{background:linear-gradient(150deg,color-mix(in srgb,#a78bfa 30%,var(--bg)),color-mix(in srgb,#38bdf8 16%,var(--bg)));color:var(--text);border-color:#a78bfa;box-shadow:0 0 0 3px rgba(167,139,250,.2)}
+.bzc.big button[aria-pressed=true] small{color:var(--muted)}
+.bzc.seg{background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:4px;gap:4px;flex-wrap:nowrap}
+.bzc.seg button{border:0;background:none;padding:9px 6px;border-radius:10px}
+.bzc.seg button[aria-pressed=true]{background:linear-gradient(135deg,#059669,#10b981);box-shadow:none}
+.bzs .preview{border-radius:14px;background:linear-gradient(120deg,color-mix(in srgb,#fbbf24 15%,transparent),color-mix(in srgb,#f472b6 11%,transparent));border:1px solid color-mix(in srgb,#fbbf24 38%,transparent);padding:12px 14px}
+.bzs .preview::before{content:"🪙 "}
+.bzs .check{gap:12px;padding:8px 0;line-height:1.35}
+.bzs .check>input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:42px;height:24px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;transition:background .2s;margin:0}
+.bzs .check>input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.bzs .check>input[type=checkbox]:checked{background:linear-gradient(135deg,#10b981,#38bdf8)}
+.bzs .check>input[type=checkbox]:checked::after{transform:translateX(18px)}
+.bzs .check>input[type=checkbox]:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+form.formpage.bz>.dfoot{position:sticky;bottom:0;z-index:5;display:flex;gap:8px;align-items:center;margin:0 -6px!important;padding:10px 12px;border-radius:18px;background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.25);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+form.formpage.bz>.dfoot .bzsum{flex:1;font-size:12px;color:var(--muted);line-height:1.3;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+form.formpage.bz>.dfoot .bzsum b{display:block;color:var(--text);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+form.formpage.bz>.dfoot .bzsum:empty{display:none}
+@media (max-width:520px){form.formpage.bz>.dfoot .btn.ghost{padding:12px 12px}}
+form.formpage.bz>.dfoot .btn{border-radius:16px;padding:12px 18px}
+form.formpage.bz>.dfoot .btn.primary,.bzs .btn.primary{border:0;color:#fff;font-weight:800;background:linear-gradient(90deg,#0ea5e9,#8b5cf6,#ec4899);box-shadow:0 10px 26px rgba(139,92,246,.4)}
+@media (max-width:860px){form.formpage.bz>.dfoot{bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
+/* Cabecera con ficha en vivo (Nuevo cliente / Nueva demo) */
+.bzhero{position:relative;border-radius:24px;padding:18px;margin:0 0 16px;overflow:hidden;color:#fff;background:linear-gradient(135deg,#0e4a6b,#3b2a78 60%,#7a2f62);box-shadow:0 18px 40px rgba(0,0,0,.3)}
+.bzhero::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(251,191,36,.45),transparent 65%);pointer-events:none}
+.bzhero h2{font-size:22px;margin:0;position:relative}
+.bzhero p{color:#d6e4ee;font-size:14px;margin-top:4px;position:relative}
+.bztk{position:relative;margin-top:14px;border-radius:18px;padding:14px;background:rgba(8,18,26,.55);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(6px)}
+.bztk .h{display:flex;align-items:center;gap:10px;min-width:0}
+.bztk .av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#0b1a23;background:linear-gradient(135deg,#38bdf8,#a78bfa)}
+.bztk .h div{min-width:0}.bztk .h b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bztk .h small{color:#b8cbd6;font-size:12px}
+.bztk .st{margin-left:auto;flex:none;font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;color:#34d399;background:rgba(52,211,153,.16)}
+.bztk .rw{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.bztk .rw span{font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.08)}
+.bztk .dt{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.18)}
+.bztk .dt small{color:#b8cbd6;font-size:11px;letter-spacing:.08em;text-transform:uppercase}.bztk .dt b{font:800 21px ui-monospace,Menlo,monospace;color:#7ff0bb}.bztk .dt .r{text-align:right}.bztk .dt .r b{color:#fde68a}
+:root[data-theme="light"] .bzn{color:#fff}
+@media (prefers-reduced-motion:reduce){.bzs .check>input[type=checkbox],.bzs .check>input[type=checkbox]::after{transition:none}}
+.fu-top{display:flex;justify-content:flex-end;margin:0 0 12px}
+.fuc .fu-del{color:var(--danger,#ef4444)}
 .lplat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 12px}
 .lplat label{position:relative}.lplat input{position:absolute;opacity:0;pointer-events:none}
 .lplat span{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2,rgba(255,255,255,.03));font-weight:700;font-size:13px;text-align:center;cursor:pointer}
@@ -1848,6 +2129,45 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .tabbar{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);background:color-mix(in srgb,var(--surface) 88%,transparent)}
 .tabbar button[aria-current="page"] .ic{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--brand) 70%,transparent))}
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 45%,transparent) transparent}
+/* ===== Entrada estilo «Cine»: muro de carátulas que se mueve y todo centrado en una sola tarjeta ===== */
+#gate{background:#05070d}
+#gate .gb,#gate .ggrid{opacity:.35}
+.gwall{position:absolute;inset:-40% -20%;display:grid;grid-template-columns:repeat(12,1fr);gap:18px;transform:rotate(-12deg);opacity:.6;animation:gwMove 60s linear infinite alternate;pointer-events:none}
+.gwall i{aspect-ratio:2/3;border-radius:16px;position:relative;background:linear-gradient(160deg,hsl(var(--h) 72% 56%),hsl(calc(var(--h) + 60) 62% 20%));box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.gwall i::after{content:"▶";position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.3);font-size:22px}
+@keyframes gwMove{from{translate:0 0}to{translate:-6% -10%}}
+@media (prefers-reduced-motion:reduce){.gwall{animation:none}}
+.gfade{position:absolute;inset:0;background:radial-gradient(65% 75% at 50% 50%,rgba(5,7,13,.5),rgba(5,7,13,.95))}
+.gbg{position:fixed;inset:0;overflow:hidden}
+#gate .gwrap{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:100vh;min-height:100dvh;padding:40px 16px 28px!important;box-sizing:border-box}
+.gside{display:contents}
+.gpanel{order:2;width:100%;display:flex;justify-content:center;padding:0!important;background:none!important;border:0!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#gate .ghead{order:1;display:grid!important;grid-template-columns:auto auto;grid-template-areas:"ring name" "ring tag";justify-content:center;align-items:center;column-gap:14px;row-gap:0;text-align:left!important;width:min(440px,100%)}
+#gate .gring{width:60px!important;height:60px!important}
+#gate .gname{font-size:38px!important;line-height:1.05}
+#gate .gtag{margin:2px 0 0!important;font-size:11.5px;letter-spacing:.14em}
+#gate .gwel,#gate .gmsg{display:none!important}
+#gate .gcard{width:100%!important;max-width:440px;margin:0 auto!important;background:rgba(8,10,18,.8)!important;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+#gate h1,#gate #gateText{text-align:center!important}
+.gfeat{order:3;align-self:center;display:flex!important;flex-wrap:wrap;justify-content:center;gap:8px;max-width:680px}
+.gfeat li{padding:7px 12px!important;gap:6px!important;border-radius:99px!important;background:rgba(255,255,255,.07)!important}
+.gfeat li>span{width:auto!important;height:auto!important;background:none!important;font-size:15px!important}
+.gfeat small{display:none!important}.gfeat b{font-size:12.5px!important;font-weight:600;color:#dfe7ef}
+.gextra{order:4;align-self:center!important;align-items:center!important;padding:0!important;gap:12px;width:min(440px,100%)}
+#gate .gsales{max-width:440px!important;width:100%!important}
+#gate .gfoot{align-items:center!important;text-align:center!important}
+:root[data-theme="light"] #gate{background:#eef3fb}
+:root[data-theme="light"] .gfade{background:radial-gradient(65% 75% at 50% 50%,rgba(238,243,251,.55),rgba(238,243,251,.95))}
+:root[data-theme="light"] #gate .gcard{background:rgba(255,255,255,.88)!important;box-shadow:0 30px 70px -24px rgba(30,60,110,.45)}
+:root[data-theme="light"] .gfeat b{color:#1f3b48}:root[data-theme="light"] .gfeat li{background:rgba(255,255,255,.75)!important}
+@media (max-width:599px){
+  #gate .gwrap{justify-content:flex-start;padding:28px 14px 22px!important;gap:14px}
+  #gate .gring{width:50px!important;height:50px!important}#gate .gname{font-size:32px!important}
+  .gwall{grid-template-columns:repeat(7,1fr);gap:12px}
+  #gate .gcard{padding:22px 18px 20px!important}
+  .gfeat{gap:6px}.gfeat li{padding:6px 10px!important}
+}
+@media (min-height:860px) and (max-width:599px){#gate .gwrap{justify-content:center}}
 </style>
 </head>
 <body>
@@ -1855,6 +2175,7 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 <div id="gate" hidden>
   <div class="gbg" aria-hidden="true">
     <i class="gb gb1"></i><i class="gb gb2"></i><i class="gb gb3"></i><i class="gb gb4"></i><i class="ggrid"></i>
+    <div class="gwall" id="gWall"></div><i class="gfade"></i>
   </div>
   <button type="button" class="ib themebtn" data-act="theme" aria-label="Cambiar entre tema claro y oscuro"></button>
   <main class="gwrap">
@@ -1898,6 +2219,7 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
     <button type="button" class="brand" data-act="home" title="Ir a la lista de clientes" aria-label="Ir a la lista de clientes"><span class="logo"></span><span><b class="brand-name">Concha</b><span class="sub">Cuentas Emby</span></span></button>
     <div class="clock" aria-label="Fecha y hora"><div class="ctime"><b data-clock="hm">--:--</b><i data-clock="s">00</i></div><div class="cday" data-clock="day"></div><div class="cdate" data-clock="date"></div></div>
     <button type="button" class="qsbtn" data-act="qs" aria-label="Buscar opciones, clientes o vendedores (Ctrl+K)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><span>Buscar…</span><kbd>Ctrl K</kbd></button>
+    <button type="button" class="newsbtn" data-act="news" aria-label="Novedades del panel">✨<span>Novedades</span><i class="newsdot" hidden></i></button>
     <nav class="nav" id="nav" aria-label="Secciones"></nav>
     <div id="sideSales"></div>
     <div class="sidefoot">
@@ -1907,6 +2229,7 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
     </div>
   </aside>
   <button type="button" class="brand topbar" data-act="home" title="Ir a la lista de clientes" aria-label="Ir a la lista de clientes"><span class="logo"></span><b class="brand-name">Concha</b><span class="topclock"><b data-clock="hm">--:--</b><span data-clock="short"></span></span></button>
+  <button type="button" class="newsm" data-act="news" aria-label="Novedades del panel" title="Novedades del panel">✨<i class="newsdot" hidden></i></button>
   <button type="button" class="qsm" data-act="qs" aria-label="Buscar opciones, clientes o vendedores"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg></button>
   <main id="main"></main>
   <div id="shade" data-act="menu"></div>
@@ -1988,7 +2311,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'renew-same': 'bolt', renew: 'clock', 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-pkg': 'box', 'bulk-scr': 'screen', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -2031,7 +2354,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN = new Set();
 
 /* ---------- Estado ---------- */
-const S = { fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { cf: { id: 0, hist: null, conn: null, busy: false }, fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -2091,6 +2414,7 @@ function navGroups() {
     { v: 'perfil', t: 'Perfil', i: 'user' },
     ...(!canDo('system') ? [{ v: 'plantillas', t: 'Mis mensajes', i: 'msg' }] : []),
     ...(!noCli() ? [{ v: 'avisotv', t: 'Aviso en la tele', i: 'tv' }] : []),
+    ...(isSuper() ? [{ v: 'appcli', t: 'App de clientes', i: 'screen' }] : []),
     { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
     ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
     ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
@@ -2157,6 +2481,7 @@ function showGate(setup) {
   $('#gateTitle').textContent = setup ? 'Bienvenido' : 'Iniciar sesión';
   $('#gateHost').textContent = location.hostname;
   $('#gateYear').textContent = new Date().getFullYear();
+  { const w = $('#gWall'); if (w && !w.firstChild) w.innerHTML = Array.from({ length: 120 }, (_, i) => `<i style="--h:${(i * 47) % 360}"></i>`).join(''); }
   { const gs = $('#gateSales'); if (SALES) { gs.outerHTML = salesHtml('gsales').replace('<a class="gsales"', '<a class="gsales" id="gateSales"'); } else gs.hidden = true; }
   $('#gateErr').hidden = true;
   $('#gateForm').reset();
@@ -2305,6 +2630,98 @@ function jfWords(root) {
   for (let n = w.nextNode(); n; n = w.nextNode()) if (/Emby/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/\bEmby\b/g, 'Jellyfin');
   root.querySelectorAll('[placeholder*="Emby"],[title*="Emby"],[aria-label*="Emby"]').forEach((e) => ['placeholder', 'title', 'aria-label'].forEach((a) => { const v = e.getAttribute(a); if (v) e.setAttribute(a, v.replace(/\bEmby\b/g, 'Jellyfin')); }));
 }
+
+/* ---------- Formularios con color: pasos numerados, iconos, botones en vez de listas cortas ---------- */
+const BZ_ICON = { panelName: '🙂', name: '🙂', embyName: '👤', username: '👤', password: '🔑', email: '✉️', telegram: '✈️', whatsapp: '💬', signal: '🔒', url: '🌐', publicUrl: '🔗', apiKey: '🗝️', contact: '📞', price: '💶', creditPrice: '💶', amount: '💶' };
+function bzChips(sel) {
+  if (sel.dataset.bz || sel.multiple) return;
+  const opts = [...sel.options];
+  const kind = sel.dataset.chip || '';
+  if (!kind && (opts.length < 2 || opts.length > 5 || opts.some((o) => o.text.length > 24))) return;
+  sel.dataset.bz = '1';
+  sel.classList.add('bz-hid'); sel.tabIndex = -1; sel.setAttribute('aria-hidden', 'true');
+  const box = document.createElement('div');
+  box.className = 'bzc' + (kind ? ' ' + kind : opts.length === 2 && !kind ? ' seg' : '');
+  box.setAttribute('role', 'group');
+  const lab = sel.closest('label'); if (lab) box.setAttribute('aria-label', (lab.firstChild && lab.firstChild.textContent || '').replace('*', '').trim());
+  sel.after(box);
+  const BIG = { basico: ['🎬', 'HD, películas y series'], k4: ['💎', 'Todo + Ultra HD'], custom: ['📚', 'Las que ya tiene'] };
+  const draw = () => {
+    box.innerHTML = [...sel.options].map((o) => {
+      let t = esc(o.text);
+      if (kind === 'big' && BIG[o.value]) t = `<span class="e">${BIG[o.value][0]}</span>${t}<small>${BIG[o.value][1]}</small>`;
+      else { const m = /^(\d+) (\S.*)$/.exec(o.text); if (m && !kind) t = `${m[1]}<small>${esc(m[2])}</small>`; }
+      return `<button type="button" data-v="${esc(o.value)}" aria-pressed="${o.value === sel.value}"${o.disabled ? ' disabled' : ''}>${t}</button>`;
+    }).join('');
+  };
+  draw();
+  box.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-v]'); if (!b || b.disabled) return;
+    if (sel.value !== b.dataset.v) { sel.value = b.dataset.v; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    sync();
+  });
+  const sync = () => box.querySelectorAll('button[data-v]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === sel.value)));
+  sel.addEventListener('change', sync);
+  if (sel.form) { sel.form.addEventListener('change', sync); sel.form.addEventListener('input', sync); }
+  new MutationObserver(() => { draw(); }).observe(sel, { childList: true, subtree: true, attributes: true });
+}
+function bzForm(f) {
+  if (f.classList.contains('bz')) return;
+  f.classList.add('bz');
+  const kids = [...f.children], foot = kids.filter((k) => k.classList && k.classList.contains('dfoot'));
+  let sec = null, n = 0;
+  const hasH2 = kids.some((k) => k.tagName === 'H2');
+  for (const k of kids) {
+    if (foot.includes(k) || k.classList.contains('bzhero')) continue;
+    if (k.tagName === 'H2' || !sec) {
+      n++;
+      sec = document.createElement('section');
+      sec.className = `bzs c${((n - 1) % 6) + 1}`;
+      f.insertBefore(sec, k);
+      if (k.tagName === 'H2' && hasH2) { k.classList.remove('sep'); k.insertAdjacentHTML('afterbegin', `<span class="bzn">${n}</span>`); }
+    }
+    sec.appendChild(k);
+  }
+  foot.forEach((d) => f.appendChild(d));
+  // Iconos dentro de los campos
+  f.querySelectorAll('label.f>input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]):not([type=color]), .inrow>input').forEach((inp) => {
+    const ic2 = BZ_ICON[inp.name] || { email: '✉️', password: '🔑', url: '🌐', tel: '📞', date: '📅' }[inp.type] || '';
+    let box = inp.parentElement;
+    if (box.classList.contains('inrow')) box.classList.add('bzin');
+    else { const w = document.createElement('span'); w.className = 'bzin'; inp.before(w); w.appendChild(inp); box = w; }
+    if (ic2) box.insertAdjacentHTML('afterbegin', `<i aria-hidden="true">${ic2}</i>`);
+  });
+  f.querySelectorAll('.bzin .btn[data-act=gen]').forEach((b) => { b.textContent = '🎲'; });
+  f.querySelectorAll('select').forEach(bzChips);
+}
+let bzObs = null, bzRaf = 0;
+function bzLite(f) {
+  if (f.classList.contains('bz')) return;
+  f.classList.add('bz');
+  const sec = f.closest('section');
+  if (sec && !sec.classList.contains('bzs') && sec.querySelector(':scope > h2')) {
+    const n = document.querySelectorAll('#main section.bzs').length + 1;
+    sec.classList.add('bzs', `c${((n - 1) % 6) + 1}`);
+    sec.querySelector(':scope > h2').insertAdjacentHTML('afterbegin', `<span class="bzn">${n}</span>`);
+  }
+  f.querySelectorAll('label.f>input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]):not([type=color]), .inrow>input').forEach((inp) => {
+    const ic2 = BZ_ICON[inp.name] || { email: '✉️', password: '🔑', url: '🌐', tel: '📞', date: '📅' }[inp.type] || '';
+    let box = inp.parentElement;
+    if (box.classList.contains('inrow')) box.classList.add('bzin');
+    else { const w = document.createElement('span'); w.className = 'bzin'; inp.before(w); w.appendChild(inp); box = w; }
+    if (ic2) box.insertAdjacentHTML('afterbegin', `<i aria-hidden="true">${ic2}</i>`);
+  });
+  f.querySelectorAll('select').forEach(bzChips);
+}
+const BZ_LITE = ['profileForm', 'supportForm', 'pw', 'brandForm'];
+function bzAll(root) {
+  (root || document).querySelectorAll('form.formpage:not(.bz):not(.nobz)').forEach((f) => { try { bzForm(f); } catch (e) { console.error('bzForm', e); } });
+  $('#main').querySelectorAll(BZ_LITE.map((id) => 'form#' + id).join(',')).forEach((f) => { try { bzLite(f); } catch (e) { console.error('bzLite', e); } }); // en el orden de la página
+  if (!bzObs && typeof MutationObserver !== 'undefined') {
+    bzObs = new MutationObserver(() => { if (bzRaf) return; bzRaf = requestAnimationFrame(() => { bzRaf = 0; bzAll($('#main')); }); });
+    bzObs.observe($('#main'), { childList: true, subtree: true });
+  }
+}
 let jfObs = null, jfRaf = 0;
 function jfWatch() {
   if (jfObs || typeof MutationObserver === 'undefined') return;
@@ -2339,7 +2756,7 @@ function render() {
   if (S.view === 'directo') S.view = 'monitor';
   if (S.view === 'movdemos') { S.view = 'movimientos'; S.logF = 'demo'; }
   const d = S.d, items = navItems();
-  if (!items.some((x) => x.v === S.view) && !(S.view === 'hoy' && !noCli()) && !(S.view === 'vendedor' && me().role !== 'sub') && !(S.view === 'srvficha' && canDo('viewServers') && S.d.servers.some((x) => x.id === S.sf.id))) S.view = S.view === 'srvficha' && canDo('viewServers') ? 'servidores' : 'resumen';
+  if (!items.some((x) => x.v === S.view) && !(S.view === 'hoy' && !noCli()) && !(S.view === 'vendedor' && me().role !== 'sub') && !(S.view === 'srvficha' && canDo('viewServers') && S.d.servers.some((x) => x.id === S.sf.id)) && !(S.view === 'cficha' && S.d.clients.some((x) => x.id === S.cf.id))) S.view = S.view === 'srvficha' && canDo('viewServers') ? 'servidores' : 'resumen';
   const listF = ['soon', 'expired', 'demo', 'off'].includes(S.filter) ? S.filter : 'all';
   const navTop = $('#nav').scrollTop;
   const item = (x) => {
@@ -2362,8 +2779,8 @@ function render() {
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
-  try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() === 'jellyfin') jfWatch(); }
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+  try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() === 'jellyfin') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
     $('#main').innerHTML = `<div class="panel pad" style="max-width:720px"><h2>Esta pantalla no se ha podido mostrar</h2><p class="err" style="max-width:none;margin:10px 0">${esc(ex && ex.message)}</p>
@@ -2377,13 +2794,16 @@ function render() {
   if (S.view === 'uso' && !S.uso && !S.usoBusy) loadUso();
   if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
   if (S.view === 'srvficha') sfAfterRender();
+  if (S.view === 'cficha' && !S.cf.hist && !S.cf.busy) loadCf();
+  instBanner(); newsDots();
   if (S.view === 'avisotv') { tvPreview(); const f = $('#tvForm'); if (f) { f.oninput = tvPreview; f.onchange = (e) => { if (e.target.name === 'use') { S.tv.own = e.target.value === 'mine'; f.querySelector('.tv-form').disabled = !S.tv.own; } }; } }
   if (S.view === 'ingresos' && !S.ing && !S.ingBusy) loadIng();
   if (S.view === 'inactivos' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
   if (S.view === 'directo') { loadLive(); S.liveTimer = setInterval(loadLive, (S.d.settings.liveSec || 15) * 1000); }
   if ((S.view === 'nuevo' || S.view === 'demonueva') && $('#newClient')) wireCost(+$('#newClient').elements.serverId.value, null, $('#newClient'));
-  if (S.view === 'resumen' && S.d.servers.length && !noCli()) { loadLive(); S.liveTimer = setInterval(() => { if (!document.hidden) loadLive(); }, 20000); }
+  if ((S.view === 'nuevo' || S.view === 'demonueva') && $('#newClient')) { const nf = $('#newClient'); ['input', 'change'].forEach((ev) => nf.addEventListener(ev, nwTicket)); nf.addEventListener('click', () => setTimeout(nwTicket, 0)); nwTicket(); }
+  if (S.view === 'resumen' && S.d.servers.length && !noCli()) { loadLive(); refreshDown(); S.liveTimer = setInterval(() => { if (!document.hidden) { loadLive(); refreshDown(); } }, 20000); }
   if (S.view === 'cuentas' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'cuentas' && S.d.servers.length && !noCli() && (!S.liveAt || Date.now() - S.liveAt > 30000)) { S.liveAt = Date.now(); loadLive(); }
   const tab = (attrs, icon, label, cur) => `<button type="button" ${attrs}${cur ? ' aria-current="page"' : ''}>${ic(icon)}<span>${label}</span></button>`;
@@ -2464,8 +2884,32 @@ window.addEventListener('popstate', (e) => {
 });
 /** Página principal del panel: Clientes › Lista (o el Resumen, si ese usuario no ve clientes).
     Se abre al entrar, al recargar (F5) y al pulsar «Atrás» desde cualquier pantalla. */
-const homeKey = () => (noCli() ? 'resumen' : 'cuentas/all');
-function goHome() { if (noCli()) S.view = 'resumen'; else { S.view = 'cuentas'; S.filter = 'all'; } S.page = 1; }
+/** Aviso en el Resumen: servidores caídos ahora mismo, y los que se cayeron y volvieron en las últimas 6 horas */
+function downBox() {
+  const list = (S.health && S.health.servers) || [];
+  const hhmm = (iso) => new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const ago = (iso) => { const m = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? plural(m, 'minuto', 'minutos') : `${Math.floor(m / 60)} h ${m % 60} min`; };
+  const down = list.filter((x) => x.ok === false && x.since);
+  const back = []; // solo se avisa de lo que está caído ahora mismo (lo que ya volvió no hace falta)
+  const btn = (x) => (canDo('viewServers') ? `<button type="button" class="btn sm" data-act="srv-open" data-id="${x.id}">Ver servidor</button>` : '');
+  if (!down.length && !back.length) return '<div id="downBox"></div>';
+  // Pestañita pequeña; al tocarla se ve el detalle
+  const pill = down.length
+    ? `<button type="button" class="dpill bad" data-act="down-tog" aria-expanded="${!!S.downOpen}"><span class="db-dot"></span>${down.length === 1 ? `«${esc(down[0].name)}» caído` : `${down.length} servidores caídos`}<span class="chev">›</span></button>`
+    : `<button type="button" class="dpill ok" data-act="down-tog" aria-expanded="${!!S.downOpen}">🟢 ${back.length === 1 ? `«${esc(back[0].name)}» se cayó y ya ha vuelto` : `${back.length} servidores se cayeron y ya han vuelto`}<span class="chev">›</span></button>`;
+  const rows = [...down.map((x) => `<div class="db-r bad"><div><b>🔴 «${esc(x.name)}» no responde</b><small>Desde las ${hhmm(x.since)} (hace ${ago(x.since)}). Sus clientes no pueden ver nada.</small></div>${btn(x)}</div>`),
+    ...back.map((x) => `<div class="db-r"><div><b>🟢 «${esc(x.name)}» ya funciona</b><small>Volvió a las ${hhmm(x.lastUp)} tras ${plural(x.lastMins || 1, 'minuto', 'minutos')} caído.</small></div>${btn(x)}</div>`)].join('');
+  const h = pill + (S.downOpen ? `<div class="dpanel">${rows}</div>` : '');
+  return `<div id="downBox">${h}</div>`;
+}
+async function refreshDown() {
+  try { S.health = await api('GET', '/api/health'); } catch (e) { return; }
+  const el = $('#downBox'); if (el && S.view === 'resumen') el.outerHTML = downBox();
+}
+/** Página de inicio: la que elija cada uno en Mi perfil; si no, Resumen para el equipo y Clientes para los vendedores */
+const homeView = () => (noCli() ? 'resumen' : (me() && me().home) || (staff() ? 'resumen' : 'cuentas'));
+const homeKey = () => (homeView() === 'resumen' ? 'resumen' : 'cuentas/all');
+function goHome() { if (homeView() === 'resumen') S.view = 'resumen'; else { S.view = 'cuentas'; S.filter = 'all'; } S.page = 1; }
 /** (Antes se abría la pantalla que había en la dirección; se deja por si se quiere volver a usar) */
 function navFromHash() {
   const m = /^#\/([a-z]+)(?:\/(\w+))?$/.exec(location.hash || '');
@@ -2524,7 +2968,7 @@ function seenBox(id) {
   if (!S.seen) return '<div class="sb-empty">Consultando Emby…</div>';
   const inf = (S.seenInfo && S.seenInfo[id]) || {}, a = seenLong(inf.seen || S.seen[id]), l = seenLong(inf.login), dv = inf.dev;
   const c0 = S.d.clients.find((v) => v.id === id), now = c0 && S.live && S.live.sessions ? S.live.sessions.find((v) => v.clientId === id) : null;
-  if (now) return `<div class="sb2"><i class="sb-dot now"></i><div><b>Conectado ahora mismo</b><span>${now.paused ? 'En pausa' : 'Viendo'}: ${esc(now.title)}</span><small>${esc(now.device)}${now.app ? ' · ' + esc(now.app) : ''}</small><button type="button" class="linkbtn sb-more" data-act="m-conn" data-id="${id}">${ic('signal')}Ver historial de conexiones</button></div></div>`;
+  if (now) return `<div class="sb2"><i class="sb-dot now"></i><div><b>Conectado ahora mismo</b><span>${now.paused ? 'En pausa' : 'Viendo'}: ${esc(now.title)}</span><small>${esc(now.device)}${now.app ? ' · ' + appTag(now.app) : ''}</small><button type="button" class="linkbtn sb-more" data-act="m-conn" data-id="${id}">${ic('signal')}Ver historial de conexiones</button></div></div>`;
   if (!a && !l) return `<div class="sb-empty">Todavía no se ha conectado nunca a Emby.</div>`;
   const cls = !a ? 'off' : a.now ? 'now' : a.ago <= 1 ? 'ok' : a.ago <= 7 ? 'mid' : 'off';
   const short = (v) => whenShort(v);
@@ -2562,7 +3006,7 @@ function clientRow(c, compact) {
     <td><div>${c.demo ? fmtTs(c.expiresAt) : fmt(c.expires)}</div><div class="small muted">${when(c)}</div>${extra}</td>
     <td><span class="badge ${st}">${STAGE[st]}</span>${c.paid === false ? '<div class="due">Cobro pendiente</div>' : ''}${c.lastError ? `<div class="err">No se pudo aplicar en Emby: ${esc(c.lastError)}</div>` : ''}</td>
     <td class="r"><div class="acts">
-      <button class="btn sm primary" data-act="renew" data-id="${c.id}">${c.demo ? 'Convertir en cuenta' : 'Extender'}</button>
+      <button class="btn sm primary" data-act="renew" data-id="${c.id}">${c.demo ? 'Convertir en cuenta' : 'Extender'}</button>${canSame(c) ? `<button class="btn sm rsame-mini" data-act="renew-same" data-id="${c.id}">⚡ Igual</button>` : ''}
       ${compact ? '' : `<button class="btn sm" data-act="msg" data-id="${c.id}">Mensaje</button><button class="btn sm" data-act="edit" data-id="${c.id}">Editar</button>${c.status === 'trash' ? '' : c.off ? `<button class="btn sm" data-act="c-on" data-id="${c.id}">Activar</button>` : `<button class="btn sm" data-act="c-off" data-id="${c.id}">Desactivar</button>`}<button class="btn sm ghost" data-act="trash" data-id="${c.id}">${c.demo ? 'Cancelar' : 'Dar de baja'}</button>`}
     </div></td></tr>`;
 }
@@ -2682,6 +3126,7 @@ function clientCard(c) {
   const more = open ? `<div class="more2">
       <div class="cfacts">${fact('calendar', c.demo ? 'Termina' : 'Vence', c.demo ? fmtTs(c.expiresAt) : fmt(c.expires))}${fact('user', 'Cliente desde', fmt(c.createdAt))}${c.demo ? '' : fact('history', 'Renovaciones', ren ? String(ren) : 'ninguna aún')}</div>
       <div class="seenbox2" data-seenbox="${c.id}">${seenBox(c.id)}</div>
+      <button type="button" class="cf-open sm" data-act="ficha" data-id="${c.id}">📇 <b>Ver ficha completa</b></button>
       ${contacts.length ? `<div class="cchips">${contacts.join('')}</div>` : ''}
       ${c.note && c.note.includes('\n') ? `<div class="cnote full">${ic('note')}<span>${esc(c.note)}</span></div>` : ''}
     </div>` : '';
@@ -2702,6 +3147,7 @@ function clientCard(c) {
       <span class="tag left ${st}" title="Tiempo restante">${ic('clock')}${leftText(c)}</span>
     </div>
     ${leftBar(c)}
+    ${canSame(c) ? (() => { const L = lastPlan(c); return `<button type="button" class="rsame" data-act="renew-same" data-id="${c.id}">⚡ <b>Renovar igual</b><span>${plural(L.m, 'mes', 'meses')} · ${plural(L.sc, 'pantalla', 'pantallas')} · ${priceOf(L.m, L.sc)} cr.</span></button>`; })() : ''}
     ${open && !liveOf(c) ? '' : `<div class="cline"><span data-live="${c.id}">${liveOf(c) || `${ic('signal')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span>`}</span></div>`}
     ${flags ? `<div class="flags">${flags}</div>` : ''}
     ${note}
@@ -2754,7 +3200,7 @@ function vResumen() {
   const welcome = `<div class="welcome"><p class="wg">${greet} ${hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙'}</p><h1>Bienvenido, <span>${esc(wName)}</span></h1><span class="wrole r-${d.me.role}">${ROLE[d.me.role] || ''}</span><p class="wl">${phrase}</p></div>`;
   const DS = dashStyle();
   if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip, dsearch });
-  return welcome + licBanner() + secTip + dsearch + hero + quick + review + `
+  return welcome + licBanner() + downBox() + secTip + dsearch + hero + quick + review + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
     ${sc('active', cnt.active, 'Activas', 'con su contenido', 'check')}
@@ -2794,7 +3240,7 @@ function dSpark(days, k, col) {
 const dLeft = (c) => { const n = diff(c.expires, S.d.today); return n > 1 ? [`en ${n} días`, 'soon'] : n === 1 ? ['mañana', 'soon'] : n === 0 ? ['hoy', 'soon'] : [`hace ${plural(-n, 'día', 'días')}`, 'bad']; };
 function dDue(list, max = 6) {
   if (!list.length) return `<div class="ddue-ok">${ic('check')}<b>Nada pendiente</b><span>Ninguna cuenta vence en los próximos ${S.d.settings.warnDays} días.</span></div>`;
-  return `<div class="ddue">${list.slice(0, max).map((c) => { const [t, k] = dLeft(c); return `<div class="ddr"><span class="dav ${k}">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="ddn"><b>${esc(c.panelName)}</b><small>${diff(c.expires, S.d.today) < 0 ? 'Caducó' : 'Vence'} ${t}</small></div><button type="button" class="btn sm" data-act="renew" data-id="${c.id}">Renovar</button></div>`; }).join('')}${list.length > max ? `<button type="button" class="dmore" data-act="goto" data-filter="soon">Ver ${plural(list.length - max, 'más', 'más')} ${ic('chev')}</button>` : ''}</div>`;
+  return `<div class="ddue">${list.slice(0, max).map((c) => { const [t, k] = dLeft(c); return `<div class="ddr"><span class="dav ${k}">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="ddn"><b>${esc(c.panelName)}</b><small>${diff(c.expires, S.d.today) < 0 ? 'Caducó' : 'Vence'} ${t}</small></div>${canSame(c) ? `<button type="button" class="btn sm rsame-mini" data-act="renew-same" data-id="${c.id}" title="Renovar igual que la última vez">⚡ Igual</button>` : ''}<button type="button" class="btn sm" data-act="renew" data-id="${c.id}">Renovar</button></div>`; }).join('')}${list.length > max ? `<button type="button" class="dmore" data-act="goto" data-filter="soon">Ver ${plural(list.length - max, 'más', 'más')} ${ic('chev')}</button>` : ''}</div>`;
 }
 /** Tarjeta «En directo» del Resumen: cuántos clientes están viendo ahora y qué. Al tocarla se abre el Monitor */
 function fzLiveHtml() {
@@ -2923,7 +3369,7 @@ function dashFacil(p) {
   const day = (emo, n, label, attrs) => `<${attrs ? 'button type="button" ' + attrs : 'div'} class="fz-d"><span aria-hidden="true">${emo}</span><b>${n}</b><small>${label}</small></${attrs ? 'button' : 'div'}>`;
   const due = urgent.filter((c) => diff(c.expires, d.today) >= 0).sort(byExpiry);
   const note = cnt.expired ? `Tienes <b>${plural(cnt.expired, 'cuenta caducada', 'cuentas caducadas')}</b>: si renuevan, vuelven a ver al momento.` : cnt.soon ? `<b>${plural(cnt.soon, 'cuenta caduca', 'cuentas caducan')}</b> pronto. Buen momento para escribirles.` : total ? '¡Todo en orden! Ninguna cuenta caduca en los próximos días. 🎉' : 'Todavía no tienes cuentas. Crea la primera con «Nueva cuenta».';
-  return licBanner() + secTip + `<div class="fz">
+  return licBanner() + downBox() + secTip + `<div class="fz">
     <section class="fz-hero"><div><p class="fz-g">${greet}, ${esc(wName)} ${emoji}</p><h1>Así está tu negocio hoy</h1><p class="fz-date">${esc(date)}</p><p class="fz-note">${note}</p></div>
       <div class="fz-ha"><button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>${credits}</div></section>
     ${d.servers.length && !noCli() ? `<button type="button" class="fz-live" id="fzLive" data-view="monitor" aria-label="Clientes viendo ahora: abrir el Monitor">${fzLiveHtml()}</button>` : ''}
@@ -2955,7 +3401,7 @@ function dashNew(style, p) {
   const legend = stLeg('active', cnt.active, 'Activas', 'var(--ok)') + stLeg('soon', cnt.soon, 'Vencen pronto', 'var(--warn)') + stLeg('expired', cnt.expired, 'Caducadas', 'var(--bad)') + stLeg('trash', cnt.trash, 'Papelera', 'var(--idle)');
   const extra = `<div class="dchips"><button class="chip" data-act="goto" data-filter="demo">${plural(cnt.demo, 'demo en curso', 'demos en curso')}</button>${cnt.off ? `<button class="chip" data-act="goto" data-filter="off">${plural(cnt.off, 'desactivada', 'desactivadas')}</button>` : ''}</div>`;
   const log = d.log.length ? timeline(d.log.slice(0, 6)) : '<div class="panel"><div class="empty">Todavía no hay movimientos.</div></div>';
-  const top = licBanner() + secTip;
+  const top = licBanner() + downBox() + secTip;
   const btnNew = `<button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>`;
 
   if (style === 'tarjetas') {
@@ -3198,35 +3644,52 @@ function vNuevo(demo) {
   if (!S.d.servers.length) return head(title) + noServer();
   const gen = (kind, label) => `<button type="button" class="btn" data-act="gen" data-kind="${kind}" title="${label}" aria-label="${label}">Generar</button>`;
   const hours = S.d.settings.demoHours.map((h) => [h, `${h} horas`]);
+  const srvs = S.d.servers.filter((x) => x.usable !== false).sort((a, b) => !!a.full - !!b.full);
   const plan = demo
-    ? `<label class="f">Duración de la demo *<select name="hours">${options(hours, hours[0][0])}</select></label>`
+    ? `<label class="f">Duración de la demo *<select name="hours" data-chip="dur">${options(hours, hours[0][0])}</select></label>`
     : `<label class="f">Duración *<select name="months">${options(MONTH_OPTS, 1)}</select></label>
       <label class="f">Pantallas *<select name="screens">${options(SCREEN_OPTS, 1)}</select></label>`;
   return head(title, demo ? 'Crea una cuenta de prueba gratuita. Al cumplirse sus horas se desactiva sola.' : 'Crea la cuenta en el servidor Emby y la deja activa al momento.') + `
-  <form id="newClient" class="panel pad formpage"${demo ? ' data-demo="1"' : ''}>
-    <h2>Información básica</h2>
+  <form id="newClient" class="formpage"${demo ? ' data-demo="1"' : ''}>
+    <div class="bzhero"><h2>👀 Así quedará ${demo ? 'la demo' : 'la cuenta'}</h2><p>Se rellena sola mientras escribes.</p><div class="bztk" id="nwTk" aria-live="polite"></div></div>
+    <h2>La cuenta</h2>
     <div class="row4">
       <label class="f">Nombre en el panel *<span class="inrow"><input name="panelName" required maxlength="80" autocomplete="off" placeholder="nombre_usuario">${gen('panelName', 'Generar un nombre')}</span></label>
       <label class="f">Nombre en Emby *<span class="inrow"><input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" placeholder="user.12abc">${gen('embyName', 'Generar un usuario')}</span></label>
       <label class="f">Contraseña *<span class="inrow"><input name="password" required minlength="4" autocomplete="off" placeholder="Contraseña">${gen('password', 'Generar una contraseña')}</span></label>
-      <label class="f">Email<span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span></label>
+      <label class="f">Email <span class="muted">(opcional)</span><span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span></label>
     </div>
-    <div class="row4">
-      <label class="f">Servidor *<select name="serverId">${S.d.servers.filter((x) => x.usable !== false).sort((a, b) => !!a.full - !!b.full).map((x) => `<option value="${x.id}"${x.full ? ' disabled' : ''}>${esc(x.name)}${x.full ? ' · lleno' : ''}</option>`).join('')}</select></label>
-      <label class="f">Contenido *<select name="quality">${qualityOpts('basico', false)}</select></label>
-      ${plan}
-    </div>
+    <h2>${demo ? 'La demo' : 'El plan'}</h2>
+    <label class="f">Servidor *<select name="serverId"${srvs.length <= 8 ? ' data-chip="srv"' : ''}>${srvs.map((x) => `<option value="${x.id}"${x.full ? ' disabled' : ''}>${esc(x.name)}${x.full ? ' (lleno)' : ''}</option>`).join('')}</select></label>
+    <label class="f">Contenido *<select name="quality" data-chip="big">${qualityOpts('basico', false)}</select></label>
+    <div class="row2">${plan}</div>
     <p class="preview" id="cost"></p>
-    ${demo ? '' : `<div class="row4">${paidSelect(true)}${ownerSelect(me().id)}</div>`}
-    <h2 class="sep">Información de contacto (opcional)</h2>
+    ${demo ? '' : `<h2>El cobro</h2><div class="row2">${paidSelect(true)}${ownerSelect(me().id)}</div>`}
+    <h2>Contacto <span class="muted small" style="font-weight:500">(opcional)</span></h2>
     <div class="row3">
       <label class="f">Telegram<input name="telegram" maxlength="120" autocomplete="off" placeholder="@usuario"></label>
       <label class="f">WhatsApp<input name="whatsapp" maxlength="120" autocomplete="off" inputmode="tel" placeholder="+34 600 000 000"></label>
       <label class="f">Signal<input name="signal" maxlength="120" autocomplete="off" placeholder="@usuario"></label>
     </div>
     <label class="f">Notas<textarea name="note" rows="2" maxlength="300" placeholder="Notas adicionales…"></textarea></label>
-    <div class="dfoot"><button type="button" class="btn ghost" data-view="cuentas" data-filter="${demo ? 'demo' : 'all'}">Cancelar</button><button type="submit" class="btn primary">${demo ? 'Crear demo Emby' : 'Crear cliente Emby'}</button></div>
+    <div class="dfoot"><span class="bzsum" id="nwSum"></span><button type="button" class="btn ghost" data-view="cuentas" data-filter="${demo ? 'demo' : 'all'}">Cancelar</button><button type="submit" class="btn primary">${demo ? 'Crear demo ✨' : 'Crear cliente ✨'}</button></div>
   </form>`;
+}
+/** Ficha en vivo de la cuenta que se va a crear (cabecera de Nuevo cliente / Nueva demo) */
+function nwTicket() {
+  const f = $('#newClient'), tk = $('#nwTk'); if (!f || !tk) return;
+  const el = f.elements, demo = !!f.dataset.demo;
+  const name = el.panelName.value.trim() || (demo ? 'Demo nueva' : 'Cliente nuevo'), user = el.embyName.value.trim() || 'usuario';
+  const srv = S.d.servers.find((x) => x.id === +el.serverId.value) || {};
+  const q = el.quality.value, qt = q === 'k4' ? '💎 4K' : q === 'basico' ? '🎬 Básico' : '📚 Las suyas';
+  let dur, until, cost;
+  if (demo) { const h = +el.hours.value; dur = `⏳ ${h} horas`; until = new Date(Date.now() + h * 3600e3).toLocaleString('es-ES', { hour: '2-digit', minute: '2-digit' }); cost = 'Gratis'; }
+  else { const m = +el.months.value, sc = +el.screens.value; dur = `⏳ ${plural(m, 'mes', 'meses')}`; until = addMonths(S.d.today, m).split('-').reverse().join('/'); const c = priceOf(m, sc); cost = plural(c, 'crédito', 'créditos'); }
+  const scr = demo ? '🖥️ 1 pantalla' : `🖥️ ${plural(+el.screens.value, 'pantalla', 'pantallas')}`;
+  tk.innerHTML = `<div class="h"><span class="av">${esc(name.charAt(0).toUpperCase())}</span><div><b>${esc(name)}</b><small>@${esc(user)}${srv.name ? ' · ' + esc(srv.name) : ''}</small></div><span class="st">${demo ? 'DEMO' : 'NUEVA'}</span></div>
+    <div class="rw"><span>${qt}</span><span>${scr}</span><span>${dur}</span></div>
+    <div class="dt"><div><small>${demo ? 'Termina a las' : 'Vence el'}</small><br><b>${esc(until)}</b></div><div class="r"><small>Coste</small><br><b>${esc(cost)}</b></div></div>`;
+  const sum = $('#nwSum'); if (sum) sum.innerHTML = `<b>${esc(name)}</b>${esc([qt.replace(/^\S+ /, ''), dur.replace(/^\S+ /, ''), demo ? '' : scr.replace(/^\S+ /, ''), cost].filter(Boolean).join(' · '))}`;
 }
 
 /* ---------- Avisos de vencimiento ---------- */
@@ -3548,7 +4011,7 @@ function liveHtml() {
     const mode = { DirectPlay: 'Directo', DirectStream: 'Directo', Transcode: 'Transcodificando' }[s.method] || s.method;
     return `<tr><td class="name">${esc(s.user)}</td>
       <td>${esc(s.title)}${s.paused ? ' <span class="muted">(en pausa)</span>' : ''}<div class="bar"><i style="width:${pct}%"></i></div></td>
-      <td>${esc(s.device)}<div class="small muted">${esc(s.app)}${S.d.servers.length > 1 ? ', ' + esc(s.server) : ''}</div></td>
+      <td>${esc(s.device)}<div class="small muted">${appTag(s.app)}${S.d.servers.length > 1 ? ', ' + esc(s.server) : ''}</div></td>
       <td>${esc(mode)}</td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
@@ -3589,6 +4052,7 @@ function monRows() {
     && (f.tr === 'all' || (f.tr === 'video' ? x.trVideo : f.tr === 'yes' ? x.transcode : !x.transcode))
     && (f.res === 'all' || x.res === f.res)
     && (f.kind === 'all' || x.kind === f.kind)
+    && (!f.app || (f.app === 'yes' ? isMyApp(x.app) : !isMyApp(x.app)))
     && (!q || [x.user, x.client, x.title, x.sub, x.device, x.app, x.owner].join(' ').toLowerCase().includes(q)));
 }
 function vMonitor() {
@@ -3617,6 +4081,7 @@ function monBody() {
     ${k('trv', all.filter((x) => x.trVideo).length, 'Convierte imagen', 'alert', '#e2457a', f.tr === 'video')}
     ${k('pelicula', all.filter((x) => x.kind === 'pelicula').length, 'Películas', 'film', '#e2457a', f.kind === 'pelicula')}
     ${k('serie', all.filter((x) => x.kind === 'serie').length, 'Series', 'tv', '#14b8c4', f.kind === 'serie')}
+    ${appOn() ? k('myapp', all.filter((x) => isMyApp(x.app)).length, 'Con ' + esc(appName()), 'screen', '#22c55e', f.app === 'yes') + k('otherapp', all.filter((x) => !isMyApp(x.app)).length, 'Otras apps', 'alert', '#94a3b8', f.app === 'no') : ''}
     ${k('all', bw >= 1e9 ? (bw / 1e9).toFixed(2) + '<small> Gbps</small>' : Math.round(bw / 1e6) + '<small> Mbps</small>', 'Consumo aprox.', 'wifi', '#a46bff', false)}</div>`;
   const srv = d.servers.length > 1 ? `<div class="msrv">${d.servers.map((s) => `<button type="button" data-act="mon-srv" data-id="${s.id}" style="--c:${monColor(s.id)}" aria-pressed="${f.srv === s.id}"><i class="${s.ok ? '' : 'off'}"></i>${esc(s.name)} <em>${s.ok ? s.n : 'sin conexión'}</em></button>`).join('')}</div>` : '';
   const sel = (id, v, list, label) => `<label><span>${label}</span><select id="${id}">${options(list, v)}</select></label>`;
@@ -3714,7 +4179,7 @@ function monCard(x) {
       <div class="ln"><span>Archivo</span><b>${x.srcBitrate ? mbps(x.srcBitrate) : '—'}</b></div>
       ${x.encBitrate ? `<div class="ln" title="Es el bitrate que Emby pide al codificador, no una medida real de la red"><span>Pedido al codificador</span><b>${mbps(x.encBitrate)}</b></div>` : ''}
       ${!x.canMsg || !x.remote ? `<div class="qlim">${!x.canMsg ? 'Este aparato no admite mensajes. ' : ''}${!x.remote ? 'No admite control remoto: puede ignorar «Detener».' : ''}</div>` : ''}
-      <div class="dv" title="${esc(x.device + ' · ' + x.app)}">${ic('screen').replace('class="ic"', 'class="ic" style="width:13px;height:13px;vertical-align:-2px"')} ${esc(x.device || 'Aparato')}${x.app ? ' · ' + esc(x.app) : ''}</div>
+      <div class="dv" title="${esc(x.device + ' · ' + x.app)}">${ic('screen').replace('class="ic"', 'class="ic" style="width:13px;height:13px;vertical-align:-2px"')} ${esc(x.device || 'Aparato')}${x.app ? ' · ' + esc(x.app) : ''}</div>${appOn() && isMyApp(x.app) ? `<div style="margin-top:3px">${appTag(x.app)}</div>` : ''}
       <div class="ft">${pill}<button type="button" class="m q" data-act="mon-notice" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Aviso de calidad: cómo poner la calidad al máximo" aria-label="Aviso de calidad a ${esc(x.user)}"${x.canMsg ? '' : ' disabled'}>${ic('bolt')}</button><button type="button" class="m" data-act="mon-msg" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Mandar un mensaje a la pantalla" aria-label="Mandar mensaje a ${esc(x.user)}"${x.canMsg ? '' : ' disabled'}>${ic('msg')}</button><button type="button" class="x" data-act="mon-stop" data-sid="${x.serverId}" data-ses="${esc(x.id)}" title="Detener la reproducción" aria-label="Detener la reproducción de ${esc(x.user)}">${ic('xc')}</button></div>
     </div></article>`;
 }
@@ -4841,12 +5306,56 @@ function logTable(rows) {
 }
 function vMovimientos(demoOnly) {
   const F = { demo: (l) => !!l.demo || l.type === 'demo', all: () => true, alta: (l) => l.type === 'alta' || l.type === 'importada', renovacion: (l) => l.type === 'renovacion', baja: (l) => ['baja', 'papelera', 'caducada', 'eliminada'].includes(l.type), cobro: (l) => l.type === 'cobro', auto: (l) => l.auto };
-  const rows = S.d.log.filter((l) => (demoOnly ? (l.demo || l.type === 'demo') : true) && (F[S.logF] || F.all)(l));
-  const chip = (k, t) => `<button class="chip" data-act="logf" data-v="${k}" aria-pressed="${S.logF === k}">${t}</button>`;
-  const chips = demoOnly ? chip('all', 'Todos') + chip('auto', 'Automáticos')
-    : chip('all', 'Todos') + chip('alta', 'Altas') + chip('renovacion', 'Renovaciones') + chip('baja', 'Bajas y caducidades') + chip('demo', 'Demos') + chip('cobro', 'Cobros') + chip('auto', 'Automáticos');
-  return head(demoOnly ? 'Movimientos de demos' : 'Movimientos', demoOnly ? 'Demos creadas, terminadas, convertidas en cuenta y eliminadas.' : 'Altas, renovaciones, bajas y todo lo que el panel hace por su cuenta. Se muestran los 500 más recientes.') +
-    `<div class="tools"><div class="chips">${chips}</div></div>` + (rows.length ? logTable(rows) : '<div class="panel"><div class="empty">No hay movimientos de este tipo.</div></div>');
+  const base = S.d.log.filter((l) => (demoOnly ? (l.demo || l.type === 'demo') : true));
+  const rows = base.filter((l) => (F[S.logF] || F.all)(l));
+  const cnt = (k) => base.filter(F[k]).length;
+  const chip = (k, t, e) => `<button type="button" data-act="logf" data-v="${k}" aria-pressed="${S.logF === k}">${e} ${t}<em>${cnt(k)}</em></button>`;
+  const chips = demoOnly ? chip('all', 'Todos', '📋') + chip('auto', 'Automáticos', '🤖')
+    : chip('all', 'Todos', '📋') + chip('alta', 'Altas', '✨') + chip('renovacion', 'Renovaciones', '🔄') + chip('baja', 'Bajas', '🗑️') + chip('demo', 'Demos', '🎁') + chip('cobro', 'Cobros', '💶') + chip('auto', 'Automáticos', '🤖');
+  // Hoy, de un vistazo
+  const td = S.d.today, today = base.filter((l) => String(l.ts).slice(0, 10) === td || new Date(l.ts).toLocaleDateString('sv-SE') === td);
+  const k = (n, t, cls, e) => `<div class="mv-k ${cls}"><span>${e}</span><b>${n}</b><small>${t}</small></div>`;
+  const kpis = demoOnly ? '' : `<div class="mv-ks">${k(today.filter(F.alta).length, 'altas hoy', 'g', '✨')}${k(today.filter(F.renovacion).length, 'renovaciones hoy', 'b', '🔄')}${k(today.filter(F.demo).length, 'demos hoy', 'v', '🎁')}${k(today.filter(F.baja).length, 'bajas hoy', 'r', '🗑️')}</div>`;
+  return head(demoOnly ? 'Movimientos de demos' : 'Movimientos', demoOnly ? 'Demos creadas, terminadas, convertidas en cuenta y eliminadas.' : 'Todo lo que pasa en tus cuentas: altas, renovaciones, bajas y lo que el panel hace solo.') +
+    kpis + `<div class="mv-tools"><div class="mv-chips" role="group" aria-label="Filtrar">${chips}</div>
+    <label class="mv-q">🔎<input id="movQ" type="search" placeholder="Buscar cliente, usuario o vendedor…" value="${esc(S.movQ || '')}" autocomplete="off"></label></div>` + movList(rows);
+}
+/** Las filas que ve ahora la página de Movimientos (para «Ver más» y la búsqueda sin repintar todo) */
+function currentMovRows() {
+  const demoOnly = S.view === 'movdemos';
+  const F = { demo: (l) => !!l.demo || l.type === 'demo', all: () => true, alta: (l) => l.type === 'alta' || l.type === 'importada', renovacion: (l) => l.type === 'renovacion', baja: (l) => ['baja', 'papelera', 'caducada', 'eliminada'].includes(l.type), cobro: (l) => l.type === 'cobro', auto: (l) => !!l.auto };
+  return S.d.log.filter((l) => (demoOnly ? (l.demo || l.type === 'demo') : true) && (F[S.logF] || F.all)(l));
+}
+document.addEventListener('input', (e) => { if (e.target && e.target.id === 'movQ') { S.movQ = e.target.value; S.movN = 120; const ml = $('#movList'); if (ml) ml.outerHTML = movList(currentMovRows()); } });
+const MV_KIND = { alta: ['✨', 'Alta', 'g'], importada: ['📥', 'Importada', 'g'], renovacion: ['🔄', 'Renovación', 'b'], demo: ['🎁', 'Demo', 'v'], caducada: ['⌛', 'Caducada', 'a'], papelera: ['🗑️', 'A la papelera', 'r'], baja: ['🗑️', 'Baja', 'r'], eliminada: ['❌', 'Eliminada', 'r'],
+  cobro: ['💶', 'Cobro', 'g'], reparada: ['🛠️', 'Reparada', 't'], comprobada: ['✅', 'Comprobada', 't'], error: ['⚠️', 'Error', 'r'], monitor: ['📡', 'Monitor', 'i'], aviso: ['🔔', 'Aviso', 'a'], edicion: ['✏️', 'Cambios', 's'], transferida: ['🔀', 'Cambio de servidor', 'c'],
+  restaurada: ['♻️', 'Restaurada', 'g'], activada: ['▶️', 'Activada', 'g'], desactivada: ['⏸️', 'Desactivada', 'a'], servidor: ['🖥️', 'Servidor', 'i'], ajustes: ['⚙️', 'Ajustes', 's'], seguridad: ['🔐', 'Seguridad', 's'], login: ['🔐', 'Entrada', 's'], usuario: ['👤', 'Equipo', 's'], alertas: ['🚨', 'Alertas', 'a'] };
+function movList(all) {
+  const q = (S.movQ || '').trim().toLowerCase();
+  const rows = q ? all.filter((l) => `${l.client || ''} ${l.emby || ''} ${l.actor || ''} ${userName(l.ownerId)} ${l.text || ''}`.toLowerCase().includes(q)) : all;
+  if (!rows.length) return `<div id="movList"><div class="panel"><div class="empty">${q ? 'Nada coincide con esa búsqueda.' : 'No hay movimientos de este tipo.'}</div></div></div>`;
+  const N = S.movN || 120, show = rows.slice(0, N);
+  const dayKey = (ts) => new Date(ts).toLocaleDateString('sv-SE');
+  const yest = new Date(Date.now() - 86400e3).toLocaleDateString('sv-SE');
+  const dayTitle = (k) => { const t = k === S.d.today ? 'Hoy' : k === yest ? 'Ayer' : new Date(k + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); };
+  let html = '', cur = '';
+  const many = S.d.users.length > 1;
+  for (const l of show) {
+    const dk = dayKey(l.ts);
+    if (dk !== cur) { if (cur) html += '</div>'; cur = dk; html += `<h3 class="mv-day">${esc(dayTitle(dk))}<small>${rows.filter((x) => dayKey(x.ts) === dk).length}</small></h3><div class="mv-items">`; }
+    const [e, t, c] = MV_KIND[l.type] || ['📝', l.type || 'Otro', 's'];
+    const own = many && l.ownerId ? userName(l.ownerId) : '';
+    const who = l.auto || !l.actor ? '<span class="mv-by auto">🤖 Automático</span>' : `<span class="mv-by">👤 ${esc(l.actor)}</span>`;
+    const hhmm = new Date(l.ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    const name = l.client ? `<button type="button" class="mv-name" data-act="al-client" data-q="${esc(l.emby || l.client)}" title="Ver esta cuenta">${esc(l.client)}</button>` : '<span class="mv-name panel">Panel</span>';
+    html += `<article class="mv-it ${c}"><span class="mv-ic">${e}</span><div class="mv-b">
+      <div class="mv-top">${name}<span class="mv-t">${esc(t)}</span><time>${hhmm}</time></div>
+      ${l.client ? `<div class="mv-sub">${l.emby ? `@${esc(l.emby)}` : ''}${own ? `<span class="mv-own">de ${esc(own)}</span>` : ''}${l.demo ? '<span class="mv-own v">demo</span>' : ''}</div>` : ''}
+      <p class="mv-x${l.type === 'error' ? ' bad' : ''}">${esc(l.text)}</p>${who}</div></article>`;
+  }
+  html += '</div>';
+  const more = rows.length > N ? `<button type="button" class="btn mv-more" data-act="mov-more">Ver ${Math.min(120, rows.length - N)} más (${rows.length - N} quedan)</button>` : '';
+  return `<div id="movList">${html}${more}</div>`;
 }
 
 /** Resumen de lo que incluye un paquete en un servidor */
@@ -5166,8 +5675,57 @@ function ajSections() {
   };
 }
 function vAjustes() {
-  const x = ajSections();
-  return head('Precios y paquetes', 'Lo que cuesta cada alta y renovación, y los paquetes de créditos. Los plazos y límites están en Ajustes, Tiempos.') + x.rules + tiersHtml() + x.packs;
+  return vPrecios2();
+}
+/** «Precios y paquetes» con diseño nuevo: tarjetas por duración, escalera de precios y paquetes en tarjetas.
+    Los campos (nombres) y el guardado son los mismos de siempre. */
+function vPrecios2() {
+  const g = S.d.settings, cur = g.currency || 'EUR';
+  const t = (g.priceTiers || []).slice().sort((a, b) => a.from - b.from);
+  const base = t.length ? t[0].price : (g.creditPrice || 0);
+  const packs = g.creditPacks || [];
+  const MCOL = { 1: 'c1', 3: 'c2', 6: 'c3', 12: 'c4' }, MEMO = { 1: '🌱', 3: '🌿', 6: '🌳', 12: '🏆' };
+  const step = (name, val, label) => `<div class="pp-row"><span class="pp-l">${label}</span><div class="stp"><button type="button" class="stp-b" data-act="stp" data-d="-1" aria-label="Menos">−</button><input type="number" name="${name}" min="0" max="999" required value="${val}" inputmode="numeric" aria-label="${label}"><button type="button" class="stp-b" data-act="stp" data-d="1" aria-label="Más">+</button></div><span class="pp-u">créd.</span></div>`;
+  const hero = `<div class="pz-hero"><div><h2>💶 Tus precios</h2><p>Lo que cuesta cada cuenta, cuánto vale un crédito y los paquetes que ofreces.</p></div>
+    <div class="pz-kpis"><span><b>${plural(priceOf(1, 1), 'crédito', 'créditos')}</b><small>alta de 1 mes</small></span><span><b>${base ? eur(base) : '—'}</b><small>por crédito</small></span><span><b>${packs.length}</b><small>${packs.length === 1 ? 'paquete' : 'paquetes'}</small></span></div></div>`;
+  const prices = `<section class="bzs c1"><h2><span class="bzn">1</span>Lo que cuesta cada cuenta</h2>
+    <form id="rules" class="pz-form">
+      <p class="pz-hint">Créditos que se descuentan al crear o renovar. Toca <b>−</b> y <b>+</b> o escribe el número.</p>
+      <div class="pz-grid">${MONTH_OPTS.map(([m, txt]) => `<div class="pz-card ${MCOL[m]}"><div class="pz-ch"><span class="pz-e">${MEMO[m]}</span><b>${txt}</b></div>
+        ${SCREEN_OPTS.map(([sc, st]) => step(`p_${m}_${sc}`, priceOf(m, sc), `📺 ${st}`)).join('')}</div>`).join('')}</div>
+      <input type="hidden" name="demoMax" value="${g.demoMax}"><input type="hidden" name="warnDays" value="${g.warnDays}"><input type="hidden" name="graceDays" value="${g.graceDays}"><input type="hidden" name="purgeDays" value="${g.purgeDays}">
+      <div class="pz-acts"><button class="btn primary" type="submit">💾 Guardar precios</button><button class="btn ghost sm" type="button" data-act="run">Revisar caducidades ahora</button></div>
+    </form></section>`;
+  const rows = [...t, {}, {}].slice(0, Math.max(3, t.length + 1));
+  const tiers = `<section class="bzs c2"><h2><span class="bzn">2</span>Precio del crédito <span class="muted small" style="font-weight:500">(compras online)</span></h2>
+    <form id="tiersForm" class="pz-form">
+      <p class="pz-hint">Lo que paga un vendedor por cada crédito cuando compra desde el panel.</p>
+      <label class="pz-big">Precio general<span class="pz-money"><input type="number" name="gprice" min="0" step="0.01" value="${g.creditPrice || ''}" placeholder="0,00" inputmode="decimal"><em>${cur === 'EUR' ? '€' : esc(cur)}</em></span><small>por crédito</small></label>
+      <h3 class="pz-h3">🪜 Más créditos, más barato <span class="muted small" style="font-weight:500">(opcional)</span></h3>
+      <div class="pz-tiers">${rows.map((r, i) => `<div class="pz-tier"><span class="pz-tn">${i + 1}</span><span>Desde</span><input name="tfrom" type="number" min="1" step="1" value="${r.from || ''}" placeholder="${i === 0 ? '1' : i === 1 ? '100' : '500'}" aria-label="Desde cuántos créditos"><span>créditos</span><b>→</b><span class="pz-money sm"><input name="tprice" type="number" min="0" step="0.01" value="${r.price || ''}" placeholder="${i === 0 ? '3,00' : i === 1 ? '2,50' : '2,00'}" aria-label="Precio de cada crédito" inputmode="decimal"><em>€</em></span></div>`).join('')}</div>
+      <p class="tr-prev pz-stairs" id="tierPrev"></p>
+      <p class="pz-hint">Ejemplo: «Desde 1 → 3 €» y «Desde 100 → 2,50 €». Quien compra 50 paga 150 €; quien compra 100 paga 250 €. Si un vendedor tiene precio propio en su ficha, se usa el suyo.</p>
+      <div class="pz-acts"><button class="btn primary" type="submit">💾 Guardar precio del crédito</button></div>
+    </form></section>`;
+  const PCOL = ['#38bdf8', '#a78bfa', '#f472b6', '#fbbf24', '#34d399', '#fb923c'];
+  const plist = [...packs, {}, {}].slice(0, 12);
+  const packsH = `<section class="bzs c4"><h2><span class="bzn">3</span>Paquetes de créditos</h2>
+    <form id="packs" class="pz-form">
+      <p class="pz-hint">Salen al asignar créditos y al comprar online. Para quitar uno, vacía su nombre y sus créditos. El <b>precio fijo</b> es opcional: si no lo pones, se calcula solo.</p>
+      <div class="pz-packs">${plist.map((p, i) => `<div class="pz-pack${p.name || p.credits ? '' : ' empty'}" style="--pc:${PCOL[i % PCOL.length]}"><div class="pz-pt">🪙 ${p.name || p.credits ? '' : 'Nuevo paquete'}</div>
+        <input name="pn" maxlength="40" class="pz-pn" placeholder="Nombre" value="${esc(p.name || '')}" aria-label="Nombre del paquete">
+        <div class="pz-pr"><span class="pz-money sm"><input name="pc" type="number" min="1" max="100000" step="1" placeholder="0" value="${p.credits || ''}" aria-label="Créditos" inputmode="numeric"><em>créd.</em></span>
+        <span class="pz-money sm"><input name="pp" type="number" min="0" step="0.01" placeholder="Auto" value="${p.price || ''}" aria-label="Precio fijo del paquete" inputmode="decimal"><em>€</em></span></div>
+        ${p.credits ? `<small class="pz-pv">${p.price ? `Precio fijo: <b>${eur(p.price)}</b>` : base ? `Sale a <b>${eur(packCost(p.credits, t, g.creditPrice || 0))}</b>` : ''}</small>` : ''}</div>`).join('')}</div>
+      <div class="pz-acts"><button class="btn primary" type="submit">💾 Guardar paquetes</button></div>
+    </form></section>`;
+  return head('Precios y paquetes', 'Lo que cuesta cada alta y renovación, y los paquetes de créditos. Los plazos y límites están en Ajustes, Tiempos.') + hero + prices + tiers + packsH;
+}
+/** Lo que costaría un paquete con los precios por cantidad (o el general) */
+function packCost(n, tiers, general) {
+  let price = general;
+  for (const x of tiers) if (n >= x.from) price = x.price;
+  return Math.round(n * price * 100) / 100;
 }
 /* Precio del crédito en euros para las compras online: general y por cantidad */
 function tiersHtml() {
@@ -5199,7 +5757,7 @@ function tiersWire() {
 /* ---------- Ajustes: Perfil ---------- */
 function vPerfil() {
   const m = me(), g = S.d.settings, sys = canDo('system'), sp = g.support || {};
-  return head('Configuración y sistema', 'Gestiona tu perfil y los datos generales del panel.') + `
+  return head('Configuración y sistema', 'Gestiona tu perfil y los datos generales del panel.') + (isStandalone() ? '' : `<section><h2>App en el móvil</h2><div class="instbar" style="max-width:640px"><span class="ib-ic"><img src="/icon-192.png" alt=""></span><div><b>Instala el panel como una app</b><small>Funciona en Android, iPhone y ordenador. Se actualiza sola con cada versión.</small></div><button type="button" class="ib-go" data-act="app-install">📲 Instalar</button></div></section>`) + `
   <section><h2>Información personal</h2>
     <div class="panel pad"><form id="profileForm" style="max-width:640px">
       <div class="row2">
@@ -5207,6 +5765,8 @@ function vPerfil() {
         <label class="f">Email<input type="email" name="email" maxlength="120" value="${esc(m.email || '')}" placeholder="nombre@correo.com"></label>
       </div>
       <label class="f">Nombre completo<input name="name" required maxlength="60" value="${esc(m.name)}"></label>
+      <label class="f">Página de inicio <span class="muted" style="font-weight:500">(lo primero que ves al abrir el panel)</span><select name="home">${options([['', 'Automática'], ['resumen', 'Resumen'], ['cuentas', 'Clientes']], m.home || '')}</select></label>
+      <p class="muted small" style="margin:-6px 0 12px">Automática: el Resumen si eres del equipo y la lista de Clientes si eres vendedor.</p>
       ${sys ? `<div class="row2">
         <label class="f">Moneda predeterminada<select name="currency">${options(CURRENCIES, g.currency || 'EUR')}</select></label>
         <label class="f">Precio por crédito<input type="number" name="creditPrice" min="0" max="100000" step="0.01" value="${g.creditPrice || ''}" placeholder="0,00"></label>
@@ -5253,6 +5813,9 @@ function vTiempos() {
         ${num('liveSec', 'Refresco de «En directo» (segundos)', g.liveSec, 5, 120, 'Cada cuánto se actualiza la pantalla En directo')}
         <label class="f">Mensaje de sesión detenida<textarea name="message" rows="3" maxlength="300">${esc(a.message)}</textarea><small class="muted" style="font-weight:400">Lo ve el cliente en su pantalla cuando se le detiene</small></label>
       </div>
+      <h2 class="sep">Pausas largas</h2>
+      <label class="check"><input type="checkbox" name="psOn"${(g.pauseStop || {}).on !== false ? ' checked' : ''}> Cerrar las reproducciones que lleven mucho rato en pausa (el cliente ve un aviso y puede volver a darle a reproducir: sigue donde lo dejó)</label>
+      <div class="row2">${num('psMin', 'Minutos en pausa antes de cerrarla', (g.pauseStop || {}).minutes || 15, 5, 240, 'Recomendado: 15. Libera el servidor de vídeos que nadie está viendo')}</div>
       <label class="f">Política de desconexión<select name="policy">${options([['newest', 'Detener la que lleva menos tiempo reproduciendo (proteger la más antigua)'], ['oldest', 'Detener la que lleva más tiempo reproduciendo (proteger la más reciente)'], ['all', 'Detener todas las reproducciones de la cuenta']], a.policy)}</select></label>
       <div class="infobox"><b>Cómo funciona</b><ul>
         <li>El panel pregunta a Emby cada ${g.monitorSec} s, también con el panel cerrado en el navegador (la ventana negra debe seguir abierta).</li>
@@ -5792,6 +6355,201 @@ async function dConn(c) {
   showDlg(`Conexiones de ${c.panelName}`, body);
 }
 
+/* ---------- App de clientes: el .apk propio, su enlace de descarga y «Solo mi app» ---------- */
+const appHas = () => !!(S.d && S.d.settings.app && S.d.settings.app.file);
+const appOn = () => appHas() && S.d.settings.app.tag !== false;
+const appName = () => (S.d && S.d.settings.app && S.d.settings.app.name) || 'la app';
+const appUrl = () => `${(S.d.settings.brand.url || location.origin).replace(/\/+$/, '')}/app`;
+function isMyApp(client) { const a = S.d && S.d.settings.app; const w = String((a && (a.client || a.name)) || '').trim().toLowerCase(); return !!w && String(client || '').toLowerCase().includes(w); }
+const appTag = (client) => (appOn() && isMyApp(client) ? `<span class="myapp">📲 ${esc(appName())}</span>` : esc(client || ''));
+const appCode = () => (S.d.settings.app && S.d.settings.app.dlCode) || '';
+const appBlock = () => `📲 Descarga nuestra app ${appName()}:\n${appUrl()}\n${appCode() ? `En Fire Stick o TV Box: abre la app «Downloader» y escribe el código ${appCode()}` : 'En Fire Stick o TV Box: abre la app «Downloader» y escribe esa dirección.'}`;
+const appGuide = () => `📲 Cómo instalar la app ${appName()}\n\n📱 En el móvil Android:\n1. Abre este enlace: ${appUrl()}\n2. Toca «Descargar» y luego «Instalar».\n3. Si pide permiso para instalar apps, actívalo y vuelve atrás.\n\n📺 En Fire Stick o TV Box:\n1. Instala la app «Downloader» desde la tienda.\n2. Ajustes › Mi Fire TV › Opciones para desarrolladores › Instalar apps desconocidas › activa Downloader.\n3. Abre Downloader, escribe ${appCode() ? `el código ${appCode()}` : appUrl()} y pulsa «Go».\n4. Pulsa «Instalar». ¡Listo!\n\nAl abrir la app, entra con tu usuario y contraseña de siempre.`;
+const fmtMB = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.round(b / 1024) + ' KB');
+function vAppCli() {
+  const a = S.d.settings.app || {}, o = a.only || {}, has = appHas();
+  const sw = (name, on, title, sub) => `<label class="ap-sw"><input type="checkbox" name="${name}"${on ? ' checked' : ''}><span class="ap-tg"></span><span><b>${title}</b><small>${sub}</small></span></label>`;
+  const hero = `<section class="ap-hero"><span class="ap-ic">📲</span><div><h1>App de clientes</h1><p>Tu app ${esc(a.name || '')} para móviles Android, Fire Stick y TV Box: súbela aquí y tus clientes la descargan desde tu panel.</p></div></section>`;
+  const file = has ? `<div class="ap-file"><div class="ap-v"><b>${esc(a.name)}</b><span>Versión ${esc(a.version || '—')}</span></div>
+      <div class="ap-ks"><div><b>${fmtMB(a.size || 0)}</b><small>tamaño</small></div><div><b>${a.downloads || 0}</b><small>descargas</small></div><div><b>${a.at ? fmt(a.at.slice(0, 10)) : '—'}</b><small>subida</small></div></div>
+      <div class="ap-acts"><button type="button" class="btn primary" data-act="app-pick">⬆️ Subir versión nueva</button><button type="button" class="btn" data-act="app-tell">📣 Avisar a mis clientes</button><button type="button" class="btn ghost" data-act="app-del">Quitar</button></div></div>`
+    : `<div class="ap-empty"><div>📦</div><b>Todavía no has subido la app</b><p class="muted small">Elige el archivo .apk de tu app. Se queda guardado en el panel.</p><button type="button" class="btn primary" data-act="app-pick">⬆️ Subir el .apk</button></div>`;
+  const up = `<input type="file" id="appFile" accept=".apk,application/vnd.android.package-archive" hidden><div id="appProg" class="ap-prog" hidden><div><i></i></div><span>Subiendo…</span></div>`;
+  const link = has ? `<section class="ap-card"><h2>🔗 Enlace de descarga</h2><div class="ap-link"><code>${esc(appUrl())}</code><button type="button" class="btn sm" data-act="app-copy">Copiar</button></div>
+      <p class="muted small">Siempre da la última versión que subas. En la Fire Stick el cliente lo escribe en la app «Downloader».</p>
+      <button type="button" class="btn" data-act="app-guide">📋 Copiar instrucciones de instalación para el cliente</button></section>
+    <section class="ap-card"><h2>🔢 Código para Downloader</h2>
+      ${appCode() ? `<div class="ap-code"><b>${esc(appCode())}</b><span>Tus clientes solo tienen que escribir este número en Downloader.</span></div>` : '<p class="muted small" style="margin:-4px 0 10px">Con un código de números, en la Fire Stick no hay que escribir la dirección entera con el mando.</p>'}
+      <div class="ap-steps"><p><b>1.</b> Entra en <a href="https://go.aftvnews.com/" target="_blank" rel="noopener">go.aftvnews.com</a> (es la web de los creadores de Downloader).</p><p><b>2.</b> Pega tu enlace <code>${esc(appUrl())}</code> y pulsa el botón para acortarlo.</p><p><b>3.</b> Te da un número. Escríbelo aquí abajo y pulsa «Guardar opciones».</p></div>
+      <p class="muted small">Solo hace falta hacerlo una vez: el código sirve para siempre porque tu enlace siempre da la última versión.</p></section>` : '';
+  const opts = `<section class="ap-card"><h2>⚙️ Opciones</h2>
+      ${sw('inMsg', a.inMsg !== false, 'Enlace en los mensajes', 'Al copiar el mensaje de alta, demo o renovación, se añade el enlace para descargar la app.')}
+      ${sw('tag', a.tag !== false, 'Ver quién usa la app', `En Monitor y en la ficha de cada cliente sale la etiqueta 📲 ${esc(a.name || '')}.`)}
+      <label class="f">Código de Downloader <span class="muted small">(opcional)</span><input name="dlCode" inputmode="numeric" maxlength="12" placeholder="Ejemplo: 123456" value="${esc(a.dlCode || '')}"></label>
+      <div class="row2"><label class="f">Nombre de la app<input name="name" maxlength="40" value="${esc(a.name || '')}"></label><label class="f">Nombre con el que se conecta<input name="client" maxlength="60" value="${esc(a.client || '')}"><small class="muted">Es el nombre que ve Emby. No lo cambies si no sabes cuál es.</small></label></div></section>`;
+  const only = `<section class="ap-card ap-only${o.on ? ' on' : ''}"><h2>🔒 Solo mi app <span class="ap-st">${o.on ? 'ACTIVADO' : 'DESACTIVADO'}</span></h2>
+      <p class="muted small" style="margin:-4px 0 12px">Si un cliente reproduce con otra app, el panel corta esa reproducción y le dice en la pantalla que use ${esc(a.name || 'tu app')}. Déjalo configurado y actívalo o desactívalo cuando quieras.</p>
+      ${sw('onlyOn', !!o.on, 'Activar «Solo mi app»', has ? 'Se aplica en menos de un minuto. Las cuentas de administrador no se tocan.' : 'Primero sube la app.')}
+      ${sw('apple', o.apple !== false, 'Dejar ver en Apple (iPhone, iPad, Apple TV)', 'Recomendado: la app es solo para Android, así que en Apple no se puede usar.')}
+      <label class="f">Otras apps permitidas <span class="muted small">(opcional, separadas por comas)</span><input name="allow" maxlength="300" placeholder="Ejemplo: Emby for Samsung, Emby for LG" value="${esc(o.allow || '')}"></label>
+      <label class="f">Mensaje en la pantalla del cliente<textarea name="message" rows="3" maxlength="400">${esc(o.message || '')}</textarea><small class="muted">{app} es el nombre de tu app y {link} el enlace de descarga.</small></label>
+      <p class="muted small">Si algún cliente necesita otra app, ábrele su ficha y en «App» pulsa «Cambiar».</p></section>`;
+  const hist = (a.history || []).length ? `<section class="ap-card"><h2>🕓 Versiones subidas</h2>${a.history.map((h, i) => `<div class="ap-h${i ? '' : ' cur'}"><b>${esc(h.version || '—')}</b><span>${fmtTs(h.at, true)} · ${fmtMB(h.size || 0)}${h.by ? ' · ' + esc(h.by) : ''}</span>${i ? '' : '<em>actual</em>'}</div>`).join('')}</section>` : '';
+  return hero + `<div class="ap-grid"><section class="ap-card">${file}${up}</section>${link}<form id="appForm" class="ap-form">${opts}${only}<div class="ap-save"><button class="btn primary" type="submit">💾 Guardar opciones</button></div></form>${hist}</div>`;
+}
+function appUploadFile(f) {
+  if (!f) return;
+  if (!/\.apk$/i.test(f.name)) return toast('Elige un archivo .apk', true);
+  const box = $('#appProg'), bar = box && $('i', box), txt = box && $('span', box);
+  if (box) box.hidden = false;
+  const x = new XMLHttpRequest();
+  x.open('POST', '/api/app-upload');
+  x.setRequestHeader('Content-Type', 'application/octet-stream'); x.setRequestHeader('X-App-Upload', '1');
+  x.setRequestHeader('X-File-Name', f.name.replace(/[^\w.\- ]/g, '')); x.setRequestHeader('X-Base', location.origin);
+  x.upload.onprogress = (e) => { if (e.lengthComputable && bar) { const pc = Math.round((e.loaded / e.total) * 100); bar.style.width = pc + '%'; txt.textContent = pc < 100 ? `Subiendo… ${pc}% (${fmtMB(e.loaded)} de ${fmtMB(e.total)})` : 'Comprobando el archivo…'; } };
+  x.onload = async () => {
+    let r = {}; try { r = JSON.parse(x.responseText); } catch (e) { /* nada */ }
+    if (x.status !== 200) { if (box) box.hidden = true; return toast(r.error || 'No se pudo subir la app', true); }
+    await reload();
+    toast(`App subida: ${r.app.name} ${r.app.version || ''} ✓`);
+    if (r.newer) dConfirm('📣 ¿Avisar a tus clientes?', `Has subido la versión ${esc(r.app.version)}. Puedes mandar un aviso por Telegram a tus clientes con el enlace para actualizar.`, 'Escribir el aviso', async () => { const b = $('[data-act=app-tell]'); if (b) setTimeout(() => b.click(), 50); }, 'Abriendo el aviso…');
+  };
+  x.onerror = () => { if (box) box.hidden = true; toast('Se cortó la conexión al subir la app. Vuelve a intentarlo.', true); };
+  x.send(f);
+}
+document.addEventListener('change', (e) => { if (e.target && e.target.id === 'appFile') appUploadFile(e.target.files[0]); });
+document.addEventListener('submit', async (e) => {
+  if (!e.target || e.target.id !== 'appForm') return;
+  e.preventDefault();
+  const f = e.target, el = f.elements;
+  try {
+    await api('PUT', '/api/app-settings', { name: el.name.value, client: el.client.value, dlCode: el.dlCode.value, inMsg: el.inMsg.checked, tag: el.tag.checked, base: location.origin, only: { on: el.onlyOn.checked && appHas(), apple: el.apple.checked, allow: el.allow.value, message: el.message.value } });
+    if (el.onlyOn.checked && !appHas()) toast('Primero sube la app para poder activar «Solo mi app»', true); else toast('Opciones guardadas ✓');
+    await reload();
+  } catch (ex) { toast(ex.message, true); }
+});
+
+/* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
+const NEWS = [
+  { v: 159, d: '2026-10-26', items: ['📲 App de clientes: sube tu app, tus clientes la descargan desde tu panel y el enlace sale en los mensajes', '🏷️ En Monitor y en la ficha ves quién usa tu app', '🔒 «Solo mi app»: opción para que solo se pueda ver con tu app (la activas y desactivas cuando quieras)', '🔢 Código de Downloader: tus clientes escriben solo un número en la Fire Stick'] },
+  { v: 158, d: '2026-10-26', items: ['🎬 Entrada al panel nueva: un muro de carátulas que se mueve y todo centrado, en el ordenador y en el móvil'] },
+  { v: 157, d: '2026-10-26', items: ['✨ Este botón de Novedades: aquí verás cada mejora del panel'] },
+  { v: 156, d: '2026-10-26', items: ['🔄 Ventana de Renovar nueva: botones de colores y un ticket que enseña la fecha nueva y lo que cuesta', '⚡ «Renovar igual»: renueva con el mismo plan de la última vez en un toque', '📇 Ficha del cliente: todo de una cuenta en una sola pantalla', '📲 El panel se puede instalar como una app en el móvil y el ordenador'] },
+  { v: 155, d: '2026-10-26', items: ['🧾 Movimientos con diseño nuevo: por días, con buscador y se ve de quién es cada cuenta'] },
+  { v: 154, d: '2026-10-26', items: ['💶 «Precios y paquetes» renovado, con botones + y − y una escalera de precios'] },
+  { v: 153, d: '2026-10-26', items: ['🔴 Aviso de servidor caído en el Resumen, pequeño y solo cuando hay alguno caído'] },
+  { v: 151, d: '2026-10-26', items: ['🏠 Eliges qué página se abre al entrar (Resumen o Clientes) en Mi perfil'] },
+  { v: 150, d: '2026-10-26', items: ['🎨 Formularios con más color: secciones numeradas, iconos y botones grandes para elegir'] },
+  { v: 149, d: '2026-10-26', items: ['🗑️ En Seguimiento puedes borrar las demos que no compraron, una a una o todas'] },
+  { v: 148, d: '2026-10-26', items: ['⏸️ Las pausas largas se cierran solas (por defecto a los 15 minutos)'] },
+  { v: 147, d: '2026-10-25', items: ['🔎 Si una cuenta pierde sus bibliotecas, el aviso dice qué programa pudo ser'] },
+  { v: 145, d: '2026-10-25', items: ['✅ Un minuto después de crear o renovar, el panel comprueba que las bibliotecas están bien', '📨 Si no puede arreglar una cuenta, te avisa por Telegram'] },
+  { v: 144, d: '2026-10-25', items: ['🛡️ Vigilante de bibliotecas: cada 15 minutos devuelve las bibliotecas a las cuentas activas que las pierdan'] },
+  { v: 143, d: '2026-10-24', items: ['🚨 Arreglado el aviso por Telegram cuando un servidor se cae'] },
+  { v: 142, d: '2026-10-23', items: ['🟣 Muchas mejoras para Jellyfin: carátulas, contraseñas, reinicio y una pantalla de margen'] },
+  { v: 141, d: '2026-10-23', items: ['🔑 Las licencias eligen plataforma: solo Emby, solo Jellyfin o las dos'] },
+  { v: 140, d: '2026-10-22', items: ['👥 El detector de cuentas compartidas ya no cuenta las pausas y es más fiable'] },
+  { v: 139, d: '2026-10-22', items: ['🎉 Animación nueva al crear o renovar: un ticket con la fecha que va subiendo'] },
+  { v: 138, d: '2026-10-22', items: ['📡 Monitor con filtro: todas, mías o de mis vendedores'] },
+];
+// La primera vez solo se marca como nueva la última versión
+const newsSeen = () => { let n = 0; try { n = +(localStorage.getItem('newsSeen') || 0); } catch (e) { /* nada */ } return n || NEWS[0].v - 1; };
+function newsDots() { const on = NEWS[0].v > newsSeen(); document.querySelectorAll('.newsdot').forEach((x) => { x.hidden = !on; }); }
+function dNews() {
+  const seen = newsSeen(), byDay = [];
+  for (const n of NEWS) { let g = byDay.find((x) => x.d === n.d); if (!g) byDay.push(g = { d: n.d, list: [] }); g.list.push(n); }
+  const dayTxt = (d) => { const t = d === S.d.today ? 'Hoy' : new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); };
+  showDlg('✨ Novedades del panel', `<p class="muted small" style="margin:-4px 0 12px">Lo último que se ha mejorado. Lo más nuevo, arriba.</p><div class="nw">${byDay.map((g) => `<h4 class="nw-d">${esc(dayTxt(g.d))}</h4>${g.list.map((n) => `<div class="nw-v${n.v > seen ? ' new' : ''}"><div class="nw-h"><b>Versión ${n.v}</b>${n.v > seen ? '<span class="nw-new">NUEVO</span>' : ''}</div><ul>${n.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}`).join('')}</div>`);
+  try { localStorage.setItem('newsSeen', String(NEWS[0].v)); } catch (e) { /* nada */ }
+  newsDots();
+}
+
+/* ---------- App en el móvil: instalar el panel como una app ---------- */
+const APP = { prompt: null };
+const isStandalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const canInstall = () => !isStandalone() && (!!APP.prompt || isIOS());
+try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch (e) { /* sin app */ }
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); APP.prompt = e; if (S.d) instBanner(); });
+window.addEventListener('appinstalled', () => { APP.prompt = null; const b = $('#instBar'); if (b) b.remove(); toast('¡App instalada! Ya la tienes en la pantalla de inicio 📲'); });
+function instHidden() { try { return Date.now() < +(localStorage.getItem('instHide') || 0); } catch (e) { return false; } }
+function instBanner() {
+  const old = $('#instBar'); if (old) old.remove();
+  if (!canInstall() || instHidden() || !['resumen', 'cuentas'].includes(S.view)) return;
+  const m = $('#main'); if (!m) return;
+  m.insertAdjacentHTML('afterbegin', `<div id="instBar" class="instbar"><span class="ib-ic"><img src="/icon-192.png" alt=""></span><div><b>Instala la app</b><small>Abre ${esc(BRAND.name || 'el panel')} desde la pantalla de inicio, como una app.</small></div><button type="button" class="ib-go" data-act="app-install">📲 Instalar</button><button type="button" class="ib-x" data-act="app-hide" aria-label="Ahora no">✕</button></div>`);
+}
+async function appInstall() {
+  if (isStandalone()) return toast('Ya estás usando la app 👍');
+  if (APP.prompt) { const p = APP.prompt; APP.prompt = null; p.prompt(); try { const r = await p.userChoice; if (r && r.outcome === 'accepted') { const b = $('#instBar'); if (b) b.remove(); } } catch (e) { /* nada */ } return; }
+  const step = (n, t) => `<div class="ig-s"><span>${n}</span><p>${t}</p></div>`;
+  const ios = isIOS();
+  showDlg('📲 Instalar la app', `<div class="ig">
+    <div class="ig-hero"><img src="/icon-192.png" alt=""><div><b>${esc(BRAND.name || 'Panel')}</b><small>Se abre a pantalla completa, sin la barra del navegador, y se actualiza sola.</small></div></div>
+    ${ios ? `<h4>En iPhone o iPad (Safari)</h4>${step(1, 'Toca el botón <b>Compartir</b> <span class="ig-k">⬆️</span> abajo en la pantalla.')}${step(2, 'Baja y toca <b>«Añadir a pantalla de inicio»</b> <span class="ig-k">➕</span>.')}${step(3, 'Toca <b>«Añadir»</b>. ¡Listo! Ya tienes el icono.')}<p class="muted small">Si usas Chrome en iPhone, el botón Compartir está arriba, junto a la dirección.</p>`
+    : `<h4>En Android (Chrome)</h4>${step(1, 'Toca el menú <b>⋮</b> arriba a la derecha.')}${step(2, 'Toca <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.')}${step(3, 'Confirma con <b>«Instalar»</b>. ¡Listo!')}
+      <h4>En el ordenador (Chrome o Edge)</h4>${step('💻', 'Pulsa el icono <span class="ig-k">⊕</span> que sale a la derecha de la dirección y luego <b>«Instalar»</b>.')}`}
+  </div>`);
+}
+
+/* ---------- Ficha del cliente: todo de una cuenta en una sola pantalla ---------- */
+function openCf(id) { S.cf = { id, hist: null, conn: null, busy: false, back: S.view === 'cficha' ? S.cf.back : S.view }; S.view = 'cficha'; render(); window.scrollTo(0, 0); }
+async function loadCf() {
+  const id = S.cf.id; S.cf.busy = true;
+  const [h, k] = await Promise.all([api('GET', `/api/clients/${id}/history`).catch((e) => ({ error: e.message })), api('GET', `/api/clients/${id}/connections`).catch(() => null)]);
+  if (S.cf.id !== id) return;
+  S.cf.hist = h.error ? { error: h.error, history: [] } : h; S.cf.conn = k; S.cf.busy = false;
+  if (S.view === 'cficha') render();
+}
+function vCFicha() {
+  const c = S.d.clients.find((x) => x.id === S.cf.id);
+  const back = `<button type="button" class="btn ghost cf-back" data-view="${esc(S.cf.back && S.cf.back !== 'cficha' ? S.cf.back : 'cuentas')}">← Volver</button>`;
+  if (!c) return back + '<div class="panel"><div class="empty">Esa cuenta ya no existe.</div></div>';
+  const st = stage(c), n = c.demo ? null : diff(c.expires, S.d.today), ren = (S.d.renewals || {})[c.id] || 0;
+  const spent = (c.charges || []).reduce((a, x) => a + (x.credits || 0), 0);
+  const since = Math.max(0, diff(S.d.today, c.createdAt || S.d.today));
+  const sinceTxt = since === 0 ? 'Hoy' : since < 31 ? plural(since, 'día', 'días') : since < 365 ? plural(Math.round(since / 30), 'mes', 'meses') : plural(Math.floor(since / 365), 'año', 'años');
+  const big = c.demo ? 'DEMO' : n < 0 ? `-${-n}` : String(n);
+  const bigTxt = c.demo ? `Termina ${fmtTs(c.expiresAt)}` : n < 0 ? `días caducada · venció el ${fmt(c.expires)}` : n === 0 ? `vence HOY · ${fmt(c.expires)}` : `${n === 1 ? 'día' : 'días'} · vence el ${fmt(c.expires)}`;
+  const many = S.d.users.length > 1;
+  const kpi = (e, v, t, cls = '') => `<div class="cf-k ${cls}"><span>${e}</span><b>${v}</b><small>${t}</small></div>`;
+  const act = (a, e, t, cls = '') => `<button type="button" class="cf-a ${cls}" data-act="${a}" data-id="${c.id}"><span>${e}</span>${t}</button>`;
+  const L = lastPlan(c);
+  const hero = `<section class="cf-hero st-${st}">
+    <button type="button" class="cf-more" data-act="more" data-id="${c.id}" aria-label="Más opciones" title="Más opciones">⋯</button>
+    <div class="cf-id"><span class="cf-av">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="cf-nm"><h1>${esc(c.panelName)}</h1><p>@${esc(c.embyName)} · ${esc(serverName(c.serverId))}${many ? ` · de ${esc(userName(c.ownerId) || '—')}` : ''}</p><span class="cf-st">${esc(STAGE[st])}</span>${c.paid === false ? '<span class="cf-st due">💶 Cobro pendiente</span>' : ''}</div></div>
+    <div class="cf-left"><b>${big}</b><span>${bigTxt}</span></div>
+    ${c.demo ? '' : leftBar(c)}
+    <div class="cf-acts">${c.demo ? act('renew', '✨', 'Convertir', 'pri') : act('renew-same', '⚡', `<div>Renovar igual<small>${plural(L.m, 'mes', 'meses')} · ${plural(L.sc, 'pantalla', 'pantallas')}</small></div>`, 'pri') + act('renew', '🗓️', 'Otro plan')}${act('msg', '💬', 'Mensaje')}${act('m-pass', '🔑', 'Contraseña')}${act('edit', '✏️', 'Editar')}</div>
+  </section>`;
+  const kpis = `<div class="cf-ks">${kpi('📅', sinceTxt, `cliente desde el ${fmt(c.createdAt)}`, 'b')}${kpi('🔄', String(ren), ren === 1 ? 'renovación' : 'renovaciones', 'v')}${kpi('🪙', String(spent), spent === 1 ? 'crédito gastado' : 'créditos gastados', 'a')}${kpi('⏳', c.demo ? '—' : n < 0 ? '0' : String(n), 'días que le quedan', n != null && n <= S.d.settings.warnDays ? 'r' : 'g')}</div>`;
+  const row = (e, k, v) => `<div class="cf-r"><span>${e}</span><em>${k}</em><b>${v}</b></div>`;
+  const plan = `<div class="cf-card"><h3>📦 Su plan</h3>
+    ${row('🎬', 'Contenido', c.quality ? esc(Q[c.quality] || c.quality) : 'Bibliotecas propias')}${row('🖥️', 'Pantallas', c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite')}${row('🛰️', 'Servidor', esc(serverName(c.serverId)))}
+    ${row('👤', 'Usuario', '@' + esc(c.embyName))}${row('🔒', 'Contraseña', c.password ? (S.pw.has(c.id) ? esc(c.password) : '••••••••') + ` <button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="Ver contraseña">${ic('eye')}</button>` : 'No guardada')}
+    ${row('💶', 'Cobro', c.paid === false ? '<span class="bad">Pendiente</span>' : 'Cobrado')}
+    ${appHas() && (S.d.settings.app.only.on || c.appFree) ? row('📲', 'App', `${c.appFree ? 'Cualquier app' : 'Solo ' + esc(appName())} <button type="button" class="linkbtn" data-act="app-free" data-id="${c.id}">Cambiar</button>`) : ''}</div>`;
+  const ch = [];
+  if (c.whatsapp) { const w = waNum(c.whatsapp); ch.push(w ? `<a class="cf-c wa" href="https://wa.me/${w}" target="_blank" rel="noopener">🟢 WhatsApp<small>${esc(c.whatsapp)}</small></a>` : `<span class="cf-c wa">🟢 WhatsApp<small>${esc(c.whatsapp)}</small></span>`); }
+  if (c.telegram) { const t = c.telegram.replace(/^@/, ''); ch.push(/^[A-Za-z0-9_]{3,40}$/.test(t) ? `<a class="cf-c tg" href="https://t.me/${t}" target="_blank" rel="noopener">✈️ Telegram<small>@${esc(t)}</small></a>` : `<span class="cf-c tg">✈️ Telegram<small>${esc(c.telegram)}</small></span>`); }
+  if (c.email) ch.push(`<a class="cf-c em" href="mailto:${esc(c.email)}">✉️ Email<small>${esc(c.email)}</small></a>`);
+  if (c.signal) ch.push(`<span class="cf-c">💭 Signal<small>${esc(c.signal)}</small></span>`);
+  if (S.d.settings.notices.telegram.bot) ch.push(c.tgLinked ? '<span class="cf-c ok">🔔 Avisos por Telegram<small>Enlazado ✓</small></span>' : `<button type="button" class="cf-c add" data-act="m-tg" data-id="${c.id}">🔔 Avisos por Telegram<small>Toca para enlazar</small></button>`);
+  const contact = `<div class="cf-card"><h3>📇 Contacto <button type="button" class="linkbtn cf-ed" data-act="m-notes" data-id="${c.id}">Editar</button></h3>${ch.length ? `<div class="cf-cs">${ch.join('')}</div>` : '<p class="muted small">Sin contacto guardado. Toca «Editar» para añadirlo.</p>'}${c.note ? `<div class="cf-note">📝 ${esc(c.note)}</div>` : ''}</div>`;
+  const k = S.cf.conn, w = k && k.week;
+  const devs = [], seenDev = new Set();
+  for (const x of (k && k.rows) || []) { const key = x.devId || x.dev; if (seenDev.has(key)) continue; seenDev.add(key); devs.push(x); if (devs.length >= 6) break; }
+  const usesApp = ((k && k.rows) || []).some((x) => isMyApp(x.app));
+  const conn = `<div class="cf-card"><h3>📡 Aparatos (7 días)${appOn() && k ? (usesApp ? ` <span class="myapp">📲 Usa ${esc(appName())}</span>` : ' <span class="myapp no">Sin la app</span>') : ''} <button type="button" class="linkbtn cf-ed" data-act="m-conn" data-id="${c.id}">Ver todo</button></h3>
+    ${!k ? '<p class="muted small">Cargando…</p>' : `<div class="cf-mini">${kpi('📱', w.devices, w.devices === 1 ? 'aparato' : 'aparatos')}${kpi('📍', w.places, w.places === 1 ? 'sitio' : 'sitios')}${kpi('👥', `${w.maxAt}/${c.screens || '∞'}`, 'a la vez')}</div>
+    ${w.reasons && w.reasons.length ? `<p class="cwarn">${ic('alert')}Parece compartida: ${esc(w.reasons.join(', '))}.</p>` : ''}
+    ${devs.length ? `<div class="cf-devs">${devs.map((x) => `<div><span>${x.playing ? '▶️' : '📺'}</span><b>${esc(x.dev || 'Aparato')}</b><small>${appTag(x.app || '')} · ${fmtTs(x.from, true)}</small></div>`).join('')}</div>` : '<p class="muted small">Todavía no hay conexiones apuntadas.</p>'}`}</div>`;
+  const h = S.cf.hist, hist = h ? (h.history || []) : null;
+  const tl = `<div class="cf-card cf-wide"><h3>🕓 Historial</h3>${!h ? '<p class="muted small">Cargando…</p>' : h.error ? `<p class="err">${esc(h.error)}</p>` : !hist.length ? '<p class="muted small">Todavía no hay movimientos de esta cuenta.</p>'
+    : `<div class="cf-tl">${hist.slice(0, 40).map((l) => { const [e, t, cl] = MV_KIND[l.type] || ['📝', l.type || 'Otro', 's']; return `<div class="cf-ti ${cl}"><span class="cf-dot">${e}</span><div><div class="cf-tt"><b>${esc(t)}</b><time>${fmtTs(l.ts, true)}</time></div><p>${esc(l.text)}</p><small>${l.auto || !l.actor ? '🤖 Automático' : '👤 ' + esc(l.actor)}</small></div></div>`; }).join('')}</div>${hist.length > 40 ? `<button type="button" class="btn sm" data-act="m-hist" data-id="${c.id}">Ver las ${hist.length}</button>` : ''}`}</div>`;
+  return back + hero + kpis + `<div class="cf-grid">${plan}${contact}${conn}${tl}</div>`;
+}
+
 /* ---------- Cuentas compartidas ---------- */
 async function loadShared() {
   S.sh.busy = true;
@@ -5855,10 +6613,11 @@ function vSeguimiento() {
     const contact = [x.whatsapp ? `${ic('msg')}${esc(x.whatsapp)}` : '', x.telegram ? `${ic('send')}${esc(x.telegram)}` : '', x.tgLinked ? `${ic('bell')}bot enlazado` : ''].filter(Boolean).map((t) => `<span>${t}</span>`).join('');
     return `<article class="fuc"><div class="fu-l"><b>${esc(x.name)}</b><small>@${esc(x.emby)} · terminó ${ago <= 0 ? 'hoy' : ago === 1 ? 'ayer' : `hace ${ago} días`}${S.d.users.length > 1 && userName(x.ownerId) ? ' · ' + esc(userName(x.ownerId)) : ''}</small>${contact ? `<div class="devs">${contact}</div>` : ''}</div>
       <div class="acts">${x.status === 'pending' ? `<button class="btn sm primary" data-act="fu-msg" data-k="${x.id}">${ic('send')}Escribirle</button><button class="btn sm" data-act="fu-set" data-k="${x.id}" data-st="done" title="Ya le he escrito">${ic('check')}Hecho</button><button class="btn sm ghost" data-act="fu-set" data-k="${x.id}" data-st="skip" title="No hace falta">Descartar</button>`
-        : `<span class="qst ${x.status === 'bought' ? 'correcto' : ''}">${ST[x.status] || x.status}</span>${x.status !== 'bought' ? `<button class="btn sm ghost" data-act="fu-set" data-k="${x.id}" data-st="pending">Volver a pendientes</button>` : ''}`}</div></article>`;
+        : `<span class="qst ${x.status === 'bought' ? 'correcto' : ''}">${ST[x.status] || x.status}</span>${x.status !== 'bought' ? `<button class="btn sm ghost" data-act="fu-set" data-k="${x.id}" data-st="pending">Volver a pendientes</button>` : ''}`}<button class="btn sm ghost fu-del" data-act="fu-del" data-k="${x.id}" title="Borrar esta demo ahora (de Emby y del panel)">${ic('trash')}Borrar</button></div></article>`;
   };
   const empty = f.tab === 'pending' ? `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Nada pendiente</b><span>Cuando una demo termine sin comprar, aparecerá aquí.</span></div></div>` : '<div class="panel"><div class="empty">Todavía no hay ninguno.</div></div>';
-  return head('Seguimiento de demos', sub) + tabs + (rows.length ? `<div class="fulist">${rows.map(card).join('')}</div>` : empty)
+  const delAll = rows.length ? `<div class="fu-top"><button class="btn sm danger" data-act="fu-delall" data-k="${f.tab}">${ic('trash')}Borrar ${rows.length === 1 ? 'esta demo' : `las ${rows.length} demos de esta lista`}</button></div>` : '';
+  return head('Seguimiento de demos', sub) + tabs + delAll + (rows.length ? `<div class="fulist">${rows.map(card).join('')}</div>` : empty)
     + '<p class="small muted" style="margin-top:12px">El texto del mensaje se cambia en Emby › Plantillas de mensajes › «Seguimiento de una demo». Se guardan los últimos 30 días.</p>';
 }
 
@@ -6749,41 +7508,74 @@ function dDemo() {
   });
 }
 
+/* «Renovar igual»: mismo tiempo, pantallas y contenido que la última vez, en un toque */
+function lastPlan(c) {
+  let m = +c.lastMonths || 0;
+  if (!m) { const ch = (c.charges || []).filter((x) => x.kind === 'alta' || x.kind === 'renovacion').pop(); if (ch && ch.from && ch.to) { const [y1, m1] = ch.from.split('-').map(Number), [y2, m2] = ch.to.split('-').map(Number); m = (y2 - y1) * 12 + (m2 - m1); } }
+  if (!MONTH_OPTS.some(([x]) => x === m)) m = 1;
+  const sc = SCREEN_OPTS.some(([x]) => x === c.screens) ? c.screens : 1;
+  const q = c.quality === null ? 'custom' : (c.quality || 'basico');
+  return { m, sc, q };
+}
+const qLabel = (q) => q === 'k4' ? '💎 4K' : q === 'basico' ? '🎬 Básico' : '📚 Las suyas';
+const canSame = (c) => !c.demo && ['soon', 'expired', 'trash'].includes(stage(c));
+function rnTicket(c, m, sc, q, base, from, chip) {
+  const dmy = (d) => d.split('-').reverse().join('/'), cost = priceOf(m, sc), nu = addMonths(base, m);
+  return `<div class="h"><span class="av">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)} · ${esc(serverName(c.serverId))}</small></div><span class="st">${chip}</span></div>
+    <div class="rw"><span>${qLabel(q)}</span><span>🖥️ ${plural(sc, 'pantalla', 'pantallas')}</span><span>⏳ +${plural(m, 'mes', 'meses')}</span></div>
+    <div class="dt"><div><small>${c.demo ? 'Vencerá el' : `Nueva fecha (antes ${esc(dmy(c.expires))})`}</small><br><b>${esc(dmy(nu))}</b></div><div class="r"><small>Coste</small><br><b>${esc(plural(cost, 'crédito', 'créditos'))}</b></div></div>
+    <p class="rnfrom">${esc(from)}</p>`;
+}
+function renewBase(c) {
+  const fromToday = c.demo || diff(c.expires, S.d.today) < 0;
+  return [fromToday ? S.d.today : c.expires, c.demo ? 'Cuenta desde hoy.' : fromToday ? 'Ya venció, así que cuenta desde hoy.' : 'Se suma a su vencimiento actual.'];
+}
+function dRenewSame(c) {
+  if (c.demo) return dRenew(c);
+  const prevExp = c.expires, { m, sc, q } = lastPlan(c), [base, from] = renewBase(c);
+  openDlg({
+    title: '⚡ Renovar igual', submit: 'Renovar ✨',
+    body: `<div class="bzhero rnhero"><div class="bztk">${rnTicket(c, m, sc, q, base, from, 'IGUAL')}</div></div>
+      <input type="hidden" name="months" value="${m}"><input type="hidden" name="screens" value="${sc}"><input type="hidden" name="quality" value="${q}">
+      <div class="rnf"><span class="rnl">💶 Cobro</span>${paidSelect(true).replace(/<label class="f">Cobro al cliente/, '<label class="f rnhide">Cobro al cliente')}</div>
+      <p class="preview rnprev" id="cost"></p>
+      <p class="muted small" style="margin:6px 0 0">¿Quieres cambiar algo? <button type="button" class="linkbtn" data-act="renew" data-id="${c.id}">Elegir otro plan</button></p>`,
+    onOpen: () => { dlgForm.querySelectorAll('select').forEach(bzChips); wireCost(c.serverId, null); },
+    onSubmit: async (fd) => {
+      const r = await api('POST', `/api/clients/${c.id}/renew`, { months: m, screens: sc, quality: q, paid: fd.get('paid') === '1' });
+      return `Renovada hasta el ${fmt(r.expires)}`;
+    },
+    after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) celebrateThen('renew', now, () => dMessage(now, '', 'renewed'), prevExp); },
+  });
+}
 function dRenew(c) {
   const prevExp = c.expires;
   const fromToday = c.demo || diff(c.expires, S.d.today) < 0;
   const base = fromToday ? S.d.today : c.expires;
   const from = c.demo ? 'Cuenta desde hoy.' : fromToday ? 'Ya venció, así que cuenta desde hoy.' : 'Se suma a su vencimiento actual.';
-  // Un solo desplegable con cada combinacion de meses y pantallas y lo que cuesta
-  const packs = [];
-  MONTH_OPTS.forEach(([m, mt]) => SCREEN_OPTS.forEach(([sc, st]) => { const cr = priceOf(m, sc); packs.push([`${m}-${sc}`, `${mt}, ${st} (${plural(cr, 'crédito', 'créditos')})`]); }));
-  const fact = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+  const dmy = (d) => d.split('-').reverse().join('/');
   openDlg({
-    title: c.demo ? 'Convertir demo en cuenta' : 'Extender cuenta Emby', submit: c.demo ? 'Convertir en cuenta' : 'Extender',
-    body: `<dl class="facts">
-        ${fact('Cliente', esc(c.panelName))}
-        ${fact('Usuario de Emby', esc(c.embyName))}
-        ${fact('Email', c.email ? esc(c.email) : '—')}
-        ${fact('Servidor', esc(serverName(c.serverId)))}
-        ${fact('Plan actual', planText(c))}
-        ${fact(c.demo ? 'La demo termina' : 'Vencimiento actual', c.demo ? fmtTs(c.expiresAt) : `${fmt(c.expires)} <span class="muted small" style="font-weight:400">(${when(c)})</span>`)}
-      </dl>
-      <label class="f">Paquete de duración *<select name="pack">${options(packs, `1-${c.screens || 1}`)}</select></label>
-      <input type="hidden" name="months" value="1"><input type="hidden" name="screens" value="${c.screens || 1}">
-      <div class="row2">
-        <label class="f">Contenido<select name="quality">${qualityOpts(c.quality || 'custom', c.quality === null)}</select></label>
-        ${paidSelect(true)}
-      </div>
-      <p class="preview" id="cost"></p>`,
+    title: c.demo ? 'Convertir demo en cuenta' : 'Renovar cuenta Emby', submit: c.demo ? 'Convertir en cuenta ✨' : 'Renovar ✨',
+    body: `<div class="bzhero rnhero"><div class="bztk" id="rnTk"></div></div>
+      <div class="rnf"><span class="rnl">⏳ Duración</span><select name="months">${options(MONTH_OPTS, 1)}</select></div>
+      <div class="rnf"><span class="rnl">📺 Pantallas</span><select name="screens">${options(SCREEN_OPTS, c.screens || 1)}</select></div>
+      <div class="rnf"><span class="rnl">🎬 Contenido</span><select name="quality" data-chip="big">${qualityOpts(c.quality || 'custom', c.quality === null)}</select></div>
+      <div class="rnf"><span class="rnl">💶 Cobro</span>${paidSelect(true).replace(/<label class="f">Cobro al cliente/, '<label class="f rnhide">Cobro al cliente')}</div>
+      <p class="preview rnprev" id="cost"></p>`,
     onOpen: () => {
       const f = dlgForm;
-      // se ejecuta antes que el calculo de coste, que escucha en el formulario
-      f.elements.pack.onchange = () => { const [m, sc] = f.elements.pack.value.split('-'); f.elements.months.value = m; f.elements.screens.value = sc; };
-      wireCost(c.serverId, () => `Nuevo vencimiento: <b>${fmt(addMonths(base, +f.elements.months.value))}</b> <span class="muted small">${from}</span>`);
+      f.querySelectorAll('select').forEach(bzChips);
+      const tk = () => {
+        const m = +f.elements.months.value, sc = +f.elements.screens.value, q = f.elements.quality.value;
+        $('#rnTk', f).innerHTML = rnTicket(c, m, sc, q, base, from, c.demo ? 'DEMO → CUENTA' : 'RENOVAR');
+      };
+      wireCost(c.serverId, null);
+      ['change', 'input'].forEach((ev) => f.addEventListener(ev, tk)); f.addEventListener('click', () => setTimeout(tk, 0));
+      tk();
     },
     onSubmit: async (fd) => {
       const r = await api('POST', `/api/clients/${c.id}/renew`, { months: +fd.get('months'), screens: +fd.get('screens'), quality: fd.get('quality'), paid: fd.get('paid') === '1' });
-      return `${c.demo ? 'Convertida en cuenta' : 'Extendida'} hasta el ${fmt(r.expires)}`;
+      return `${c.demo ? 'Convertida en cuenta' : 'Renovada'} hasta el ${fmt(r.expires)}`;
     },
     // Al terminar, el mensaje listo para enviar al cliente
     after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) celebrateThen('renew', now, () => dMessage(now, '', 'renewed'), prevExp); },
@@ -6846,6 +7638,8 @@ function dMore(c) {
   const noCredits = !owner || owner.role === 'super' || (owner.role === 'admin' && !owner.useCredits);
   const grp = (title, items, cls = '') => { const html = items.filter(Boolean).join(''); return html ? `<div class="mgrp ${cls}"><h4>${title}</h4><div class="mgrid2">${html}</div></div>` : ''; };
   showDlg(c.panelName, `<div class="mlist2">
+    <button type="button" class="cf-open" data-act="ficha" data-id="${c.id}">📇 <b>Ver ficha completa</b><small>Plan, historial, aparatos y contacto en una pantalla</small></button>
+    ${grp('Renovar', [c.demo ? '' : it('renew-same', 'Renovar igual', `${plural(lastPlan(c).m, 'mes', 'meses')} · ${plural(lastPlan(c).sc, 'pantalla', 'pantallas')}`), it('renew', c.demo ? 'Convertir en cuenta' : 'Elegir plan')])}
     ${grp('Enviar al cliente', [it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
     ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : ''])}
     ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
@@ -7390,6 +8184,7 @@ function dMessage(c, password, key) {
     title: `Mensaje para ${c.panelName}`, submit: 'Copiar mensaje',
     body: `<label class="f">Plantilla<select name="tpl">${options(TPL, key || (c.demo ? 'demo' : 'created'))}</select></label>
       <label class="check"><input type="checkbox" name="guide" checked> Añadir al final la guía para poner la calidad al máximo (en cuentas y demos nuevas)</label>
+      ${appHas() ? `<label class="check"><input type="checkbox" name="app"${S.d.settings.app.inMsg !== false ? ' checked' : ''}> Añadir el enlace para descargar la app ${esc(appName())} 📲</label>` : ''}
       ${tgLink(c) ? `<label class="check"><input type="checkbox" name="tg"${c.tgLinked ? '' : ' checked'}> Añadir el enlace de Telegram para que reciba los avisos${c.tgLinked ? ' <span class="muted small">(ya lo tiene enlazado)</span>' : ''}</label>` : ''}
       <label class="f">Mensaje (puedes retocarlo antes de copiarlo)<textarea name="msg" rows="13" style="font-family:ui-monospace,Consolas,monospace;font-size:13.5px"></textarea></label>
       ${notes.map((n) => `<p class="muted small" style="margin-bottom:8px">${n}</p>`).join('')}
@@ -7400,9 +8195,10 @@ function dMessage(c, password, key) {
       const upd = () => {
         const k = f.elements.tpl.value, add = f.elements.guide.checked && (k === 'created' || k === 'demo'), main = fillTpl(k, c, password);
         const tg = f.elements.tg && f.elements.tg.checked && k !== 'quality' && !main.includes(tgLink(c)) ? '\n\n' + tgBlock(c) : '';
-        f.elements.msg.value = main + tg + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link();
+        const ap = f.elements.app && f.elements.app.checked && k !== 'quality' && !main.includes(appUrl()) ? '\n\n' + appBlock() : '';
+        f.elements.msg.value = main + ap + tg + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link();
       };
-      f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; if (f.elements.tg) f.elements.tg.onchange = upd; f.elements.msg.oninput = link; upd();
+      f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; if (f.elements.app) f.elements.app.onchange = upd; if (f.elements.tg) f.elements.tg.onchange = upd; f.elements.msg.oninput = link; upd();
     },
     onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Mensaje copiado'; },
   });
@@ -7872,8 +8668,10 @@ document.addEventListener('click', (e) => {
   if (a === 'sec-close' || a === 'sec-closeall') { api('POST', '/api/security/sessions/close', a === 'sec-closeall' ? { all: true } : { sid: el.dataset.sid }).then((r) => { toast(r.closed === 1 ? 'Sesión cerrada' : `${r.closed} sesiones cerradas`); loadSec(); }, (x) => toast(x.message, true)); return; }
   if (a === 'mon-reload') { loadMon(); return; }
   if (a === 'mon-auto') { S.mon.auto = !S.mon.auto; S.mon.left = S.mon.every; el.setAttribute('aria-pressed', S.mon.auto); el.textContent = S.mon.auto ? '⏸ Pausar monitorización' : '▶ Iniciar monitorización'; if (S.mon.auto) loadMon(); const l = $('#monLeft'); if (l) l.textContent = S.mon.auto ? S.mon.left + ' s' : 'pausa'; return; }
+  if (a === 'stp') { const inp = el.parentElement.querySelector('input'); if (inp) { const v = Math.max(+inp.min || 0, Math.min(+inp.max || 999, (+inp.value || 0) + (+el.dataset.d))); inp.value = v; inp.dispatchEvent(new Event('input', { bubbles: true })); } return; }
+  if (a === 'down-tog') { S.downOpen = !S.downOpen; const el2 = $('#downBox'); if (el2) el2.outerHTML = downBox(); return; }
   if (a === 'mon-who') { S.mon.who = el.dataset.k; monPaint(); return; }
-  if (a === 'mon-k') { const k = el.dataset.k, f = S.mon; if (k === 'all') Object.assign(f, { st: 'all', tr: 'all', kind: 'all' }); else if (k === 'play' || k === 'pause') f.st = f.st === k ? 'all' : k; else if (k === 'tr') f.tr = f.tr === 'yes' ? 'all' : 'yes'; else if (k === 'trv') f.tr = f.tr === 'video' ? 'all' : 'video'; else f.kind = f.kind === k ? 'all' : k; monPaint(); return; }
+  if (a === 'mon-k') { const k = el.dataset.k, f = S.mon; if (k === 'all') Object.assign(f, { st: 'all', tr: 'all', kind: 'all', app: '' }); else if (k === 'myapp') f.app = f.app === 'yes' ? '' : 'yes'; else if (k === 'otherapp') f.app = f.app === 'no' ? '' : 'no'; else if (k === 'play' || k === 'pause') f.st = f.st === k ? 'all' : k; else if (k === 'tr') f.tr = f.tr === 'yes' ? 'all' : 'yes'; else if (k === 'trv') f.tr = f.tr === 'video' ? 'all' : 'video'; else f.kind = f.kind === k ? 'all' : k; monPaint(); return; }
   if (a === 'mon-srv') { S.mon.srv = S.mon.srv === id ? 0 : id; monPaint(); return; }
   if (a === 'mon-stop') { monStop(el); return; }
   if (a === 'mon-msg') { monMsg(el); return; }
@@ -7951,6 +8749,8 @@ document.addEventListener('click', (e) => {
   }
   if (a === 'fu-tab') { S.fu.tab = el.dataset.k; render(); return; }
   if (a === 'fu-msg') { const x = (S.fu.data.list || []).find((v) => v.id === el.dataset.k); if (x) dQuickMsg({ panelName: x.name, whatsapp: x.whatsapp, tgLinked: x.tgLinked }, 'Escribir a ' + x.name, x.text, x.tgLinked && S.d.settings.notices.telegram.bot ? `/api/followups/${x.id}/telegram` : ''); return; }
+  if (a === 'fu-del') { const x = ((S.fu.data || {}).list || []).find((y) => y.id === el.dataset.k); dConfirm(`Borrar la demo de ${x ? x.name : ''}`, 'Se borra ahora de Emby y del panel, y desaparece de esta lista. Si ya compró y es una cuenta, la cuenta no se toca.', 'Borrar', () => api('POST', `/api/followups/${el.dataset.k}/delete`, {}).then((r) => { S.fu.data = null; return r; }), 'Demo borrada'); return; }
+  if (a === 'fu-delall') { const n = ((S.fu.data || {}).list || []).filter((y) => (el.dataset.k === 'done' ? y.status !== 'pending' : y.status === 'pending')).length; dConfirm(`Borrar ${n === 1 ? '1 demo' : n + ' demos'}`, `Se borran ahora de Emby y del panel todas las demos de la lista «${el.dataset.k === 'done' ? 'Hechos' : 'Por escribir'}». Las que compraron y ya son cuentas no se tocan. No se puede deshacer.`, 'Borrar todas', () => api('POST', '/api/followups-delete', { tab: el.dataset.k }).then((r) => { S.fu.data = null; return r; }), 'Demos borradas'); return; }
   if (a === 'fu-set') { api('POST', `/api/followups/${el.dataset.k}`, { status: el.dataset.st }).then(async () => { S.fu.data = null; await reload(); toast(el.dataset.st === 'done' ? 'Apuntado como hecho' : el.dataset.st === 'skip' ? 'Descartado' : 'Vuelve a pendientes'); }, (x) => toast(x.message, true)); return; }
   if (a === 'acc-reload') { S.acc.data = null; loadAccess(); render(); return; }
   if (a === 'acc-csv') { accCsv(); return; }
@@ -8002,6 +8802,17 @@ document.addEventListener('click', (e) => {
     case 'demo': needServer(() => { S.view = 'demonueva'; render(); window.scrollTo(0, 0); }); break;
     case 'import': needServer(dImport); break;
     case 'renew': if (c) dRenew(c); break;
+    case 'renew-same': if (c) dRenewSame(c); break;
+    case 'news': if (S.d) dNews(); break;
+    case 'app-free': if (c) { const free = !c.appFree; dConfirm(free ? 'Permitir cualquier app' : 'Solo la app oficial', free ? `${esc(c.panelName)} podrá ver con cualquier app aunque «Solo mi app» esté activado.` : `${esc(c.panelName)} tendrá que usar ${esc(appName())}.`, 'Cambiar', () => api('POST', `/api/clients/${c.id}/app-free`, { free }), 'Cambiado'); } break;
+    case 'app-pick': { const i = $('#appFile'); if (i) i.click(); } break;
+    case 'app-copy': copyText(appUrl()).then(() => toast('Enlace copiado')); break;
+    case 'app-guide': copyText(appGuide()).then(() => toast('Instrucciones copiadas: pégalas en el chat del cliente')); break;
+    case 'app-del': dConfirm('Quitar la app del panel', 'El enlace de descarga dejará de funcionar y «Solo mi app» se desactiva. Podrás volver a subirla cuando quieras.', 'Quitar', () => api('POST', '/api/app-delete'), 'App quitada'); break;
+    case 'app-tell': { const a = S.d.settings.app; S.bc.text = `Hola {nombre} 👋\n\n📲 Hay una versión nueva de nuestra app ${a.name}${a.version ? ' (' + a.version + ')' : ''}.\n\nDescárgala aquí: ${appUrl()}\nEn Fire Stick: abre la app «Downloader» y escribe esa dirección.\n\nSe instala encima de la anterior, no pierdes nada.`; S.view = 'mensajecli'; render(); window.scrollTo(0, 0); } break;
+    case 'app-install': appInstall(); break;
+    case 'app-hide': try { localStorage.setItem('instHide', String(Date.now() + 14 * 86400000)); } catch (e) { /* nada */ } { const b = $('#instBar'); if (b) b.remove(); } break;
+    case 'ficha': if (c) { if (dlg.open) dlg.close(); openCf(c.id); } break;
     case 'edit': if (c) dEdit(c); break;
     case 'al-tab': S.al.tab = el.dataset.k; render(); break;
     case 'al-page': S.al.page = Math.max(1, S.al.page + (+el.dataset.step)); render(); window.scrollTo(0, 0); break;
@@ -8087,7 +8898,8 @@ document.addEventListener('click', (e) => {
     case 'home': goHome(); S.q = ''; render(); window.scrollTo(0, 0); break;
     case 'goto': S.view = el.dataset.filter === 'trash' ? 'papelera' : 'cuentas'; if (el.dataset.filter !== 'trash') S.filter = el.dataset.filter; S.q = ''; render(); break;
     case 'filter': S.filter = el.dataset.filter; S.page = 1; render(); break;
-    case 'logf': S.logF = el.dataset.v; render(); break;
+    case 'logf': S.logF = el.dataset.v; S.movN = 120; render(); break;
+    case 'mov-more': S.movN = (S.movN || 120) + 120; { const ml = $('#movList'); if (ml) ml.outerHTML = movList(currentMovRows()); } break;
     case 'mine': S.filter = 'all'; S.fOwner = me().id; S.page = 1; render(); break;
     case 'who': S.fWho = el.dataset.k; S.page = 1; render(); break;
     case 'cal': { const step = +el.dataset.step; S.cal = step === 0 ? S.d.today.slice(0, 7) : addMonths(S.cal + '-01', step).slice(0, 7); render(); break; }
@@ -8327,7 +9139,7 @@ document.addEventListener('submit', (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     act(async () => {
-      await api('PUT', '/api/me', { name: fd.get('name'), email: fd.get('email') });
+      await api('PUT', '/api/me', { name: fd.get('name'), email: fd.get('email'), home: fd.get('home') || '' });
       if (fd.has('currency')) await api('PUT', '/api/settings', { currency: fd.get('currency'), creditPrice: +(fd.get('creditPrice') || 0) });
     }, 'Perfil guardado');
   }
@@ -8342,7 +9154,7 @@ document.addEventListener('submit', (e) => {
     act(async () => {
       if (tab === 'con') {
         await api('PUT', '/api/alerts/config', { sessions: { on: fd.get('on') === 'on', stop: fd.get('stop') === 'on', logout: fd.get('logout') === 'on', grace: n('grace'), policy: fd.get('policy'), message: fd.get('message') } });
-        await api('PUT', '/api/settings', { monitorSec: n('monitorSec'), liveSec: n('liveSec') });
+        await api('PUT', '/api/settings', { monitorSec: n('monitorSec'), liveSec: n('liveSec'), pauseStop: { on: fd.get('psOn') === 'on', minutes: n('psMin') } });
         S.al.data = null;
       } else if (tab === 'lim') await api('PUT', '/api/settings', { warnDays: n('warnDays'), demoMax: n('demoMax') });
       else if (tab === 'pla') await api('PUT', '/api/settings', { graceDays: n('graceDays'), purgeDays: n('purgeDays'), demoPurgeDays: n('demoPurgeDays') });
