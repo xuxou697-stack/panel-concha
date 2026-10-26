@@ -2570,7 +2570,7 @@ async function boot() {
 }
 async function start() {
   bootLoading(true);
-  try { S.d = kindView(await api('GET', '/api/data', null, { timeout: 30000 })); } // primera carga: con límite de tiempo
+  try { S.d = kindView(await api('GET', '/api/data', null, { timeout: 30000 })); if (uiOld(S.d.uiVer)) return; } // primera carga: con límite de tiempo
   finally { bootLoading(false); }
   if (S.d.me.mustPw) return showMustPw();
   $('#gate').hidden = true; $('#app').hidden = false; goHome(); try { history.replaceState(null, '', location.pathname + location.search + '#/' + homeKey()); } catch (e) { /* nada */ } render(); payReturn();
@@ -2614,7 +2614,19 @@ function bootLoading(on) {
   document.body.appendChild(el);
   setTimeout(() => { const t = document.getElementById('bootLdTxt'); if (t) t.textContent = 'Está tardando más de lo normal. Espera un momento…'; }, 6000);
 }
-async function reload() { S.d = kindView(await api('GET', '/api/data')); render(); }
+async function reload() { S.d = kindView(await api('GET', '/api/data')); if (uiOld(S.d.uiVer)) return; render(); }
+/* Actualización automática: si el panel se ha actualizado y este navegador (o la app del móvil) tiene guardada una
+   copia vieja de la pantalla, se recarga solo una vez para coger la nueva */
+const UI_VER = '__UI_VER__';
+function uiOld(ver) {
+  if (!ver || UI_VER.startsWith('__') || ver === UI_VER) return false;
+  let tried = ''; try { tried = sessionStorage.getItem('uiReload') || ''; } catch (e) { /* nada */ }
+  if (tried === ver) return false; // ya se intentó con esta versión: no se entra en bucle
+  try { sessionStorage.setItem('uiReload', ver); } catch (e) { /* nada */ }
+  location.reload();
+  return true;
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.d) api('GET', '/api/state').then((r) => uiOld(r.uiVer)).catch(() => {}); });
 /* ---------- Emby y Jellyfin: dos pestañas con la misma vista ----------
    Si no hay ningún servidor Jellyfin, el panel es exactamente el de siempre (S.d son los datos tal cual).
    Si lo hay, cada pestaña ve solo sus servidores, sus clientes y sus movimientos. */
@@ -6474,6 +6486,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 165, d: '2026-10-26', items: ['🔄 El panel se actualiza solo: si un móvil tenía guardada una versión vieja, la cambia por la nueva sin tener que borrar nada'] },
   { v: 164, d: '2026-10-26', items: ['🖥️ Los formularios aprovechan toda la pantalla del ordenador: secciones en dos columnas y «Así quedará la cuenta» fijo a la derecha'] },
   { v: 162, d: '2026-10-26', items: ['📲 «Instalar el panel» en Ajustes para todos: el superadministrador, los administradores, los resellers y los subresellers'] },
   { v: 161, d: '2026-10-26', items: ['📲 Los vendedores también ven «App de clientes» en Ajustes para descargar la app y copiar el enlace o el código'] },

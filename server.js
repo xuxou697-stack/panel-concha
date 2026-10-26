@@ -2107,6 +2107,7 @@ function publicData(me) {
     parentTemplates: tplLocked() ? {} : (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
     licMaster: me.role === 'super' && !LIC_CLIENT,
     kinds: licKinds(),
+    uiVer: indexFile().ver,
     panelMaster: !LIC_CLIENT, // el panel principal (no alquilado): solo aquí el equipo exporta los datos en claro
     expSalt: crypto.createHash('sha256').update(String(db.secret || '') + '|exp').digest('hex').slice(0, 24),
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
@@ -2141,7 +2142,7 @@ const SUPER = ['super'];
 
 const SALES_EMAIL = 'clickonline69@proton.me';
 const salesEmail = () => (typeof db.settings.salesEmail === 'string' ? db.settings.salesEmail : SALES_EMAIL);
-route('GET', '/api/state', null, ({ req }) => ({ needsSetup: !db.users.length, authed: !!currentUser(req), brand: db.settings.brand, support: db.settings.support, license: licStatus(), salesEmail: salesEmail() }));
+route('GET', '/api/state', null, ({ req }) => ({ uiVer: indexFile().ver, needsSetup: !db.users.length, authed: !!currentUser(req), brand: db.settings.brand, support: db.settings.support, license: licStatus(), salesEmail: salesEmail() }));
 /* Marca del panel: nombre, color y logo propios */
 route('PUT', '/api/brand', SUPER, ({ me, body }) => lock(async () => {
   const name = str(body.name, 30) || 'Concha';
@@ -6182,8 +6183,11 @@ let indexCache = null; // { mtime, raw, gz }
 function indexFile() {
   const mtime = fs.statSync(INDEX_FILE).mtimeMs;
   if (!indexCache || indexCache.mtime !== mtime) {
-    const raw = fs.readFileSync(INDEX_FILE);
-    indexCache = { mtime, raw, gz: zlib.gzipSync(raw, { level: 9 }) };
+    const raw0 = fs.readFileSync(INDEX_FILE);
+    // Huella de esta versión de la pantalla: si el navegador tiene una copia vieja guardada, se da cuenta y se recarga solo
+    const ver = crypto.createHash('sha1').update(raw0).digest('hex').slice(0, 12);
+    const raw = Buffer.from(raw0.toString('utf8').replace("'__UI_VER__'", `'${ver}'`), 'utf8');
+    indexCache = { mtime, raw, gz: zlib.gzipSync(raw, { level: 9 }), ver };
   }
   return indexCache;
 }
