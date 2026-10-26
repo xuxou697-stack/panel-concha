@@ -2129,6 +2129,22 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .tabbar{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);background:color-mix(in srgb,var(--surface) 88%,transparent)}
 .tabbar button[aria-current="page"] .ic{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--brand) 70%,transparent))}
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 45%,transparent) transparent}
+/* ===== Formularios en el ordenador: usan todo el ancho (secciones en dos columnas) ===== */
+@media (min-width:1100px){
+  form.formpage.bz{max-width:1180px!important;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;align-items:start}
+  form.formpage.bz>*{grid-column:1/-1}
+  form.formpage.bz>.bzs{grid-column:auto;margin-bottom:16px}
+  form.formpage.bz>.bzs:first-of-type:last-of-type,form.formpage.bz>.bzs:last-of-type:nth-of-type(odd){grid-column:1/-1}
+  .panel:has(> form.formpage.bz){max-width:none!important}
+  /* Nuevo cliente / Nueva demo: el formulario a la izquierda y «Así quedará» fijo a la derecha */
+  #newClient.bz{grid-template-columns:minmax(0,1fr) minmax(320px,380px);column-gap:20px}
+  #newClient.bz>*{grid-column:1}
+  #newClient.bz>.bzs{grid-column:1!important}
+  #newClient.bz>.bzhero{grid-column:2;grid-row:1 / span 30;position:sticky;top:18px;align-self:start;margin:0}
+  #newClient .row4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media (min-width:1100px){#main form[style*="max-width"],#main .panel[style*="max-width"],#main section[style*="max-width"],#main .bzlite,#main .tpl-wrap{max-width:1180px!important}}
+@media (min-width:1500px){#newClient .row4{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 /* ===== Entrada estilo «Cine»: muro de carátulas que se mueve y todo centrado en una sola tarjeta ===== */
 #gate{background:#05070d}
 #gate .gb,#gate .ggrid{opacity:.35}
@@ -6458,6 +6474,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 164, d: '2026-10-26', items: ['🖥️ Los formularios aprovechan toda la pantalla del ordenador: secciones en dos columnas y «Así quedará la cuenta» fijo a la derecha'] },
   { v: 162, d: '2026-10-26', items: ['📲 «Instalar el panel» en Ajustes para todos: el superadministrador, los administradores, los resellers y los subresellers'] },
   { v: 161, d: '2026-10-26', items: ['📲 Los vendedores también ven «App de clientes» en Ajustes para descargar la app y copiar el enlace o el código'] },
   { v: 159, d: '2026-10-26', items: ['📲 App de clientes: sube tu app, tus clientes la descargan desde tu panel y el enlace sale en los mensajes', '🏷️ En Monitor y en la ficha ves quién usa tu app', '🔒 «Solo mi app»: opción para que solo se pueda ver con tu app (la activas y desactivas cuando quieras)', '🔢 Código de Downloader: tus clientes escriben solo un número en la Fire Stick'] },
