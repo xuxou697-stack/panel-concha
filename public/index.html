@@ -1584,7 +1584,17 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .monwho{margin:0 0 14px}
 
 /* Renovar (diseño nuevo) */
+/* Aviso de versión nueva */
+.uibar{position:fixed;left:12px;right:12px;margin:0 auto;width:fit-content;justify-content:space-between;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;color:#fff;font-size:14px;font-weight:700;background:linear-gradient(90deg,#0ea5e9,#8b5cf6,#ec4899);box-shadow:0 12px 30px rgba(0,0,0,.4);max-width:calc(100vw - 24px)}
+.uibar span{min-width:0}.uibar button{border:0;border-radius:12px;padding:8px 14px;font:inherit;font-weight:800;color:#4c1d95;background:#fff;cursor:pointer;white-space:nowrap}
+@media (min-width:861px){.uibar{bottom:24px}}
 /* App de clientes */
+.ap-pub{border-style:dashed}.ap-pub.on{border-style:solid;border-color:color-mix(in srgb,#22c55e 55%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#22c55e 10%,transparent),color-mix(in srgb,#0ea5e9 8%,transparent))}
+.ap-pubrow{display:flex;align-items:center;gap:14px}.ap-pubrow>div{flex:1;min-width:0}.ap-pubrow b{display:block;font-size:16px}.ap-pubrow small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.ap-big{flex:none;position:relative;width:64px;height:36px;border-radius:99px;border:1px solid var(--line);background:var(--raised);cursor:pointer;padding:0}
+.ap-big i{position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:transform .2s}
+.ap-big.on{background:linear-gradient(90deg,#22c55e,#0ea5e9);border-color:transparent}.ap-big.on i{transform:translateX(28px)}
+
 .ap-hero{display:flex;gap:16px;align-items:center;padding:20px;border-radius:22px;margin:0 0 16px;color:#fff;background:radial-gradient(120% 140% at 0% 0%,#22c55e 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#0ea5e9 0%,transparent 55%),linear-gradient(135deg,#052e2b,#0c4a6e)}
 .ap-hero h1{margin:0;font-size:24px;color:#fff}.ap-hero p{margin:4px 0 0;opacity:.9;font-size:14px}.ap-ic{flex:none;width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:30px;background:rgba(255,255,255,.16)}
 .ap-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;max-width:860px}.ap-form{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}.ap-grid section.ap-card{margin:0;min-width:0}.ap-card .btn{white-space:normal;max-width:100%;text-align:center}
@@ -2627,6 +2637,16 @@ function uiOld(ver) {
   return true;
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.d) api('GET', '/api/state').then((r) => uiOld(r.uiVer)).catch(() => {}); });
+// Con el panel abierto, cada 3 minutos se mira si hay versión nueva: sale un aviso con «Actualizar» (no se recarga solo para no perder lo que estés escribiendo)
+function uiBar(ver) {
+  if (!ver || UI_VER.startsWith('__') || ver === UI_VER || $('#uiBar')) return;
+  document.body.insertAdjacentHTML('beforeend', `<div id="uiBar" class="uibar" role="status"><span>✨ Hay una versión nueva del panel</span><button type="button" data-act="ui-update">Actualizar</button></div>`);
+}
+setInterval(() => { if (!document.hidden && S.d) api('GET', '/api/state').then((r) => uiBar(r.uiVer)).catch(() => {}); }, 180000);
+async function uiCheckNow() {
+  try { const r = await api('GET', '/api/state'); if (r.uiVer && r.uiVer !== UI_VER && !UI_VER.startsWith('__')) { toast('Actualizando a la versión nueva…'); setTimeout(() => location.reload(), 600); } else toast('Ya tienes la última versión ✓'); }
+  catch (e) { toast(e.message, true); }
+}
 /* ---------- Emby y Jellyfin: dos pestañas con la misma vista ----------
    Si no hay ningún servidor Jellyfin, el panel es exactamente el de siempre (S.d son los datos tal cual).
    Si lo hay, cada pestaña ve solo sus servidores, sus clientes y sus movimientos. */
@@ -2868,17 +2888,17 @@ function render() {
    Cada pantalla queda guardada en el historial (#/cuentas/soon…), así «Atrás» vuelve a la anterior en vez de salir del panel.
    Una ventana abierta (Más, Editar…) también ocupa un paso: «Atrás» la cierra. */
 const NAV = { skip: false, fromPop: false, closing: false };
-const navKey = () => S.view + (S.view === 'cuentas' ? '/' + (S.filter || 'all') : S.view === 'vendedor' ? '/' + (S.vendorId || 0) : S.view === 'srvficha' ? '/' + (S.sf.id || 0) : '');
-const navState = (extra) => ({ k: navKey(), v: S.view, f: S.filter, vid: S.vendorId, sid: S.sf.id, ...extra });
+const navKey = () => S.view + (S.view === 'cuentas' ? '/' + (S.filter || 'all') : S.view === 'vendedor' ? '/' + (S.vendorId || 0) : S.view === 'srvficha' ? '/' + (S.sf.id || 0) : S.view === 'cficha' ? '/' + (S.cf.id || 0) : '');
+const navState = (extra) => ({ k: navKey(), v: S.view, f: S.filter, vid: S.vendorId, sid: S.sf.id, cid: S.cf.id, ...extra });
+let navY = 0; window.addEventListener('scroll', () => { navY = window.scrollY; }, { passive: true });
 function navSync() {
   if (NAV.fromPop) { NAV.fromPop = false; return; }
   const st = history.state || {}, k = navKey(), home = homeKey();
   if (!st.k) { history.replaceState(navState(), '', '#/' + k); return; }
   if (st.dlg || st.k === k) return; // con una ventana abierta decide su cierre
-  // El historial solo tiene dos pasos: la lista de clientes y la pantalla actual. Así «Atrás» siempre vuelve a la lista.
-  if (k === home) { if (st.sub) { NAV.fromPop = false; NAV.backPending = true; history.back(); } else history.replaceState(navState(), '', '#/' + k); return; }
-  if (st.sub) history.replaceState(navState({ sub: 1 }), '', '#/' + k);
-  else history.pushState(navState({ sub: 1 }), '', '#/' + k);
+  // Cada pantalla es un paso: «Atrás» vuelve a la pantalla anterior (y a donde estabas en ella), no al principio
+  try { history.replaceState({ ...st, y: navY }, '', location.hash); } catch (e) { /* nada */ }
+  history.pushState(navState(k === home ? {} : { sub: 1 }), '', '#/' + k);
 }
 function navDlgOpened() {
   const st = history.state || {};
@@ -2909,7 +2929,8 @@ window.addEventListener('popstate', (e) => {
   if (!st || !st.v || $('#app').hidden || !S.d) return;
   if (st.k === navKey()) return;
   S.view = st.v; if (st.f) S.filter = st.f; if (st.vid != null) S.vendorId = st.vid; if (st.sid != null && st.sid !== S.sf.id) sfReset(st.sid); S.page = 1;
-  NAV.fromPop = true; render(); window.scrollTo(0, 0);
+  if (st.v === 'cficha' && st.cid && st.cid !== S.cf.id) S.cf = { id: st.cid, hist: null, conn: null, busy: false };
+  NAV.fromPop = true; render(); const y = st.y || 0; window.scrollTo(0, y); if (y) setTimeout(() => window.scrollTo(0, y), 60);
 });
 /** Página principal del panel: Clientes › Lista (o el Resumen, si ese usuario no ve clientes).
     Se abre al entrar, al recargar (F5) y al pulsar «Atrás» desde cualquier pantalla. */
@@ -6425,7 +6446,8 @@ function vAppCli() {
       <label class="f">Mensaje en la pantalla del cliente<textarea name="message" rows="3" maxlength="400">${esc(o.message || '')}</textarea><small class="muted">{app} es el nombre de tu app y {link} el enlace de descarga.</small></label>
       <p class="muted small">Si algún cliente necesita otra app, ábrele su ficha y en «App» pulsa «Cambiar».</p></section>`;
   const hist = (a.history || []).length ? `<section class="ap-card"><h2>🕓 Versiones subidas</h2>${a.history.map((h, i) => `<div class="ap-h${i ? '' : ' cur'}"><b>${esc(h.version || '—')}</b><span>${fmtTs(h.at, true)} · ${fmtMB(h.size || 0)}${h.by ? ' · ' + esc(h.by) : ''}</span>${i ? '' : '<em>actual</em>'}</div>`).join('')}</section>` : '';
-  return hero + `<div class="ap-grid"><section class="ap-card">${file}${up}</section>${link}<form id="appForm" class="ap-form">${opts}${only}<div class="ap-save"><button class="btn primary" type="submit">💾 Guardar opciones</button></div></form>${hist}</div>`;
+  const pub = `<section class="ap-card ap-pub${a.public ? ' on' : ''}"><div class="ap-pubrow"><div><b>${a.public ? '👀 Visible para tu equipo' : '🙈 Solo la ves tú'}</b><small>${a.public ? 'Tus administradores, resellers y subresellers ven «App de clientes», el enlace en los mensajes y las etiquetas.' : 'Nadie más la ve mientras haces pruebas. Cuando esté lista, actívala con un clic.'}</small></div><button type="button" class="ap-big${a.public ? ' on' : ''}" data-act="app-pub" aria-pressed="${!!a.public}"><i></i></button></div></section>`;
+  return hero + `<div class="ap-grid">${pub}<section class="ap-card">${file}${up}</section>${link}<form id="appForm" class="ap-form">${opts}${only}<div class="ap-save"><button class="btn primary" type="submit">💾 Guardar opciones</button></div></form>${hist}</div>`;
 }
 /* Instalar el panel como app: para todos (super, administradores, resellers y subresellers) */
 function vAppInst() {
@@ -6486,6 +6508,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 167, d: '2026-10-27', items: ['🔄 Con el panel abierto, si subes una versión nueva sale el aviso «Actualizar»; y en Novedades hay un botón para buscar actualizaciones'] },
+  { v: 166, d: '2026-10-27', items: ['⬅️ «Atrás» vuelve a la pantalla anterior, paso a paso, y al mismo sitio donde estabas', '🙈 App de clientes: interruptor para enseñarla u ocultarla a tu equipo con un clic'] },
   { v: 165, d: '2026-10-26', items: ['🔄 El panel se actualiza solo: si un móvil tenía guardada una versión vieja, la cambia por la nueva sin tener que borrar nada'] },
   { v: 164, d: '2026-10-26', items: ['🖥️ Los formularios aprovechan toda la pantalla del ordenador: secciones en dos columnas y «Así quedará la cuenta» fijo a la derecha'] },
   { v: 162, d: '2026-10-26', items: ['📲 «Instalar el panel» en Ajustes para todos: el superadministrador, los administradores, los resellers y los subresellers'] },
@@ -6518,7 +6542,7 @@ function dNews() {
   const seen = newsSeen(), byDay = [];
   for (const n of NEWS) { let g = byDay.find((x) => x.d === n.d); if (!g) byDay.push(g = { d: n.d, list: [] }); g.list.push(n); }
   const dayTxt = (d) => { const t = d === S.d.today ? 'Hoy' : new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); };
-  showDlg('✨ Novedades del panel', `<p class="muted small" style="margin:-4px 0 12px">Lo último que se ha mejorado. Lo más nuevo, arriba.</p><div class="nw">${byDay.map((g) => `<h4 class="nw-d">${esc(dayTxt(g.d))}</h4>${g.list.map((n) => `<div class="nw-v${n.v > seen ? ' new' : ''}"><div class="nw-h"><b>Versión ${n.v}</b>${n.v > seen ? '<span class="nw-new">NUEVO</span>' : ''}</div><ul>${n.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}`).join('')}</div>`);
+  showDlg('✨ Novedades del panel', `<p class="muted small" style="margin:-4px 0 12px">Lo último que se ha mejorado. Lo más nuevo, arriba. El panel se actualiza solo al abrirlo; también puedes <button type="button" class="linkbtn" data-act="ui-check">🔄 buscar actualizaciones</button>.</p><div class="nw">${byDay.map((g) => `<h4 class="nw-d">${esc(dayTxt(g.d))}</h4>${g.list.map((n) => `<div class="nw-v${n.v > seen ? ' new' : ''}"><div class="nw-h"><b>Versión ${n.v}</b>${n.v > seen ? '<span class="nw-new">NUEVO</span>' : ''}</div><ul>${n.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}`).join('')}</div>`);
   try { localStorage.setItem('newsSeen', String(NEWS[0].v)); } catch (e) { /* nada */ }
   newsDots();
 }
@@ -6563,7 +6587,7 @@ async function loadCf() {
 }
 function vCFicha() {
   const c = S.d.clients.find((x) => x.id === S.cf.id);
-  const back = `<button type="button" class="btn ghost cf-back" data-view="${esc(S.cf.back && S.cf.back !== 'cficha' ? S.cf.back : 'cuentas')}">← Volver</button>`;
+  const back = `<button type="button" class="btn ghost cf-back" data-act="nav-back">← Volver</button>`;
   if (!c) return back + '<div class="panel"><div class="empty">Esa cuenta ya no existe.</div></div>';
   const st = stage(c), n = c.demo ? null : diff(c.expires, S.d.today), ren = (S.d.renewals || {})[c.id] || 0;
   const spent = (c.charges || []).reduce((a, x) => a + (x.credits || 0), 0);
@@ -8864,7 +8888,11 @@ document.addEventListener('click', (e) => {
     case 'renew': if (c) dRenew(c); break;
     case 'renew-same': if (c) dRenewSame(c); break;
     case 'news': if (S.d) dNews(); break;
+    case 'ui-update': location.reload(); break;
+    case 'ui-check': uiCheckNow(); break;
     case 'app-free': if (c) { const free = !c.appFree; dConfirm(free ? 'Permitir cualquier app' : 'Solo la app oficial', free ? `${esc(c.panelName)} podrá ver con cualquier app aunque «Solo mi app» esté activado.` : `${esc(c.panelName)} tendrá que usar ${esc(appName())}.`, 'Cambiar', () => api('POST', `/api/clients/${c.id}/app-free`, { free }), 'Cambiado'); } break;
+    case 'nav-back': if (history.state && history.state.k && history.length > 1) history.back(); else { goHome(); render(); } break;
+    case 'app-pub': { const on = !(S.d.settings.app || {}).public; api('PUT', '/api/app-settings', { public: on }).then(() => { toast(on ? 'App visible para todo tu equipo 👀' : 'App oculta: ahora solo la ves tú 🙈'); return reload(); }).catch((e) => toast(e.message, true)); } break;
     case 'app-pick': { const i = $('#appFile'); if (i) i.click(); } break;
     case 'app-copy': copyText(appUrl()).then(() => toast('Enlace copiado')); break;
     case 'app-guide': copyText(appGuide()).then(() => toast('Instrucciones copiadas: pégalas en el chat del cliente')); break;

@@ -2113,7 +2113,9 @@ function publicData(me) {
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
     license: me.role === 'super' ? licStatus() : null,
     expDue: me.role === 'super' ? expDueCount() : 0,
-    settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } } },
+    settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } },
+      // La app de clientes: mientras el superadministrador no la publique, el resto del equipo no la ve
+      app: me.role === 'super' || (db.settings.app || {}).public ? db.settings.app : { ...db.settings.app, file: false, tag: false, inMsg: false } },
     servers: serversFor(me).map((s) => (seeServers
       ? { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
       : { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
@@ -6891,13 +6893,14 @@ route('PUT', '/api/app-settings', SUPER, ({ me, body }) => lock(async () => {
   if (body.client !== undefined) a.client = client || a.name;
   if (body.inMsg !== undefined) a.inMsg = !!body.inMsg;
   if (body.tag !== undefined) a.tag = !!body.tag;
+  if (body.public !== undefined) a.public = !!body.public;
   if (body.dlCode !== undefined) a.dlCode = String(body.dlCode || '').replace(/\D/g, '').slice(0, 12);
   if (typeof body.base === 'string' && /^https?:\/\/[\w.-]+(:\d+)?$/.test(body.base)) a.base = body.base;
   if (o.on !== undefined) a.only.on = !!o.on;
   if (o.apple !== undefined) a.only.apple = !!o.apple;
   if (o.allow !== undefined) a.only.allow = str(o.allow, 300);
   if (o.message !== undefined) a.only.message = str(o.message, 400).trim() || APP_DEF.only.message;
-  addLog('ajustes', null, `App de clientes: ${o.on !== undefined ? (a.only.on ? '«Solo mi app» activado' : '«Solo mi app» desactivado') : 'ajustes cambiados'}`, me);
+  addLog('ajustes', null, `App de clientes: ${body.public !== undefined ? (a.public ? 'visible para el equipo' : 'oculta para el equipo') : o.on !== undefined ? (a.only.on ? '«Solo mi app» activado' : '«Solo mi app» desactivado') : 'ajustes cambiados'}`, me);
   saveDb();
   return { ok: true, app: a };
 }));
