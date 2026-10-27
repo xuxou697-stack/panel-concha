@@ -2581,7 +2581,7 @@ function payOfferFor(ownerId) {
 }
 /** Mensaje de aviso de caducidad para Telegram: el texto, los precios y el botón de pago (si los hay) */
 function expiringTg(c) {
-  if (cpEligible(c) && cpOptions(c).length && siteBase()) {
+  if (cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) {
     const text = fillText(tplFor(c.ownerId, 'expiring'), c) + '\n\n💳 Puedes renovar tú mismo, al momento, con el botón de abajo.';
     return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Pagar y renovar', url: cpLink(c) }]] } };
   }
@@ -4862,9 +4862,14 @@ function cpCtx(c) {
   return { cfg: v, key: v.key, vendor: o };
 }
 const cpEligible = (c) => !!cpCtx(c);
-function cpOptions(c, ctx) {
-  const pr = ((ctx || cpCtx(c) || {}).cfg || {}).prices || {}, sc = c.screens || 1;
-  return [1, 3, 6, 12].map((m) => ({ m, price: Number(pr[`${m}-${sc}`]) || 0 })).filter((x) => x.price >= 0.5);
+function cpOptions(c, ctx, scr) {
+  const pr = ((ctx || cpCtx(c) || {}).cfg || {}).prices || {}, sc = scr || c.screens || 1;
+  return [1, 3, 6, 12].map((m) => ({ m, sc, price: Number(pr[`${m}-${sc}`]) || 0 })).filter((x) => x.price >= 0.5);
+}
+/** Pantallas que el cliente puede elegir al pagar: las que tienen algún precio (y, si es de un vendedor, las que tienen precio en créditos) */
+function cpScreens(c, ctx) {
+  const ok = (sc) => { if (!ctx || !ctx.vendor) return true; try { costFor(ctx.vendor, 1, sc); return true; } catch { return false; } };
+  return [1, 2, 3, 4].filter((sc) => cpOptions(c, ctx, sc).length && ok(sc));
 }
 const cpReady = () => true; // cada cuenta lo decide cpCtx
 const orderKey = (o) => { if (!o.vendorId) return db.payCfg.stripe.key; const u = db.users.find((x) => x.id === o.vendorId); return u && u.clientPay && u.clientPay.key; };
@@ -4875,11 +4880,13 @@ async function cpPaid(o, via) {
   o.status = 'paid'; o.paidAt = new Date().toISOString();
   if (!c) { o.note = 'La cuenta ya no existe'; notifyStaff('payments', `⚠️ Pago de cliente recibido (${o.amount.toFixed(2)} ${o.currency}) pero la cuenta ya no existe. Pedido ${o.id}.`); return true; }
   const t = today(), base = !c.demo && diffDays(c.expires, t) >= 0 ? c.expires : t, prev = c.expires;
+  const oldScr = c.screens;
   c.expires = addMonths(base, o.months); c.lastMonths = o.months; c.demo = false; c.status = 'active'; c.paid = true;
+  if (o.screens && [1, 2, 3, 4].includes(o.screens)) c.screens = o.screens; // eligió otras pantallas al pagar
   delete c.expiresAt; delete c.off; delete c.offBy; delete c.trashedAt; delete c.trashReason;
   try { await grantAccess(c); delete c.lastError; }
   catch (e) { c.lastError = e.message; notifyStaff('payments', `⚠️ ${c.panelName} ha pagado y la fecha ya está renovada, pero Emby dio un error al dar acceso: ${e.message}. El vigilante lo volverá a intentar.`); }
-  const what = `${o.months} ${o.months === 1 ? 'mes' : 'meses'}, ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}`;
+  const what = `${o.months} ${o.months === 1 ? 'mes' : 'meses'}, ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}${oldScr && oldScr !== c.screens ? ` (antes ${oldScr})` : ''}`;
   const vend = o.vendorId ? db.users.find((u) => u.id === o.vendorId) : null;
   if (vend) { // la renovación le cuesta sus créditos, como si la hiciera él (aunque se quede en negativo: el cliente ya ha pagado)
     const cost = costFor(vend, o.months, c.screens || 1);
@@ -4906,6 +4913,10 @@ h1{margin:0 0 4px;font-size:24px}.sub{margin:0 0 18px;color:#9fb6c2;font-size:14
 .op{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 10px;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;font:inherit;cursor:pointer;text-align:left}
 .op:hover{border-color:#a78bfa;background:rgba(167,139,250,.12)}.op b{font-size:16px}.op small{display:block;color:#9fb6c2;font-size:12.5px}.op .p{margin-left:auto;font-size:20px;font-weight:900;white-space:nowrap}
 .op.best{border-color:#f472b6;background:linear-gradient(120deg,rgba(14,165,233,.16),rgba(236,72,153,.16))}.tag{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:99px;background:#ec4899;color:#fff;vertical-align:2px}
+.lbl{margin:14px 0 8px;font-size:13px;font-weight:800;color:#cfe0ea}.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px}
+.tab{display:flex;flex-direction:column;align-items:center;padding:10px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;text-decoration:none}.tab b{font-size:20px}.tab small{font-size:11px;color:#9fb6c2;text-align:center}
+.tab.on{border:0;background:linear-gradient(135deg,#0ea5e9,#8b5cf6,#ec4899);box-shadow:0 8px 20px rgba(139,92,246,.35)}.tab.on small{color:#fff}
+.note{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);font-size:13.5px;color:#fde68a}
 .big{font-size:56px;text-align:center;margin:4px 0 8px}.ok{color:#4ade80}.foot{margin-top:16px;font-size:12px;color:#7f93a1;text-align:center;line-height:1.5}</style>
 <body><main class="card"><div class="brand">${brand}</div>${body}</main></body></html>`);
 }
@@ -4929,19 +4940,20 @@ async function cpRoute(req, res, pathname) {
   if (m[2] && req.method === 'POST') {
     const chunks = []; let size = 0;
     for await (const ch of req) { size += ch.length; if (size > 2000) break; chunks.push(ch); }
-    const months = Number(new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('m'));
-    const op = opts.find((x) => x.m === months);
+    const fp = new URLSearchParams(Buffer.concat(chunks).toString('utf8'));
+    const months = Number(fp.get('m')), scr = Number(fp.get('s')) || c.screens || 1;
+    const op = cpScreens(c, ctx).includes(scr) ? cpOptions(c, ctx, scr).find((x) => x.m === months) : null;
     if (!op) return cpPage(res, 400, 'Opción no válida', '<h1>Esa opción ya no está</h1><p class="sub">Vuelve atrás y elige otra.</p>');
     const open = db.orders.filter((o) => o.clientId === c.id && o.status === 'pending' && Date.now() - Date.parse(o.created) < 3600000);
-    if (ctx.vendor) { const cost = costFor(ctx.vendor, months, c.screens || 1); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
+    if (ctx.vendor) { const cost = costFor(ctx.vendor, months, scr); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
     if (open.length >= 5) return cpPage(res, 429, 'Espera un poco', '<h1>Espera un momento</h1><p class="sub">Tienes varios pagos sin terminar. Prueba de nuevo en un rato.</p>');
-    const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, amount: op.price, currency: cur, method: 'stripe', status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'}` };
+    const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: 'stripe', status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}` };
     const base = siteBase() || panelBase(req), back = `${base}/pagar/${c.id}-${c.payKey}?o=${o.id}`;
     let ss;
     try {
       ss = await stripeCall('POST', '/v1/checkout/sessions', {
         mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': cur.toLowerCase(), 'line_items[0][price_data][unit_amount]': String(Math.round(op.price * 100)),
-        'line_items[0][price_data][product_data][name]': `${String(ctx.cfg.desc || 'Suscripción').slice(0, 60)} · ${months} ${months === 1 ? 'mes' : 'meses'}`,
+        'line_items[0][price_data][product_data][name]': `${String(ctx.cfg.desc || 'Suscripción').slice(0, 60)} · ${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}`,
         client_reference_id: o.id, 'metadata[order]': o.id, 'metadata[client]': String(c.id), success_url: back, cancel_url: `${base}/pagar/${c.id}-${c.payKey}?cancelado=1`,
       }, ctx.key);
     } catch (e) { console.error('Cobro a clientes:', e.message); return cpPage(res, 502, 'Error', '<h1>No se pudo abrir el pago</h1><p class="sub">Inténtalo de nuevo en un momento. Si sigue fallando, avisa a tu proveedor.</p>'); }
@@ -4964,11 +4976,17 @@ async function cpRoute(req, res, pathname) {
   }
   const left = diffDays(c.expires, today());
   const state = left < 0 ? `Tu cuenta venció el <b>${H(fmtD(c.expires))}</b>. Al pagar vuelve a funcionar al momento.` : left === 0 ? `Tu cuenta vence <b>hoy</b>. Al pagar se suma a tu fecha.` : `Tu cuenta vence el <b>${H(fmtD(c.expires))}</b> (en ${left} ${left === 1 ? 'día' : 'días'}). Lo que pagues se suma a esa fecha.`;
-  const best = opts.length > 1 ? opts.reduce((a, b) => (b.price / b.m < a.price / a.m ? b : a)) : null;
-  const list = opts.length ? opts.map((x) => `<button class="op${best && x === best && x.m > 1 ? ' best' : ''}" name="m" value="${x.m}"><span><b>${x.m} ${x.m === 1 ? 'mes' : 'meses'}${best && x === best && x.m > 1 ? '<span class="tag">MEJOR PRECIO</span>' : ''}</b><small>${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}${x.m > 1 ? ' · ' + money(x.price / x.m) + ' al mes' : ''}</small></span><span class="p">${money(x.price)}</span></button>`).join('')
+  const scrs = cpScreens(c, ctx), cur0 = c.screens || 1;
+  let sel = Number(q.get('s')) || cur0; if (!scrs.includes(sel)) sel = scrs.includes(cur0) ? cur0 : scrs[0];
+  const sopts = sel ? cpOptions(c, ctx, sel) : [];
+  const best = sopts.length > 1 ? sopts.reduce((a, b) => (b.price / b.m < a.price / a.m ? b : a)) : null;
+  const MT = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
+  const tabs = scrs.length > 1 ? `<p class="lbl">¿Cuántas pantallas a la vez?</p><div class="tabs">${scrs.map((n) => `<a class="tab${n === sel ? ' on' : ''}" href="/pagar/${c.id}-${H(c.payKey)}?s=${n}"><b>${n}</b><small>${n === 1 ? 'pantalla' : 'pantallas'}${n === cur0 ? ' · la tuya' : ''}</small></a>`).join('')}</div>` : '';
+  const change = sel && sel !== cur0 ? `<p class="note">Al pagar, tu cuenta pasa de ${cur0} a <b>${sel} ${sel === 1 ? 'pantalla' : 'pantallas'}</b>.</p>` : '';
+  const list = sopts.length ? `<p class="lbl">¿Cuánto tiempo?</p><input type="hidden" name="s" value="${sel}">` + sopts.map((x) => `<button class="op${best && x === best && x.m > 1 ? ' best' : ''}" name="m" value="${x.m}"><span><b>${MT[x.m]}${best && x === best && x.m > 1 ? '<span class="tag">MEJOR PRECIO</span>' : ''}</b><small>${sel} ${sel === 1 ? 'pantalla' : 'pantallas'}${x.m > 1 ? ' · ' + money(x.price / x.m) + ' al mes' : ''}</small></span><span class="p">${money(x.price)}</span></button>`).join('')
     : '<p class="sub">Todavía no hay precios para tu plan. Habla con tu proveedor.</p>';
   return cpPage(res, 200, 'Renovar', `<h1>Hola, ${H(c.panelName)} 👋</h1><p class="sub">${state}</p>${q.get('cancelado') ? '<p class="sub" style="color:#fbbf24">No se ha cobrado nada. Puedes elegir otra vez cuando quieras.</p>' : ''}
-    <form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 Pago seguro con tarjeta, Apple Pay o Google Pay a través de Stripe.<br>Tu cuenta se renueva sola en cuanto se confirma el pago.</p>`);
+    ${tabs}${change}<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 Pago seguro con tarjeta, Apple Pay o Google Pay a través de Stripe.<br>Tu cuenta se renueva sola en cuanto se confirma el pago.</p>`);
 }
 /* Cobro a clientes de cada reseller o subreseller: sus precios y su propio Stripe */
 const VEND_ROLES = ['reseller', 'sub'];

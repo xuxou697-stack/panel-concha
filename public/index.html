@@ -6595,7 +6595,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
-  { v: 169, d: '2026-10-27', items: ['💳 «Enlace de pago» abre una ventana con el mensaje listo para copiar o enviar por WhatsApp y Telegram'] },
+  { v: 169, d: '2026-10-27', items: ['💳 «Enlace de pago» abre una ventana con el mensaje listo para copiar o enviar por WhatsApp y Telegram', '📺 En la página de pago el cliente elige pantallas (1, 2, 3 o 4) y tiempo, con todos tus precios'] },
   { v: 168, d: '2026-10-27', items: ['💳 Cobro a clientes: tus clientes pagan con tarjeta desde su enlace (o el botón del aviso de Telegram) y su cuenta se renueva sola', '👥 Preparado para tus vendedores: cuando lo actives, cada uno pone sus precios y su Stripe'] },
   { v: 167, d: '2026-10-27', items: ['🔄 Con el panel abierto, si subes una versión nueva sale el aviso «Actualizar»; y en Novedades hay un botón para buscar actualizaciones'] },
   { v: 166, d: '2026-10-27', items: ['⬅️ «Atrás» vuelve a la pantalla anterior, paso a paso, y al mismo sitio donde estabas', '🙈 App de clientes: interruptor para enseñarla u ocultarla a tu equipo con un clic'] },
@@ -7686,7 +7686,7 @@ function lastPlan(c) {
   let m = +c.lastMonths || 0;
   if (!m) { const ch = (c.charges || []).filter((x) => x.kind === 'alta' || x.kind === 'renovacion').pop(); if (ch && ch.from && ch.to) { const [y1, m1] = ch.from.split('-').map(Number), [y2, m2] = ch.to.split('-').map(Number); m = (y2 - y1) * 12 + (m2 - m1); } }
   if (!MONTH_OPTS.some(([x]) => x === m)) m = 1;
-  const sc = SCREEN_OPTS.some(([x]) => x === c.screens) ? c.screens : 1;
+  const sc = [1, 2, 3, 4].includes(c.screens) ? c.screens : 1;
   const q = c.quality === null ? 'custom' : (c.quality || 'basico');
   return { m, sc, q };
 }
