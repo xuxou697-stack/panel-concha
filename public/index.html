@@ -3751,7 +3751,17 @@ function nwTicket() {
 /* ---------- Avisos de vencimiento ---------- */
 const tgLink = (c) => { const b = S.d.settings.notices.telegram.bot; return b ? `https://t.me/${b}?start=${c.tgCode}` : ''; };
 /** Texto con el enlace personal de Telegram, para añadirlo al mensaje que se le da al cliente */
-const tgBlock = (c) => { const l = tgLink(c); return l ? `🔔 Recibe por Telegram los avisos de tu cuenta (antes de que caduque y novedades). Abre este enlace y pulsa «Iniciar»:\n${l}` : ''; };
+const tgBlock = (c) => { const l = tgLink(c); return l ? `🔔 Activa tus avisos gratis por Telegram\n✅ Te avisamos antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n👉 Abre este enlace y pulsa «INICIAR»:\n${l}` : ''; };
+/** Invitación completa al bot (para mandarla sola por WhatsApp o Telegram) */
+const tgInvite = (c) => { const l = tgLink(c); return l ? `🔔 ¡Activa tus avisos gratis!\n\nHola ${c.panelName} 👋 Para que nunca te quedes sin servicio, te avisamos por Telegram:\n\n✅ Unos días antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n📢 Novedades y avisos importantes del servidor\n\n👉 Solo tienes que abrir este enlace y pulsar «INICIAR»:\n${l}\n\n🔒 Es privado: solo recibes avisos de tu cuenta y los puedes quitar cuando quieras.` : ''; };
+/** Mensaje con el enlace de pago */
+const payInvite = (c) => `💳 Renueva tu cuenta en 1 minuto\n\nHola ${c.panelName} 👋 Ya puedes renovar tú mismo, sin esperar a nadie:\n\n1️⃣ Abre tu enlace personal:\n${c.payLink}\n2️⃣ Elige pantallas y tiempo (cuanto más tiempo, más ahorras 😉)\n3️⃣ Paga con tarjeta, Apple Pay o Google Pay\n\n✅ Tu cuenta se renueva sola al momento y te llega la confirmación.\n🔒 Pago seguro a través de Stripe.`;
+/** Botones para enviar un texto: copiar, WhatsApp y Telegram */
+function shareBtns(text, wa) {
+  return `<div class="qacts" style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn primary" data-act="pl-copy">📋 Copiar</button>
+    ${wa ? `<a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(text)}">🟢 WhatsApp</a>` : ''}
+    <a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(text)}">✈️ Telegram</a></div>`;
+}
 function noticeRows() {
   const days = S.d.settings.notices.chat.days;
   return S.d.clients.filter((c) => !c.demo && c.status === 'active' && diff(c.expires, S.d.today) >= 0 && diff(c.expires, S.d.today) <= days).sort(byExpiry);
@@ -3817,9 +3827,11 @@ function dTelegram(c) {
   showDlg(`Telegram de ${c.panelName}`, !link
     ? `<p class="muted">${canDo('system') ? 'Todavía no hay bot de Telegram. Configúralo en Ajustes, Avisos de vencimiento.' : 'El superadministrador todavía no ha configurado el bot de Telegram.'}</p>`
     : `<p class="preview">${c.tgLinked ? 'Este cliente ya tiene Telegram enlazado y recibirá los avisos.' : 'Todavía no está enlazado.'}${nt.on ? '' : ' <span class="muted small">El envío por Telegram está apagado en Ajustes.</span>'}</p>
-      <label class="f">Enlace personal del cliente<input id="tgLinkBox" readonly value="${esc(link)}"></label>
-      <p class="muted small" style="margin-bottom:12px">Envíale este enlace. Al abrirlo y pulsar «Iniciar» en Telegram queda enlazado, y el bot le avisará antes de que caduque su cuenta. El enlace es solo suyo.</p>
-      <div class="acts"><button type="button" class="btn primary" data-act="tg-copy">Copiar enlace</button>${c.tgLinked ? `<button type="button" class="btn" data-act="tg-unlink" data-id="${c.id}">Desenlazar</button>` : ''}</div>`);
+      <label class="f">Mensaje para el cliente<textarea id="plText" rows="10" readonly>${esc(tgInvite(c))}</textarea></label>
+      <p class="muted small" style="margin-bottom:12px">Al abrir su enlace y pulsar «Iniciar» queda enlazado: el bot le da la bienvenida y le avisará antes de que caduque. El enlace es solo suyo.</p>
+      ${shareBtns(tgInvite(c), waNum(c.whatsapp))}
+      <input id="tgLinkBox" type="hidden" value="${esc(link)}">
+      <div class="acts" style="margin-top:8px"><button type="button" class="btn ghost" data-act="tg-copy">Copiar solo el enlace</button>${c.tgLinked ? `<button type="button" class="btn" data-act="tg-unlink" data-id="${c.id}">Desenlazar</button>` : ''}</div>`);
 }
 
 function vCobros() {
@@ -6414,14 +6426,12 @@ async function dConn(c) {
 /** Enlace de pago de un cliente: se ve, se copia o se envía por WhatsApp / Telegram */
 function dPayLink(c) {
   if (!c.payLink) return showDlg('💳 Enlace de pago', '<p>Este cliente no tiene enlace de pago. Revisa que «Cobro a clientes» esté activado y que haya precio para sus pantallas.</p>');
-  const text = `Hola ${c.panelName} 👋\n\nPuedes renovar tu cuenta tú mismo, al momento, desde este enlace:\n${c.payLink}\n\nPagas con tarjeta, Apple Pay o Google Pay y se renueva sola.`;
+  const text = payInvite(c);
   const wa = waNum(c.whatsapp);
   showDlg(`💳 Enlace de pago de ${c.panelName}`, `<p class="muted small" style="margin:-4px 0 10px">Es solo de este cliente. Al pagar, su cuenta se renueva sola.</p>
-    <label class="f">Mensaje para el cliente<textarea id="plText" rows="6" readonly>${esc(text)}</textarea></label>
-    <div class="qacts" style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn primary" data-act="pl-copy">📋 Copiar</button>
-      ${wa ? `<a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(text)}">🟢 WhatsApp</a>` : ''}
-      <a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(c.payLink)}&text=${encodeURIComponent('Renueva tu cuenta al momento desde aquí 👆')}">✈️ Telegram</a>
-      <a class="btn ghost" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(c.payLink)}">👁️ Ver la página</a></div>`);
+    <label class="f">Mensaje para el cliente<textarea id="plText" rows="11" readonly>${esc(text)}</textarea></label>
+    ${shareBtns(text, wa)}
+    <a class="btn ghost" style="text-decoration:none;margin-top:8px;display:inline-block" target="_blank" rel="noopener" href="${esc(c.payLink)}">👁️ Ver la página de pago</a>`);
 }
 
 /* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
@@ -6595,6 +6605,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 171, d: '2026-10-27', items: ['💬 Mensajes nuevos para tus clientes: invitación al bot, bienvenida, aviso de caducidad con botón «Renovar ahora», enlace de pago y confirmación del pago'] },
   { v: 169, d: '2026-10-27', items: ['💳 «Enlace de pago» abre una ventana con el mensaje listo para copiar o enviar por WhatsApp y Telegram', '📺 En la página de pago el cliente elige pantallas (1, 2, 3 o 4) y tiempo, con todos tus precios'] },
   { v: 168, d: '2026-10-27', items: ['💳 Cobro a clientes: tus clientes pagan con tarjeta desde su enlace (o el botón del aviso de Telegram) y su cuenta se renueva sola', '👥 Preparado para tus vendedores: cuando lo actives, cada uno pone sus precios y su Stripe'] },
   { v: 167, d: '2026-10-27', items: ['🔄 Con el panel abierto, si subes una versión nueva sale el aviso «Actualizar»; y en Novedades hay un botón para buscar actualizaciones'] },
@@ -8375,7 +8386,7 @@ function dMessage(c, password, key) {
         const k = f.elements.tpl.value, add = f.elements.guide.checked && (k === 'created' || k === 'demo'), main = fillTpl(k, c, password);
         const tg = f.elements.tg && f.elements.tg.checked && k !== 'quality' && !main.includes(tgLink(c)) ? '\n\n' + tgBlock(c) : '';
         const ap = f.elements.app && f.elements.app.checked && k !== 'quality' && !main.includes(appUrl()) ? '\n\n' + appBlock() : '';
-        const py = f.elements.pay && f.elements.pay.checked && k !== 'quality' && !main.includes(c.payLink) ? `\n\n💳 Para renovar tú mismo, al momento:\n${c.payLink}` : '';
+        const py = f.elements.pay && f.elements.pay.checked && k !== 'quality' && !main.includes(c.payLink) ? `\n\n💳 Renueva tú mismo en 1 minuto (eliges pantallas y tiempo y pagas con tarjeta, Apple Pay o Google Pay):\n${c.payLink}` : '';
         f.elements.msg.value = main + py + ap + tg + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link();
       };
       f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; if (f.elements.app) f.elements.app.onchange = upd; if (f.elements.pay) f.elements.pay.onchange = upd; if (f.elements.tg) f.elements.tg.onchange = upd; f.elements.msg.oninput = link; upd();
@@ -9055,7 +9066,7 @@ document.addEventListener('click', (e) => {
     case 'm-move': if (c) dMove(c); break;
     case 'm-tg': if (c) dTelegram(c); break;
     case 'm-tgmsg': if (c) dTgMsg(c); break;
-    case 'tg-copy': { const box = $('#tgLinkBox'); copyText(box.value, box).then(() => toast('Enlace copiado')).catch((x) => toast(x.message, true)); break; }
+    case 'tg-copy': { const box = $('#tgLinkBox'); copyText(box.value).then(() => { el.textContent = '✓ Enlace copiado'; }).catch((x) => toast(x.message, true)); break; }
     case 'tg-unlink': if (c) { if (dlg.open) dlg.close(); act(() => api('POST', `/api/clients/${c.id}/tg-unlink`, {}), 'Telegram desenlazado'); } break;
     case 'noticed': if (c) {
       if (el.dataset.copy) navigator.clipboard && navigator.clipboard.writeText(fillTpl('expiring', c, '')).then(() => toast('Mensaje copiado: pégalo en el chat')).catch(() => {});

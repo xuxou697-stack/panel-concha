@@ -79,7 +79,7 @@ const DEFAULT_TEMPLATES = {
   created: 'Hola {nombre} 👋\n\nTu cuenta Emby ya está activa:\n\nUsuario: {usuario}\nContraseña: {contraseña}\nServidor: {servidor}\nDirección: {direccion}\nPantallas: {pantallas}\nContenido: {contenido}\nVence: {vence}\n\n¡Disfruta del contenido!',
   demo: 'Hola {nombre} 👋\n\nTu demo de Emby está lista:\n\nUsuario: {usuario}\nContraseña: {contraseña}\nServidor: {servidor}\nDirección: {direccion}\nTermina: {vence}\n\nSi te gusta, avísame antes de que termine y te la dejo como cuenta fija.',
   renewed: 'Hola {nombre} 👋\n\nTu cuenta Emby ({usuario}) está renovada.\nNuevo vencimiento: {vence}\n\n¡Gracias!',
-  expiring: 'Hola {nombre} 👋\n\nTu cuenta Emby ({usuario}) vence el {vence}.\nAvísame si quieres renovarla para no quedarte sin servicio.',
+  expiring: '⏰ Hola {nombre}, tu cuenta caduca {cuando}\n\n📺 Usuario: {usuario}\n📅 Vence el: {vence}\n\nRenueva a tiempo y sigue disfrutando sin cortes de todas tus películas y series. 🍿',
   quality: '📺 Para ver Emby con la mejor calidad y sin cortes:\n1. Abre Emby en tu aparato y entra en Ajustes.\n2. Busca «Reproducción», «Calidad de vídeo» o «Calidad remota».\n3. Elige la calidad máxima: el valor más alto que aparezca (por ejemplo 1000 Mbps o «Máxima»).\nDespués, vuelve a reproducir el vídeo. Hazlo en cada aparato donde uses Emby.',
   followup: 'Hola {nombre} 👋\n\n¿Qué tal la prueba de Emby? Si te ha gustado, te la dejo hoy mismo como cuenta fija con todo el contenido.\n\n¿Te la activo?',
   vendor: 'Hola {nombre} 👋\n\nYa tienes acceso al panel {panel}:\n\nDirección: {direccion}\nUsuario: {usuario}\nContraseña: {contraseña}\nTipo de cuenta: {tipo}\nCréditos: {creditos}\n\nLa primera vez que entres, el panel te pedirá elegir una contraseña nueva que solo sepas tú.',
@@ -98,6 +98,7 @@ function loadDb() {
   db.settings = { ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), ...db.settings };
   const al = db.settings.alerts || {};
   db.settings.templates = { ...DEFAULT_TEMPLATES, ...(db.settings.templates || {}) };
+  if (db.settings.templates.expiring === 'Hola {nombre} 👋\n\nTu cuenta Emby ({usuario}) vence el {vence}.\nAvísame si quieres renovarla para no quedarte sin servicio.') db.settings.templates.expiring = DEFAULT_TEMPLATES.expiring; // el aviso antiguo pasa al nuevo, más claro
   db.settings.brand = { name: 'Concha', color: '', logo: '', url: '', tiles: 'solid', ...(db.settings.brand || {}) };
   // Precios en euros para clientes (meses-pantallas). Por defecto, la tarifa del propietario
   db.settings.clientPay = { on: false, desc: 'Suscripción', prices: { '1-1': 7.5, '1-2': 12, '1-3': 16, '1-4': 19, '3-1': 19, '3-2': 27, '3-3': 34, '3-4': 41, '6-1': 38, '6-2': 48, '6-3': 55, '6-4': 65, '12-1': 65, '12-2': 90, '12-3': 105, '12-4': 120 }, ...(db.settings.clientPay || {}) };
@@ -2542,6 +2543,7 @@ async function telegramPoll() {
         if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') continue;
         const chat = msg.chat.id, text = msg.text.trim();
         let reply;
+        let welcomeBtn = null;
         const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
         if (/^\/stop\b/i.test(text)) {
           let n = 0;
@@ -2562,10 +2564,12 @@ async function telegramPoll() {
             if (c.tgChat !== chat || !c.tgAt) c.tgAt = new Date().toISOString();
             c.tgChat = chat;
             addLog('aviso', c, 'Telegram enlazado para recibir avisos', null);
-            reply = `Listo, ${c.panelName}. Te avisaré por aquí unos días antes de que caduque tu cuenta. Escribe /stop si no quieres más avisos.`;
-          } else reply = 'Para activar los avisos abre el enlace personal que te dio tu vendedor.';
+            const days = (db.settings.notices.chat || {}).days || 5, fd = c.expires ? c.expires.split('-').reverse().join('/') : '';
+            reply = `🎉 ¡Listo, ${c.panelName}! Tus avisos están activados.\n\nDesde ahora te escribiré por aquí:\n📅 ${days} ${days === 1 ? 'día' : 'días'} antes de que caduque tu cuenta${fd && !c.demo ? ` (ahora vence el ${fd})` : ''}\n💳 Con un botón para renovarla tú mismo, al momento\n📢 Si hay novedades o avisos importantes\n\nNo tienes que hacer nada más 😊\nSi algún día no quieres más avisos, escribe /stop.`;
+            if (!c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) welcomeBtn = { inline_keyboard: [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] };
+          } else reply = '👋 ¡Hola! Para activar tus avisos abre el enlace personal que te ha enviado tu proveedor y pulsa «Iniciar».';
         }
-        await tg('sendMessage', { chat_id: chat, text: reply }).catch(() => {});
+        await tg('sendMessage', { chat_id: chat, text: reply, ...(welcomeBtn ? { reply_markup: welcomeBtn } : {}) }).catch(() => {});
       }
       saveDb();
     });
@@ -2582,8 +2586,8 @@ function payOfferFor(ownerId) {
 /** Mensaje de aviso de caducidad para Telegram: el texto, los precios y el botón de pago (si los hay) */
 function expiringTg(c) {
   if (cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) {
-    const text = fillText(tplFor(c.ownerId, 'expiring'), c) + '\n\n💳 Puedes renovar tú mismo, al momento, con el botón de abajo.';
-    return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Pagar y renovar', url: cpLink(c) }]] } };
+    const text = fillText(tplFor(c.ownerId, 'expiring'), c) + '\n\n💳 Renueva tú mismo en 1 minuto con el botón de abajo:\n• Eliges pantallas y tiempo (cuanto más tiempo, más ahorras 😉)\n• Pagas con tarjeta, Apple Pay o Google Pay\n• Tu cuenta se renueva sola al momento ✅';
+    return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] } };
   }
   const off = payOfferFor(c.ownerId);
   let text = fillText(tplFor(c.ownerId, 'expiring'), c);
@@ -4899,7 +4903,7 @@ async function cpPaid(o, via) {
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
   if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}`);
-  if (c.tgChat) tg('sendMessage', { chat_id: c.tgChat, text: `✅ Pago recibido. ¡Gracias, ${c.panelName}!\n\nTu cuenta está renovada hasta el ${c.expires.split('-').reverse().join('/')}. No tienes que hacer nada más.` }).catch(() => {});
+  if (c.tgChat) tg('sendMessage', { chat_id: c.tgChat, text: `✅ ¡Pago recibido! Gracias, ${c.panelName} 🙌\n\nTu cuenta ya está renovada:\n📅 Nueva fecha: ${c.expires.split('-').reverse().join('/')}\n📺 Pantallas: ${c.screens || 1}\n\nNo tienes que hacer nada: sigue viendo como siempre 🍿` }).catch(() => {});
   return true;
 }
 const H = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
