@@ -2549,6 +2549,14 @@ async function telegramPoll() {
         const chat = msg.chat.id, text = msg.text.trim();
         let reply;
         let welcomeBtn = null;
+        // Órdenes para los clientes: /suscripcion, /renovar, /app, /calidad, /ayuda (y /start sin código si ya está enlazado)
+        const cmd = ((/^\/([a-z_]+)(?:@\w+)?$/i.exec(text) || [])[1] || '').toLowerCase();
+        const mine = db.clients.filter((c) => c.tgChat === chat);
+        if (cmd && cmd !== 'stop' && BOT_CMD[cmd] && (cmd !== 'start' || mine.length)) {
+          const r = botAnswer(BOT_CMD[cmd], mine);
+          await tg('sendMessage', { chat_id: chat, text: r.text, disable_web_page_preview: true, ...(r.kb ? { reply_markup: r.kb } : {}) }).catch(() => {});
+          continue;
+        }
         const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
         if (/^\/stop\b/i.test(text)) {
           let n = 0;
@@ -2570,7 +2578,7 @@ async function telegramPoll() {
             c.tgChat = chat;
             addLog('aviso', c, 'Telegram enlazado para recibir avisos', null);
             const days = (db.settings.notices.chat || {}).days || 5, fd = c.expires ? c.expires.split('-').reverse().join('/') : '';
-            reply = `🎉 ¡Listo, ${c.panelName}! Tus avisos están activados.\n\nDesde ahora te escribiré por aquí:\n📅 ${days} ${days === 1 ? 'día' : 'días'} antes de que caduque tu cuenta${fd && !c.demo ? ` (ahora vence el ${fd})` : ''}\n💳 Con un botón para renovarla tú mismo, al momento\n📢 Si hay novedades o avisos importantes\n\nNo tienes que hacer nada más 😊\nSi algún día no quieres más avisos, escribe /stop.`;
+            reply = `🎉 ¡Listo, ${c.panelName}! Tus avisos están activados.\n\nDesde ahora te escribiré por aquí:\n📅 ${days} ${days === 1 ? 'día' : 'días'} antes de que caduque tu cuenta${fd && !c.demo ? ` (ahora vence el ${fd})` : ''}\n💳 Con un botón para renovarla tú mismo, al momento\n📢 Si hay novedades o avisos importantes\n\nNo tienes que hacer nada más 😊\n\n📋 Escribe /suscripcion cuando quieras para ver cuántos días te quedan (o pulsa «Menú» abajo).\nSi algún día no quieres más avisos, escribe /stop.`;
             if (!c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) welcomeBtn = { inline_keyboard: [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] };
           } else reply = '👋 ¡Hola! Para activar tus avisos abre el enlace personal que te ha enviado tu proveedor y pulsa «Iniciar».';
         }
@@ -2660,6 +2668,48 @@ async function telegramNotices() {
   }
   if (due.length) saveDb();
 }
+/* ---------- Órdenes del bot para los clientes ---------- */
+const BOT_CMD = { start: 'estado', suscripcion: 'estado', subscripcion: 'estado', cuenta: 'estado', micuenta: 'estado', estado: 'estado', dias: 'estado',
+  renovar: 'renovar', pagar: 'renovar', app: 'app', descargar: 'app', calidad: 'calidad', ayuda: 'ayuda', help: 'ayuda', menu: 'ayuda' };
+const BOT_MENU = [['suscripcion', 'Ver cuántos días te quedan'], ['renovar', 'Renovar tu cuenta al momento'], ['app', 'Descargar la app'], ['calidad', 'Ver con la mejor calidad'], ['ayuda', 'Ayuda y contacto'], ['stop', 'Dejar de recibir avisos']];
+function tgSetCommands() {
+  if (!db.settings.notices.telegram.token) return;
+  tg('setMyCommands', { commands: BOT_MENU.map(([command, description]) => ({ command, description })) }).catch(() => {});
+}
+setTimeout(tgSetCommands, 20000);
+function botAnswer(kind, list) {
+  const fmtD = (d) => d.split('-').reverse().join('/');
+  if (!list.length) return { text: '👋 ¡Hola! Todavía no tienes tu cuenta enlazada.\n\nAbre el enlace personal que te ha enviado tu proveedor y pulsa «Iniciar». Después podrás preguntarme cuántos días te quedan con /suscripcion.' };
+  const accs = list.slice(0, 5);
+  const payBtn = (c, label) => (cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: label, url: cpLink(c) } : null);
+  const sp = db.settings.support || {}, wa = String(sp.whatsapp || '').replace(/\D/g, ''), tgu = String(sp.telegram || '').replace(/^@/, '');
+  const contact = [wa ? `🟢 WhatsApp: https://wa.me/${wa}` : '', /^[A-Za-z0-9_]{3,40}$/.test(tgu) ? `✈️ Telegram: @${tgu}` : '', sp.email ? `✉️ ${sp.email}` : ''].filter(Boolean).join('\n');
+  if (kind === 'estado') {
+    const parts = accs.map((c) => {
+      const left = diffDays(c.expires, today());
+      if (c.demo) return `🎁 Prueba de ${c.panelName}\n👤 Usuario: ${c.embyName}\n${c.status === 'active' ? '⏳ Tu prueba sigue activa.' : '🎬 Tu prueba ha terminado.'}`;
+      const per = Math.max(30, (c.lastMonths || 1) * 30), full = Math.max(0, Math.min(10, Math.round((left / per) * 10)));
+      const bar = left < 0 ? '🟥'.repeat(10) : (left <= 5 ? '🟨' : '🟩').repeat(full) + '⬜'.repeat(10 - full);
+      const when = left < 0 ? `⛔ Caducó hace ${-left} ${left === -1 ? 'día' : 'días'}` : left === 0 ? '⚠️ Vence HOY' : left === 1 ? '⏰ Vence mañana' : `⏳ Te quedan ${left} días`;
+      return `📋 Tu suscripción${accs.length > 1 ? ' · ' + c.panelName : ''}\n\n👤 Usuario: ${c.embyName}\n📺 Pantallas: ${c.screens || 1}\n📅 Vence el: ${fmtD(c.expires)}\n${when}\n${bar}${c.sub && c.sub.status === 'active' && !c.sub.cancelAt ? '\n🔁 Renovación automática activa: no tienes que hacer nada.' : ''}`;
+    });
+    const btns = accs.map((c) => payBtn(c, accs.length > 1 ? `💳 Renovar · ${c.panelName}` : '💳 Renovar ahora')).filter(Boolean).map((b) => [b]);
+    return { text: parts.join('\n\n— — —\n\n') + '\n\nOtras opciones: /renovar · /app · /calidad · /ayuda', kb: btns.length ? { inline_keyboard: btns } : null };
+  }
+  if (kind === 'renovar') {
+    const btns = accs.map((c) => payBtn(c, accs.length > 1 ? `💳 Renovar · ${c.panelName}` : '💳 Renovar ahora')).filter(Boolean).map((b) => [b]);
+    if (btns.length) return { text: '💳 Renueva en 1 minuto\n\n1️⃣ Pulsa el botón de abajo\n2️⃣ Elige pantallas y tiempo (cuanto más tiempo, más ahorras 😉)\n3️⃣ Paga online y tu cuenta se renueva sola al momento ✅', kb: { inline_keyboard: btns } };
+    return { text: `💳 Para renovar, escribe a tu proveedor y te la deja lista en un momento.${contact ? '\n\n' + contact : ''}` };
+  }
+  if (kind === 'app') {
+    const ap = db.settings.app || {}, c = accs[0], owner = db.users.find((u) => u.id === c.ownerId);
+    const ok = ap.file && (ap.public || !owner || owner.role === 'super' || owner.role === 'admin') && siteBase();
+    if (!ok) return { text: '📲 Usa la app de Emby de siempre en tu aparato. Si necesitas ayuda para instalarla, escribe /ayuda.' };
+    return { text: `📲 Nuestra app ${ap.name || ''}\n\nPara móviles Android, Fire Stick y TV Box.\n\n📱 En el móvil: pulsa el botón de abajo y luego «Instalar».\n📺 En Fire Stick: abre la app «Downloader» y escribe ${ap.dlCode ? `el código ${ap.dlCode}` : siteBase() + '/app'}.\n\nAl abrirla, entra con tu usuario y contraseña de siempre.`, kb: { inline_keyboard: [[{ text: '⬇️ Descargar la app', url: siteBase() + '/app' }]] } };
+  }
+  if (kind === 'calidad') return { text: fillText(tplFor(accs[0].ownerId, 'quality'), accs[0]) };
+  return { text: `🤖 ¿En qué te ayudo?\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva tu cuenta al momento\n📲 /app · descarga la app\n📺 /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
+}
 /** Fin de una demo: si el cliente tiene el bot enlazado y hay pago online, se le invita a activarla con un botón */
 function demoEndTg(c) {
   if (!c.tgChat || !db.settings.notices.telegram.on || !db.settings.notices.telegram.token) return;
@@ -2696,7 +2746,7 @@ route('PUT', '/api/notices', SUPER, ({ me, body }) => lock(async () => {
       if (!/^\d+:[\w-]{20,}$/.test(token)) throw new HttpError(400, 'Ese no parece un token de bot de Telegram. Tiene la forma 123456:ABC-DEF…');
       let info;
       try { info = await tg('getMe', {}, token); } catch (e) { throw new HttpError(400, e.message); }
-      cur.telegram.token = token; cur.telegram.bot = info.username || ''; cur.telegram.offset = 0;
+      cur.telegram.token = token; cur.telegram.bot = info.username || ''; cur.telegram.offset = 0; setTimeout(tgSetCommands, 1000);
     }
     if (body.telegram.remove === true) { cur.telegram.token = ''; cur.telegram.bot = ''; cur.telegram.on = false; }
     else cur.telegram.on = !!body.telegram.on && !!cur.telegram.token;

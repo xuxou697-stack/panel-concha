@@ -3758,7 +3758,7 @@ const tgLink = (c) => { const b = S.d.settings.notices.telegram.bot; return b ? 
 /** Texto con el enlace personal de Telegram, para añadirlo al mensaje que se le da al cliente */
 const tgBlock = (c) => { const l = tgLink(c); return l ? `🔔 Activa tus avisos gratis por Telegram\n✅ Te avisamos antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n👉 Abre este enlace y pulsa «INICIAR»:\n${l}` : ''; };
 /** Invitación completa al bot (para mandarla sola por WhatsApp o Telegram) */
-const tgInvite = (c) => { const l = tgLink(c); return l ? `🔔 ¡Activa tus avisos gratis!\n\nHola ${c.panelName} 👋 Para que nunca te quedes sin servicio, te avisamos por Telegram:\n\n✅ Unos días antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n📢 Novedades y avisos importantes del servidor\n\n👉 Solo tienes que abrir este enlace y pulsar «INICIAR»:\n${l}\n\n🔒 Es privado: solo recibes avisos de tu cuenta y los puedes quitar cuando quieras.` : ''; };
+const tgInvite = (c) => { const l = tgLink(c); return l ? `🔔 ¡Activa tus avisos gratis!\n\nHola ${c.panelName} 👋 Para que nunca te quedes sin servicio, te avisamos por Telegram:\n\n✅ Unos días antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n📢 Novedades y avisos importantes del servidor\n📋 Y cuando quieras, escribe /suscripcion para ver cuántos días te quedan\n\n👉 Solo tienes que abrir este enlace y pulsar «INICIAR»:\n${l}\n\n🔒 Es privado: solo recibes avisos de tu cuenta y los puedes quitar cuando quieras.` : ''; };
 /** Mensaje con el enlace de pago */
 const payInvite = (c) => `💳 Renueva tu cuenta en 1 minuto\n\nHola ${c.panelName} 👋 Ya puedes renovar tú mismo, sin esperar a nadie:\n\n1️⃣ Abre tu enlace personal:\n${c.payLink}\n2️⃣ Elige pantallas y tiempo (cuanto más tiempo, más ahorras 😉)\n3️⃣ Paga con tarjeta, Apple Pay o Google Pay\n\n✅ Tu cuenta se renueva sola al momento y te llega la confirmación.\n🔒 Pago seguro a través de Stripe.`;
 /** Botones para enviar un texto: copiar, WhatsApp y Telegram */
@@ -6626,6 +6626,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 174, d: '2026-10-27', items: ['🤖 El bot responde a tus clientes: /suscripcion (cuántos días le quedan), /renovar, /app, /calidad y /ayuda, con un menú en Telegram'] },
   { v: 173, d: '2026-10-27', items: ['🛠️ Arreglado el aviso «Error en el panel… reading value» al editar o renovar después de abrir Renovar'] },
   { v: 172, d: '2026-10-27', items: ['🔔 Avisos escalonados por Telegram: X días antes, 1 día antes, el mismo día y un rescate a los 3 días de caducar', '🏠 El enlace de cada cliente es su página «Mi cuenta»: fecha, pantallas, renovar, app, guía y soporte', '🚀 Al terminar una demo, el bot invita a activarla con un botón de pago', '📊 Cobros online en el Resumen', '🔁 Renovación automática opcional para tus clientes'] },
   { v: 171, d: '2026-10-27', items: ['💬 Mensajes nuevos para tus clientes: invitación al bot, bienvenida, aviso de caducidad con botón «Renovar ahora», enlace de pago y confirmación del pago'] },
