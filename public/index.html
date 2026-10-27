@@ -6411,6 +6411,19 @@ async function dConn(c) {
   showDlg(`Conexiones de ${c.panelName}`, body);
 }
 
+/** Enlace de pago de un cliente: se ve, se copia o se envía por WhatsApp / Telegram */
+function dPayLink(c) {
+  if (!c.payLink) return showDlg('💳 Enlace de pago', '<p>Este cliente no tiene enlace de pago. Revisa que «Cobro a clientes» esté activado y que haya precio para sus pantallas.</p>');
+  const text = `Hola ${c.panelName} 👋\n\nPuedes renovar tu cuenta tú mismo, al momento, desde este enlace:\n${c.payLink}\n\nPagas con tarjeta, Apple Pay o Google Pay y se renueva sola.`;
+  const wa = waNum(c.whatsapp);
+  showDlg(`💳 Enlace de pago de ${c.panelName}`, `<p class="muted small" style="margin:-4px 0 10px">Es solo de este cliente. Al pagar, su cuenta se renueva sola.</p>
+    <label class="f">Mensaje para el cliente<textarea id="plText" rows="6" readonly>${esc(text)}</textarea></label>
+    <div class="qacts" style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn primary" data-act="pl-copy">📋 Copiar</button>
+      ${wa ? `<a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(text)}">🟢 WhatsApp</a>` : ''}
+      <a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(c.payLink)}&text=${encodeURIComponent('Renueva tu cuenta al momento desde aquí 👆')}">✈️ Telegram</a>
+      <a class="btn ghost" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(c.payLink)}">👁️ Ver la página</a></div>`);
+}
+
 /* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
 async function loadCp() { S.cpBusy = true; try { S.cp = await api('GET', isSuper() ? '/api/client-pay' : '/api/my-client-pay'); S.cpAt = Date.now(); } catch (e) { S.cp = { error: e.message }; } S.cpBusy = false; if (S.view === 'cobrocli') render(); }
 function vCobroCli() {
@@ -6582,6 +6595,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 169, d: '2026-10-27', items: ['💳 «Enlace de pago» abre una ventana con el mensaje listo para copiar o enviar por WhatsApp y Telegram'] },
   { v: 168, d: '2026-10-27', items: ['💳 Cobro a clientes: tus clientes pagan con tarjeta desde su enlace (o el botón del aviso de Telegram) y su cuenta se renueva sola', '👥 Preparado para tus vendedores: cuando lo actives, cada uno pone sus precios y su Stripe'] },
   { v: 167, d: '2026-10-27', items: ['🔄 Con el panel abierto, si subes una versión nueva sale el aviso «Actualizar»; y en Novedades hay un botón para buscar actualizaciones'] },
   { v: 166, d: '2026-10-27', items: ['⬅️ «Atrás» vuelve a la pantalla anterior, paso a paso, y al mismo sitio donde estabas', '🙈 App de clientes: interruptor para enseñarla u ocultarla a tu equipo con un clic'] },
@@ -8273,7 +8287,12 @@ function fillTpl(key, c, password) {
 }
 async function copyText(text, el) {
   try { await navigator.clipboard.writeText(text); }
-  catch (e) { el.focus(); el.select(); if (!document.execCommand('copy')) throw new Error('No se pudo copiar solo. El texto está seleccionado: cópialo a mano.'); }
+  catch (e) {
+    let tmp = null;
+    if (!el) { tmp = el = document.createElement('textarea'); el.value = text; el.setAttribute('readonly', ''); el.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; (dlg.open ? dlg : document.body).appendChild(el); }
+    el.focus(); el.select(); const ok = document.execCommand('copy'); if (tmp) tmp.remove();
+    if (!ok) throw new Error('No se pudo copiar solo. El texto está seleccionado: cópialo a mano.');
+  }
 }
 /** Mensaje listo para enviar al cliente. La contraseña solo se conoce justo al crear la cuenta. */
 /** Ticket animado (opción A): la fecha rueda hasta la nueva, se llena la barra y luego se abre el mensaje escribiéndose solo */
@@ -8974,7 +8993,8 @@ document.addEventListener('click', (e) => {
     case 'cpv-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/my-client-pay', { on }).then(() => { toast(on ? 'Cobro a tus clientes activado ✅' : 'Cobro a tus clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cpv-wh': copyText(S.cp && S.cp.webhook || '').then(() => toast('Dirección copiada')); break;
     case 'cpv-del': dConfirm('Desconectar tu Stripe', 'Tus clientes dejarán de poder pagar online hasta que vuelvas a conectarlo.', 'Desconectar', () => api('PUT', '/api/my-client-pay', { removeKey: true }).then(() => { S.cp = null; }), 'Stripe desconectado'); break;
-    case 'm-paylink': if (c && c.payLink) copyText(c.payLink).then(() => toast('Enlace de pago copiado: pégalo en el chat del cliente')); break;
+    case 'm-paylink': if (c) dPayLink(c); break;
+    case 'pl-copy': { const i = $('#plText'); if (i) copyText(i.value, i).then(() => { const b = $('[data-act=pl-copy]'); if (b) b.textContent = '✓ Copiado'; }).catch((ex) => toast(ex.message, true)); } break;
     case 'app-pub': { const on = !(S.d.settings.app || {}).public; api('PUT', '/api/app-settings', { public: on }).then(() => { toast(on ? 'App visible para todo tu equipo 👀' : 'App oculta: ahora solo la ves tú 🙈'); return reload(); }).catch((e) => toast(e.message, true)); } break;
     case 'app-pick': { const i = $('#appFile'); if (i) i.click(); } break;
     case 'app-copy': copyText(appUrl()).then(() => toast('Enlace copiado')); break;
