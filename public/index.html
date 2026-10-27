@@ -1589,6 +1589,10 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .uibar span{min-width:0}.uibar button{border:0;border-radius:12px;padding:8px 14px;font:inherit;font-weight:800;color:#4c1d95;background:#fff;cursor:pointer;white-space:nowrap}
 @media (min-width:861px){.uibar{bottom:24px}}
 /* App de clientes */
+.cpb{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;margin:0 0 16px;padding:16px;border-radius:20px;border:1px solid color-mix(in srgb,#8b5cf6 40%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#6366f1 16%,var(--surface)),color-mix(in srgb,#ec4899 12%,var(--surface)))}
+.cpb-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:10px}.cpb-h b{font-size:15.5px}.cpb-h small{color:var(--muted);font-size:12.5px}
+.cpb-ks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.cpb-k{padding:10px;border-radius:14px;background:color-mix(in srgb,var(--bg) 55%,transparent)}.cpb-k span{font-size:16px}.cpb-k b{display:block;font-size:17px;overflow-wrap:anywhere}.cpb-k small{display:block;color:var(--muted);font-size:11.5px}
+
 .cp-tbl{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:6px;align-items:center}
 .cp-h{font-size:12px;font-weight:800;color:var(--muted);text-align:center}.cp-m{font-size:13px;font-weight:800;padding-right:4px;white-space:nowrap}
 .cp-c{position:relative;display:block}.cp-c input{width:100%;height:40px;border-radius:10px;padding:0 20px 0 8px;text-align:right;font-weight:700}.cp-c span{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted)}
@@ -3430,6 +3434,7 @@ function dashFacil(p) {
       <div class="fz-ha"><button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>${credits}</div></section>
     ${d.servers.length && !noCli() ? `<button type="button" class="fz-live" id="fzLive" data-view="monitor" aria-label="Clientes viendo ahora: abrir el Monitor">${fzLiveHtml()}</button>` : ''}
     ${noCli() ? '' : fzTodayHtml(d)}
+    ${cpBoxHtml(d)}
     <div class="sec-h"><h2>Tus cuentas</h2><small>${plural(total, 'cuenta', 'cuentas')} · toca para ver la lista</small></div>
     <div class="fz-cards">
       ${big('ok', '🟢', cnt.active, 'Funcionando', 'Pueden ver Emby ahora', 'all')}
@@ -5721,6 +5726,10 @@ function ajSections() {
       <p class="small" style="margin:4px 0 0"><button type="button" class="linkbtn" data-view="avisotv">Más opciones: qué días exactos y cada cuánto avisar →</button></p>
       <h2 class="sep" style="font-size:16px">Por Telegram y WhatsApp</h2>
       <label class="f" style="max-width:300px">Días antes de caducar para avisar<input type="number" name="chatDays" min="1" max="30" value="${g.notices.chat.days}" required></label>
+      <label class="check"><input type="checkbox" name="d1"${g.notices.chat.d1 !== false ? ' checked' : ''}> Recordar también 1 día antes</label>
+      <label class="check"><input type="checkbox" name="d0"${g.notices.chat.d0 !== false ? ' checked' : ''}> Recordar también el mismo día que caduca</label>
+      <label class="f" style="max-width:300px;margin-top:8px">Rescate: días después de caducar (0 = no)<input type="number" name="after" min="0" max="30" value="${g.notices.chat.after != null ? g.notices.chat.after : 3}"></label>
+      <p class="muted small" style="margin:-6px 0 12px">El rescate es un «te echamos de menos» con el botón para volver. Todos los avisos llevan el botón «💳 Renovar ahora» si tienes activado Cobro a clientes.</p>
       <label class="check"><input type="checkbox" name="tgOn"${g.notices.telegram.on ? ' checked' : ''}> Enviar el aviso solo por Telegram a los clientes enlazados</label>
       <label class="f" style="margin-top:10px">Token del bot de Telegram${g.notices.telegram.hasToken ? ` (guardado${g.notices.telegram.bot ? ', bot @' + esc(g.notices.telegram.bot) : ''}; vacío = no cambiarlo)` : ''}<input name="tgToken" type="password" autocomplete="off" placeholder="123456789:ABC-DEF…"></label>
       <p class="muted small" style="margin:-6px 0 12px">El bot se crea gratis en Telegram hablando con @BotFather (orden /newbot), que te da el token. Telegram solo deja escribir a quien ha abierto el bot: cada cliente debe pulsar una vez su enlace personal (Más, Avisos por Telegram). Se envía entre las 10:00 y las 21:00. El texto es la plantilla «Aviso de vencimiento». WhatsApp no permite envíos automáticos: se mandan con un toque desde Clientes, Avisos de vencimiento.</p>
@@ -6434,6 +6443,16 @@ function dPayLink(c) {
     <a class="btn ghost" style="text-decoration:none;margin-top:8px;display:inline-block" target="_blank" rel="noopener" href="${esc(c.payLink)}">👁️ Ver la página de pago</a>`);
 }
 
+/** Resumen: lo cobrado online a los clientes (pago con su enlace y renovaciones automáticas) */
+function cpBoxHtml(d) {
+  const x = d.cpStats;
+  if (!x || (!x.on && !x.month[0])) return '';
+  const cur = d.settings.currency || 'EUR', money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
+  const k = (e, v, t) => `<div class="cpb-k"><span>${e}</span><b>${v}</b><small>${t}</small></div>`;
+  return `<${isSuper() ? 'button type="button" data-view="cobrocli"' : 'div'} class="cpb"><div class="cpb-h"><b>💳 Cobros online de clientes</b><small>${x.on ? 'renuevan solos con su enlace' : 'cobro a clientes apagado'}</small></div>
+    <div class="cpb-ks">${k('☀️', money(x.today[1]), `hoy · ${plural(x.today[0], 'pago', 'pagos')}`)}${k('📅', money(x.month[1]), `este mes · ${plural(x.month[0], 'pago', 'pagos')}`)}${k('🔁', x.subs, x.subs === 1 ? 'renovación automática' : 'renovaciones automáticas')}</div></${isSuper() ? 'button' : 'div'}>`;
+}
+
 /* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
 async function loadCp() { S.cpBusy = true; try { S.cp = await api('GET', isSuper() ? '/api/client-pay' : '/api/my-client-pay'); S.cpAt = Date.now(); } catch (e) { S.cp = { error: e.message }; } S.cpBusy = false; if (S.view === 'cobrocli') render(); }
 function vCobroCli() {
@@ -6448,16 +6467,18 @@ function vCobroCli() {
     : !d.stripe.wh ? `<div class="ap-card" style="border-color:#f59e0b"><b>💡 Recomendado: el webhook de Stripe</b><p class="muted small" style="margin:4px 0 0">Sin él también funciona (se comprueba cuando el cliente vuelve de pagar), pero con el webhook la renovación es segura aunque el cliente cierre la página. Se pone en Ajustes › Pagos online.</p></div>` : '';
   const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a clientes activado' : '⏸️ Cobro a clientes apagado'}</b><small>${c.on ? 'Los avisos de caducidad por Telegram llevan el botón «💳 Pagar y renovar».' : 'Prepara los precios y actívalo cuando quieras.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cp-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
   const table = cpTable(pr, c.desc, 'Son tus precios. Tus resellers y subresellers, si se lo activas, ponen los suyos aparte.');
+  const subs = `<section class="ap-card ap-pub${c.subs ? ' on' : ''}"><div class="ap-pubrow"><div><b>🔁 Renovación automática: ${c.subs ? 'ofrecida' : 'no ofrecida'}</b><small>${c.subs ? 'En la página de pago sale la casilla «Renovar automáticamente»: Stripe le cobra solo cada periodo y la cuenta se renueva sola. El cliente la cancela cuando quiera desde su enlace.' : 'Actívala para que tus clientes puedan dejar el pago automático. Recomendado: añade en tu webhook de Stripe los eventos invoice.paid y customer.subscription.deleted.'}</small></div><button type="button" class="ap-big${c.subs ? ' on' : ''}" data-act="cp-subs" aria-pressed="${!!c.subs}"><i></i></button></div></section>`;
   const vend = `<section class="ap-card ap-pub${c.vendors ? ' on' : ''}"><div class="ap-pubrow"><div><b>👥 Para tus resellers y subresellers: ${c.vendors ? 'activado' : 'apagado'}</b><small>${c.vendors ? 'Les sale «Cobro a clientes» en Ajustes: cada uno pone sus precios y conecta su propio Stripe (el dinero le llega a él y la renovación le descuenta sus créditos).' : 'Mientras esté apagado no lo ven. Actívalo cuando lo tengas preparado.'}</small></div><button type="button" class="ap-big${c.vendors ? ' on' : ''}" data-act="cp-vend" aria-pressed="${!!c.vendors}"><i></i></button></div></section>`;
   const how = `<section class="ap-card"><h2>🧭 Cómo funciona</h2><div class="ap-steps">
     <p><b>1.</b> Cuando a un cliente le quedan los días que tengas en «Avisos de vencimiento», el bot le manda el aviso con el botón <b>💳 Pagar y renovar</b>.</p>
     <p><b>2.</b> El botón abre <b>su página de pago</b> en tu panel, con su nombre, su fecha y los precios de <b>sus pantallas</b>.</p>
     <p><b>3.</b> Paga con tarjeta, Apple Pay o Google Pay. Al confirmarse, <b>su cuenta se renueva sola</b> y le llega «✅ Pago recibido» por Telegram.</p>
-    <p><b>4.</b> A ti te llega el aviso del cobro y queda apuntado en Movimientos.</p></div>
+    <p><b>4.</b> A ti te llega el aviso del cobro y queda apuntado en Movimientos.</p>
+    <p><b>5.</b> Su enlace es también su página <b>«Mi cuenta»</b>: su fecha, sus pantallas, la app, la guía de calidad y tu contacto.</p></div>
     <p class="muted small">Solo para <b>tus clientes</b> (y los de tus administradores). Los de resellers y subresellers no, porque el dinero te llegaría a ti. También puedes copiar el enlace de cualquier cliente desde su menú ⋯ › «Enlace de pago», o añadirlo al copiar su mensaje.</p></section>`;
   const st = { paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'] };
   const list = `<section class="ap-card"><h2>🧾 Últimos pagos de clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${(st[o.status] || ['•'])[0]} ${esc(o.user)}</b><span>${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}${o.after ? ' · vence ' + fmt(o.after) : ''}</span><em style="color:${o.status === 'paid' ? '#16a34a' : 'var(--muted)'}">${(st[o.status] || ['', o.status])[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
-  return hero + `<div class="ap-grid">${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${vend}${how}${list}</div>`;
+  return hero + `<div class="ap-grid">${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${subs}${vend}${how}${list}</div>`;
 }
 function cpTable(pr, desc, note) {
   const M = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '1 año']], SC = [1, 2, 3, 4];
@@ -6605,6 +6626,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 172, d: '2026-10-27', items: ['🔔 Avisos escalonados por Telegram: X días antes, 1 día antes, el mismo día y un rescate a los 3 días de caducar', '🏠 El enlace de cada cliente es su página «Mi cuenta»: fecha, pantallas, renovar, app, guía y soporte', '🚀 Al terminar una demo, el bot invita a activarla con un botón de pago', '📊 Cobros online en el Resumen', '🔁 Renovación automática opcional para tus clientes'] },
   { v: 171, d: '2026-10-27', items: ['💬 Mensajes nuevos para tus clientes: invitación al bot, bienvenida, aviso de caducidad con botón «Renovar ahora», enlace de pago y confirmación del pago'] },
   { v: 169, d: '2026-10-27', items: ['💳 «Enlace de pago» abre una ventana con el mensaje listo para copiar o enviar por WhatsApp y Telegram', '📺 En la página de pago el cliente elige pantallas (1, 2, 3 o 4) y tiempo, con todos tus precios'] },
   { v: 168, d: '2026-10-27', items: ['💳 Cobro a clientes: tus clientes pagan con tarjeta desde su enlace (o el botón del aviso de Telegram) y su cuenta se renueva sola', '👥 Preparado para tus vendedores: cuando lo actives, cada uno pone sus precios y su Stripe'] },
@@ -8258,7 +8280,7 @@ function dMove(c) {
 const TPL = [['created', 'Cuenta creada'], ['demo', 'Demo creada'], ['renewed', 'Cuenta renovada'], ['expiring', 'Aviso de vencimiento'], ['quality', 'Guía de calidad']];
 /** Texto que usa este usuario: el suyo, si no el de su reseller, si no el del panel */
 const tplText = (k) => (S.d.myTemplates || {})[k] || (S.d.parentTemplates || {})[k] || (S.d.settings.templates || {})[k] || '';
-const TPL_ALL = [...TPL, ['followup', 'Seguimiento de una demo que terminó'], ['vendor', 'Acceso al panel para un vendedor']];
+const TPL_ALL = [...TPL, ['rescue', 'Rescate (cuenta caducada hace unos días)'], ['followup', 'Seguimiento de una demo que terminó'], ['vendor', 'Acceso al panel para un vendedor']];
 /** Direccion del panel que se da a los vendedores: la de Ajustes o, si no hay, la que se esta usando ahora */
 function panelUrl() {
   const set = (S.d.settings.brand || {}).url;
@@ -9000,6 +9022,7 @@ document.addEventListener('click', (e) => {
     case 'app-free': if (c) { const free = !c.appFree; dConfirm(free ? 'Permitir cualquier app' : 'Solo la app oficial', free ? `${esc(c.panelName)} podrá ver con cualquier app aunque «Solo mi app» esté activado.` : `${esc(c.panelName)} tendrá que usar ${esc(appName())}.`, 'Cambiar', () => api('POST', `/api/clients/${c.id}/app-free`, { free }), 'Cambiado'); } break;
     case 'nav-back': if (history.state && history.state.k && history.length > 1) history.back(); else { goHome(); render(); } break;
     case 'cp-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/client-pay', { on }).then(() => { toast(on ? 'Cobro a clientes activado ✅' : 'Cobro a clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
+    case 'cp-subs': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.subs); api('PUT', '/api/client-pay', { subs: on }).then(() => { toast(on ? 'Renovación automática ofrecida 🔁' : 'Renovación automática ya no se ofrece'); S.cp = null; loadCp(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cp-vend': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.vendors); api('PUT', '/api/client-pay', { vendors: on }).then(() => { toast(on ? 'Activado para tus vendedores 👥' : 'Apagado para tus vendedores'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cpv-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/my-client-pay', { on }).then(() => { toast(on ? 'Cobro a tus clientes activado ✅' : 'Cobro a tus clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cpv-wh': copyText(S.cp && S.cp.webhook || '').then(() => toast('Dirección copiada')); break;
@@ -9325,7 +9348,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'noticeForm') {
     e.preventDefault();
     const fd = new FormData(e.target);
-    act(() => api('PUT', '/api/notices', { screen: { on: fd.get('screenOn') === 'on', days: +fd.get('screenDays'), message: fd.get('screenMsg') }, chat: { days: +fd.get('chatDays') }, telegram: { on: fd.get('tgOn') === 'on', token: fd.get('tgToken') } }), 'Avisos guardados');
+    act(() => api('PUT', '/api/notices', { screen: { on: fd.get('screenOn') === 'on', days: +fd.get('screenDays'), message: fd.get('screenMsg') }, chat: { days: +fd.get('chatDays'), d1: fd.get('d1') === 'on', d0: fd.get('d0') === 'on', after: +(fd.get('after') || 0) }, telegram: { on: fd.get('tgOn') === 'on', token: fd.get('tgToken') } }), 'Avisos guardados');
   }
   if (e.target.id === 'brandForm') {
     e.preventDefault();
