@@ -82,6 +82,8 @@ const DEFAULT_TEMPLATES = {
   expiring: '⏰ Hola {nombre}, tu cuenta caduca {cuando}\n\n📺 Usuario: {usuario}\n📅 Vence el: {vence}\n\nRenueva a tiempo y sigue disfrutando sin cortes de todas tus películas y series. 🍿',
   quality: '📺 Para ver Emby con la mejor calidad y sin cortes:\n1. Abre Emby en tu aparato y entra en Ajustes.\n2. Busca «Reproducción», «Calidad de vídeo» o «Calidad remota».\n3. Elige la calidad máxima: el valor más alto que aparezca (por ejemplo 1000 Mbps o «Máxima»).\nDespués, vuelve a reproducir el vídeo. Hazlo en cada aparato donde uses Emby.',
   rescue: '😢 Hola {nombre}, te echamos de menos\n\nTu cuenta ({usuario}) caducó el {vence} y ya no puedes ver el contenido.\n\n¡Vuelve cuando quieras! Al renovar se activa al momento, con todo como lo dejaste: tus favoritos y lo que estabas viendo. 🍿',
+  payinvite: '💳 Renueva tu cuenta en 1 minuto\n\nHola {nombre} 👋 Ya puedes renovar tú mismo, sin esperar a nadie:\n\n1️⃣ Abre tu enlace personal:\n{enlace_pago}\n2️⃣ Elige pantallas y tiempo (cuanto más tiempo, más ahorras 😉)\n3️⃣ Paga con tarjeta, Apple Pay o Google Pay\n\n✅ Tu cuenta se renueva sola al momento y te llega la confirmación.\n🔒 Pago seguro a través de Stripe.',
+  tginvite: '🔔 ¡Activa tus avisos gratis!\n\nHola {nombre} 👋 Para que nunca te quedes sin servicio, te avisamos por Telegram:\n\n✅ Unos días antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n📢 Novedades y avisos importantes del servidor\n📋 Y cuando quieras, escribe /suscripcion para ver cuántos días te quedan\n\n👉 Solo tienes que abrir este enlace y pulsar «INICIAR»:\n{enlace_telegram}\n\n🔒 Es privado: solo recibes avisos de tu cuenta y los puedes quitar cuando quieras.',
   followup: 'Hola {nombre} 👋\n\n¿Qué tal la prueba de Emby? Si te ha gustado, te la dejo hoy mismo como cuenta fija con todo el contenido.\n\n¿Te la activo?',
   vendor: 'Hola {nombre} 👋\n\nYa tienes acceso al panel {panel}:\n\nDirección: {direccion}\nUsuario: {usuario}\nContraseña: {contraseña}\nTipo de cuenta: {tipo}\nCréditos: {creditos}\n\nLa primera vez que entres, el panel te pedirá elegir una contraseña nueva que solo sepas tú.',
 };
@@ -112,6 +114,8 @@ function loadDb() {
   openApiKeys(db.servers);
   if (!Array.isArray(db.access)) db.access = [];
   if (!Array.isArray(db.followups)) db.followups = [];
+  if (!Array.isArray(db.requests)) db.requests = []; // películas y series que piden los clientes por el bot
+  db.settings.referral = { days: 0, ...(db.settings.referral || {}) };
   if (!Array.isArray(db.broadcasts)) db.broadcasts = [];
   if (!Array.isArray(db.incidents)) db.incidents = [];
   if (!Array.isArray(db.vpay)) db.vpay = [];
@@ -2113,6 +2117,7 @@ function publicData(me) {
     licMaster: me.role === 'super' && !LIC_CLIENT,
     kinds: licKinds(),
     uiVer: indexFile().ver,
+    reqPending: (() => { const vis = visibleOwners(me); return db.requests.filter((r) => r.status === 'pending' && (!vis || vis.has(r.ownerId))).length; })(),
     cpStats: isStaff(me) ? (() => { const t = today(), mo = t.slice(0, 7), out = { today: [0, 0], month: [0, 0], auto: 0, subs: db.clients.filter((c) => c.sub && c.sub.status === 'active' && !c.sub.cancelAt && !c.sub.vendorId).length, on: !!cpCfg().on };
       for (const o of db.orders) { if (o.kind !== 'client' || o.status !== 'paid' || o.vendorId || !o.paidAt) continue; const d = new Date(o.paidAt).toLocaleDateString('sv-SE'); if (d.slice(0, 7) !== mo) continue; out.month[0]++; out.month[1] += o.amount; if (o.cycle) out.auto++; if (d === t) { out.today[0]++; out.today[1] += o.amount; } }
       out.month[1] = Math.round(out.month[1] * 100) / 100; out.today[1] = Math.round(out.today[1] * 100) / 100; return out; })() : null,
@@ -2436,7 +2441,7 @@ function tgCode(c) { return `c${c.id}_${crypto.createHmac('sha256', db.secret).u
 function leftWords(left) { return left <= 0 ? 'hoy' : left === 1 ? 'mañana' : `en ${left} días`; }
 /** Rellena una plantilla con los datos de la cuenta (sin la contraseña) */
 /** Plantilla que toca para las cuentas de un vendedor: la suya, si no la de su reseller, si no la del panel */
-const MY_TPL_KEYS = ['created', 'demo', 'renewed', 'expiring', 'rescue', 'quality', 'followup', 'vendor'];
+const MY_TPL_KEYS = ['created', 'demo', 'renewed', 'expiring', 'rescue', 'payinvite', 'tginvite', 'quality', 'followup', 'vendor'];
 const tplLocked = () => db.settings.tplLock === true; // solo si el superadministrador lo activa en Plantillas
 function tplFor(ownerId, key) {
   if (tplLocked()) return db.settings.templates[key] || DEFAULT_TEMPLATES[key] || '';
@@ -2539,11 +2544,13 @@ async function telegramPoll() {
   if (!cfg.token || tgBusy) return;
   tgBusy = true;
   try {
-    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: 0, allowed_updates: ['message'] });
+    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: 0, allowed_updates: ['message', 'callback_query'] });
     if (!ups.length) return;
+    const jobs = []; // respuestas del bot que consultan Emby: se hacen después, sin bloquear el panel
     await lock(async () => {
       for (const u of ups) {
         cfg.offset = u.update_id + 1;
+        if (u.callback_query) { const cq = u.callback_query; jobs.push(() => botCallback(cq)); continue; }
         const msg = u.message;
         if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') continue;
         const chat = msg.chat.id, text = msg.text.trim();
@@ -2553,8 +2560,15 @@ async function telegramPoll() {
         const cmd = ((/^\/([a-z_]+)(?:@\w+)?$/i.exec(text) || [])[1] || '').toLowerCase();
         const mine = db.clients.filter((c) => c.tgChat === chat);
         if (cmd && cmd !== 'stop' && BOT_CMD[cmd] && (cmd !== 'start' || mine.length)) {
-          const r = botAnswer(BOT_CMD[cmd], mine);
-          await tg('sendMessage', { chat_id: chat, text: r.text, disable_web_page_preview: true, ...(r.kb ? { reply_markup: r.kb } : {}) }).catch(() => {});
+          if (botTooFast(chat)) continue;
+          reqWait.delete(chat);
+          jobs.push(() => botReply(chat, BOT_CMD[cmd], mine));
+          continue;
+        }
+        // Texto normal (u orden que no existe) de un cliente enlazado: le enseñamos el menú
+        if (mine.length && cmd !== 'stop' && !/^\/start\b/i.test(text) && !/^[uc]\d+_[0-9a-f]{10}$/i.test(text)) {
+          if (botTooFast(chat)) continue;
+          jobs.push(() => botReply(chat, 'ayuda', mine));
           continue;
         }
         const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
@@ -2586,6 +2600,7 @@ async function telegramPoll() {
       }
       saveDb();
     });
+    for (const j of jobs) { try { await j(); } catch (e) { console.error('Bot:', e.message); } }
   } catch (e) { if (tgLastErr !== e.message) console.error('Telegram:', e.message); tgLastErr = e.message; }
   finally { tgBusy = false; }
 }
@@ -2670,8 +2685,12 @@ async function telegramNotices() {
 }
 /* ---------- Órdenes del bot para los clientes ---------- */
 const BOT_CMD = { start: 'estado', suscripcion: 'estado', subscripcion: 'estado', cuenta: 'estado', micuenta: 'estado', estado: 'estado', dias: 'estado',
-  renovar: 'renovar', pagar: 'renovar', app: 'app', descargar: 'app', calidad: 'calidad', ayuda: 'ayuda', help: 'ayuda', menu: 'ayuda' };
-const BOT_MENU = [['suscripcion', 'Ver cuántos días te quedan'], ['renovar', 'Renovar tu cuenta al momento'], ['app', 'Descargar la app'], ['calidad', 'Ver con la mejor calidad'], ['ayuda', 'Ayuda y contacto'], ['stop', 'Dejar de recibir avisos']];
+  renovar: 'renovar', pagar: 'renovar', app: 'app', descargar: 'app', calidad: 'calidad', ayuda: 'ayuda', help: 'ayuda', menu: 'ayuda',
+  problemas: 'problemas', problema: 'problemas', soporte: 'problemas', servidor: 'servidor', funciona: 'servidor',
+  datos: 'datos', acceso: 'datos', contrasena: 'datos', aparatos: 'aparatos', dispositivos: 'aparatos', invitar: 'invitar', amigo: 'invitar', precios: 'precios', tarifa: 'precios' };
+const BOT_MENU = [['suscripcion', '📋 Cuántos días te quedan'], ['renovar', '💳 Renovar tu cuenta al momento'], ['problemas', '🛠️ Soluciones rápidas a problemas'], ['servidor', '🟢 ¿Funciona el servidor?'],
+  ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis aparatos conectados'], ['precios', '💶 Precios'], ['invitar', '🎁 Invita a un amigo'],
+  ['app', '📲 Descargar la app'], ['calidad', '✨ Ver con la mejor calidad'], ['ayuda', '💬 Ayuda y contacto'], ['stop', '🔕 Dejar de recibir avisos']];
 function tgSetCommands() {
   if (!db.settings.notices.telegram.token) return;
   tg('setMyCommands', { commands: BOT_MENU.map(([command, description]) => ({ command, description })) }).catch(() => {});
@@ -2694,7 +2713,7 @@ function botAnswer(kind, list) {
       return `📋 Tu suscripción${accs.length > 1 ? ' · ' + c.panelName : ''}\n\n👤 Usuario: ${c.embyName}\n📺 Pantallas: ${c.screens || 1}\n📅 Vence el: ${fmtD(c.expires)}\n${when}\n${bar}${c.sub && c.sub.status === 'active' && !c.sub.cancelAt ? '\n🔁 Renovación automática activa: no tienes que hacer nada.' : ''}`;
     });
     const btns = accs.map((c) => payBtn(c, accs.length > 1 ? `💳 Renovar · ${c.panelName}` : '💳 Renovar ahora')).filter(Boolean).map((b) => [b]);
-    return { text: parts.join('\n\n— — —\n\n') + '\n\nOtras opciones: /renovar · /app · /calidad · /ayuda', kb: btns.length ? { inline_keyboard: btns } : null };
+    return { text: parts.join('\n\n— — —\n\n') + '\n\nMás opciones: /renovar · /problemas · /ayuda', kb: btns.length ? { inline_keyboard: btns } : null };
   }
   if (kind === 'renovar') {
     const btns = accs.map((c) => payBtn(c, accs.length > 1 ? `💳 Renovar · ${c.panelName}` : '💳 Renovar ahora')).filter(Boolean).map((b) => [b]);
@@ -2708,8 +2727,131 @@ function botAnswer(kind, list) {
     return { text: `📲 Nuestra app ${ap.name || ''}\n\nPara móviles Android, Fire Stick y TV Box.\n\n📱 En el móvil: pulsa el botón de abajo y luego «Instalar».\n📺 En Fire Stick: abre la app «Downloader» y escribe ${ap.dlCode ? `el código ${ap.dlCode}` : siteBase() + '/app'}.\n\nAl abrirla, entra con tu usuario y contraseña de siempre.`, kb: { inline_keyboard: [[{ text: '⬇️ Descargar la app', url: siteBase() + '/app' }]] } };
   }
   if (kind === 'calidad') return { text: fillText(tplFor(accs[0].ownerId, 'quality'), accs[0]) };
-  return { text: `🤖 ¿En qué te ayudo?\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva tu cuenta al momento\n📲 /app · descarga la app\n📺 /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
+  return { text: `🤖 ¿En qué te ayudo? Toca una opción:\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva al momento\n🛠️ /problemas · soluciones rápidas\n🟢 /servidor · ¿funciona el servidor?\n🔑 /datos · tu usuario y contraseña\n📺 /aparatos · tus aparatos conectados\n💶 /precios · tarifas\n🎁 /invitar · invita a un amigo\n📲 /app · descarga la app\n✨ /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
 }
+/* ---------- Bot: problemas, servidor, pedir, datos, aparatos, precios e invitar ---------- */
+const reqWait = new Map(); // chat -> momento en que pidió /pedir (esperamos el título)
+const botRate = new Map();
+function botTooFast(chat) { const t = Date.now(), l = botRate.get(chat) || 0; botRate.set(chat, t); if (botRate.size > 5000) botRate.clear(); return t - l < 1200; }
+const hEsc = (x) => String(x == null ? '' : x).replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+const PROBS = [
+  ['carga', '🔄 No carga o se queda pensando', '1. Cierra la app del todo y vuelve a abrirla.\n2. Comprueba que tienes internet (abre YouTube, por ejemplo).\n3. Apaga y enciende el router y el aparato.\n4. Escribe /servidor por si estamos en mantenimiento.\n\nSi sigue igual, escríbenos con una foto del error.'],
+  ['cortes', '📶 Se corta o va lento', '1. Pon la calidad al máximo (escribe /calidad): si la app convierte la imagen, se corta.\n2. Con wifi, acerca el aparato al router o usa cable.\n3. Cierra otras apps o descargas que usen internet.\n4. Prueba otra película: si solo falla una, avísanos y la revisamos.'],
+  ['clave', '🔑 Me pide la contraseña', '1. Escribe /datos para ver tu usuario y tu contraseña.\n2. Cuidado con mayúsculas y espacios al escribirla.\n3. Si te dice que no es correcta, escríbenos y te la cambiamos en un momento.'],
+  ['pantallas', '📺 Dice que hay demasiadas pantallas', 'Tu plan permite un número de pantallas a la vez.\n1. Cierra la app en los aparatos que no estés usando.\n2. Escribe /aparatos para ver dónde está abierta y cerrar sesiones.\n3. ¿Necesitas más? Escribe /renovar y elige más pantallas.'],
+  ['falta', '🎬 No encuentro una película o serie', '1. Usa la lupa 🔍 de la app y prueba también con el título original.\n2. Busca también en la sección de películas o series por orden alfabético.'],
+  ['caducada', '⛔ Mi cuenta no funciona', '1. Escribe /suscripcion para ver si ha caducado.\n2. Si ha caducado, renueva con /renovar y vuelve a funcionar al momento.\n3. Si no ha caducado, mira /servidor y /problemas › No carga.'],
+  ['otro', '💬 Otro problema', ''],
+];
+const devKeys = new Map(); // clave corta del botón -> aparato a cerrar
+function botContact() {
+  const sp = db.settings.support || {}, wa = String(sp.whatsapp || '').replace(/\D/g, ''), tgu = String(sp.telegram || '').replace(/^@/, '');
+  return [wa ? `🟢 WhatsApp: https://wa.me/${wa}` : '', /^[A-Za-z0-9_]{3,40}$/.test(tgu) ? `✈️ Telegram: @${tgu}` : '', sp.email ? `✉️ ${sp.email}` : ''].filter(Boolean).join('\n');
+}
+async function botReply(chat, kind, list) {
+  const send = (text, kb, html) => tg('sendMessage', { chat_id: chat, text, disable_web_page_preview: true, ...(html ? { parse_mode: 'HTML' } : {}), ...(kb ? { reply_markup: kb } : {}) });
+  if (['estado', 'renovar', 'app', 'calidad', 'ayuda'].includes(kind) || !list.length) { const r = botAnswer(list.length ? kind : 'estado', list); return send(r.text, r.kb); }
+  const accs = list.slice(0, 5);
+  if (kind === 'problemas') return send('🛠️ ¿Qué te pasa? Toca una opción y te digo cómo arreglarlo:', { inline_keyboard: PROBS.map(([k, t]) => [{ text: t, callback_data: 'pb:' + k }]) });
+  if (kind === 'servidor') {
+    const seen = new Set(), lines = [];
+    for (const c of accs) {
+      const s = db.servers.find((x) => x.id === c.serverId); if (!s || seen.has(s.id)) continue; seen.add(s.id);
+      const h = health.get(s.id);
+      lines.push(!h ? `⚪ Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''}: comprobando…` : h.down ? `🔴 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} tiene un problema ahora mismo.\nYa lo sabemos y lo estamos arreglando. Vuelve a probar en un rato 🙏` : `🟢 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} funciona correctamente.`);
+    }
+    return send((lines.join('\n\n') || '⚪ No he podido comprobarlo ahora.') + '\n\nSi a ti no te va, mira /problemas.');
+  }
+  if (kind === 'pedir') {
+    const today0 = today(), n = db.requests.filter((r) => accs.some((c) => c.id === r.clientId) && r.at.slice(0, 10) === today0).length;
+    if (n >= 5) return send('🙋 Hoy ya nos has pedido 5 títulos. ¡Mañana puedes pedir más! 😊');
+    reqWait.set(chat, Date.now());
+    return send('🙋 ¿Qué película o serie te gustaría ver?\n\nEscríbeme el título (y el año, si lo sabes). Te aviso por aquí cuando esté disponible. 🍿');
+  }
+  if (kind === 'datos') {
+    const parts = accs.map((c) => { const s = db.servers.find((x) => x.id === c.serverId) || {};
+      return `🔑 <b>Tus datos${accs.length > 1 ? ' · ' + hEsc(c.panelName) : ''}</b>\n\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : '<i>pídenosla y te la damos</i>'}${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}`; });
+    return send(parts.join('\n\n') + '\n\n🤫 No compartas tus datos con nadie.', null, true);
+  }
+  if (kind === 'aparatos') {
+    const out = [], kb = [];
+    for (const c of accs) {
+      const s = db.servers.find((x) => x.id === c.serverId);
+      let list2 = [];
+      if (s && c.embyId) { try { list2 = ((await emby(s, 'GET', '/Sessions')) || []).filter((x) => x.UserId === c.embyId); } catch { /* servidor sin respuesta */ } }
+      const devs = new Map(); for (const x of list2) if (x.DeviceId && !devs.has(x.DeviceId)) devs.set(x.DeviceId, x);
+      out.push(`📺 Aparatos conectados${accs.length > 1 ? ' · ' + c.panelName : ''}: ${devs.size}${c.screens ? ` (tu plan: ${c.screens} a la vez)` : ''}\n` + ([...devs.values()].map((x) => `• ${x.DeviceName || 'Aparato'} — ${x.Client || ''}${x.NowPlayingItem ? ' ▶️ viendo' : ''}`).join('\n') || '• Ninguno ahora mismo'));
+      for (const x of [...devs.values()].slice(0, 6)) { const k = crypto.randomBytes(5).toString('hex'); devKeys.set(k, { chat, clientId: c.id, deviceId: x.DeviceId, name: x.DeviceName || 'Aparato', at: Date.now() }); kb.push([{ text: `❌ Cerrar sesión en ${String(x.DeviceName || 'Aparato').slice(0, 30)}`, callback_data: 'dv:' + k }]); }
+    }
+    if (devKeys.size > 3000) for (const [k, v] of devKeys) if (Date.now() - v.at > 3600000) devKeys.delete(k);
+    return send(out.join('\n\n') + (kb.length ? '\n\n¿No reconoces alguno? Ciérralo con su botón 👇' : ''), kb.length ? { inline_keyboard: kb } : null);
+  }
+  if (kind === 'precios') {
+    const c = accs[0], ctx = cpCtx(c);
+    const pr = (ctx && ctx.cfg.prices) || {}, cur = (db.settings.currency || 'EUR').toUpperCase(), money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur });
+    const rows = [1, 3, 6, 12].map((m) => { const xs = [1, 2, 3, 4].filter((sc) => Number(pr[`${m}-${sc}`]) >= 0.5).map((sc) => `${sc} 📺 ${money(Number(pr[`${m}-${sc}`]))}`); return xs.length ? `${m === 12 ? '🗓️ 1 año' : m === 1 ? '📅 1 mes' : `⏳ ${m} meses`}\n   ${xs.join(' · ')}` : ''; }).filter(Boolean);
+    if (!rows.length) return send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
+    const btn = cpEligible(c) && siteBase() ? { inline_keyboard: [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] } : null;
+    return send(`💶 Nuestras tarifas\n\n${rows.join('\n\n')}\n\n📺 = pantallas a la vez. Cuanto más tiempo, más ahorras 😉`, btn);
+  }
+  if (kind === 'invitar') {
+    const days = Number((db.settings.referral || {}).days) || 0, c = accs.find((x) => !x.demo) || accs[0];
+    if (!days) return send(`🎁 ¿Conoces a alguien que quiera el servicio? Dile que nos escriba:${botContact() ? '\n\n' + botContact() : ''}`);
+    if (!c.refCode) { await lock(async () => { if (!c.refCode) { let k; do { k = crypto.randomBytes(3).toString('hex').toUpperCase(); } while (db.clients.some((x) => x.refCode === k)); c.refCode = k; saveDb(); } }); }
+    const share = `🎬 Te recomiendo este servicio: películas y series en 4K, en todos tus aparatos.\nAl contratar, di que vas de mi parte con el código ${c.refCode} 😉${botContact() ? '\n\n' + botContact() : ''}`;
+    return send(`🎁 Invita a un amigo y gana ${days} ${days === 1 ? 'día' : 'días'} gratis\n\nTu código: ${c.refCode}\n\nCuando un amigo contrate con tu código, se te suman ${days} ${days === 1 ? 'día' : 'días'} a tu cuenta automáticamente. ¡Sin límite de amigos! 🙌`, { inline_keyboard: [[{ text: '📤 Enviar a un amigo', url: `https://t.me/share/url?url=${encodeURIComponent(share)}` }]] });
+  }
+  return send(botAnswer('ayuda', list).text);
+}
+async function botRequest(chat, list, text) {
+  const title = String(text).replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (title.length < 2) return tg('sendMessage', { chat_id: chat, text: 'Escríbeme el título, por favor 🙂 (o /pedir para empezar de nuevo)' });
+  const c = list[0];
+  await lock(async () => {
+    db.requests.unshift({ id: crypto.randomBytes(5).toString('hex'), clientId: c.id, name: c.panelName, emby: c.embyName, ownerId: c.ownerId, title, at: new Date().toISOString(), status: 'pending' });
+    db.requests = db.requests.slice(0, 1000);
+    addLog('aviso', c, `Ha pedido por el bot: «${title}»`, null);
+    saveDb();
+  });
+  const o = db.users.find((u) => u.id === c.ownerId), msg = `🙋 Petición de ${c.panelName} (@${c.embyName}):\n«${title}»\n\nLa tienes en el panel, en Clientes › Peticiones.`;
+  if (o && (o.role === 'reseller' || o.role === 'sub')) notifyUser(o, msg); else notifyStaff('payments', msg);
+  return tg('sendMessage', { chat_id: chat, text: `✅ ¡Apuntado! Hemos recibido tu petición:\n«${title}»\n\nTe avisaré por aquí cuando esté disponible. 🍿` });
+}
+async function botCallback(cq) {
+  const chat = cq.message && cq.message.chat && cq.message.chat.id, data = String(cq.data || '');
+  await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
+  if (!chat) return;
+  if (data.startsWith('pb:')) {
+    const p = PROBS.find(([k]) => k === data.slice(3)); if (!p) return;
+    const body = p[0] === 'otro' ? `Cuéntanos qué te pasa y te ayudamos:${botContact() ? '\n\n' + botContact() : '\n\nEscribe a tu proveedor.'}` : p[2];
+    return tg('sendMessage', { chat_id: chat, text: `${p[1]}\n\n${body}`, disable_web_page_preview: true });
+  }
+  if (data.startsWith('dv:')) {
+    const d = devKeys.get(data.slice(3));
+    if (!d || d.chat !== chat) return tg('sendMessage', { chat_id: chat, text: 'Ese botón ha caducado. Escribe /aparatos para verlos de nuevo.' });
+    const c = db.clients.find((x) => x.id === d.clientId && x.tgChat === chat), s = c && db.servers.find((x) => x.id === c.serverId);
+    if (!c || !s) return;
+    devKeys.delete(data.slice(3));
+    try { await emby(s, 'DELETE', `/Devices?Id=${encodeURIComponent(d.deviceId)}`); }
+    catch { return tg('sendMessage', { chat_id: chat, text: 'No he podido cerrarla ahora. Inténtalo en un rato o escríbenos.' }); }
+    await lock(async () => { addLog('aviso', c, `El cliente cerró desde el bot la sesión en «${d.name}»`, null); saveDb(); });
+    return tg('sendMessage', { chat_id: chat, text: `✅ Sesión cerrada en «${d.name}».\n\nSi no fuiste tú quien la abrió, escríbenos y te cambiamos la contraseña. 🔒` });
+  }
+}
+// Peticiones en el panel (cada uno ve las de sus clientes)
+route('GET', '/api/requests', '*', ({ me }) => { const vis = visibleOwners(me); return { list: db.requests.filter((r) => !vis || vis.has(r.ownerId)).slice(0, 300).map((r) => ({ ...r, tg: !!(db.clients.find((c) => c.id === r.clientId) || {}).tgChat })) }; });
+route('POST', '/api/requests/:id', '*', ({ me, params, body }) => lock(async () => {
+  const vis = visibleOwners(me), r = db.requests.find((x) => x.id === params.id && (!vis || vis.has(x.ownerId)));
+  if (!r) throw new HttpError(404, 'Esa petición ya no existe.');
+  if (body.status === 'delete') { db.requests = db.requests.filter((x) => x !== r); saveDb(); return { ok: true }; }
+  if (!['done', 'no', 'pending'].includes(body.status)) throw new HttpError(400, 'Estado no válido.');
+  r.status = body.status; r.doneAt = new Date().toISOString();
+  const c = db.clients.find((x) => x.id === r.clientId);
+  if (c && c.tgChat && body.status !== 'pending') tg('sendMessage', { chat_id: c.tgChat, text: body.status === 'done' ? `🎉 ¡Buenas noticias, ${c.panelName}!\n\nYa tienes disponible «${r.title}» 🍿\nBúscala en la app con la lupa 🔍. ¡Que la disfrutes!` : `🙏 Hola ${c.panelName}, hemos buscado «${r.title}» pero ahora mismo no está disponible.\n\nLo seguimos teniendo en cuenta. ¡Gracias por pedirla!` }).catch(() => {});
+  addLog('aviso', c || null, `Petición «${r.title}»: ${body.status === 'done' ? 'ya disponible (avisado)' : body.status === 'no' ? 'no disponible (avisado)' : 'pendiente otra vez'}`, me);
+  saveDb();
+  return { ok: true };
+}));
 /** Fin de una demo: si el cliente tiene el bot enlazado y hay pago online, se le invita a activarla con un botón */
 function demoEndTg(c) {
   if (!c.tgChat || !db.settings.notices.telegram.on || !db.settings.notices.telegram.token) return;
@@ -2740,6 +2882,7 @@ route('PUT', '/api/notices', SUPER, ({ me, body }) => lock(async () => {
     if (body.chat.d0 !== undefined) cur.chat.d0 = !!body.chat.d0;
     if (body.chat.after !== undefined) cur.chat.after = int(body.chat.after, 0, 30, cur.chat.after);
   }
+  if (body.referral && typeof body.referral === 'object') db.settings.referral.days = int(body.referral.days, 0, 90, db.settings.referral.days || 0);
   if (body.telegram && typeof body.telegram === 'object') {
     const token = str(body.telegram.token, 100);
     if (token && token !== cur.telegram.token) {
@@ -3219,6 +3362,19 @@ route('POST', '/api/clients', '*', ({ me, body }) => lock(async () => {
   spend(me, cost, `Alta de ${c.embyName} (${what})`);
   if (cost > 0) c.charges = [{ ts: new Date().toISOString(), userId: me.id, credits: cost, from: c.createdAt, to: c.expires, kind: 'alta' }];
   addLog('alta', c, `Alta: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
+  // «Invita a un amigo»: si viene con el código de otro cliente, a ese cliente se le suman los días de regalo
+  const refCode = str(body.ref, 12).toUpperCase(), refDays = Number((db.settings.referral || {}).days) || 0;
+  if (refCode && refDays > 0) {
+    const r = db.clients.find((x) => x.refCode === refCode && x.id !== c.id);
+    if (r) {
+      c.refBy = r.id;
+      if (!r.demo && r.status === 'active' && diffDays(r.expires, today()) >= 0) {
+        r.expires = addDays(r.expires, refDays);
+        addLog('edicion', r, `🎁 +${refDays} días de regalo: ${c.panelName} se ha unido con su código`, me);
+        if (r.tgChat) tg('sendMessage', { chat_id: r.tgChat, text: `🎁 ¡Gracias por recomendarnos, ${r.panelName}!\n\nTu amigo se ha unido con tu código y te regalamos ${refDays} ${refDays === 1 ? 'día' : 'días'}.\n📅 Tu cuenta vence ahora el ${r.expires.split('-').reverse().join('/')}.` }).catch(() => {});
+      } else addLog('edicion', r, `${c.panelName} se ha unido con su código (no se suman días: su cuenta no está activa)`, me);
+    }
+  }
   libCheckLater(c);
   saveDb();
   return { ok: true, id: c.id };

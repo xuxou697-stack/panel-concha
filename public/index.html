@@ -1589,6 +1589,10 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .uibar span{min-width:0}.uibar button{border:0;border-radius:12px;padding:8px 14px;font:inherit;font-weight:800;color:#4c1d95;background:#fff;cursor:pointer;white-space:nowrap}
 @media (min-width:861px){.uibar{bottom:24px}}
 /* App de clientes */
+.rq{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}.rq:first-of-type{border-top:0}
+.rq-t{flex:1;min-width:200px}.rq-t b{display:block;font-size:15px}.rq-t small{color:var(--muted);font-size:12.5px}.rq-a{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.rq-st{font-size:12.5px;color:var(--muted)}
+.rq.pending .rq-t b{color:#fbbf24}
+
 .cpb{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;margin:0 0 16px;padding:16px;border-radius:20px;border:1px solid color-mix(in srgb,#8b5cf6 40%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#6366f1 16%,var(--surface)),color-mix(in srgb,#ec4899 12%,var(--surface)))}
 .cpb-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:10px}.cpb-h b{font-size:15.5px}.cpb-h small{color:var(--muted);font-size:12.5px}
 .cpb-ks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.cpb-k{padding:10px;border-radius:14px;background:color-mix(in srgb,var(--bg) 55%,transparent)}.cpb-k span{font-size:16px}.cpb-k b{display:block;font-size:17px;overflow-wrap:anywhere}.cpb-k small{display:block;color:var(--muted);font-size:11.5px}
@@ -2837,7 +2841,7 @@ function render() {
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() === 'jellyfin') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -2853,6 +2857,7 @@ function render() {
   if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
   if (S.view === 'srvficha') sfAfterRender();
   if (S.view === 'cficha' && !S.cf.hist && !S.cf.busy) loadCf();
+  if (S.view === 'peticiones' && !S.rqBusy && (!S.rq || Date.now() - S.rqAt > 20000)) loadRq();
   if (S.view === 'cobrocli' && !S.cpBusy && (!S.cp || Date.now() - S.cpAt > 30000)) loadCp();
   instBanner(); newsDots();
   if (S.view === 'avisotv') { tvPreview(); const f = $('#tvForm'); if (f) { f.oninput = tvPreview; f.onchange = (e) => { if (e.target.name === 'use') { S.tv.own = e.target.value === 'mine'; f.querySelector('.tv-form').disabled = !S.tv.own; } }; } }
@@ -3732,6 +3737,7 @@ function vNuevo(demo) {
       <label class="f">WhatsApp<input name="whatsapp" maxlength="120" autocomplete="off" inputmode="tel" placeholder="+34 600 000 000"></label>
       <label class="f">Signal<input name="signal" maxlength="120" autocomplete="off" placeholder="@usuario"></label>
     </div>
+    ${!demo && S.d.settings.referral && S.d.settings.referral.days ? `<label class="f">Código de invitación <span class="muted small">(opcional: si viene de parte de otro cliente, ese cliente gana ${plural(S.d.settings.referral.days, 'día', 'días')})</span><input name="ref" maxlength="12" autocomplete="off" placeholder="Ej.: A1B2C3" style="text-transform:uppercase"></label>` : ''}
     <label class="f">Notas<textarea name="note" rows="2" maxlength="300" placeholder="Notas adicionales…"></textarea></label>
     <div class="dfoot"><span class="bzsum" id="nwSum"></span><button type="button" class="btn ghost" data-view="cuentas" data-filter="${demo ? 'demo' : 'all'}">Cancelar</button><button type="submit" class="btn primary">${demo ? 'Crear demo ✨' : 'Crear cliente ✨'}</button></div>
   </form>`;
@@ -3758,9 +3764,9 @@ const tgLink = (c) => { const b = S.d.settings.notices.telegram.bot; return b ? 
 /** Texto con el enlace personal de Telegram, para añadirlo al mensaje que se le da al cliente */
 const tgBlock = (c) => { const l = tgLink(c); return l ? `🔔 Activa tus avisos gratis por Telegram\n✅ Te avisamos antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n👉 Abre este enlace y pulsa «INICIAR»:\n${l}` : ''; };
 /** Invitación completa al bot (para mandarla sola por WhatsApp o Telegram) */
-const tgInvite = (c) => { const l = tgLink(c); return l ? `🔔 ¡Activa tus avisos gratis!\n\nHola ${c.panelName} 👋 Para que nunca te quedes sin servicio, te avisamos por Telegram:\n\n✅ Unos días antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n📢 Novedades y avisos importantes del servidor\n📋 Y cuando quieras, escribe /suscripcion para ver cuántos días te quedan\n\n👉 Solo tienes que abrir este enlace y pulsar «INICIAR»:\n${l}\n\n🔒 Es privado: solo recibes avisos de tu cuenta y los puedes quitar cuando quieras.` : ''; };
-/** Mensaje con el enlace de pago */
-const payInvite = (c) => `💳 Renueva tu cuenta en 1 minuto\n\nHola ${c.panelName} 👋 Ya puedes renovar tú mismo, sin esperar a nadie:\n\n1️⃣ Abre tu enlace personal:\n${c.payLink}\n2️⃣ Elige pantallas y tiempo (cuanto más tiempo, más ahorras 😉)\n3️⃣ Paga con tarjeta, Apple Pay o Google Pay\n\n✅ Tu cuenta se renueva sola al momento y te llega la confirmación.\n🔒 Pago seguro a través de Stripe.`;
+const tgInvite = (c) => (tgLink(c) ? fillTpl('tginvite', c) : '');
+/** Mensaje con el enlace de pago (se cambia en Plantillas de mensajes › «Enlace de pago») */
+const payInvite = (c) => fillTpl('payinvite', c);
 /** Botones para enviar un texto: copiar, WhatsApp y Telegram */
 function shareBtns(text, wa) {
   return `<div class="qacts" style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn primary" data-act="pl-copy">📋 Copiar</button>
@@ -5729,6 +5735,8 @@ function ajSections() {
       <label class="check"><input type="checkbox" name="d1"${g.notices.chat.d1 !== false ? ' checked' : ''}> Recordar también 1 día antes</label>
       <label class="check"><input type="checkbox" name="d0"${g.notices.chat.d0 !== false ? ' checked' : ''}> Recordar también el mismo día que caduca</label>
       <label class="f" style="max-width:300px;margin-top:8px">Rescate: días después de caducar (0 = no)<input type="number" name="after" min="0" max="30" value="${g.notices.chat.after != null ? g.notices.chat.after : 3}"></label>
+      <label class="f" style="max-width:300px;margin-top:8px">🎁 Invita a un amigo: días de regalo (0 = apagado)<input type="number" name="refDays" min="0" max="90" value="${(g.referral && g.referral.days) || 0}"></label>
+      <p class="muted small" style="margin:-6px 0 12px">Cada cliente tiene su código en el bot (/invitar). Al crear un cliente nuevo, escribe el código de quien le invitó y a ese cliente se le suman los días solos.</p>
       <p class="muted small" style="margin:-6px 0 12px">El rescate es un «te echamos de menos» con el botón para volver. Todos los avisos llevan el botón «💳 Renovar ahora» si tienes activado Cobro a clientes.</p>
       <label class="check"><input type="checkbox" name="tgOn"${g.notices.telegram.on ? ' checked' : ''}> Enviar el aviso solo por Telegram a los clientes enlazados</label>
       <label class="f" style="margin-top:10px">Token del bot de Telegram${g.notices.telegram.hasToken ? ` (guardado${g.notices.telegram.bot ? ', bot @' + esc(g.notices.telegram.bot) : ''}; vacío = no cambiarlo)` : ''}<input name="tgToken" type="password" autocomplete="off" placeholder="123456789:ABC-DEF…"></label>
@@ -6453,6 +6461,20 @@ function cpBoxHtml(d) {
     <div class="cpb-ks">${k('☀️', money(x.today[1]), `hoy · ${plural(x.today[0], 'pago', 'pagos')}`)}${k('📅', money(x.month[1]), `este mes · ${plural(x.month[0], 'pago', 'pagos')}`)}${k('🔁', x.subs, x.subs === 1 ? 'renovación automática' : 'renovaciones automáticas')}</div></${isSuper() ? 'button' : 'div'}>`;
 }
 
+/* ---------- Peticiones: películas y series que piden los clientes por el bot ---------- */
+async function loadRq() { S.rqBusy = true; try { S.rq = await api('GET', '/api/requests'); S.rqAt = Date.now(); } catch (e) { S.rq = { error: e.message, list: [] }; } S.rqBusy = false; if (S.view === 'peticiones') render(); }
+function vPeticiones() {
+  const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#f59e0b 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#3b1d0a,#4c1d95)"><span class="ap-ic">🙋</span><div><h1>Peticiones</h1><p>Lo que tus clientes piden por el bot con /pedir. Cuando lo subas, márcalo y el bot les avisa solo.</p></div></section>`;
+  const d = S.rq;
+  if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  const pend = d.list.filter((r) => r.status === 'pending'), done = d.list.filter((r) => r.status !== 'pending');
+  const card = (r) => `<div class="rq ${r.status}"><div class="rq-t"><b>«${esc(r.title)}»</b><small>${esc(r.name)} · @${esc(r.emby)}${S.d.users.length > 1 && r.ownerId !== me().id ? ' · de ' + esc(userName(r.ownerId)) : ''} · ${fmtTs(r.at, true)}${r.tg ? '' : ' · sin Telegram'}</small></div>
+    <div class="rq-a">${r.status === 'pending' ? `<button type="button" class="btn sm primary" data-act="rq-done" data-id="${r.id}">✅ Ya está</button><button type="button" class="btn sm" data-act="rq-no" data-id="${r.id}">🙏 No disponible</button>` : `<span class="rq-st">${r.status === 'done' ? '✅ Disponible · avisado' : '🙏 No disponible · avisado'}</span>`}<button type="button" class="btn sm ghost" data-act="rq-del" data-id="${r.id}" title="Borrar">🗑️</button></div></div>`;
+  return hero + `<div class="ap-grid"><section class="ap-card"><h2>⏳ Pendientes (${pend.length})</h2>${pend.length ? pend.map(card).join('') : '<p class="muted small">No hay peticiones pendientes. 🎉</p>'}</section>
+    ${done.length ? `<section class="ap-card"><h2>📁 Ya contestadas</h2>${done.slice(0, 60).map(card).join('')}</section>` : ''}</div>`;
+}
+async function rqSet(id, status) { try { await api('POST', `/api/requests/${id}`, { status }); toast(status === 'done' ? 'Marcada como disponible: el cliente ya está avisado 🍿' : status === 'no' ? 'Cliente avisado' : 'Borrada'); S.rq = null; await reload(); loadRq(); } catch (e) { toast(e.message, true); } }
+
 /* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
 async function loadCp() { S.cpBusy = true; try { S.cp = await api('GET', isSuper() ? '/api/client-pay' : '/api/my-client-pay'); S.cpAt = Date.now(); } catch (e) { S.cp = { error: e.message }; } S.cpBusy = false; if (S.view === 'cobrocli') render(); }
 function vCobroCli() {
@@ -6626,6 +6648,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 176, d: '2026-10-27', items: ['🤖 El bot ahora ayuda mucho más: /problemas con soluciones, /servidor, /datos, /aparatos, /precios e /invitar', '🎁 Invita a un amigo: días de regalo para quien recomienda'] },
+  { v: 175, d: '2026-10-27', items: ['✏️ Los mensajes «Enlace de pago» e «Invitación a Telegram» se pueden cambiar en Plantillas de mensajes'] },
   { v: 174, d: '2026-10-27', items: ['🤖 El bot responde a tus clientes: /suscripcion (cuántos días le quedan), /renovar, /app, /calidad y /ayuda, con un menú en Telegram'] },
   { v: 173, d: '2026-10-27', items: ['🛠️ Arreglado el aviso «Error en el panel… reading value» al editar o renovar después de abrir Renovar'] },
   { v: 172, d: '2026-10-27', items: ['🔔 Avisos escalonados por Telegram: X días antes, 1 día antes, el mismo día y un rescate a los 3 días de caducar', '🏠 El enlace de cada cliente es su página «Mi cuenta»: fecha, pantallas, renovar, app, guía y soporte', '🚀 Al terminar una demo, el bot invita a activarla con un botón de pago', '📊 Cobros online en el Resumen', '🔁 Renovación automática opcional para tus clientes'] },
@@ -8287,7 +8311,7 @@ function dMove(c) {
 const TPL = [['created', 'Cuenta creada'], ['demo', 'Demo creada'], ['renewed', 'Cuenta renovada'], ['expiring', 'Aviso de vencimiento'], ['quality', 'Guía de calidad']];
 /** Texto que usa este usuario: el suyo, si no el de su reseller, si no el del panel */
 const tplText = (k) => (S.d.myTemplates || {})[k] || (S.d.parentTemplates || {})[k] || (S.d.settings.templates || {})[k] || '';
-const TPL_ALL = [...TPL, ['rescue', 'Rescate (cuenta caducada hace unos días)'], ['followup', 'Seguimiento de una demo que terminó'], ['vendor', 'Acceso al panel para un vendedor']];
+const TPL_ALL = [...TPL, ['rescue', 'Rescate (cuenta caducada hace unos días)'], ['payinvite', 'Enlace de pago (usa {enlace_pago})'], ['tginvite', 'Invitación a los avisos de Telegram (usa {enlace_telegram})'], ['followup', 'Seguimiento de una demo que terminó'], ['vendor', 'Acceso al panel para un vendedor']];
 /** Direccion del panel que se da a los vendedores: la de Ajustes o, si no hay, la que se esta usando ahora */
 function panelUrl() {
   const set = (S.d.settings.brand || {}).url;
@@ -8318,7 +8342,7 @@ function fillTpl(key, c, password) {
     nombre: c.panelName, usuario: c.embyName, 'contraseña': password || c.password || 'la que ya tienes',
     servidor: srv.name || '', direccion: srv.publicUrl || '(dirección pendiente)',
     pantallas: c.screens ? String(c.screens) : 'sin límite', contenido: c.quality ? Q[c.quality] : 'el de siempre',
-    cuando: (() => { const l = diff(c.expires, S.d.today); return l <= 0 ? 'hoy' : l === 1 ? 'mañana' : `en ${l} días`; })(), dias: String(Math.max(0, diff(c.expires, S.d.today))), enlace_telegram: tgLink(c),
+    cuando: (() => { const l = diff(c.expires, S.d.today); return l <= 0 ? 'hoy' : l === 1 ? 'mañana' : `en ${l} días`; })(), dias: String(Math.max(0, diff(c.expires, S.d.today))), enlace_telegram: tgLink(c), enlace_pago: c.payLink || '',
     vence: c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires),
   };
   const alias = { contrasena: 'contraseña', 'dirección': 'direccion', fecha: 'vence', caducidad: 'vence', vencimiento: 'vence', cliente: 'nombre', user: 'usuario' };
@@ -9029,6 +9053,9 @@ document.addEventListener('click', (e) => {
     case 'app-free': if (c) { const free = !c.appFree; dConfirm(free ? 'Permitir cualquier app' : 'Solo la app oficial', free ? `${esc(c.panelName)} podrá ver con cualquier app aunque «Solo mi app» esté activado.` : `${esc(c.panelName)} tendrá que usar ${esc(appName())}.`, 'Cambiar', () => api('POST', `/api/clients/${c.id}/app-free`, { free }), 'Cambiado'); } break;
     case 'nav-back': if (history.state && history.state.k && history.length > 1) history.back(); else { goHome(); render(); } break;
     case 'cp-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/client-pay', { on }).then(() => { toast(on ? 'Cobro a clientes activado ✅' : 'Cobro a clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
+    case 'rq-done': rqSet(el.dataset.id, 'done'); break;
+    case 'rq-no': rqSet(el.dataset.id, 'no'); break;
+    case 'rq-del': rqSet(el.dataset.id, 'delete'); break;
     case 'cp-subs': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.subs); api('PUT', '/api/client-pay', { subs: on }).then(() => { toast(on ? 'Renovación automática ofrecida 🔁' : 'Renovación automática ya no se ofrece'); S.cp = null; loadCp(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cp-vend': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.vendors); api('PUT', '/api/client-pay', { vendors: on }).then(() => { toast(on ? 'Activado para tus vendedores 👥' : 'Apagado para tus vendedores'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cpv-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/my-client-pay', { on }).then(() => { toast(on ? 'Cobro a tus clientes activado ✅' : 'Cobro a tus clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
@@ -9303,7 +9330,7 @@ document.addEventListener('submit', (e) => {
       email: fd.get('email'), telegram: fd.get('telegram'), whatsapp: fd.get('whatsapp'), signal: fd.get('signal'), note: fd.get('note'), quality: fd.get('quality'),
     };
     (demo ? api('POST', '/api/demos', { ...common, hours: +fd.get('hours') })
-      : api('POST', '/api/clients', { ...common, months: +fd.get('months'), screens: +fd.get('screens'), paid: fd.get('paid') === '1', ...(fd.get('ownerId') ? { ownerId: +fd.get('ownerId') } : {}) }))
+      : api('POST', '/api/clients', { ...common, months: +fd.get('months'), screens: +fd.get('screens'), paid: fd.get('paid') === '1', ref: fd.get('ref') || '', ...(fd.get('ownerId') ? { ownerId: +fd.get('ownerId') } : {}) }))
       .then(async (r) => {
         S.view = 'cuentas'; S.filter = demo ? 'demo' : 'all'; S.q = ''; S.fOwner = 0; S.fServer = 0;
         await reload(); window.scrollTo(0, 0); toast(demo ? 'Demo creada en Emby' : 'Cliente creado en Emby');
@@ -9355,7 +9382,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'noticeForm') {
     e.preventDefault();
     const fd = new FormData(e.target);
-    act(() => api('PUT', '/api/notices', { screen: { on: fd.get('screenOn') === 'on', days: +fd.get('screenDays'), message: fd.get('screenMsg') }, chat: { days: +fd.get('chatDays'), d1: fd.get('d1') === 'on', d0: fd.get('d0') === 'on', after: +(fd.get('after') || 0) }, telegram: { on: fd.get('tgOn') === 'on', token: fd.get('tgToken') } }), 'Avisos guardados');
+    act(() => api('PUT', '/api/notices', { screen: { on: fd.get('screenOn') === 'on', days: +fd.get('screenDays'), message: fd.get('screenMsg') }, chat: { days: +fd.get('chatDays'), d1: fd.get('d1') === 'on', d0: fd.get('d0') === 'on', after: +(fd.get('after') || 0) }, referral: { days: +(fd.get('refDays') || 0) }, telegram: { on: fd.get('tgOn') === 'on', token: fd.get('tgToken') } }), 'Avisos guardados');
   }
   if (e.target.id === 'brandForm') {
     e.preventDefault();
