@@ -1589,6 +1589,10 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .uibar span{min-width:0}.uibar button{border:0;border-radius:12px;padding:8px 14px;font:inherit;font-weight:800;color:#4c1d95;background:#fff;cursor:pointer;white-space:nowrap}
 @media (min-width:861px){.uibar{bottom:24px}}
 /* App de clientes */
+.cp-tbl{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:6px;align-items:center}
+.cp-h{font-size:12px;font-weight:800;color:var(--muted);text-align:center}.cp-m{font-size:13px;font-weight:800;padding-right:4px;white-space:nowrap}
+.cp-c{position:relative;display:block}.cp-c input{width:100%;height:40px;border-radius:10px;padding:0 20px 0 8px;text-align:right;font-weight:700}.cp-c span{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted)}
+
 .ap-pub{border-style:dashed}.ap-pub.on{border-style:solid;border-color:color-mix(in srgb,#22c55e 55%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#22c55e 10%,transparent),color-mix(in srgb,#0ea5e9 8%,transparent))}
 .ap-pubrow{display:flex;align-items:center;gap:14px}.ap-pubrow>div{flex:1;min-width:0}.ap-pubrow b{display:block;font-size:16px}.ap-pubrow small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .ap-big{flex:none;position:relative;width:64px;height:36px;border-radius:99px;border:1px solid var(--line);background:var(--raised);cursor:pointer;padding:0}
@@ -2337,7 +2341,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'renew-same': 'bolt', renew: 'clock', 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'm-paylink': 'wallet', 'renew-same': 'bolt', renew: 'clock', 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-pkg': 'box', 'bulk-scr': 'screen', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -2444,6 +2448,7 @@ function navGroups() {
     ...(isSuper() || appHas() ? [{ v: 'appcli', t: 'App de clientes', i: 'screen' }] : []),
     { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
     ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
+    ...(isSuper() || (['reseller', 'sub'].includes(me().role) && S.d.settings.clientPay && S.d.settings.clientPay.vendors) ? [{ v: 'cobrocli', t: 'Cobro a clientes', i: 'wallet' }] : []),
     ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
     ...(staff() && !noCli() && !me().useCredits ? [{ v: 'importar', t: 'Importar', i: 'download' }] : []),
     ...(staff() && canDo('reports') ? [{ v: 'logs', t: 'Logs de actividad', i: 'signal' }] : []),
@@ -2828,7 +2833,7 @@ function render() {
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() === 'jellyfin') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -2844,6 +2849,7 @@ function render() {
   if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
   if (S.view === 'srvficha') sfAfterRender();
   if (S.view === 'cficha' && !S.cf.hist && !S.cf.busy) loadCf();
+  if (S.view === 'cobrocli' && !S.cpBusy && (!S.cp || Date.now() - S.cpAt > 30000)) loadCp();
   instBanner(); newsDots();
   if (S.view === 'avisotv') { tvPreview(); const f = $('#tvForm'); if (f) { f.oninput = tvPreview; f.onchange = (e) => { if (e.target.name === 'use') { S.tv.own = e.target.value === 'mine'; f.querySelector('.tv-form').disabled = !S.tv.own; } }; } }
   if (S.view === 'ingresos' && !S.ing && !S.ingBusy) loadIng();
@@ -6405,6 +6411,74 @@ async function dConn(c) {
   showDlg(`Conexiones de ${c.panelName}`, body);
 }
 
+/* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
+async function loadCp() { S.cpBusy = true; try { S.cp = await api('GET', isSuper() ? '/api/client-pay' : '/api/my-client-pay'); S.cpAt = Date.now(); } catch (e) { S.cp = { error: e.message }; } S.cpBusy = false; if (S.view === 'cobrocli') render(); }
+function vCobroCli() {
+  const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#6366f1 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#3b0764)"><span class="ap-ic">💳</span><div><h1>Cobro a clientes</h1><p>Tus clientes pagan con tarjeta desde su enlace y su cuenta se renueva sola, sin que tengas que hacer nada.</p></div></section>`;
+  if (!isSuper()) return vCobroVend(hero);
+  const d = S.cp;
+  if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
+  const c = d.cfg, pr = c.prices || {}, cur = S.d.settings.currency || 'EUR';
+  const money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
+  const warn = !d.stripe.on ? `<div class="ap-card" style="border-color:#f59e0b"><b>⚠️ Primero activa Stripe</b><p class="muted small" style="margin:4px 0 8px">El cobro usa tu cuenta de Stripe de Ajustes › Pagos online.</p><button type="button" class="btn" data-view="pagos">Ir a Pagos online</button></div>`
+    : !d.stripe.wh ? `<div class="ap-card" style="border-color:#f59e0b"><b>💡 Recomendado: el webhook de Stripe</b><p class="muted small" style="margin:4px 0 0">Sin él también funciona (se comprueba cuando el cliente vuelve de pagar), pero con el webhook la renovación es segura aunque el cliente cierre la página. Se pone en Ajustes › Pagos online.</p></div>` : '';
+  const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a clientes activado' : '⏸️ Cobro a clientes apagado'}</b><small>${c.on ? 'Los avisos de caducidad por Telegram llevan el botón «💳 Pagar y renovar».' : 'Prepara los precios y actívalo cuando quieras.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cp-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
+  const table = cpTable(pr, c.desc, 'Son tus precios. Tus resellers y subresellers, si se lo activas, ponen los suyos aparte.');
+  const vend = `<section class="ap-card ap-pub${c.vendors ? ' on' : ''}"><div class="ap-pubrow"><div><b>👥 Para tus resellers y subresellers: ${c.vendors ? 'activado' : 'apagado'}</b><small>${c.vendors ? 'Les sale «Cobro a clientes» en Ajustes: cada uno pone sus precios y conecta su propio Stripe (el dinero le llega a él y la renovación le descuenta sus créditos).' : 'Mientras esté apagado no lo ven. Actívalo cuando lo tengas preparado.'}</small></div><button type="button" class="ap-big${c.vendors ? ' on' : ''}" data-act="cp-vend" aria-pressed="${!!c.vendors}"><i></i></button></div></section>`;
+  const how = `<section class="ap-card"><h2>🧭 Cómo funciona</h2><div class="ap-steps">
+    <p><b>1.</b> Cuando a un cliente le quedan los días que tengas en «Avisos de vencimiento», el bot le manda el aviso con el botón <b>💳 Pagar y renovar</b>.</p>
+    <p><b>2.</b> El botón abre <b>su página de pago</b> en tu panel, con su nombre, su fecha y los precios de <b>sus pantallas</b>.</p>
+    <p><b>3.</b> Paga con tarjeta, Apple Pay o Google Pay. Al confirmarse, <b>su cuenta se renueva sola</b> y le llega «✅ Pago recibido» por Telegram.</p>
+    <p><b>4.</b> A ti te llega el aviso del cobro y queda apuntado en Movimientos.</p></div>
+    <p class="muted small">Solo para <b>tus clientes</b> (y los de tus administradores). Los de resellers y subresellers no, porque el dinero te llegaría a ti. También puedes copiar el enlace de cualquier cliente desde su menú ⋯ › «Enlace de pago», o añadirlo al copiar su mensaje.</p></section>`;
+  const st = { paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'] };
+  const list = `<section class="ap-card"><h2>🧾 Últimos pagos de clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${(st[o.status] || ['•'])[0]} ${esc(o.user)}</b><span>${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}${o.after ? ' · vence ' + fmt(o.after) : ''}</span><em style="color:${o.status === 'paid' ? '#16a34a' : 'var(--muted)'}">${(st[o.status] || ['', o.status])[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
+  return hero + `<div class="ap-grid">${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${vend}${how}${list}</div>`;
+}
+function cpTable(pr, desc, note) {
+  const M = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '1 año']], SC = [1, 2, 3, 4];
+  return `<section class="ap-card"><h2>💶 Precios para tus clientes</h2><p class="muted small" style="margin:-4px 0 12px">En euros, por meses y pantallas. ${note} Deja vacío lo que no quieras ofrecer.</p>
+    <div class="cp-tbl"><div class="cp-h"></div>${SC.map((x) => `<div class="cp-h">${x} ${x === 1 ? 'pantalla' : 'pant.'}</div>`).join('')}
+    ${M.map(([m, t]) => `<div class="cp-m">${t}</div>${SC.map((x) => `<label class="cp-c"><input name="p${m}-${x}" inputmode="decimal" value="${pr[`${m}-${x}`] != null ? String(pr[`${m}-${x}`]).replace('.', ',') : ''}" placeholder="—"><span>€</span></label>`).join('')}`).join('')}</div>
+    <label class="f" style="margin-top:14px">Lo que verá en el cobro de la tarjeta<input name="desc" maxlength="60" value="${esc(desc || '')}"><small class="muted">Mejor algo neutro, por ejemplo «Suscripción».</small></label>
+    <div class="ap-save"><button class="btn primary" type="submit">💾 Guardar precios</button></div></section>`;
+}
+/* Cobro a clientes de un reseller o subreseller: sus precios y su propio Stripe */
+function vCobroVend(hero) {
+  const d = S.cp;
+  if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
+  const c = d.cfg, cur = S.d.settings.currency || 'EUR', money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
+  const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a tus clientes activado' : '⏸️ Cobro a tus clientes apagado'}</b><small>${c.on ? 'Tus clientes reciben el botón «💳 Pagar y renovar» en el aviso de caducidad.' : c.hasKey ? 'Revisa tus precios y actívalo cuando quieras.' : 'Primero conecta tu Stripe aquí abajo.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cpv-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
+  const stripe = `<section class="ap-card"><h2>🔑 Tu cuenta de Stripe</h2>
+    ${c.hasKey ? `<p class="small">✅ Conectada${c.test ? ' <b>(modo pruebas)</b>' : ''}. El dinero de tus clientes llega a tu Stripe.</p>` : '<p class="muted small" style="margin:-4px 0 10px">El dinero de tus clientes llega directamente a <b>tu</b> Stripe. Crea tu cuenta en stripe.com y pega aquí tu clave secreta.</p>'}
+    <form id="cpvKey"><label class="f">${c.hasKey ? 'Cambiar clave secreta' : 'Clave secreta de Stripe'}<input name="key" autocomplete="off" placeholder="sk_live_…"></label>
+      <label class="f">Secreto del webhook <span class="muted small">(recomendado)</span><input name="whsec" autocomplete="off" placeholder="whsec_…"></label>
+      <p class="muted small">En Stripe › Desarrolladores › Webhooks añade esta dirección con el evento <b>checkout.session.completed</b>:</p>
+      <div class="ap-link"><code>${esc(d.webhook)}</code><button type="button" class="btn sm" data-act="cpv-wh">Copiar</button></div>
+      <div class="ap-acts"><button class="btn primary" type="submit">Guardar</button>${c.hasKey ? '<button type="button" class="btn ghost" data-act="cpv-del">Desconectar</button>' : ''}</div></form></section>`;
+  const cost = d.cost || {};
+  const note = `Cada renovación pagada te descuenta tus créditos de siempre (por ejemplo 1 mes con 1 pantalla: ${plural(cost['1-1'] || 0, 'crédito', 'créditos')}).`;
+  const st = { paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'] };
+  const list = `<section class="ap-card"><h2>🧾 Pagos de tus clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${(st[o.status] || ['•'])[0]} ${esc(o.user)}</b><span>${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}</span><em>${(st[o.status] || ['', o.status])[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
+  return hero + `<div class="ap-grid">${pub}${stripe}<form id="cpForm" class="ap-form">${cpTable(c.prices || {}, c.desc, note)}</form>${list}</div>`;
+}
+document.addEventListener('submit', async (e) => {
+  if (!e.target || e.target.id !== 'cpForm') return;
+  e.preventDefault();
+  const f = e.target, prices = {};
+  f.querySelectorAll('input[name^=p]').forEach((i) => { if (i.value.trim()) prices[i.name.slice(1)] = i.value.trim(); });
+  try { await api('PUT', isSuper() ? '/api/client-pay' : '/api/my-client-pay', { prices, desc: f.elements.desc.value }); toast('Precios guardados ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); }
+});
+document.addEventListener('submit', async (e) => {
+  if (!e.target || e.target.id !== 'cpvKey') return;
+  e.preventDefault();
+  const f = e.target;
+  if (!f.elements.key.value.trim() && !f.elements.whsec.value.trim()) return toast('Pega la clave o el secreto antes de guardar', true);
+  try { await api('PUT', '/api/my-client-pay', { key: f.elements.key.value.trim(), whsec: f.elements.whsec.value.trim() }); toast('Stripe guardado ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); }
+});
+
 /* ---------- App de clientes: el .apk propio, su enlace de descarga y «Solo mi app» ---------- */
 const appHas = () => !!(S.d && S.d.settings.app && S.d.settings.app.file);
 const appOn = () => appHas() && S.d.settings.app.tag !== false;
@@ -6508,6 +6582,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 168, d: '2026-10-27', items: ['💳 Cobro a clientes: tus clientes pagan con tarjeta desde su enlace (o el botón del aviso de Telegram) y su cuenta se renueva sola', '👥 Preparado para tus vendedores: cuando lo actives, cada uno pone sus precios y su Stripe'] },
   { v: 167, d: '2026-10-27', items: ['🔄 Con el panel abierto, si subes una versión nueva sale el aviso «Actualizar»; y en Novedades hay un botón para buscar actualizaciones'] },
   { v: 166, d: '2026-10-27', items: ['⬅️ «Atrás» vuelve a la pantalla anterior, paso a paso, y al mismo sitio donde estabas', '🙈 App de clientes: interruptor para enseñarla u ocultarla a tu equipo con un clic'] },
   { v: 165, d: '2026-10-26', items: ['🔄 El panel se actualiza solo: si un móvil tenía guardada una versión vieja, la cambia por la nueva sin tener que borrar nada'] },
@@ -7724,7 +7799,7 @@ function dMore(c) {
   showDlg(c.panelName, `<div class="mlist2">
     <button type="button" class="cf-open" data-act="ficha" data-id="${c.id}">📇 <b>Ver ficha completa</b><small>Plan, historial, aparatos y contacto en una pantalla</small></button>
     ${grp('Renovar', [c.demo ? '' : it('renew-same', 'Renovar igual', `${plural(lastPlan(c).m, 'mes', 'meses')} · ${plural(lastPlan(c).sc, 'pantalla', 'pantallas')}`), it('renew', c.demo ? 'Convertir en cuenta' : 'Elegir plan')])}
-    ${grp('Enviar al cliente', [it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
+    ${grp('Enviar al cliente', [c.payLink ? it('m-paylink', 'Enlace de pago') : '', it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
     ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : ''])}
     ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
     ${grp('Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
@@ -8268,6 +8343,7 @@ function dMessage(c, password, key) {
     title: `Mensaje para ${c.panelName}`, submit: 'Copiar mensaje',
     body: `<label class="f">Plantilla<select name="tpl">${options(TPL, key || (c.demo ? 'demo' : 'created'))}</select></label>
       <label class="check"><input type="checkbox" name="guide" checked> Añadir al final la guía para poner la calidad al máximo (en cuentas y demos nuevas)</label>
+      ${c.payLink ? `<label class="check"><input type="checkbox" name="pay"${key === 'renewed' ? '' : ' checked'}> Añadir el enlace para pagar y renovar 💳</label>` : ''}
       ${appHas() ? `<label class="check"><input type="checkbox" name="app"${S.d.settings.app.inMsg !== false ? ' checked' : ''}> Añadir el enlace para descargar la app ${esc(appName())} 📲</label>` : ''}
       ${tgLink(c) ? `<label class="check"><input type="checkbox" name="tg"${c.tgLinked ? '' : ' checked'}> Añadir el enlace de Telegram para que reciba los avisos${c.tgLinked ? ' <span class="muted small">(ya lo tiene enlazado)</span>' : ''}</label>` : ''}
       <label class="f">Mensaje (puedes retocarlo antes de copiarlo)<textarea name="msg" rows="13" style="font-family:ui-monospace,Consolas,monospace;font-size:13.5px"></textarea></label>
@@ -8280,9 +8356,10 @@ function dMessage(c, password, key) {
         const k = f.elements.tpl.value, add = f.elements.guide.checked && (k === 'created' || k === 'demo'), main = fillTpl(k, c, password);
         const tg = f.elements.tg && f.elements.tg.checked && k !== 'quality' && !main.includes(tgLink(c)) ? '\n\n' + tgBlock(c) : '';
         const ap = f.elements.app && f.elements.app.checked && k !== 'quality' && !main.includes(appUrl()) ? '\n\n' + appBlock() : '';
-        f.elements.msg.value = main + ap + tg + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link();
+        const py = f.elements.pay && f.elements.pay.checked && k !== 'quality' && !main.includes(c.payLink) ? `\n\n💳 Para renovar tú mismo, al momento:\n${c.payLink}` : '';
+        f.elements.msg.value = main + py + ap + tg + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link();
       };
-      f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; if (f.elements.app) f.elements.app.onchange = upd; if (f.elements.tg) f.elements.tg.onchange = upd; f.elements.msg.oninput = link; upd();
+      f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; if (f.elements.app) f.elements.app.onchange = upd; if (f.elements.pay) f.elements.pay.onchange = upd; if (f.elements.tg) f.elements.tg.onchange = upd; f.elements.msg.oninput = link; upd();
     },
     onSubmit: async (fd) => { await copyText(fd.get('msg'), dlgForm.elements.msg); return 'Mensaje copiado'; },
   });
@@ -8892,6 +8969,12 @@ document.addEventListener('click', (e) => {
     case 'ui-check': uiCheckNow(); break;
     case 'app-free': if (c) { const free = !c.appFree; dConfirm(free ? 'Permitir cualquier app' : 'Solo la app oficial', free ? `${esc(c.panelName)} podrá ver con cualquier app aunque «Solo mi app» esté activado.` : `${esc(c.panelName)} tendrá que usar ${esc(appName())}.`, 'Cambiar', () => api('POST', `/api/clients/${c.id}/app-free`, { free }), 'Cambiado'); } break;
     case 'nav-back': if (history.state && history.state.k && history.length > 1) history.back(); else { goHome(); render(); } break;
+    case 'cp-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/client-pay', { on }).then(() => { toast(on ? 'Cobro a clientes activado ✅' : 'Cobro a clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
+    case 'cp-vend': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.vendors); api('PUT', '/api/client-pay', { vendors: on }).then(() => { toast(on ? 'Activado para tus vendedores 👥' : 'Apagado para tus vendedores'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
+    case 'cpv-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/my-client-pay', { on }).then(() => { toast(on ? 'Cobro a tus clientes activado ✅' : 'Cobro a tus clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
+    case 'cpv-wh': copyText(S.cp && S.cp.webhook || '').then(() => toast('Dirección copiada')); break;
+    case 'cpv-del': dConfirm('Desconectar tu Stripe', 'Tus clientes dejarán de poder pagar online hasta que vuelvas a conectarlo.', 'Desconectar', () => api('PUT', '/api/my-client-pay', { removeKey: true }).then(() => { S.cp = null; }), 'Stripe desconectado'); break;
+    case 'm-paylink': if (c && c.payLink) copyText(c.payLink).then(() => toast('Enlace de pago copiado: pégalo en el chat del cliente')); break;
     case 'app-pub': { const on = !(S.d.settings.app || {}).public; api('PUT', '/api/app-settings', { public: on }).then(() => { toast(on ? 'App visible para todo tu equipo 👀' : 'App oculta: ahora solo la ves tú 🙈'); return reload(); }).catch((e) => toast(e.message, true)); } break;
     case 'app-pick': { const i = $('#appFile'); if (i) i.click(); } break;
     case 'app-copy': copyText(appUrl()).then(() => toast('Enlace copiado')); break;

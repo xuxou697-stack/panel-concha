@@ -99,6 +99,8 @@ function loadDb() {
   const al = db.settings.alerts || {};
   db.settings.templates = { ...DEFAULT_TEMPLATES, ...(db.settings.templates || {}) };
   db.settings.brand = { name: 'Concha', color: '', logo: '', url: '', tiles: 'solid', ...(db.settings.brand || {}) };
+  // Precios en euros para clientes (meses-pantallas). Por defecto, la tarifa del propietario
+  db.settings.clientPay = { on: false, desc: 'Suscripción', prices: { '1-1': 7.5, '1-2': 12, '1-3': 16, '1-4': 19, '3-1': 19, '3-2': 27, '3-3': 34, '3-4': 41, '6-1': 38, '6-2': 48, '6-3': 55, '6-4': 65, '12-1': 65, '12-2': 90, '12-3': 105, '12-4': 120 }, ...(db.settings.clientPay || {}) };
   { const ap = db.settings.app || {}; db.settings.app = { ...APP_DEF, ...ap, only: { ...APP_DEF.only, ...(ap.only || {}) }, history: Array.isArray(ap.history) ? ap.history : [] }; db.settings.app.file = fs.existsSync(APP_APK); }
   db.settings.support = { ...DEFAULT_SETTINGS.support, ...(db.settings.support || {}) };
   db.settings.retention = { ...DEFAULT_SETTINGS.retention, ...(db.settings.retention || {}) };
@@ -2115,12 +2117,13 @@ function publicData(me) {
     expDue: me.role === 'super' ? expDueCount() : 0,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } },
       // La app de clientes: mientras el superadministrador no la publique, el resto del equipo no la ve
-      app: me.role === 'super' || (db.settings.app || {}).public ? db.settings.app : { ...db.settings.app, file: false, tag: false, inMsg: false } },
+      app: me.role === 'super' || (db.settings.app || {}).public ? db.settings.app : { ...db.settings.app, file: false, tag: false, inMsg: false },
+      clientPay: isStaff(me) ? db.settings.clientPay : { vendors: !!(db.settings.clientPay || {}).vendors } },
     servers: serversFor(me).map((s) => (seeServers
       ? { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
       : { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
-    clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId)) && !jfHidden(me, db.servers.find((x) => x.id === c.serverId))).map((c) => ({ ...c, tgChat: undefined, tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
+    clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId)) && !jfHidden(me, db.servers.find((x) => x.id === c.serverId))).map((c) => ({ ...c, tgChat: undefined, payKey: undefined, payLink: (isStaff(me) || c.ownerId === me.id) && siteBase() && cpEligible(c) ? cpLink(c) : '', tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
     log: db.log.filter((l) => l.type !== 'login' && seeClients && (!vis ? true : (l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)).slice(0, 500),
     ledger: db.ledger.filter((l) => (adm && !P.reports ? l.userId === me.id : !vis || vis.has(l.userId))).slice(0, 500),
     lastRun: db.lastRun,
@@ -2320,7 +2323,7 @@ Si no has sido tú, avisa al superadministrador.`);
   return { ok: true };
 });
 
-route('GET', '/api/data', '*', ({ me }) => publicData(me));
+route('GET', '/api/data', '*', ({ me, req }) => { try { const b = panelBase(req); if (/^https?:\/\/[\w.-]+(:\d+)?$/.test(b) && db.settings.siteBase !== b) db.settings.siteBase = b; } catch { /* nada */ } return publicData(me); });
 
 /* Ajustes (solo superadministrador) */
 route('PUT', '/api/settings', SUPER, ({ me, body }) => lock(async () => {
@@ -2578,6 +2581,10 @@ function payOfferFor(ownerId) {
 }
 /** Mensaje de aviso de caducidad para Telegram: el texto, los precios y el botón de pago (si los hay) */
 function expiringTg(c) {
+  if (cpEligible(c) && cpOptions(c).length && siteBase()) {
+    const text = fillText(tplFor(c.ownerId, 'expiring'), c) + '\n\n💳 Puedes renovar tú mismo, al momento, con el botón de abajo.';
+    return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Pagar y renovar', url: cpLink(c) }]] } };
+  }
   const off = payOfferFor(c.ownerId);
   let text = fillText(tplFor(c.ownerId, 'expiring'), c);
   if (off && off.prices) text += '\n\n' + fillText(off.prices, c);
@@ -4668,8 +4675,8 @@ function panelBase(req) {
   const proto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
   return `${proto}://${req.headers['x-forwarded-host'] || req.headers.host}`;
 }
-async function stripeCall(method, p, form) {
-  const key = db.payCfg.stripe.key;
+async function stripeCall(method, p, form, keyOverride) {
+  const key = keyOverride || db.payCfg.stripe.key;
   let res;
   try { res = await fetch(STRIPE_API + p, { method, headers: { Authorization: `Bearer ${key}`, ...(form ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) }, body: form ? new URLSearchParams(form).toString() : undefined, signal: AbortSignal.timeout(20000) }); }
   catch { throw new HttpError(502, 'No se pudo conectar con Stripe.'); }
@@ -4708,7 +4715,7 @@ route('GET', '/api/pay', '*', ({ me }) => {
   const out = { canBuy: canBuy(me), methods, price, currency: cur, min: c.min, own: Number(me.creditPrice) > 0, tiers: Number(me.creditPrice) > 0 ? [] : priceTiers(), packs: (db.settings.creditPacks || []).map((p, i) => ({ i, name: p.name, credits: p.credits, fixed: Number(p.price) > 0, amount: buyAmount(me, p.credits, p) })), orders: mine };
   if (me.role === 'super') {
     out.cfg = { stripe: { on: c.stripe.on, hasKey: !!c.stripe.key, test: /^sk_test_/.test(c.stripe.key), hasWh: !!c.stripe.whsec }, nowpay: { on: c.nowpay.on, hasKey: !!c.nowpay.key, hasIpn: !!c.nowpay.ipn }, min: c.min };
-    out.all = db.orders.slice(0, 100).map(pubOrder);
+    out.all = db.orders.filter((o) => o.kind !== 'client').slice(0, 100).map(pubOrder);
   }
   return out;
 });
@@ -4769,7 +4776,7 @@ route('POST', '/api/pay/checkout', '*', async ({ me, body, req }) => {
 /* Al volver de pagar: se pregunta a Stripe por si el aviso (webhook) aun no ha llegado */
 route('GET', '/api/pay/orders/:id', '*', async ({ me, params }) => {
   const o = db.orders.find((x) => x.id === params.id);
-  if (!o || (o.userId !== me.id && me.role !== 'super')) throw new HttpError(404, 'Ese pedido no existe.');
+  if (!o || o.kind === 'client' || (o.userId !== me.id && me.role !== 'super')) throw new HttpError(404, 'Ese pedido no existe.');
   if (o.status === 'pending' && o.method === 'stripe' && o.extId && db.payCfg.stripe.key) {
     try {
       const ss = await stripeCall('GET', `/v1/checkout/sessions/${encodeURIComponent(o.extId)}`);
@@ -4786,8 +4793,11 @@ async function payWebhook(req, res, pathname) {
   const raw = Buffer.concat(chunks).toString('utf8');
   const ok = () => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"received":true}'); };
   const bad = (code, msg) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: msg })); };
-  if (pathname === '/api/pay/stripe/webhook') {
-    const wh = db.payCfg.stripe.whsec;
+  const um = /^\/api\/pay\/stripe\/webhook\/u(\d+)$/.exec(pathname);
+  if (pathname === '/api/pay/stripe/webhook' || um) {
+    const vu = um ? db.users.find((u) => u.id === Number(um[1])) : null;
+    if (um && !vu) return bad(404, 'no');
+    const wh = um ? (vu.clientPay || {}).whsec : db.payCfg.stripe.whsec;
     if (!wh) return bad(400, 'webhook sin configurar');
     const sig = String(req.headers['stripe-signature'] || ''), t = (/t=(\d+)/.exec(sig) || [])[1], v1s = [...sig.matchAll(/v1=([0-9a-f]{64})/g)].map((m) => m[1]);
     if (!t || !v1s.length || Math.abs(Date.now() / 1000 - Number(t)) > 600) return bad(400, 'firma');
@@ -4796,8 +4806,8 @@ async function payWebhook(req, res, pathname) {
     let ev; try { ev = JSON.parse(raw); } catch { return bad(400, 'json'); }
     const ss = ev.data && ev.data.object;
     if (ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') {
-      const o = db.orders.find((x) => x.method === 'stripe' && x.extId === (ss && ss.id));
-      if (o && ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (markPaid(o, 'aviso de Stripe')) saveDb(); });
+      const o = db.orders.find((x) => x.method === 'stripe' && x.extId === (ss && ss.id) && (um ? x.vendorId === vu.id : !x.vendorId));
+      if (o && ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (o.kind === 'client' ? await cpPaid(o, 'aviso de Stripe') : markPaid(o, 'aviso de Stripe')) saveDb(); });
     }
     if (ev.type === 'checkout.session.expired') { const o = db.orders.find((x) => x.method === 'stripe' && x.extId === (ss && ss.id)); if (o && o.status === 'pending') await lock(async () => { o.status = 'expired'; saveDb(); }); }
     return ok();
@@ -4820,6 +4830,196 @@ async function payWebhook(req, res, pathname) {
   }
   return bad(404, 'no');
 }
+
+/* ======================================================================
+   Cobro a clientes con Stripe: el cliente abre su enlace (/pagar/…), elige meses, paga con tarjeta
+   y el panel le renueva la cuenta solo. Se activa en Ajustes › Cobro a clientes.
+   ====================================================================== */
+const cpCfg = () => db.settings.clientPay || { on: false, prices: {} };
+const siteBase = () => (db.settings.brand.url || db.settings.siteBase || (db.settings.app || {}).base || '').replace(/\/+$/, '');
+let payKeySave = false;
+function payKeyOf(c) {
+  if (c.payKey) return c.payKey;
+  c.payKey = crypto.randomBytes(9).toString('hex');
+  // la llave nueva se guarda enseguida, para que el enlace que ya se ha enviado siga valiendo tras reiniciar
+  if (!payKeySave) { payKeySave = true; setTimeout(() => { payKeySave = false; lock(async () => saveDb()).catch(() => {}); }, 200); }
+  return c.payKey;
+}
+const cpLink = (c) => `${siteBase()}/pagar/${c.id}-${payKeyOf(c)}`;
+/* Quién cobra cada cuenta:
+   - las del superadministrador y sus administradores: con la configuración y el Stripe del superadministrador
+   - las de un reseller o subreseller: con SUS precios y SU propio Stripe (el dinero le llega a él y se le descuentan
+     los créditos de la renovación), solo si el superadministrador lo ha permitido para los vendedores */
+function cpCtx(c) {
+  if (!c || c.demo) return null;
+  const o = db.users.find((u) => u.id === c.ownerId);
+  if (!o || o.role === 'super' || o.role === 'admin') {
+    const cfg = cpCfg();
+    return cfg.on && db.payCfg.stripe.on && db.payCfg.stripe.key ? { cfg, key: db.payCfg.stripe.key, vendor: null } : null;
+  }
+  const v = o.clientPay;
+  if (!cpCfg().vendors || o.disabled || !v || !v.on || !v.key) return null;
+  return { cfg: v, key: v.key, vendor: o };
+}
+const cpEligible = (c) => !!cpCtx(c);
+function cpOptions(c, ctx) {
+  const pr = ((ctx || cpCtx(c) || {}).cfg || {}).prices || {}, sc = c.screens || 1;
+  return [1, 3, 6, 12].map((m) => ({ m, price: Number(pr[`${m}-${sc}`]) || 0 })).filter((x) => x.price >= 0.5);
+}
+const cpReady = () => true; // cada cuenta lo decide cpCtx
+const orderKey = (o) => { if (!o.vendorId) return db.payCfg.stripe.key; const u = db.users.find((x) => x.id === o.vendorId); return u && u.clientPay && u.clientPay.key; };
+/** Pago de un cliente confirmado: se renueva su cuenta una sola vez */
+async function cpPaid(o, via) {
+  if (o.status === 'paid') return false;
+  const c = db.clients.find((x) => x.id === o.clientId);
+  o.status = 'paid'; o.paidAt = new Date().toISOString();
+  if (!c) { o.note = 'La cuenta ya no existe'; notifyStaff('payments', `⚠️ Pago de cliente recibido (${o.amount.toFixed(2)} ${o.currency}) pero la cuenta ya no existe. Pedido ${o.id}.`); return true; }
+  const t = today(), base = !c.demo && diffDays(c.expires, t) >= 0 ? c.expires : t, prev = c.expires;
+  c.expires = addMonths(base, o.months); c.lastMonths = o.months; c.demo = false; c.status = 'active'; c.paid = true;
+  delete c.expiresAt; delete c.off; delete c.offBy; delete c.trashedAt; delete c.trashReason;
+  try { await grantAccess(c); delete c.lastError; }
+  catch (e) { c.lastError = e.message; notifyStaff('payments', `⚠️ ${c.panelName} ha pagado y la fecha ya está renovada, pero Emby dio un error al dar acceso: ${e.message}. El vigilante lo volverá a intentar.`); }
+  const what = `${o.months} ${o.months === 1 ? 'mes' : 'meses'}, ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}`;
+  const vend = o.vendorId ? db.users.find((u) => u.id === o.vendorId) : null;
+  if (vend) { // la renovación le cuesta sus créditos, como si la hiciera él (aunque se quede en negativo: el cliente ya ha pagado)
+    const cost = costFor(vend, o.months, c.screens || 1);
+    spend(vend, cost, `Renovación pagada online por el cliente: ${c.embyName} (${what})`);
+    if (cost > 0) c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: vend.id, credits: cost, from: base, to: c.expires, kind: 'renovacion' }].slice(-24);
+    notifyUser(vend, `💳 Tu cliente ${c.panelName} ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola hasta el ${c.expires.split('-').reverse().join('/')}.${cost ? `\nSe han descontado ${cost} créditos. Saldo: ${vend.credits}.` : ''}${vend.credits < 0 ? '\n⚠️ Tu saldo está en negativo: pide una recarga.' : ''}`);
+  }
+  addLog('renovacion', c, `Renovada pagando online (${what}): ${o.amount.toFixed(2)} ${o.currency}. Vence el ${c.expires}`, null);
+  addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con tarjeta (pedido ${o.id}${via ? ', ' + via : ''})`, null);
+  o.expiresBefore = prev; o.expiresAfter = c.expires;
+  libCheckLater(c);
+  if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}`);
+  if (c.tgChat) tg('sendMessage', { chat_id: c.tgChat, text: `✅ Pago recibido. ¡Gracias, ${c.panelName}!\n\nTu cuenta está renovada hasta el ${c.expires.split('-').reverse().join('/')}. No tienes que hacer nada más.` }).catch(() => {});
+  return true;
+}
+const H = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+function cpPage(res, code, title, body) {
+  const brand = H(db.settings.brand.name || 'Panel');
+  res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self' https://checkout.stripe.com; frame-ancestors 'none'" });
+  res.end(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${H(title)} · ${brand}</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#eef4f8;background:radial-gradient(70% 60% at 10% 0%,#0e4a6b,transparent),radial-gradient(60% 60% at 100% 100%,#4c1d95,transparent),#060b18;display:grid;place-items:center;padding:18px}
+.card{width:min(460px,100%);padding:26px 22px;border-radius:24px;background:rgba(10,16,30,.78);border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 70px rgba(0,0,0,.5)}
+h1{margin:0 0 4px;font-size:24px}.sub{margin:0 0 18px;color:#9fb6c2;font-size:14.5px;line-height:1.45}.brand{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7dd3fc;margin-bottom:12px;font-weight:800}
+.op{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 10px;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;font:inherit;cursor:pointer;text-align:left}
+.op:hover{border-color:#a78bfa;background:rgba(167,139,250,.12)}.op b{font-size:16px}.op small{display:block;color:#9fb6c2;font-size:12.5px}.op .p{margin-left:auto;font-size:20px;font-weight:900;white-space:nowrap}
+.op.best{border-color:#f472b6;background:linear-gradient(120deg,rgba(14,165,233,.16),rgba(236,72,153,.16))}.tag{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:99px;background:#ec4899;color:#fff;vertical-align:2px}
+.big{font-size:56px;text-align:center;margin:4px 0 8px}.ok{color:#4ade80}.foot{margin-top:16px;font-size:12px;color:#7f93a1;text-align:center;line-height:1.5}</style>
+<body><main class="card"><div class="brand">${brand}</div>${body}</main></body></html>`);
+}
+function cpFind(token) {
+  const m = /^(\d+)-([0-9a-f]{18})$/.exec(String(token || ''));
+  if (!m) return null;
+  const c = db.clients.find((x) => x.id === Number(m[1]));
+  if (!c || !c.payKey || c.payKey.length !== m[2].length || !crypto.timingSafeEqual(Buffer.from(c.payKey), Buffer.from(m[2]))) return null;
+  return c;
+}
+/** Las páginas públicas /pagar/… (sin sesión: el enlace secreto de cada cliente es la llave) */
+async function cpRoute(req, res, pathname) {
+  const m = /^\/pagar\/([\w-]+)(\/checkout)?$/.exec(pathname);
+  const c = m && cpFind(m[1]);
+  const fmtD = (d) => d.split('-').reverse().join('/');
+  if (!c) return cpPage(res, 404, 'Enlace no válido', '<h1>Enlace no válido</h1><p class="sub">Este enlace de pago no existe o ha cambiado. Pídele uno nuevo a tu proveedor.</p>');
+  const ctx = cpCtx(c);
+  const q0 = new URL(req.url, 'http://x').searchParams;
+  if (!ctx && !q0.get('o')) return cpPage(res, 200, 'Pago no disponible', `<h1>Hola, ${H(c.panelName)}</h1><p class="sub">El pago online no está disponible ahora mismo. Habla con tu proveedor para renovar.</p>`);
+  const opts = ctx ? cpOptions(c, ctx) : [], cur = (db.settings.currency || 'EUR').toUpperCase(), money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur });
+  if (m[2] && req.method === 'POST') {
+    const chunks = []; let size = 0;
+    for await (const ch of req) { size += ch.length; if (size > 2000) break; chunks.push(ch); }
+    const months = Number(new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('m'));
+    const op = opts.find((x) => x.m === months);
+    if (!op) return cpPage(res, 400, 'Opción no válida', '<h1>Esa opción ya no está</h1><p class="sub">Vuelve atrás y elige otra.</p>');
+    const open = db.orders.filter((o) => o.clientId === c.id && o.status === 'pending' && Date.now() - Date.parse(o.created) < 3600000);
+    if (ctx.vendor) { const cost = costFor(ctx.vendor, months, c.screens || 1); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
+    if (open.length >= 5) return cpPage(res, 429, 'Espera un poco', '<h1>Espera un momento</h1><p class="sub">Tienes varios pagos sin terminar. Prueba de nuevo en un rato.</p>');
+    const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, amount: op.price, currency: cur, method: 'stripe', status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'}` };
+    const base = siteBase() || panelBase(req), back = `${base}/pagar/${c.id}-${c.payKey}?o=${o.id}`;
+    let ss;
+    try {
+      ss = await stripeCall('POST', '/v1/checkout/sessions', {
+        mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': cur.toLowerCase(), 'line_items[0][price_data][unit_amount]': String(Math.round(op.price * 100)),
+        'line_items[0][price_data][product_data][name]': `${String(ctx.cfg.desc || 'Suscripción').slice(0, 60)} · ${months} ${months === 1 ? 'mes' : 'meses'}`,
+        client_reference_id: o.id, 'metadata[order]': o.id, 'metadata[client]': String(c.id), success_url: back, cancel_url: `${base}/pagar/${c.id}-${c.payKey}?cancelado=1`,
+      }, ctx.key);
+    } catch (e) { console.error('Cobro a clientes:', e.message); return cpPage(res, 502, 'Error', '<h1>No se pudo abrir el pago</h1><p class="sub">Inténtalo de nuevo en un momento. Si sigue fallando, avisa a tu proveedor.</p>'); }
+    o.extId = ss.id; o.url = ss.url;
+    await lock(async () => { db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000; saveDb(); });
+    res.writeHead(303, { Location: ss.url, 'Cache-Control': 'no-store' }); return res.end();
+  }
+  const q = new URL(req.url, 'http://x').searchParams;
+  const oid = q.get('o');
+  if (oid) {
+    const o = db.orders.find((x) => x.id === oid && x.clientId === c.id);
+    if (o && o.status === 'pending' && o.extId) {
+      try {
+        const ss = await stripeCall('GET', `/v1/checkout/sessions/${encodeURIComponent(o.extId)}`, null, orderKey(o));
+        if (ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (await cpPaid(o, 'comprobado al volver')) saveDb(); });
+      } catch { /* se mira otra vez al recargar */ }
+    }
+    if (o && o.status === 'paid') return cpPage(res, 200, 'Pago recibido', `<div class="big">✅</div><h1 class="ok">¡Pago recibido!</h1><p class="sub">Gracias, ${H(c.panelName)}. Tu cuenta está renovada hasta el <b>${H(fmtD(c.expires))}</b>. No tienes que hacer nada más: sigue viendo como siempre.</p>`);
+    if (o) return cpPage(res, 200, 'Comprobando', `<div class="big">⏳</div><h1>Comprobando tu pago…</h1><p class="sub">Puede tardar unos segundos. Si ya has pagado, esta página se actualizará sola.</p><meta http-equiv="refresh" content="4">`);
+  }
+  const left = diffDays(c.expires, today());
+  const state = left < 0 ? `Tu cuenta venció el <b>${H(fmtD(c.expires))}</b>. Al pagar vuelve a funcionar al momento.` : left === 0 ? `Tu cuenta vence <b>hoy</b>. Al pagar se suma a tu fecha.` : `Tu cuenta vence el <b>${H(fmtD(c.expires))}</b> (en ${left} ${left === 1 ? 'día' : 'días'}). Lo que pagues se suma a esa fecha.`;
+  const best = opts.length > 1 ? opts.reduce((a, b) => (b.price / b.m < a.price / a.m ? b : a)) : null;
+  const list = opts.length ? opts.map((x) => `<button class="op${best && x === best && x.m > 1 ? ' best' : ''}" name="m" value="${x.m}"><span><b>${x.m} ${x.m === 1 ? 'mes' : 'meses'}${best && x === best && x.m > 1 ? '<span class="tag">MEJOR PRECIO</span>' : ''}</b><small>${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}${x.m > 1 ? ' · ' + money(x.price / x.m) + ' al mes' : ''}</small></span><span class="p">${money(x.price)}</span></button>`).join('')
+    : '<p class="sub">Todavía no hay precios para tu plan. Habla con tu proveedor.</p>';
+  return cpPage(res, 200, 'Renovar', `<h1>Hola, ${H(c.panelName)} 👋</h1><p class="sub">${state}</p>${q.get('cancelado') ? '<p class="sub" style="color:#fbbf24">No se ha cobrado nada. Puedes elegir otra vez cuando quieras.</p>' : ''}
+    <form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 Pago seguro con tarjeta, Apple Pay o Google Pay a través de Stripe.<br>Tu cuenta se renueva sola en cuanto se confirma el pago.</p>`);
+}
+/* Cobro a clientes de cada reseller o subreseller: sus precios y su propio Stripe */
+const VEND_ROLES = ['reseller', 'sub'];
+const myCp = (me) => (me.clientPay = { on: false, desc: 'Suscripción', prices: {}, key: '', whsec: '', ...(me.clientPay || {}) });
+route('GET', '/api/my-client-pay', VEND_ROLES, ({ me, req }) => {
+  const v = myCp(me);
+  return { allowed: !!cpCfg().vendors, cfg: { on: v.on, desc: v.desc, prices: v.prices, hasKey: !!v.key, test: /^sk_test_/.test(v.key || ''), hasWh: !!v.whsec },
+    webhook: `${siteBase() || panelBase(req)}/api/pay/stripe/webhook/u${me.id}`, cost: Object.fromEntries([1, 3, 6, 12].flatMap((m) => [1, 2, 4].map((sc) => [`${m}-${sc}`, costFor(me, m, sc)]))),
+    orders: db.orders.filter((o) => o.kind === 'client' && o.vendorId === me.id).slice(0, 40).map((o) => ({ id: o.id, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '' })) };
+});
+route('PUT', '/api/my-client-pay', VEND_ROLES, async ({ me, body }) => {
+  if (!cpCfg().vendors) throw new HttpError(403, 'El cobro a clientes todavía no está disponible para vendedores.');
+  const v = myCp(me);
+  const k = str(body.key, 200), w = str(body.whsec, 200);
+  if (k) {
+    if (!/^(sk|rk)_(live|test)_[A-Za-z0-9]{10,}$/.test(k)) throw new HttpError(400, 'La clave de Stripe debe empezar por sk_live_ (o sk_test_ para pruebas).');
+    try { await stripeCall('GET', '/v1/balance', null, k); } catch (e) { throw new HttpError(400, 'Stripe no acepta esa clave: ' + e.message); }
+  }
+  return lock(async () => {
+    if (k) v.key = k;
+    if (w) { if (!/^whsec_[A-Za-z0-9]{10,}$/.test(w)) throw new HttpError(400, 'El secreto del webhook empieza por whsec_'); v.whsec = w; }
+    if (body.removeKey) { v.key = ''; v.whsec = ''; v.on = false; }
+    if (body.desc !== undefined) v.desc = str(body.desc, 60).trim() || 'Suscripción';
+    if (body.prices && typeof body.prices === 'object') {
+      const out = {};
+      for (const m of [1, 3, 6, 12]) for (const sc of [1, 2, 3, 4]) { const x = Math.round(Number(String(body.prices[`${m}-${sc}`] || '').replace(',', '.')) * 100) / 100; if (x >= 0.5 && x <= 10000) out[`${m}-${sc}`] = x; }
+      v.prices = out;
+    }
+    if (body.on !== undefined) { if (body.on && !v.key) throw new HttpError(400, 'Primero pega la clave secreta de tu Stripe.'); v.on = !!body.on; }
+    addLog('ajustes', null, `${me.name}: cobro a sus clientes ${v.on ? 'activado' : 'desactivado'}`, me);
+    saveDb();
+    return { ok: true };
+  });
+});
+
+route('PUT', '/api/client-pay', SUPER, ({ me, body }) => lock(async () => {
+  const c = db.settings.clientPay;
+  if (body.on !== undefined) { if (body.on && !(db.payCfg.stripe.on && db.payCfg.stripe.key)) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online.'); c.on = !!body.on; }
+  if (body.desc !== undefined) c.desc = str(body.desc, 60).trim() || 'Suscripción';
+  if (body.vendors !== undefined) c.vendors = !!body.vendors;
+  if (body.prices && typeof body.prices === 'object') {
+    const out = {};
+    for (const m of [1, 3, 6, 12]) for (const sc of [1, 2, 3, 4]) { const v = Math.round(Number(String(body.prices[`${m}-${sc}`] || '').replace(',', '.')) * 100) / 100; if (v >= 0.5 && v <= 10000) out[`${m}-${sc}`] = v; }
+    c.prices = out;
+  }
+  addLog('ajustes', null, `Cobro a clientes: ${c.on ? 'activado' : 'desactivado'}${c.vendors ? ' · permitido a los vendedores' : ''}`, me);
+  saveDb();
+  return { ok: true, clientPay: c };
+}));
+route('GET', '/api/client-pay', SUPER, () => ({ cfg: cpCfg(), stripe: { on: !!(db.payCfg.stripe.on && db.payCfg.stripe.key), wh: !!db.payCfg.stripe.whsec }, base: siteBase(),
+  orders: db.orders.filter((o) => o.kind === 'client').slice(0, 60).map((o) => ({ id: o.id, clientId: o.clientId, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '' })) }));
 
 /* ---------- Copias de seguridad cifradas (descarga, Telegram y restaurar) ---------- */
 const BK_MAGIC = 'concha-copia';
@@ -6972,10 +7172,11 @@ const server = http.createServer(async (req, res) => {
       return res.end(gz ? f.gz : f.raw);
     }
     if (appFile(req, res, pathname)) return;
+    if (pathname.startsWith('/pagar/') && (req.method === 'GET' || req.method === 'POST')) return await cpRoute(req, res, pathname);
     if (req.method === 'POST' && pathname === '/api/app-upload') return await appUpload(req, res);
     if ((req.method === 'GET' || req.method === 'HEAD') && /^\/app(\/|\.apk$|$)/.test(pathname) && (pathname === '/app' || pathname === '/app/' || pathname === '/app.apk' || pathname === '/app/version.json' || /^\/app\/[\w.-]+\.apk$/.test(pathname))) return appDownload(req, res, pathname);
     if (!pathname.startsWith('/api/')) return send(res, 404, { error: 'No encontrado.' });
-    if (req.method === 'POST' && (pathname === '/api/pay/stripe/webhook' || pathname === '/api/pay/nowpayments/ipn')) return await payWebhook(req, res, pathname);
+    if (req.method === 'POST' && (pathname === '/api/pay/stripe/webhook' || /^\/api\/pay\/stripe\/webhook\/u\d+$/.test(pathname) || pathname === '/api/pay/nowpayments/ipn')) return await payWebhook(req, res, pathname);
     // Panel alquilado en pausa: solo se responde lo justo para mostrar el aviso
     if (LIC_CLIENT && licLocked() && !['/api/state', '/api/license/recheck', '/api/logout', '/api/agent/report'].includes(pathname)) return send(res, 423, { error: 'El panel está en pausa: la suscripción ha caducado.', licLocked: true });
     for (const r of routes) {
