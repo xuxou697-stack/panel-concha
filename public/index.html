@@ -6626,6 +6626,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 173, d: '2026-10-27', items: ['🛠️ Arreglado el aviso «Error en el panel… reading value» al editar o renovar después de abrir Renovar'] },
   { v: 172, d: '2026-10-27', items: ['🔔 Avisos escalonados por Telegram: X días antes, 1 día antes, el mismo día y un rescate a los 3 días de caducar', '🏠 El enlace de cada cliente es su página «Mi cuenta»: fecha, pantallas, renovar, app, guía y soporte', '🚀 Al terminar una demo, el bot invita a activarla con un botón de pago', '📊 Cobros online en el Resumen', '🔁 Renovación automática opcional para tus clientes'] },
   { v: 171, d: '2026-10-27', items: ['💬 Mensajes nuevos para tus clientes: invitación al bot, bienvenida, aviso de caducidad con botón «Renovar ahora», enlace de pago y confirmación del pago'] },
   { v: 169, d: '2026-10-27', items: ['💳 «Enlace de pago» abre una ventana con el mensaje listo para copiar o enviar por WhatsApp y Telegram', '📺 En la página de pago el cliente elige pantallas (1, 2, 3 o 4) y tiempo, con todos tus precios'] },
@@ -7754,6 +7755,7 @@ function dRenewSame(c) {
     after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) celebrateThen('renew', now, () => dMessage(now, '', 'renewed'), prevExp); },
   });
 }
+let RN_TK = null; // ficha en vivo de «Renovar» (se quita al abrir otra vez la ventana)
 function dRenew(c) {
   const prevExp = c.expires;
   const fromToday = c.demo || diff(c.expires, S.d.today) < 0;
@@ -7772,11 +7774,15 @@ function dRenew(c) {
       const f = dlgForm;
       f.querySelectorAll('select').forEach(bzChips);
       const tk = () => {
+        // la ventana se reutiliza: si ya es otra (Editar, Mensaje…), no se hace nada
+        if (!f.elements.months || !f.elements.screens || !f.elements.quality || !$('#rnTk', f)) return;
         const m = +f.elements.months.value, sc = +f.elements.screens.value, q = f.elements.quality.value;
         $('#rnTk', f).innerHTML = rnTicket(c, m, sc, q, base, from, c.demo ? 'DEMO → CUENTA' : 'RENOVAR');
       };
       wireCost(c.serverId, null);
-      ['change', 'input'].forEach((ev) => f.addEventListener(ev, tk)); f.addEventListener('click', () => setTimeout(tk, 0));
+      if (RN_TK) { ['change', 'input', 'click'].forEach((ev) => f.removeEventListener(ev, RN_TK)); }
+      RN_TK = (e) => (e && e.type === 'click' ? setTimeout(tk, 0) : tk());
+      ['change', 'input', 'click'].forEach((ev) => f.addEventListener(ev, RN_TK));
       tk();
     },
     onSubmit: async (fd) => {
