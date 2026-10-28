@@ -1807,10 +1807,13 @@ function qrSvg(text) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="Código QR"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }
 /** Aviso privado por Telegram a un usuario del panel (si lo tiene enlazado) */
+/** Todos los Telegram que reciben los avisos de un usuario: el suyo y los que haya añadido (por ejemplo, el de un socio) */
+const userChats = (u) => [...new Set([u && u.tgChat, ...((u && u.tgExtra) || [])].filter(Boolean))];
 function notifyUser(u, text) {
   const cfg = db.settings.notices.telegram;
   if (!u || !u.tgChat || !cfg.token) return Promise.resolve(false);
-  return tg('sendMessage', { chat_id: u.tgChat, text, disable_web_page_preview: true }).then(() => true).catch((e) => { console.error('Telegram (aviso privado):', e.message); return false; });
+  return Promise.all(userChats(u).map((chat) => tg('sendMessage', { chat_id: chat, text, disable_web_page_preview: true }).then(() => true).catch((e) => { console.error('Telegram (aviso privado):', e.message); return false; })))
+    .then((r) => r.some(Boolean));
 }
 /** Aviso al superadministrador (y a los administradores que lo pidan) */
 function notifyStaff(kind, text) {
@@ -2582,14 +2585,25 @@ async function telegramPoll() {
         if (/^\/stop\b/i.test(text)) {
           let n = 0;
           for (const c of db.clients) if (c.tgChat === chat) { delete c.tgChat; n++; }
-          for (const x of db.users) if (x.tgChat === chat) { delete x.tgChat; n++; }
+          for (const x of db.users) {
+            if ((x.tgExtra || []).includes(chat)) { x.tgExtra = x.tgExtra.filter((v) => v !== chat); n++; }
+            if (x.tgChat === chat) { delete x.tgChat; if ((x.tgExtra || []).length) x.tgChat = x.tgExtra.shift(); n++; }
+          }
           reply = n ? 'Hecho. Ya no te enviaré más avisos.' : 'No tenías avisos activados.';
         } else if (um) {
           const pu = db.users.find((x) => x.id === Number(um[2]));
           if (pu && !pu.disabled && userTgCode(pu) === um[1].toLowerCase()) {
-            pu.tgChat = chat;
-            addLog('seguridad', null, `${pu.username} enlazó su Telegram para los avisos de seguridad`, pu);
-            reply = `Listo, ${pu.name}. Aquí te avisaré de cada entrada en tu cuenta del panel${pu.role === 'super' ? ', de los servidores que se caigan y de las copias de seguridad' : ''}. Escribe /stop para dejar de recibirlos.`;
+            if (pu.tgChat && pu.tgChat !== chat && !(pu.tgExtra || []).includes(chat)) {
+              // Ya tenía un Telegram: este se añade (por ejemplo, el del socio) y los dos reciben los mismos avisos
+              pu.tgExtra = [...(pu.tgExtra || []), chat].slice(-4);
+              addLog('seguridad', null, `Se ha añadido otro Telegram a los avisos de ${pu.username} (ya son ${userChats(pu).length})`, pu);
+              notifyUser({ tgChat: pu.tgChat }, `👥 Otro Telegram se ha unido a los avisos de tu cuenta «${pu.username}». Desde ahora os llegan a ${userChats(pu).length}.\nSi no lo conoces, quítalo en Ajustes › Seguridad › «Quitar los otros Telegram».`);
+              reply = `👥 Listo, ${pu.name}. Este Telegram también recibirá los avisos del panel (ya sois ${userChats(pu).length}). Escribe /stop para dejar de recibirlos aquí.`;
+            } else {
+              if (!pu.tgChat) pu.tgChat = chat;
+              addLog('seguridad', null, `${pu.username} enlazó su Telegram para los avisos de seguridad`, pu);
+              reply = `Listo, ${pu.name}. Aquí te avisaré de cada entrada en tu cuenta del panel${pu.role === 'super' ? ', de los servidores que se caigan y de las copias de seguridad' : ''}. Escribe /stop para dejar de recibirlos.`;
+            }
           } else reply = 'Ese enlace no es válido. Cógelo de nuevo en el panel, en Ajustes › Seguridad.';
         } else {
           const m = /^\/start\s+(c(\d+)_[0-9a-f]{10})$/i.exec(text);
@@ -2694,9 +2708,9 @@ async function telegramNotices() {
 const BOT_CMD = { start: 'estado', suscripcion: 'estado', subscripcion: 'estado', cuenta: 'estado', micuenta: 'estado', estado: 'estado', dias: 'estado',
   renovar: 'renovar', pagar: 'renovar', app: 'app', descargar: 'app', calidad: 'calidad', ayuda: 'ayuda', help: 'ayuda', menu: 'ayuda',
   problemas: 'problemas', problema: 'problemas', soporte: 'problemas', servidor: 'servidor', funciona: 'servidor',
-  datos: 'datos', acceso: 'datos', contrasena: 'datos', aparatos: 'aparatos', dispositivos: 'aparatos', invitar: 'invitar', amigo: 'invitar', precios: 'precios', tarifa: 'precios' };
+  instalar: 'guia', guia: 'guia', moonfin: 'guia', datos: 'datos', acceso: 'datos', contrasena: 'datos', aparatos: 'aparatos', dispositivos: 'aparatos', invitar: 'invitar', amigo: 'invitar', precios: 'precios', tarifa: 'precios' };
 const BOT_MENU = [['suscripcion', '📋 Cuántos días te quedan'], ['renovar', '💳 Renovar tu cuenta al momento'], ['problemas', '🛠️ Soluciones rápidas a problemas'], ['servidor', '🟢 ¿Funciona el servidor?'],
-  ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis aparatos conectados'], ['precios', '💶 Precios'], ['invitar', '🎁 Invita a un amigo'],
+  ['instalar', '📲 Cómo instalar (Moonfin y Emby)'], ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis aparatos conectados'], ['precios', '💶 Precios'], ['invitar', '🎁 Invita a un amigo'],
   ['app', '📲 Descargar la app'], ['calidad', '✨ Ver con la mejor calidad'], ['ayuda', '💬 Ayuda y contacto'], ['stop', '🔕 Dejar de recibir avisos']];
 function tgSetCommands() {
   if (!db.settings.notices.telegram.token) return;
@@ -2734,7 +2748,7 @@ function botAnswer(kind, list) {
     return { text: `📲 Nuestra app ${ap.name || ''}\n\nPara móviles Android, Fire Stick y TV Box.\n\n📱 En el móvil: pulsa el botón de abajo y luego «Instalar».\n📺 En Fire Stick: abre la app «Downloader» y escribe ${ap.dlCode ? `el código ${ap.dlCode}` : siteBase() + '/app'}.\n\nAl abrirla, entra con tu usuario y contraseña de siempre.`, kb: { inline_keyboard: [[{ text: '⬇️ Descargar la app', url: siteBase() + '/app' }]] } };
   }
   if (kind === 'calidad') return { text: fillText(tplFor(accs[0].ownerId, 'quality'), accs[0]) };
-  return { text: `🤖 ¿En qué te ayudo? Toca una opción:\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva al momento\n🛠️ /problemas · soluciones rápidas\n🟢 /servidor · ¿funciona el servidor?\n🔑 /datos · tu usuario y contraseña\n📺 /aparatos · tus aparatos conectados\n💶 /precios · tarifas\n🎁 /invitar · invita a un amigo\n📲 /app · descarga la app\n✨ /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
+  return { text: `🤖 ¿En qué te ayudo? Toca una opción:\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva al momento\n🛠️ /problemas · soluciones rápidas\n🟢 /servidor · ¿funciona el servidor?\n📲 /instalar · cómo instalar (Moonfin y Emby)\n🔑 /datos · tu usuario y contraseña\n📺 /aparatos · tus aparatos conectados\n💶 /precios · tarifas\n🎁 /invitar · invita a un amigo\n📲 /app · descarga la app\n✨ /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
 }
 /* ---------- Bot: problemas, servidor, pedir, datos, aparatos, precios e invitar ---------- */
 const reqWait = new Map(); // chat -> momento en que pidió /pedir (esperamos el título)
@@ -2745,11 +2759,28 @@ const PROBS = [
   ['carga', '🔄 No carga o se queda pensando', '1. Cierra la app del todo y vuelve a abrirla.\n2. Comprueba que tienes internet (abre YouTube, por ejemplo).\n3. Apaga y enciende el router y el aparato.\n4. Escribe /servidor por si estamos en mantenimiento.\n\nSi sigue igual, escríbenos con una foto del error.'],
   ['cortes', '📶 Se corta o va lento', '1. Pon la calidad al máximo (escribe /calidad): si la app convierte la imagen, se corta.\n2. Con wifi, acerca el aparato al router o usa cable.\n3. Cierra otras apps o descargas que usen internet.\n4. Prueba otra película: si solo falla una, avísanos y la revisamos.'],
   ['clave', '🔑 Me pide la contraseña', '1. Escribe /datos para ver tu usuario y tu contraseña.\n2. Cuidado con mayúsculas y espacios al escribirla.\n3. Si te dice que no es correcta, escríbenos y te la cambiamos en un momento.'],
-  ['pantallas', '📺 Dice que hay demasiadas pantallas', 'Tu plan permite un número de pantallas a la vez.\n1. Cierra la app en los aparatos que no estés usando.\n2. Escribe /aparatos para ver dónde está abierta y cerrar sesiones.\n3. ¿Necesitas más? Escribe /renovar y elige más pantallas.'],
+  ['pantallas', '📺 «Límite de transmisión» o demasiadas pantallas', ''],
   ['falta', '🎬 No encuentro una película o serie', '1. Usa la lupa 🔍 de la app y prueba también con el título original.\n2. Busca también en la sección de películas o series por orden alfabético.'],
   ['caducada', '⛔ Mi cuenta no funciona', '1. Escribe /suscripcion para ver si ha caducado.\n2. Si ha caducado, renueva con /renovar y vuelve a funcionar al momento.\n3. Si no ha caducado, mira /servidor y /problemas › No carga.'],
   ['otro', '💬 Otro problema', ''],
 ];
+/* Guía de instalación (botón «Límite de transmisión» de /problemas): Moonfin recomendado, Emby con Downloader,
+   cómo iniciar sesión y dónde se puede ver. Cada parte va en su mensaje para que se lea fácil */
+const GUIDE_VIDEO = 'https://www.youtube.com/watch?v=uBZW2PYrFmQ';
+const guideKb = (skip) => ({ inline_keyboard: [
+  ...(skip === 'moon' ? [] : [[{ text: '🌙 Instalar Moonfin (recomendado)', callback_data: 'gd:moon' }]]),
+  ...(skip === 'dl' ? [] : [[{ text: '🔥 Instalar Emby con Downloader', callback_data: 'gd:dl' }]]),
+  ...(skip === 'login' ? [] : [[{ text: '🔑 Cómo iniciar sesión', callback_data: 'gd:login' }]]),
+  ...(skip === 'where' ? [] : [[{ text: '📱 ¿Dónde puedo ver Emby?', callback_data: 'gd:where' }]]),
+  [{ text: '🎥 Vídeo paso a paso', url: GUIDE_VIDEO }]] });
+function guideText(k, c) {
+  const s = c ? db.servers.find((x) => x.id === c.serverId) || {} : {};
+  if (k === 'main') return '📺 «Su cuenta superó el límite máximo de transmisión»\n\nTranquilo, no has hecho nada mal 😊 Este aviso sale con algunas versiones de la app oficial de Emby en Android TV y Fire TV.\n\n✅ La solución más fácil: 🌙 MOONFIN\nUno de los mejores reproductores que hay:\n• Se instala desde la tienda oficial (Play Store), como cualquier app\n• Sin Downloader y sin códigos\n• Rápido, moderno y compatible con tu servidor\n\n💡 Si usas varios aparatos a la vez, cierra la app en los que no uses (o mira /aparatos).\n\n👇 Elige qué quieres hacer:';
+  if (k === 'moon') return '🌙 MOONFIN — LA FORMA MÁS FÁCIL\n\nMoonfin es un reproductor moderno, rápido y muy cómodo. Su gran ventaja: se descarga de la tienda oficial de tu aparato (Play Store), como cualquier app. ¡Nada de Downloader ni de códigos! 🙌\n\n1️⃣ Abre la tienda de apps de tu tele o móvil\n2️⃣ Busca «Moonfin»\n3️⃣ Instálala y ábrela\n4️⃣ Añade la dirección de tu servidor' + (s.publicUrl ? `:\n     🌐 ${s.publicUrl}` : ' (escribe /datos para verla)') + '\n5️⃣ Pon tu usuario y tu contraseña\n\n🎉 ¡Listo! Ya puedes disfrutar de todo tu contenido 🍿';
+  if (k === 'dl') return '🔥 EMBY CON DOWNLOADER (solo 1 minuto)\n\n1️⃣ Instala «Downloader» desde la tienda de tu aparato\n2️⃣ Ábrelo y toca la barra para escribir un código\n3️⃣ Escribe el código de tu aparato:\n\n📺 Android TV / Google TV → 5555329\n🔥 Fire TV → 2260055\n📱 Móvil Android → 5393491\n\n¿No funciona alguno? Prueba con 2906753 o con 150976\n\n4️⃣ Descarga Emby y acepta la instalación\n\n🛡️ Si sale un aviso de seguridad es normal: acéptalo solo con estos códigos.\n\n💡 ¿Te parece un lío? Moonfin se instala desde la tienda, sin códigos 🌙';
+  if (k === 'login') return '🔑 CÓMO INICIAR SESIÓN\n\nLa primera vez, puede que la app no encuentre tu servidor sola. ¡No pasa nada! 😊\n\n1️⃣ Elige «Añadir servidor» (o «Servidor manual»)\n2️⃣ Escribe la dirección de tu servidor' + (s.publicUrl ? `:\n     🌐 ${s.publicUrl}` : '') + '\n3️⃣ Pon tu usuario' + (c ? `: ${c.embyName}` : '') + '\n4️⃣ Pon tu contraseña\n5️⃣ Pulsa «Iniciar sesión» ✅\n\n🔐 ¿No recuerdas la contraseña? Escribe /datos y te la enseño.';
+  return '📱 ¿DÓNDE PUEDO VER EMBY?\n\n📺 Samsung / LG\n➡️ App Emby de la tienda de tu tele\n\n🤖 Android TV / Google TV / Fire TV\n➡️ 🌙 Moonfin (recomendado, desde la tienda)\n➡️ o Emby con Downloader\n\n🍏 Apple TV\n➡️ Emby desde la App Store\n\n📱 iPhone / iPad\n➡️ App Emby (pago único) o gratis desde el navegador con el enlace de tu servidor\n\n💻 PC / Mac\n➡️ Desde el navegador con el enlace de tu servidor' + (s.publicUrl ? `:\n🌐 ${s.publicUrl}` : '');
+}
 const devKeys = new Map(); // clave corta del botón -> aparato a cerrar
 function botContact() {
   const sp = db.settings.support || {}, wa = String(sp.whatsapp || '').replace(/\D/g, ''), tgu = String(sp.telegram || '').replace(/^@/, '');
@@ -2759,6 +2790,7 @@ async function botReply(chat, kind, list) {
   const send = (text, kb, html) => tg('sendMessage', { chat_id: chat, text, disable_web_page_preview: true, ...(html ? { parse_mode: 'HTML' } : {}), ...(kb ? { reply_markup: kb } : {}) });
   if (['estado', 'renovar', 'app', 'calidad', 'ayuda'].includes(kind) || !list.length) { const r = botAnswer(list.length ? kind : 'estado', list); return send(r.text, r.kb); }
   const accs = list.slice(0, 5);
+  if (kind === 'guia') return send(guideText('where', accs[0]) + '\n\n👇 Toca para ver los pasos:', guideKb('where'));
   if (kind === 'problemas') return send('🛠️ ¿Qué te pasa? Toca una opción y te digo cómo arreglarlo:', { inline_keyboard: PROBS.map(([k, t]) => [{ text: t, callback_data: 'pb:' + k }]) });
   if (kind === 'servidor') {
     const seen = new Set(), lines = [];
@@ -2828,6 +2860,11 @@ async function botCallback(cq) {
   const chat = cq.message && cq.message.chat && cq.message.chat.id, data = String(cq.data || '');
   await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   if (!chat) return;
+  if (data.startsWith('gd:') || data === 'pb:pantallas') {
+    const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
+    if (!['main', 'moon', 'dl', 'login', 'where'].includes(k)) return;
+    return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: guideKb(k) });
+  }
   if (data.startsWith('pb:')) {
     const p = PROBS.find(([k]) => k === data.slice(3)); if (!p) return;
     const body = p[0] === 'otro' ? `Cuéntanos qué te pasa y te ayudamos:${botContact() ? '\n\n' + botContact() : '\n\nEscribe a tu proveedor.'}` : p[2];
@@ -5140,6 +5177,7 @@ async function cpPaid(o, via) {
   if (o.status === 'paid') return false;
   const c = db.clients.find((x) => x.id === o.clientId);
   o.status = 'paid'; o.paidAt = new Date().toISOString();
+  db.receiptSeq = (db.receiptSeq || 0) + 1; o.num = `${o.paidAt.slice(0, 4)}-${String(db.receiptSeq).padStart(4, '0')}`; // nº de recibo
   if (!c) { o.note = 'La cuenta ya no existe'; notifyStaff('payments', `⚠️ Pago de cliente recibido (${o.amount.toFixed(2)} ${o.currency}) pero la cuenta ya no existe. Pedido ${o.id}.`); return true; }
   const t = today(), base = !c.demo && diffDays(c.expires, t) >= 0 ? c.expires : t, prev = c.expires;
   o.wasDemo = !!c.demo;
@@ -5164,8 +5202,65 @@ async function cpPaid(o, via) {
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
   if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}`);
-  if (c.tgChat) tg('sendMessage', { chat_id: c.tgChat, text: `✅ ¡Pago recibido! Gracias, ${c.panelName} 🙌\n\nTu cuenta ya está renovada:\n📅 Nueva fecha: ${c.expires.split('-').reverse().join('/')}\n📺 Pantallas: ${c.screens || 1}\n\nNo tienes que hacer nada: sigue viendo como siempre 🍿` }).catch(() => {});
+  o.screensAfter = c.screens || 1; o.expiresFrom = base;
+  if (c.tgChat) receiptTg(c, o);
   return true;
+}
+/* ── Recibo del pago: mensaje de Telegram y página para verlo, imprimirlo o guardarlo en PDF ── */
+const rcFmtD = (d) => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '');
+const rcWhen = (iso) => new Date(iso).toLocaleString('es-ES', { timeZone: process.env.TZ || 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+const rcMoney = (o) => Number(o.amount || 0).toLocaleString('es-ES', { style: 'currency', currency: (o.currency || 'EUR').toUpperCase() });
+const rcScr = (o) => o.screensAfter || o.screens || 1;
+const rcPlan = (o) => `${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${rcScr(o)} ${rcScr(o) === 1 ? 'pantalla' : 'pantallas'}`;
+const rcUrl = (c, o) => { const b = siteBase(); return /^https:\/\//.test(b) && c.payKey ? `${b}/pagar/${c.id}-${c.payKey}/recibo/${o.id}` : ''; };
+function receiptTg(c, o) {
+  const s = db.servers.find((x) => x.id === c.serverId) || {}, brand = db.settings.brand.name || 'Panel';
+  const auto = !!(o.subId || o.cycle) && c.sub && c.sub.status === 'active' && !c.sub.cancelAt;
+  const text = `🧾 <b>RECIBO DE PAGO</b> · ${hEsc(brand)}\n<code>Nº ${hEsc(o.num || o.id)}  ·  ${hEsc(rcWhen(o.paidAt))}</code>\n\n`
+    + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 Pago online con tarjeta · seguro\n👤 ${hEsc(c.panelName)}\n\n`
+    + `📦 <b>Tu plan</b>\n▫️ ${o.wasDemo ? 'Alta' : 'Renovación'}: ${hEsc(rcPlan(o))}\n▫️ Válida hasta: <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`
+    + (o.expiresBefore && !o.wasDemo ? `\n▫️ <i>Antes vencía el ${hEsc(rcFmtD(o.expiresBefore))}</i>` : '')
+    + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '') + '\n\n'
+    + `🔑 <b>Tus datos de acceso</b>${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : '<i>la de siempre</i>'}\n\n`
+    + `🍿 ${o.wasDemo ? 'Tu cuenta ya está activada' : 'No tienes que hacer nada'}: sigue viendo como siempre.\n💙 ¡Gracias por confiar en ${hEsc(brand)}!`;
+  const url = rcUrl(c, o), kb = [];
+  if (url) kb.push([{ text: '📄 Ver recibo completo', url }]);
+  kb.push([{ text: '📲 Cómo instalar', callback_data: 'gd:main' }, ...(url ? [{ text: '🏠 Mi cuenta', url: url.replace(/\/recibo\/.*$/, '') }] : [])]);
+  return tg('sendMessage', { chat_id: c.tgChat, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: { inline_keyboard: kb } }).catch(() => {});
+}
+const RC_JS = "document.getElementById('pr').onclick=function(){window.print()}";
+const RC_HASH = crypto.createHash('sha256').update(RC_JS).digest('base64');
+function receiptPage(res, c, o) {
+  const s = db.servers.find((x) => x.id === c.serverId) || {}, brand = H(db.settings.brand.name || 'Panel'), sp = db.settings.support || {};
+  const row = (k, v) => `<div class="r"><span>${k}</span><b>${v}</b></div>`;
+  const tgu = String(sp.telegram || '').replace(/^@/, '');
+  const contact = [sp.whatsapp ? 'WhatsApp ' + H(sp.whatsapp) : '', tgu ? 'Telegram @' + H(tgu) : '', sp.email ? H(sp.email) : ''].filter(Boolean).join(' · ');
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex', 'Content-Security-Policy': `default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-${RC_HASH}'; frame-ancestors 'none'` });
+  res.end(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Recibo ${H(o.num || o.id)} · ${brand}</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#0f172a;background:radial-gradient(70% 60% at 10% 0%,#0e4a6b,transparent),radial-gradient(60% 60% at 100% 100%,#4c1d95,transparent),#060b18;display:grid;place-items:center;padding:18px}
+.rc{width:min(520px,100%);background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.top{padding:22px 24px 18px;color:#fff;background:linear-gradient(120deg,#0ea5e9,#8b5cf6,#ec4899);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.top .b{font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;opacity:.92}.top h1{margin:6px 0 0;font-size:24px}.top small{display:block;margin-top:4px;opacity:.92;font-size:13px}
+.st{flex:none;padding:6px 12px;border-radius:99px;background:#fff;color:#16a34a;font-weight:900;font-size:13px;letter-spacing:.06em}
+.bd{padding:20px 24px 8px}.sec{margin:0 0 16px}.sec h2{margin:0 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#64748b}
+.r{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px dashed #e2e8f0;font-size:14.5px}.r span{color:#475569}.r b{text-align:right;word-break:break-all}
+.tot{display:flex;justify-content:space-between;align-items:center;margin:0 0 18px;padding:14px 16px;border-radius:14px;background:#f0fdf4;border:1px solid #bbf7d0}.tot span{font-weight:700;color:#166534}.tot b{font-size:26px;color:#15803d}
+.ft{padding:4px 24px 22px;font-size:12px;color:#64748b;line-height:1.5;text-align:center}.ft b{color:#0f172a}
+.act{display:flex;gap:10px;padding:0 24px 16px}.act a,.act button{flex:1;padding:13px;border-radius:14px;border:0;font:inherit;font-size:14px;font-weight:800;text-align:center;text-decoration:none;cursor:pointer}
+.act button{color:#fff;background:linear-gradient(90deg,#22c55e,#0ea5e9)}.act a{color:#0f172a;background:#f1f5f9;display:flex;align-items:center;justify-content:center}
+@media print{body{background:#fff;padding:0;display:block}.rc{box-shadow:none;border-radius:0;width:100%}.act{display:none}.top,.tot{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+<body><main class="rc">
+<div class="top"><div><div class="b">${brand}</div><h1>Recibo de pago</h1><small>Nº ${H(o.num || o.id)} · ${H(rcWhen(o.paidAt))}</small></div><span class="st">✓ PAGADO</span></div>
+<div class="bd">
+<div class="tot"><span>Total pagado</span><b>${H(rcMoney(o))}</b></div>
+<div class="sec"><h2>Cliente</h2>${row('Nombre', H(c.panelName))}${row('Usuario', H(c.embyName))}</div>
+<div class="sec"><h2>Concepto</h2>${row(o.wasDemo ? 'Alta de cuenta' : 'Renovación', H(rcPlan(o)))}${o.expiresFrom && !o.wasDemo ? row('Desde', H(rcFmtD(o.expiresFrom))) : ''}${row('Válida hasta', H(rcFmtD(o.expiresAfter)))}${o.subId || o.cycle ? row('Renovación automática', 'Sí') : ''}</div>
+<div class="sec"><h2>Pago</h2>${row('Forma de pago', 'Tarjeta · pago online seguro')}${row('Referencia', H(o.id))}</div>
+${s.publicUrl ? `<div class="sec"><h2>Tu servidor</h2>${row('Dirección', H(s.publicUrl))}</div>` : ''}
+</div>
+<div class="act"><button type="button" id="pr">🖨️ Imprimir o guardar PDF</button><a href="/pagar/${c.id}-${H(c.payKey)}">🏠 Mi cuenta</a></div>
+<div class="ft">Justificante de tu pago a <b>${brand}</b>. Guárdalo por si lo necesitas.${contact ? '<br>¿Dudas? ' + contact : ''}</div>
+</main><script>${RC_JS}</script></body></html>`);
 }
 const H = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 function cpPage(res, code, title, body) {
@@ -5201,6 +5296,12 @@ function cpFind(token) {
 }
 /** Las páginas públicas /pagar/… (sin sesión: el enlace secreto de cada cliente es la llave) */
 async function cpRoute(req, res, pathname) {
+  const rm = /^\/pagar\/(\d+-[0-9a-f]{18})\/recibo\/([A-Z0-9]{4,40})$/.exec(pathname);
+  if (rm && req.method === 'GET') { // el recibo de un pago (mismo enlace secreto del cliente)
+    const c0 = cpFind(rm[1]), o0 = c0 && db.orders.find((x) => x.id === rm[2] && x.clientId === c0.id && x.status === 'paid');
+    if (o0) return receiptPage(res, c0, o0);
+    return cpPage(res, 404, 'Recibo no encontrado', '<h1>Recibo no encontrado</h1><p class="sub">Este recibo no existe o el enlace ha cambiado. Pídeselo a tu proveedor.</p>');
+  }
   const m = /^\/pagar\/([\w-]+)(\/checkout|\/cancelar)?$/.exec(pathname);
   const c = m && cpFind(m[1]);
   const fmtD = (d) => d.split('-').reverse().join('/');
@@ -5256,7 +5357,7 @@ async function cpRoute(req, res, pathname) {
         if (ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (ss.subscription) o.subId = String(ss.subscription); if (await cpPaid(o, 'comprobado al volver')) saveDb(); });
       } catch { /* se mira otra vez al recargar */ }
     }
-    if (o && o.status === 'paid') return cpPage(res, 200, 'Pago recibido', `<div class="big">✅</div><h1 class="ok">¡Pago recibido!</h1><p class="sub">Gracias, ${H(c.panelName)}. Tu cuenta está ${o.wasDemo ? 'activada' : 'renovada'} hasta el <b>${H(fmtD(c.expires))}</b>. No tienes que hacer nada más: sigue viendo como siempre.${o.auto ? '<br><br>🔁 La renovación automática está activa: se cobrará sola cada periodo. Puedes cancelarla cuando quieras desde este mismo enlace.' : ''}</p><p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">Ver mi cuenta</a></p>`);
+    if (o && o.status === 'paid') return cpPage(res, 200, 'Pago recibido', `<div class="big">✅</div><h1 class="ok">¡Pago recibido!</h1><p class="sub">Gracias, ${H(c.panelName)}. Tu cuenta está ${o.wasDemo ? 'activada' : 'renovada'} hasta el <b>${H(fmtD(c.expires))}</b>. No tienes que hacer nada más: sigue viendo como siempre.${o.auto ? '<br><br>🔁 La renovación automática está activa: se cobrará sola cada periodo. Puedes cancelarla cuando quieras desde este mismo enlace.' : ''}</p><a class="btn2" href="/pagar/${c.id}-${H(c.payKey)}/recibo/${H(o.id)}">🧾 Ver mi recibo</a><p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">Ver mi cuenta</a></p>`);
     if (o) return cpPage(res, 200, 'Comprobando', `<div class="big">⏳</div><h1>Comprobando tu pago…</h1><p class="sub">Puede tardar unos segundos. Si ya has pagado, esta página se actualizará sola.</p><meta http-equiv="refresh" content="4">`);
   }
   // «Mi cuenta»: el mismo enlace es la página del cliente (estado, renovar, app, guía y soporte)
@@ -5446,9 +5547,9 @@ async function sendBackupTelegram() {
   if (!to.length) throw new Error('Enlaza tu Telegram en Ajustes › Seguridad para recibir la copia.');
   const buf = encryptBackup(JSON.stringify(db), Buffer.from(c.key, 'hex'), c.salt);
   if (buf.length > 45e6) throw new Error('La copia pesa demasiado para Telegram (más de 45 MB).');
-  for (const u of to) {
+  for (const chat of [...new Set(to.flatMap(userChats))]) {
     const form = new FormData();
-    form.append('chat_id', String(u.tgChat));
+    form.append('chat_id', String(chat));
     form.append('caption', `💾 Copia de seguridad de ${db.settings.brand.name || 'Concha'} · ${whenTxt()}\nCifrada con tu contraseña de copias. Para recuperarla: Ajustes › Copias de seguridad › Restaurar.`);
     form.append('document', new Blob([buf], { type: 'application/octet-stream' }), bkName());
     const res = await fetch(`${TG_API}/bot${cfg.token}/sendDocument`, { method: 'POST', body: form, signal: AbortSignal.timeout(120000) });
@@ -5566,7 +5667,7 @@ route('GET', '/api/security', '*', ({ me, req }) => {
   const al = me.secAlerts || {};
   return {
     twoFa: !!(me.totp && me.totp.on), codesLeft: me.totp && me.totp.on ? (me.totp.codes || []).length : 0,
-    bot: cfg.token ? cfg.bot || '' : '', tgLinked: !!me.tgChat, tgLink: cfg.token && cfg.bot ? `https://t.me/${cfg.bot}?start=${userTgCode(me)}` : '',
+    bot: cfg.token ? cfg.bot || '' : '', tgLinked: !!me.tgChat, tgCount: userChats(me).length, tgLink: cfg.token && cfg.bot ? `https://t.me/${cfg.bot}?start=${userTgCode(me)}` : '',
     alerts: { login: al.login !== false, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, vendorLogins: me.role === 'super' || me.role === 'reseller' ? al.vendorLogins !== false : al.vendorLogins === true, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
     sessions: list, idleMin: db.settings.security.idleMin,
   };
@@ -5627,7 +5728,8 @@ route('POST', '/api/security/tg/test', '*', async ({ me }) => {
   if (!(await notifyUser(me, `👋 Prueba: los avisos de seguridad del panel ${db.settings.brand.name || 'Concha'} te llegarán aquí.`))) throw new HttpError(502, 'Telegram no ha aceptado el mensaje. Revisa el bot en Ajustes › Notificaciones.');
   return { ok: true };
 });
-route('POST', '/api/security/tg/unlink', '*', ({ me }) => lock(async () => { delete me.tgChat; saveDb(); return { ok: true }; }));
+route('POST', '/api/security/tg/unlink', '*', ({ me }) => lock(async () => { delete me.tgChat; delete me.tgExtra; saveDb(); return { ok: true }; }));
+route('POST', '/api/security/tg/extra-off', '*', ({ me }) => lock(async () => { const n = (me.tgExtra || []).length; delete me.tgExtra; addLog('seguridad', null, `${me.username} quitó ${n} Telegram extra de sus avisos`, me); saveDb(); return { ok: true, removed: n }; }));
 route('POST', '/api/security/sessions/close', '*', ({ me, body, req }) => {
   const tok = sessionToken(req);
   let n = 0;

@@ -1589,6 +1589,8 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .uibar span{min-width:0}.uibar button{border:0;border-radius:12px;padding:8px 14px;font:inherit;font-weight:800;color:#4c1d95;background:#fff;cursor:pointer;white-space:nowrap}
 @media (min-width:861px){.uibar{bottom:24px}}
 /* App de clientes */
+.tgshare{margin:12px 0;padding:12px 14px;border-radius:14px;border:1px dashed color-mix(in srgb,#0ea5e9 50%,transparent);background:color-mix(in srgb,#0ea5e9 8%,transparent)}.tgshare>b{display:block}.tgshare small{display:block;color:var(--muted);margin:2px 0 8px}.tgshare .cpy{margin-bottom:8px}.tgshare code{word-break:break-all}
+
 .rq{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}.rq:first-of-type{border-top:0}
 .rq-t{flex:1;min-width:200px}.rq-t b{display:block;font-size:15px}.rq-t small{color:var(--muted);font-size:12.5px}.rq-a{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.rq-st{font-size:12.5px;color:var(--muted)}
 .rq.pending .rq-t b{color:#fbbf24}
@@ -4484,6 +4486,8 @@ function vSeguridad() {
         <p class="muted small">El bot te contestará «Listo…». Luego pulsa «Ya lo he hecho, comprobar». Si el bot no contesta nada, puede que ese mismo bot esté puesto en otro programa o panel (por ejemplo, el panel antiguo de tu PC): ciérralo, porque solo uno puede leer sus mensajes.</p></details>`
     : `${sw('login', x.alerts.login, 'Cada vez que alguien entra en mi cuenta', 'Con la hora, la IP y el aparato. Si no has sido tú, lo sabrás al momento.')}${!isSuper() && (me().role === 'reseller' || (me().role === 'admin' && canDo('resellers'))) ? sw('vendorLogins', x.alerts.vendorLogins, me().role === 'reseller' ? 'Cuando entra uno de mis subresellers' : 'Cuando entra un reseller o subreseller', 'Con su nombre y la hora.') : ''}
       ${isSuper() ? sw('credits', x.alerts.credits, 'Créditos cargados por otros', 'Si un admin carga muchos créditos, sin cobrar o sin apuntar el cobro, y si se repite una referencia de pago.') : ''}${isSuper() ? sw('daily', x.alerts.daily, 'Resumen diario a las 9:00', 'Cómo fue ayer y qué hay que revisar hoy, en un solo mensaje. <button type="button" class="linkbtn" data-act="daily-test">Probar ahora</button>') : ''}${isSuper() || (me().role === 'admin' && canDo('resellers')) ? sw('sabotage', x.alerts.sabotage, 'Acciones raras del equipo', 'Si alguien borra, desactiva o cambia muchas cosas seguidas.') : ''}${isSuper() || (me().role === 'admin' && canDo('servers')) ? sw('quality', x.alerts.quality, 'Calidad y saturación', 'Resumen de la revisión diaria de calidad y aviso si un servidor convierte muchos vídeos a la vez.') : ''}${isSuper() ? sw('staffLogins', x.alerts.staffLogins, 'Cuando entra un administrador', 'Te avisa de las entradas de tus administradores.') + sw('vendorLogins', x.alerts.vendorLogins, 'Cuando entra un reseller o subreseller', 'Con su nombre, el aparato y la IP.') + sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar, con el tiempo que estuvo caído.') + sw('backup', x.alerts.backup, 'Copia de seguridad diaria', 'Te llega el archivo cifrado (se configura en Copias de seguridad).') + sw('payments', x.alerts.payments, 'Cuando un vendedor compra créditos', 'Con el importe y su saldo nuevo.') : me().role === 'admin' && canDo('viewServers') ? sw('servers', x.alerts.servers, 'Si un servidor Emby se cae', 'Y cuando vuelve a funcionar.') : ''}
+      <div class="tgshare"><b>👥 ¿Tu socio también quiere los avisos?</b><small>Mándale <b>este mismo enlace</b>. Cuando lo abra y pulse «Iniciar», le llegarán los mismos avisos que a ti. ${x.tgCount > 1 ? `Ahora mismo llegan a <b>${x.tgCount} Telegram</b>.` : ''}</small>
+        <div class="cpy"><code>${esc(x.tgLink)}</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(x.tgLink)}">${ic('copy')}Copiar</button></div>${x.tgCount > 1 ? '<button type="button" class="btn sm ghost" data-act="sec-tgextra">Quitar los otros Telegram</button>' : ''}</div>
       <div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn" data-act="sec-tgtest">Enviar mensaje de prueba</button><button class="btn ghost" data-act="sec-tgoff">Desenlazar</button></div>`;
   const tgc = `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#0ea5e9">${ic('bell')}</span><div><h2>Avisos de seguridad por Telegram</h2><small>Mensajes privados solo para ti.</small></div>
     <span class="pillst ${x.tgLinked ? 'on' : 'off'}">${x.tgLinked ? 'Enlazado' : 'Sin enlazar'}</span></div>${tgs}</section>`;
@@ -6590,13 +6594,24 @@ function vAppCli() {
   return hero + `<div class="ap-grid">${pub}<section class="ap-card">${file}${up}</section>${link}<form id="appForm" class="ap-form">${opts}${only}<div class="ap-save"><button class="btn primary" type="submit">💾 Guardar opciones</button></div></form>${hist}</div>`;
 }
 /* Instalar el panel como app: para todos (super, administradores, resellers y subresellers) */
+const isAndroid = () => /android/i.test(navigator.userAgent);
+/** Chrome «de verdad» en Android (no el navegador de dentro de Telegram, Samsung Internet, Xiaomi…), que es el que instala apps */
+const isRealChrome = () => /Chrome\/\d/.test(navigator.userAgent) && !/(SamsungBrowser|EdgA|OPR|Opera|YaBrowser|MiuiBrowser|HeyTapBrowser|UCBrowser|Firefox|; wv\)|Telegram|FBAN|FBAV|Instagram|Line\/)/i.test(navigator.userAgent);
 function vAppInst() {
   const step = (n, t) => `<div class="ig-s"><span>${n}</span><p>${t}</p></div>`;
+  const host = location.host, intent = `intent://${host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end`;
+  const other = isAndroid() && !isRealChrome() && !isStandalone()
+    ? `<section class="ap-card" style="border-color:#f59e0b"><h2>⚠️ Ábrelo en Chrome</h2><p class="muted small" style="margin:-4px 0 12px">Estás en un navegador que no deja instalar apps (por ejemplo, el de dentro de Telegram, Samsung o Xiaomi). En Chrome sí se puede.</p><a class="btn primary" style="text-decoration:none" href="${esc(intent)}">🌐 Abrir el panel en Chrome</a></section>` : '';
+  const stuck = !APP.prompt && !isStandalone() && isAndroid() && isRealChrome()
+    ? `<section class="ap-card"><h2>🤔 ¿No te sale «Instalar aplicación»?</h2><div class="ap-steps">
+        <p><b>1.</b> Si acabas de <b>borrar la app</b>, Chrome tarda un poco en olvidarla: cierra Chrome del todo (desde las apps recientes), vuelve a abrir el panel y espera unos segundos.</p>
+        <p><b>2.</b> Prueba con Chrome <b>⋮ › «Añadir a pantalla de inicio» › «Instalar»</b>.</p>
+        <p><b>3.</b> Si sigue sin salir: Chrome <b>⋮ › Ajustes › Configuración de sitios › Todos los sitios › ${esc(host)} › «Borrar y restablecer»</b>. Vuelve a entrar en el panel e instálalo (tendrás que poner tu usuario otra vez).</p></div></section>` : '';
   return `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#0ea5e9 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#312e81)"><span class="ap-ic"><img src="/icon-192.png" alt="" style="width:46px;height:46px;border-radius:12px"></span><div><h1>Instalar el panel</h1><p>Ten ${esc(BRAND.name || 'el panel')} como una app en tu móvil o en tu ordenador: se abre a pantalla completa y se actualiza solo.</p></div></section>
-    <div class="ap-grid">
+    <div class="ap-grid">${other}
       <section class="ap-card" style="text-align:center"><button type="button" class="btn primary" data-act="app-install" style="font-size:16px;padding:14px 22px">📲 Instalar ahora</button>
         <p class="muted small" style="margin:10px 0 0">${isStandalone() ? 'Ya lo estás usando como app 👍' : APP.prompt ? 'Tu navegador lo puede instalar directamente.' : 'Si no se abre la ventana de instalar, sigue los pasos de abajo.'}</p></section>
-      <section class="ap-card ig"><h2>🤖 Android (Chrome)</h2>${step(1, 'Toca el menú <b>⋮</b> arriba a la derecha.')}${step(2, 'Toca <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.')}${step(3, 'Confirma con <b>«Instalar»</b>. ¡Listo!')}</section>
+      ${stuck}<section class="ap-card ig"><h2>🤖 Android (Chrome)</h2>${step(1, 'Toca el menú <b>⋮</b> arriba a la derecha.')}${step(2, 'Toca <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.')}${step(3, 'Confirma con <b>«Instalar»</b>. ¡Listo!')}</section>
       <section class="ap-card ig"><h2>🍎 iPhone o iPad (Safari)</h2>${step(1, 'Toca <b>Compartir</b> <span class="ig-k">⬆️</span> abajo en la pantalla.')}${step(2, 'Toca <b>«Añadir a pantalla de inicio»</b> <span class="ig-k">➕</span>.')}${step(3, 'Toca <b>«Añadir»</b>. ¡Listo!')}</section>
       <section class="ap-card ig"><h2>💻 Ordenador (Chrome o Edge)</h2>${step(1, 'Pulsa el icono <span class="ig-k">⊕</span> a la derecha de la dirección.')}${step(2, 'Pulsa <b>«Instalar»</b>. Te queda un icono en el escritorio.')}</section>
     </div>`;
@@ -6648,31 +6663,36 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 182, d: '2026-10-28', items: ['🧾 Recibo de pago: cuando un cliente paga online le llega un recibo bonito por Telegram (importe, plan, fecha y sus datos de acceso) y un enlace para verlo, imprimirlo o guardarlo en PDF'] },
+  { v: 181, d: '2026-10-28', items: ['✨ Novedades a medida: tu equipo solo ve lo nuevo que le sirve; los arreglos y retoques solo los ves tú'] },
+  { v: 180, d: '2026-10-28', items: ['👥 Avisos del panel para 2: tu socio puede recibir en su Telegram los mismos avisos que tú (Ajustes › Seguridad)'] },
+  { v: 179, d: '2026-10-28', items: ['📲 Bot: guía de instalación nueva con Moonfin (recomendado), Emby con Downloader, cómo iniciar sesión y dónde ver Emby. En /problemas › «Límite de transmisión» y en /instalar'], team: ['📲 El bot de tus clientes tiene una guía de instalación nueva con Moonfin: fácil y sin códigos (/instalar)'] },
+  { v: 178, d: '2026-10-28', items: ['📲 «Instalar el panel» detecta si estás en un navegador que no deja instalar (Telegram, Samsung…) y te lleva a Chrome, con ayuda si no sale «Instalar aplicación»'] },
   { v: 177, d: '2026-10-28', items: ['🛡️ Arreglado: al actualizar el panel (Redeploy) se podían perder las cuentas creadas o renovadas en ese momento. Ahora el panel nuevo espera a que el viejo termine y no se pierde nada'] },
-  { v: 176, d: '2026-10-27', items: ['🤖 El bot ahora ayuda mucho más: /problemas con soluciones, /servidor, /datos, /aparatos, /precios e /invitar', '🎁 Invita a un amigo: días de regalo para quien recomienda'] },
+  { v: 176, d: '2026-10-27', items: ['🤖 El bot ahora ayuda mucho más: /problemas con soluciones, /servidor, /datos, /aparatos, /precios e /invitar', '🎁 Invita a un amigo: días de regalo para quien recomienda'], team: ['🤖 El bot de tus clientes ayuda mucho más: /problemas con soluciones, /servidor, /datos, /aparatos y /precios'] },
   { v: 175, d: '2026-10-27', items: ['✏️ Los mensajes «Enlace de pago» e «Invitación a Telegram» se pueden cambiar en Plantillas de mensajes'] },
-  { v: 174, d: '2026-10-27', items: ['🤖 El bot responde a tus clientes: /suscripcion (cuántos días le quedan), /renovar, /app, /calidad y /ayuda, con un menú en Telegram'] },
+  { v: 174, d: '2026-10-27', items: ['🤖 El bot responde a tus clientes: /suscripcion (cuántos días le quedan), /renovar, /app, /calidad y /ayuda, con un menú en Telegram'], team: ['🤖 Tus clientes pueden escribir /suscripcion al bot para ver cuántos días les quedan'] },
   { v: 173, d: '2026-10-27', items: ['🛠️ Arreglado el aviso «Error en el panel… reading value» al editar o renovar después de abrir Renovar'] },
-  { v: 172, d: '2026-10-27', items: ['🔔 Avisos escalonados por Telegram: X días antes, 1 día antes, el mismo día y un rescate a los 3 días de caducar', '🏠 El enlace de cada cliente es su página «Mi cuenta»: fecha, pantallas, renovar, app, guía y soporte', '🚀 Al terminar una demo, el bot invita a activarla con un botón de pago', '📊 Cobros online en el Resumen', '🔁 Renovación automática opcional para tus clientes'] },
-  { v: 171, d: '2026-10-27', items: ['💬 Mensajes nuevos para tus clientes: invitación al bot, bienvenida, aviso de caducidad con botón «Renovar ahora», enlace de pago y confirmación del pago'] },
+  { v: 172, d: '2026-10-27', items: ['🔔 Avisos escalonados por Telegram: X días antes, 1 día antes, el mismo día y un rescate a los 3 días de caducar', '🏠 El enlace de cada cliente es su página «Mi cuenta»: fecha, pantallas, renovar, app, guía y soporte', '🚀 Al terminar una demo, el bot invita a activarla con un botón de pago', '📊 Cobros online en el Resumen', '🔁 Renovación automática opcional para tus clientes'], team: ['🔔 Tus clientes reciben avisos por Telegram 5 días antes, el día antes, el mismo día y un «te echamos de menos» si caduca'] },
+  { v: 171, d: '2026-10-27', items: ['💬 Mensajes nuevos para tus clientes: invitación al bot, bienvenida, aviso de caducidad con botón «Renovar ahora», enlace de pago y confirmación del pago'], team: ['💬 Mensajes nuevos y más bonitos para tus clientes: invitación al bot, bienvenida y aviso de caducidad'] },
   { v: 169, d: '2026-10-27', items: ['💳 «Enlace de pago» abre una ventana con el mensaje listo para copiar o enviar por WhatsApp y Telegram', '📺 En la página de pago el cliente elige pantallas (1, 2, 3 o 4) y tiempo, con todos tus precios'] },
   { v: 168, d: '2026-10-27', items: ['💳 Cobro a clientes: tus clientes pagan con tarjeta desde su enlace (o el botón del aviso de Telegram) y su cuenta se renueva sola', '👥 Preparado para tus vendedores: cuando lo actives, cada uno pone sus precios y su Stripe'] },
   { v: 167, d: '2026-10-27', items: ['🔄 Con el panel abierto, si subes una versión nueva sale el aviso «Actualizar»; y en Novedades hay un botón para buscar actualizaciones'] },
-  { v: 166, d: '2026-10-27', items: ['⬅️ «Atrás» vuelve a la pantalla anterior, paso a paso, y al mismo sitio donde estabas', '🙈 App de clientes: interruptor para enseñarla u ocultarla a tu equipo con un clic'] },
-  { v: 165, d: '2026-10-26', items: ['🔄 El panel se actualiza solo: si un móvil tenía guardada una versión vieja, la cambia por la nueva sin tener que borrar nada'] },
-  { v: 164, d: '2026-10-26', items: ['🖥️ Los formularios aprovechan toda la pantalla del ordenador: secciones en dos columnas y «Así quedará la cuenta» fijo a la derecha'] },
-  { v: 162, d: '2026-10-26', items: ['📲 «Instalar el panel» en Ajustes para todos: el superadministrador, los administradores, los resellers y los subresellers'] },
+  { v: 166, d: '2026-10-27', items: ['⬅️ «Atrás» vuelve a la pantalla anterior, paso a paso, y al mismo sitio donde estabas', '🙈 App de clientes: interruptor para enseñarla u ocultarla a tu equipo con un clic'], team: ['⬅️ «Atrás» vuelve a la pantalla anterior, paso a paso, y al mismo sitio donde estabas'] },
+  { v: 165, d: '2026-10-26', items: ['🔄 El panel se actualiza solo: si un móvil tenía guardada una versión vieja, la cambia por la nueva sin tener que borrar nada'], team: ['🔄 El panel se actualiza solo: siempre tienes la última versión, sin borrar nada'] },
+  { v: 164, d: '2026-10-26', items: ['🖥️ Los formularios aprovechan toda la pantalla del ordenador: secciones en dos columnas y «Así quedará la cuenta» fijo a la derecha'], team: ['🖥️ En el ordenador, los formularios aprovechan toda la pantalla'] },
+  { v: 162, d: '2026-10-26', items: ['📲 «Instalar el panel» en Ajustes para todos: el superadministrador, los administradores, los resellers y los subresellers'], team: ['📲 Puedes instalar el panel como una app en tu móvil: Ajustes › Instalar el panel'] },
   { v: 161, d: '2026-10-26', items: ['📲 Los vendedores también ven «App de clientes» en Ajustes para descargar la app y copiar el enlace o el código'] },
   { v: 159, d: '2026-10-26', items: ['📲 App de clientes: sube tu app, tus clientes la descargan desde tu panel y el enlace sale en los mensajes', '🏷️ En Monitor y en la ficha ves quién usa tu app', '🔒 «Solo mi app»: opción para que solo se pueda ver con tu app (la activas y desactivas cuando quieras)', '🔢 Código de Downloader: tus clientes escriben solo un número en la Fire Stick'] },
-  { v: 158, d: '2026-10-26', items: ['🎬 Entrada al panel nueva: un muro de carátulas que se mueve y todo centrado, en el ordenador y en el móvil'] },
-  { v: 157, d: '2026-10-26', items: ['✨ Este botón de Novedades: aquí verás cada mejora del panel'] },
-  { v: 156, d: '2026-10-26', items: ['🔄 Ventana de Renovar nueva: botones de colores y un ticket que enseña la fecha nueva y lo que cuesta', '⚡ «Renovar igual»: renueva con el mismo plan de la última vez en un toque', '📇 Ficha del cliente: todo de una cuenta en una sola pantalla', '📲 El panel se puede instalar como una app en el móvil y el ordenador'] },
-  { v: 155, d: '2026-10-26', items: ['🧾 Movimientos con diseño nuevo: por días, con buscador y se ve de quién es cada cuenta'] },
+  { v: 158, d: '2026-10-26', items: ['🎬 Entrada al panel nueva: un muro de carátulas que se mueve y todo centrado, en el ordenador y en el móvil'], team: ['🎬 Entrada al panel nueva, más bonita y centrada'] },
+  { v: 157, d: '2026-10-26', items: ['✨ Este botón de Novedades: aquí verás cada mejora del panel'], team: ['✨ Este botón de Novedades: aquí verás lo nuevo del panel'] },
+  { v: 156, d: '2026-10-26', items: ['🔄 Ventana de Renovar nueva: botones de colores y un ticket que enseña la fecha nueva y lo que cuesta', '⚡ «Renovar igual»: renueva con el mismo plan de la última vez en un toque', '📇 Ficha del cliente: todo de una cuenta en una sola pantalla', '📲 El panel se puede instalar como una app en el móvil y el ordenador'], team: ['🔄 Ventana de Renovar nueva, con un ticket que enseña la fecha nueva y lo que cuesta', '⚡ «Renovar igual»: renueva con el mismo plan en un toque', '📇 Ficha del cliente: todo de una cuenta en una sola pantalla'] },
+  { v: 155, d: '2026-10-26', items: ['🧾 Movimientos con diseño nuevo: por días, con buscador y se ve de quién es cada cuenta'], team: ['🧾 Movimientos con diseño nuevo: por días, con buscador y se ve de quién es cada cuenta'] },
   { v: 154, d: '2026-10-26', items: ['💶 «Precios y paquetes» renovado, con botones + y − y una escalera de precios'] },
   { v: 153, d: '2026-10-26', items: ['🔴 Aviso de servidor caído en el Resumen, pequeño y solo cuando hay alguno caído'] },
-  { v: 151, d: '2026-10-26', items: ['🏠 Eliges qué página se abre al entrar (Resumen o Clientes) en Mi perfil'] },
-  { v: 150, d: '2026-10-26', items: ['🎨 Formularios con más color: secciones numeradas, iconos y botones grandes para elegir'] },
-  { v: 149, d: '2026-10-26', items: ['🗑️ En Seguimiento puedes borrar las demos que no compraron, una a una o todas'] },
+  { v: 151, d: '2026-10-26', items: ['🏠 Eliges qué página se abre al entrar (Resumen o Clientes) en Mi perfil'], team: ['🏠 Eliges qué página se abre al entrar (Resumen o Clientes) en Mi perfil'] },
+  { v: 150, d: '2026-10-26', items: ['🎨 Formularios con más color: secciones numeradas, iconos y botones grandes para elegir'], team: ['🎨 Formularios con más color y botones grandes para elegir'] },
+  { v: 149, d: '2026-10-26', items: ['🗑️ En Seguimiento puedes borrar las demos que no compraron, una a una o todas'], team: ['🗑️ En Seguimiento puedes borrar las demos que no compraron'] },
   { v: 148, d: '2026-10-26', items: ['⏸️ Las pausas largas se cierran solas (por defecto a los 15 minutos)'] },
   { v: 147, d: '2026-10-25', items: ['🔎 Si una cuenta pierde sus bibliotecas, el aviso dice qué programa pudo ser'] },
   { v: 145, d: '2026-10-25', items: ['✅ Un minuto después de crear o renovar, el panel comprueba que las bibliotecas están bien', '📨 Si no puede arreglar una cuenta, te avisa por Telegram'] },
@@ -6681,18 +6701,21 @@ const NEWS = [
   { v: 142, d: '2026-10-23', items: ['🟣 Muchas mejoras para Jellyfin: carátulas, contraseñas, reinicio y una pantalla de margen'] },
   { v: 141, d: '2026-10-23', items: ['🔑 Las licencias eligen plataforma: solo Emby, solo Jellyfin o las dos'] },
   { v: 140, d: '2026-10-22', items: ['👥 El detector de cuentas compartidas ya no cuenta las pausas y es más fiable'] },
-  { v: 139, d: '2026-10-22', items: ['🎉 Animación nueva al crear o renovar: un ticket con la fecha que va subiendo'] },
-  { v: 138, d: '2026-10-22', items: ['📡 Monitor con filtro: todas, mías o de mis vendedores'] },
+  { v: 139, d: '2026-10-22', items: ['🎉 Animación nueva al crear o renovar: un ticket con la fecha que va subiendo'], team: ['🎉 Animación nueva al crear o renovar una cuenta'] },
+  { v: 138, d: '2026-10-22', items: ['📡 Monitor con filtro: todas, mías o de mis vendedores'], team: ['📡 Monitor con filtro: todas, mías o de mis subresellers'] },
 ];
+/* Novedades que ve cada uno: el superadministrador, todas; el resto del equipo, solo lo nuevo que le sirve
+   (las que llevan «team»). Los arreglos y retoques no se les enseñan */
+const newsList = () => (isSuper() ? NEWS : NEWS.filter((n) => n.team).map((n) => ({ ...n, items: n.team })));
 // La primera vez solo se marca como nueva la última versión
-const newsSeen = () => { let n = 0; try { n = +(localStorage.getItem('newsSeen') || 0); } catch (e) { /* nada */ } return n || NEWS[0].v - 1; };
-function newsDots() { const on = NEWS[0].v > newsSeen(); document.querySelectorAll('.newsdot').forEach((x) => { x.hidden = !on; }); }
+const newsSeen = () => { let n = 0; try { n = +(localStorage.getItem('newsSeen') || 0); } catch (e) { /* nada */ } return n || ((newsList()[0] || NEWS[0]).v - 1); };
+function newsDots() { const L = newsList(); const on = !!L.length && L[0].v > newsSeen(); document.querySelectorAll('.newsdot').forEach((x) => { x.hidden = !on; }); }
 function dNews() {
   const seen = newsSeen(), byDay = [];
-  for (const n of NEWS) { let g = byDay.find((x) => x.d === n.d); if (!g) byDay.push(g = { d: n.d, list: [] }); g.list.push(n); }
+  for (const n of newsList()) { let g = byDay.find((x) => x.d === n.d); if (!g) byDay.push(g = { d: n.d, list: [] }); g.list.push(n); }
   const dayTxt = (d) => { const t = d === S.d.today ? 'Hoy' : new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); };
   showDlg('✨ Novedades del panel', `<p class="muted small" style="margin:-4px 0 12px">Lo último que se ha mejorado. Lo más nuevo, arriba. El panel se actualiza solo al abrirlo; también puedes <button type="button" class="linkbtn" data-act="ui-check">🔄 buscar actualizaciones</button>.</p><div class="nw">${byDay.map((g) => `<h4 class="nw-d">${esc(dayTxt(g.d))}</h4>${g.list.map((n) => `<div class="nw-v${n.v > seen ? ' new' : ''}"><div class="nw-h"><b>Versión ${n.v}</b>${n.v > seen ? '<span class="nw-new">NUEVO</span>' : ''}</div><ul>${n.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}`).join('')}</div>`);
-  try { localStorage.setItem('newsSeen', String(NEWS[0].v)); } catch (e) { /* nada */ }
+  try { localStorage.setItem('newsSeen', String((newsList()[0] || NEWS[0]).v)); } catch (e) { /* nada */ }
   newsDots();
 }
 
@@ -6703,7 +6726,7 @@ const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.
 const isMobile = () => /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) || isIOS();
 const canInstall = () => !isStandalone() && (!!APP.prompt || isMobile());
 try { if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) navigator.serviceWorker.register('/sw.js').catch(() => {}); } catch (e) { /* sin app */ }
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); APP.prompt = e; if (S.d) instBanner(); });
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); APP.prompt = e; if (S.d) { instBanner(); if (S.view === 'appinst') render(); } });
 window.addEventListener('appinstalled', () => { APP.prompt = null; const b = $('#instBar'); if (b) b.remove(); toast('¡App instalada! Ya la tienes en la pantalla de inicio 📲'); });
 function instHidden() { try { return Date.now() < +(localStorage.getItem('instHide') || 0); } catch (e) { return false; } }
 function instBanner() {
@@ -9057,6 +9080,7 @@ document.addEventListener('click', (e) => {
     case 'rq-done': rqSet(el.dataset.id, 'done'); break;
     case 'rq-no': rqSet(el.dataset.id, 'no'); break;
     case 'rq-del': rqSet(el.dataset.id, 'delete'); break;
+    case 'sec-tgextra': dConfirm('Quitar los otros Telegram', 'Los avisos solo te llegarán a ti. Para volver a añadir a tu socio, mándale otra vez el enlace.', 'Quitar', () => api('POST', '/api/security/tg/extra-off', {}).then(() => { S.sec = null; }), 'Quitados'); break;
     case 'cp-subs': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.subs); api('PUT', '/api/client-pay', { subs: on }).then(() => { toast(on ? 'Renovación automática ofrecida 🔁' : 'Renovación automática ya no se ofrece'); S.cp = null; loadCp(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cp-vend': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.vendors); api('PUT', '/api/client-pay', { vendors: on }).then(() => { toast(on ? 'Activado para tus vendedores 👥' : 'Apagado para tus vendedores'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cpv-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/my-client-pay', { on }).then(() => { toast(on ? 'Cobro a tus clientes activado ✅' : 'Cobro a tus clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
