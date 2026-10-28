@@ -20,6 +20,7 @@ if (typeof fetch !== 'function') {
 const PORT = Number(process.env.PORT) || 3080;
 const HOST = process.env.HOST || '0.0.0.0';
 const DATA_DIR = path.join(__dirname, 'data');
+let SUPERSEDED = false, FROZEN = false; // relevo al actualizar (ver «Relevo seguro al actualizar»)
 // App propia para los clientes (ver «App propia para los clientes» más abajo)
 const APP_DIR = path.join(DATA_DIR, 'app'), APP_APK = path.join(APP_DIR, 'app.apk');
 const APP_MAX = 400 * 1024 * 1024;
@@ -213,6 +214,7 @@ function openApiKeys(list) {
   }
 }
 function saveDb() {
+  if (FROZEN) return; // la versión nueva ya está al mando: este panel viejo no sobrescribe sus datos
   const tmp = DB_FILE + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(dbForDisk(), null, 2));
   fs.renameSync(tmp, DB_FILE);
@@ -646,7 +648,10 @@ async function setEmbyPassword(server, embyId, password, isNew) {
 
 /* ---------- Cola: los cambios van de uno en uno ---------- */
 let chain = Promise.resolve();
-function lock(fn) { const p = chain.then(() => fn()); chain = p.catch(() => {}); return p; }
+function lock(fn) {
+  if (SUPERSEDED) return Promise.reject(new HttpError(503, 'El panel se está actualizando. Espera unos segundos y vuelve a intentarlo.'));
+  const p = chain.then(() => fn()); chain = p.catch(() => {}); return p;
+}
 
 /* ---------- Ciclo de vida automatico ----------
  * activa   -> caducada : el dia siguiente al vencimiento. Se le quitan las bibliotecas.
@@ -709,6 +714,7 @@ const SES_FILE = path.join(DATA_DIR, 'sesiones.json');
 const tokHash = (t) => crypto.createHash('sha256').update(String(t)).digest('hex');
 let sesTimer = null;
 function saveSessions(now) {
+  if (FROZEN) return;
   if (sesTimer) { clearTimeout(sesTimer); sesTimer = null; }
   const write = () => {
     sesTimer = null;
@@ -2539,6 +2545,7 @@ async function tg(method, body, token) {
 }
 let tgBusy = false, tgLastErr = '';
 async function telegramPoll() {
+  if (SUPERSEDED) return;
   const cfg = db.settings.notices.telegram;
   // Tambien con los avisos a clientes apagados: el bot sirve para los avisos de seguridad del equipo
   if (!cfg.token || tgBusy) return;
@@ -4302,6 +4309,7 @@ let monitoring = false;
 let lastPrune = 0;
 const pending = new Map(); // exceso de pantallas visto por primera vez -> cuando
 async function monitor() {
+  if (SUPERSEDED) return;
   const cfg = db.settings.alerts;
   if (monitoring || (!cfg.transcode.on && !cfg.sessions.on)) return;
   monitoring = true;
@@ -4575,6 +4583,7 @@ async function pauseCheck(s, list, byEmby) {
 }
 let usageDirty = 0, usageBusy = false;
 async function recordUsage() {
+  if (SUPERSEDED) return;
   if (usageBusy || !db.servers.length) return;
   usageBusy = true;
   try {
@@ -4633,6 +4642,7 @@ const CONN_FILE = path.join(DATA_DIR, 'conexiones.json');
 let conn = null, connDirty = false, connSaved = 0;
 function connLoad() { if (conn) return conn; try { conn = JSON.parse(fs.readFileSync(CONN_FILE, 'utf8')); } catch { conn = {}; } return conn; }
 function saveConn(force) {
+  if (FROZEN) return;
   if (!connDirty || (!force && Date.now() - connSaved < 120000)) return;
   try {
     const lim = Date.now() - 45 * 86400000;
@@ -6764,6 +6774,7 @@ let agentData = {}; // sid -> { samples: [...], last, alerts: {} }
 try { agentData = JSON.parse(fs.readFileSync(AGENT_FILE, 'utf8')) || {}; } catch { agentData = {}; }
 let agentDirty = false;
 function saveAgents(force) {
+  if (FROZEN) return;
   if (!agentDirty && !force) return;
   agentDirty = false;
   try { fs.writeFileSync(AGENT_FILE + '.tmp', JSON.stringify(agentData)); fs.renameSync(AGENT_FILE + '.tmp', AGENT_FILE); } catch (e) { console.error('Estado servidores:', e.message); }
@@ -7516,6 +7527,8 @@ const server = http.createServer(async (req, res) => {
       return res.end(gz ? f.gz : f.raw);
     }
     if (appFile(req, res, pathname)) return;
+    // Mientras la versión nueva toma el relevo, este panel viejo no acepta cambios (se reintentan en la nueva)
+    if (SUPERSEDED && req.method !== 'GET' && req.method !== 'HEAD') return send(res, 503, { error: 'El panel se está actualizando. Espera unos segundos y vuelve a intentarlo.' });
     if (pathname.startsWith('/pagar/') && (req.method === 'GET' || req.method === 'POST')) return await cpRoute(req, res, pathname);
     if (req.method === 'POST' && pathname === '/api/app-upload') return await appUpload(req, res);
     if ((req.method === 'GET' || req.method === 'HEAD') && /^\/app(\/|\.apk$|$)/.test(pathname) && (pathname === '/app' || pathname === '/app/' || pathname === '/app.apk' || pathname === '/app/version.json' || /^\/app\/[\w.-]+\.apk$/.test(pathname))) return appDownload(req, res, pathname);
@@ -7554,6 +7567,45 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+/* ======================================================================
+   Relevo seguro al actualizar (Redeploy). Coolify arranca el panel nuevo mientras el viejo sigue atendiendo
+   unos segundos o minutos. Antes, lo que se hacía en el viejo durante ese rato (crear o renovar una cuenta)
+   se PERDÍA: el nuevo ya había leído los datos y después los sobrescribía.
+   Ahora: el nuevo avisa (data/instancia.json); el viejo termina lo que esté haciendo, deja de guardar y
+   contesta «el panel se está actualizando»; el nuevo espera a que el viejo pare y solo entonces lee los datos.
+   ====================================================================== */
+const INST_FILE = path.join(DATA_DIR, 'instancia.json'), BEAT_FILE = path.join(DATA_DIR, 'latido.json');
+const INSTANCE = crypto.randomBytes(8).toString('hex');
+const CLI_MODE = process.argv[2] === 'clave' || process.argv[2] === 'sin2fa';
+const readJsonSafe = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } };
+const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+function beat(stopped) {
+  try { const tmp = `${BEAT_FILE}.${INSTANCE}`; fs.writeFileSync(tmp, JSON.stringify({ id: INSTANCE, t: Date.now(), stopped: !!stopped })); fs.renameSync(tmp, BEAT_FILE); } catch { /* nada */ }
+}
+function takeOver() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(INST_FILE, JSON.stringify({ id: INSTANCE, pid: process.pid, at: new Date().toISOString() }));
+  const b = readJsonSafe(BEAT_FILE);
+  if (!b || b.id === INSTANCE || b.stopped || Date.now() - (b.t || 0) > 8000) return; // no hay otro panel en marcha
+  console.log('Hay otro panel en marcha (actualización): esperando a que termine lo que está haciendo…');
+  const until = Date.now() + 25000;
+  while (Date.now() < until) { sleepSync(250); const x = readJsonSafe(BEAT_FILE); if (!x || x.stopped || x.id !== b.id || Date.now() - (x.t || 0) > 6000) break; }
+  console.log('Relevo hecho: se leen los datos con todo lo último guardado.');
+}
+function watchTakeover() {
+  setInterval(() => {
+    if (SUPERSEDED) return;
+    const m = readJsonSafe(INST_FILE);
+    if (m && m.id && m.id !== INSTANCE) {
+      SUPERSEDED = true;
+      console.log('Ha arrancado la versión nueva del panel: este panel termina lo pendiente y deja de guardar.');
+      chain.then(() => { try { saveConn(true); } catch { /* nada */ } try { saveSessions(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } FROZEN = true; beat(true); });
+      return;
+    }
+    beat(false);
+  }, 1000).unref();
+}
+if (!CLI_MODE) { takeOver(); beat(false); watchTakeover(); }
 loadDb();
 loadSessions();
 /* Rescate desde la terminal (Coolify › Terminal, o la ventana del servidor):
