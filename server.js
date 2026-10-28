@@ -2860,6 +2860,16 @@ async function botCallback(cq) {
   const chat = cq.message && cq.message.chat && cq.message.chat.id, data = String(cq.data || '');
   await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   if (!chat) return;
+  if (data.startsWith('mp:')) { // confirmar o rechazar un pago a mano (Bizum, PayPal, Revolut)
+    const [, act, oid] = data.split(':'); if (!oid) return;
+    const o = db.orders.find((x) => x.id === oid && x.kind === 'client' && x.manual);
+    const u = o && mpConfirmers(o).find((x) => userChats(x).includes(chat));
+    if (!u) return;
+    let msg;
+    try { msg = await lock(() => mpDecide(o, act === 'ok', u)); } catch (e) { msg = '⚠️ ' + e.message; }
+    mpCloseButtons(o, o.status === 'paid' ? `✅ Confirmado por ${o.confirmedBy || u.name}` : o.status === 'rejected' ? `❌ No recibido (${o.rejectedBy || u.name})` : '…');
+    return tg('sendMessage', { chat_id: chat, text: msg }).catch(() => {});
+  }
   if (data.startsWith('gd:') || data === 'pb:pantallas') {
     const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
     if (!['main', 'moon', 'dl', 'login', 'where'].includes(k)) return;
@@ -5148,16 +5158,72 @@ const cpLink = (c) => `${siteBase()}/pagar/${c.id}-${payKeyOf(c)}`;
    - las del superadministrador y sus administradores: con la configuración y el Stripe del superadministrador
    - las de un reseller o subreseller: con SUS precios y SU propio Stripe (el dinero le llega a él y se le descuentan
      los créditos de la renovación), solo si el superadministrador lo ha permitido para los vendedores */
+/* Formas de pago «a mano» (Bizum, PayPal, Revolut): el cliente paga, pulsa «Ya he pagado» y quien cobra lo confirma
+   con un botón (Telegram o el panel). Al confirmarlo, la cuenta se renueva sola, igual que con Stripe */
+const MANUAL = { bizum: { t: 'Bizum', i: '📱' }, paypal: { t: 'PayPal', i: '🅿️' }, revolut: { t: 'Revolut', i: '🔵' } };
+const cpManual = (cfg) => { const m = (cfg && cfg.manual) || {}; return Object.keys(MANUAL).filter((k) => m[k]); };
+const payMethodTxt = (o) => (MANUAL[o.method] ? MANUAL[o.method].t : 'Tarjeta · pago online seguro');
+function cleanManual(b) {
+  const out = {}, user = (x) => String(x || '').trim().replace(/^https?:\/\//i, '').replace(/^(www\.)?(paypal\.me|revolut\.me)\/?/i, '').replace(/^@/, '').replace(/\/.*$/, '');
+  const bz = String(b.bizum || '').replace(/[\s.-]/g, '');
+  if (bz) { if (!/^\+?\d{9,15}$/.test(bz)) throw new HttpError(400, 'El número de Bizum no parece válido (solo números, por ejemplo 600123456).'); out.bizum = bz; }
+  for (const k of ['paypal', 'revolut']) {
+    const v = user(b[k]);
+    if (v) { if (!/^[A-Za-z0-9._-]{2,40}$/.test(v)) throw new HttpError(400, `El usuario de ${MANUAL[k].t} no parece válido: pon solo tu usuario de ${k}.me (sin espacios).`); out[k] = v; }
+  }
+  return out;
+}
+const cpStripeOk = () => !!(db.payCfg.stripe.on && db.payCfg.stripe.key);
 function cpCtx(c) {
   if (!c) return null;
   const o = db.users.find((u) => u.id === c.ownerId);
   if (!o || o.role === 'super' || o.role === 'admin') {
     const cfg = cpCfg();
-    return cfg.on && db.payCfg.stripe.on && db.payCfg.stripe.key ? { cfg, key: db.payCfg.stripe.key, vendor: null } : null;
+    return cfg.on && (cpStripeOk() || cpManual(cfg).length) ? { cfg, key: cpStripeOk() ? db.payCfg.stripe.key : null, vendor: null } : null;
   }
   const v = o.clientPay;
-  if (!cpCfg().vendors || o.disabled || !v || !v.on || !v.key) return null;
-  return { cfg: v, key: v.key, vendor: o };
+  if (!cpCfg().vendors || o.disabled || !v || !v.on || !(v.key || cpManual(v).length)) return null;
+  return { cfg: v, key: v.key || null, vendor: o };
+}
+/** Quién puede confirmar un pago a mano: el vendedor de esa cuenta, o el superadministrador (y los admins con avisos de pagos) */
+function mpConfirmers(o) {
+  if (o.vendorId) { const v = db.users.find((u) => u.id === o.vendorId); return v && !v.disabled ? [v] : []; }
+  return db.users.filter((u) => !u.disabled && (u.role === 'super' || (u.role === 'admin' && (u.secAlerts || {}).payments === true)));
+}
+const mpCfg = (o) => (o.vendorId ? ((db.users.find((u) => u.id === o.vendorId) || {}).clientPay || {}) : cpCfg()).manual || {};
+async function mpAsk(o) {
+  const c = db.clients.find((x) => x.id === o.clientId); if (!c) return;
+  const money = Number(o.amount).toLocaleString('es-ES', { style: 'currency', currency: o.currency || 'EUR' });
+  const text = `💰 Pago por confirmar\n\n${c.panelName} (@${c.embyName}) dice que te ha pagado ${money} por ${MANUAL[o.method].t}.\n📦 ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens || 1} ${o.screens === 1 ? 'pantalla' : 'pantallas'}\n🔖 Concepto: ${o.ref}\n\nMira tu ${MANUAL[o.method].t} y confirma 👇\nAl confirmar, su cuenta se renueva sola y le llega su recibo.`;
+  const kb = { inline_keyboard: [[{ text: '✅ Sí, ha llegado', callback_data: 'mp:ok:' + o.id }], [{ text: '❌ No ha llegado', callback_data: 'mp:no:' + o.id }]] };
+  const msgs = [];
+  for (const u of mpConfirmers(o)) for (const chat of userChats(u)) {
+    try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch (e) { console.error('Telegram (pago por confirmar):', e.message); }
+  }
+  o.mpMsgs = msgs;
+}
+/** Confirma (ok) o rechaza un pago a mano. Se llama dentro de lock() */
+async function mpDecide(o, ok, u) {
+  if (!o || o.kind !== 'client' || !o.manual) throw new HttpError(404, 'Ese pago no existe.');
+  if (o.status !== 'pending') return o.status === 'paid' ? 'Este pago ya estaba confirmado ✅' : 'Este pago ya estaba marcado como no recibido.';
+  const c = db.clients.find((x) => x.id === o.clientId);
+  if (ok) {
+    o.confirmedBy = u.name;
+    await cpPaid(o, `confirmado por ${u.name}`);
+    saveDb();
+    return c ? `✅ Confirmado. La cuenta de ${c.panelName} ya está renovada hasta el ${rcFmtD(c.expires)} y le ha llegado su recibo.` : '✅ Confirmado.';
+  }
+  o.status = 'rejected'; o.rejectedBy = u.name; o.rejectedAt = new Date().toISOString();
+  if (c) addLog('cobro', c, `Pago por ${MANUAL[o.method].t} de ${Number(o.amount).toFixed(2)} ${o.currency} marcado como no recibido por ${u.name} (concepto ${o.ref})`, u);
+  saveDb();
+  if (c && c.tgChat) {
+    const money = Number(o.amount).toLocaleString('es-ES', { style: 'currency', currency: o.currency || 'EUR' });
+    tg('sendMessage', { chat_id: c.tgChat, disable_web_page_preview: true, text: `😕 No hemos podido confirmar tu pago de ${money} por ${MANUAL[o.method].t} (concepto ${o.ref}).\n\nSi ya lo enviaste, no te preocupes: ${o.vendorId ? 'habla con tu proveedor y lo revisáis juntos.' : (botContact() ? 'escríbenos y lo revisamos:\n\n' + botContact() : 'escríbenos y lo revisamos.')}` }).catch(() => {});
+  }
+  return c ? `❌ Marcado como no recibido. A ${c.panelName} se le ha avisado.` : '❌ Marcado como no recibido.';
+}
+function mpCloseButtons(o, note) {
+  for (const m of o.mpMsgs || []) tg('editMessageReplyMarkup', { chat_id: m.chat, message_id: m.mid, reply_markup: { inline_keyboard: [[{ text: note, callback_data: 'mp:done' }]] } }).catch(() => {});
 }
 const cpEligible = (c) => !!cpCtx(c);
 function cpOptions(c, ctx, scr) {
@@ -5198,7 +5264,7 @@ async function cpPaid(o, via) {
     notifyUser(vend, `💳 Tu cliente ${c.panelName} ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola hasta el ${c.expires.split('-').reverse().join('/')}.${cost ? `\nSe han descontado ${cost} créditos. Saldo: ${vend.credits}.` : ''}${vend.credits < 0 ? '\n⚠️ Tu saldo está en negativo: pide una recarga.' : ''}`);
   }
   addLog('renovacion', c, `${o.wasDemo ? 'Demo convertida en cuenta pagando online' : o.cycle ? 'Renovada sola (renovación automática)' : 'Renovada pagando online'} (${what}): ${o.amount.toFixed(2)} ${o.currency}. Vence el ${c.expires}`, null);
-  addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con tarjeta (pedido ${o.id}${via ? ', ' + via : ''})`, null);
+  addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con ${o.manual ? MANUAL[o.method].t : 'tarjeta'} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
   if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}`);
@@ -5217,7 +5283,7 @@ function receiptTg(c, o) {
   const s = db.servers.find((x) => x.id === c.serverId) || {}, brand = db.settings.brand.name || 'Panel';
   const auto = !!(o.subId || o.cycle) && c.sub && c.sub.status === 'active' && !c.sub.cancelAt;
   const text = `🧾 <b>RECIBO DE PAGO</b> · ${hEsc(brand)}\n<code>Nº ${hEsc(o.num || o.id)}  ·  ${hEsc(rcWhen(o.paidAt))}</code>\n\n`
-    + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 Pago online con tarjeta · seguro\n👤 ${hEsc(c.panelName)}\n\n`
+    + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 ${o.manual ? 'Pagado por ' + hEsc(MANUAL[o.method].t) : 'Pago online con tarjeta · seguro'}\n👤 ${hEsc(c.panelName)}\n\n`
     + `📦 <b>Tu plan</b>\n▫️ ${o.wasDemo ? 'Alta' : 'Renovación'}: ${hEsc(rcPlan(o))}\n▫️ Válida hasta: <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`
     + (o.expiresBefore && !o.wasDemo ? `\n▫️ <i>Antes vencía el ${hEsc(rcFmtD(o.expiresBefore))}</i>` : '')
     + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '') + '\n\n'
@@ -5255,7 +5321,7 @@ function receiptPage(res, c, o) {
 <div class="tot"><span>Total pagado</span><b>${H(rcMoney(o))}</b></div>
 <div class="sec"><h2>Cliente</h2>${row('Nombre', H(c.panelName))}${row('Usuario', H(c.embyName))}</div>
 <div class="sec"><h2>Concepto</h2>${row(o.wasDemo ? 'Alta de cuenta' : 'Renovación', H(rcPlan(o)))}${o.expiresFrom && !o.wasDemo ? row('Desde', H(rcFmtD(o.expiresFrom))) : ''}${row('Válida hasta', H(rcFmtD(o.expiresAfter)))}${o.subId || o.cycle ? row('Renovación automática', 'Sí') : ''}</div>
-<div class="sec"><h2>Pago</h2>${row('Forma de pago', 'Tarjeta · pago online seguro')}${row('Referencia', H(o.id))}</div>
+<div class="sec"><h2>Pago</h2>${row('Forma de pago', H(payMethodTxt(o)))}${row('Referencia', H(o.id))}</div>
 ${s.publicUrl ? `<div class="sec"><h2>Tu servidor</h2>${row('Dirección', H(s.publicUrl))}</div>` : ''}
 </div>
 <div class="act"><button type="button" id="pr">🖨️ Imprimir o guardar PDF</button><a href="/pagar/${c.id}-${H(c.payKey)}">🏠 Mi cuenta</a></div>
@@ -5302,7 +5368,7 @@ async function cpRoute(req, res, pathname) {
     if (o0) return receiptPage(res, c0, o0);
     return cpPage(res, 404, 'Recibo no encontrado', '<h1>Recibo no encontrado</h1><p class="sub">Este recibo no existe o el enlace ha cambiado. Pídeselo a tu proveedor.</p>');
   }
-  const m = /^\/pagar\/([\w-]+)(\/checkout|\/cancelar)?$/.exec(pathname);
+  const m = /^\/pagar\/([\w-]+)(\/checkout|\/cancelar|\/hecho)?$/.exec(pathname);
   const c = m && cpFind(m[1]);
   const fmtD = (d) => d.split('-').reverse().join('/');
   if (!c) return cpPage(res, 404, 'Enlace no válido', '<h1>Enlace no válido</h1><p class="sub">Este enlace de pago no existe o ha cambiado. Pídele uno nuevo a tu proveedor.</p>');
@@ -5319,18 +5385,45 @@ async function cpRoute(req, res, pathname) {
     res.writeHead(303, { Location: `/pagar/${c.id}-${c.payKey}?cancelada=1` }); return res.end();
   }
   const opts = ctx ? cpOptions(c, ctx) : [], cur = (db.settings.currency || 'EUR').toUpperCase(), money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur });
+  // «Ya he pagado» de un pago a mano (Bizum, PayPal, Revolut): se avisa a quien cobra para que lo confirme
+  if (m[2] === '/hecho' && req.method === 'POST') {
+    const chunks = []; let size = 0;
+    for await (const ch of req) { size += ch.length; if (size > 500) break; chunks.push(ch); }
+    const oid = new URLSearchParams(Buffer.concat(chunks).toString('utf8')).get('o') || '';
+    const o = db.orders.find((x) => x.id === oid && x.clientId === c.id && x.manual);
+    if (o && o.status === 'pending' && !o.claimed) {
+      await lock(async () => { o.claimed = true; o.claimedAt = new Date().toISOString(); addLog('cobro', c, `${c.panelName} dice que ha pagado ${o.amount.toFixed(2)} ${o.currency} por ${MANUAL[o.method].t} (concepto ${o.ref}). Falta confirmarlo`, null); saveDb(); });
+      mpAsk(o).then(() => lock(async () => saveDb())).catch(() => {});
+    }
+    res.writeHead(303, { Location: `/pagar/${c.id}-${c.payKey}?o=${encodeURIComponent(oid)}` }); return res.end();
+  }
   if (m[2] && req.method === 'POST') {
     const chunks = []; let size = 0;
     for await (const ch of req) { size += ch.length; if (size > 2000) break; chunks.push(ch); }
     const fp = new URLSearchParams(Buffer.concat(chunks).toString('utf8'));
     if (!ctx) return cpPage(res, 200, 'Pago no disponible', '<h1>Pago no disponible</h1><p class="sub">Habla con tu proveedor para renovar.</p>');
     const months = Number(fp.get('m')), scr = Number(fp.get('s')) || c.screens || 1;
-    const auto = fp.get('auto') === '1' && !!ctx.cfg.subs && !c.demo && !(c.sub && c.sub.status === 'active' && !c.sub.cancelAt);
+    const auto = fp.get('auto') === '1' && !!ctx.cfg.subs && !!ctx.key && !c.demo && !(c.sub && c.sub.status === 'active' && !c.sub.cancelAt);
     const op = cpScreens(c, ctx).includes(scr) ? cpOptions(c, ctx, scr).find((x) => x.m === months) : null;
     if (!op) return cpPage(res, 400, 'Opción no válida', '<h1>Esa opción ya no está</h1><p class="sub">Vuelve atrás y elige otra.</p>');
     const open = db.orders.filter((o) => o.clientId === c.id && o.status === 'pending' && Date.now() - Date.parse(o.created) < 3600000);
     if (ctx.vendor) { const cost = costFor(ctx.vendor, months, scr); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
     if (open.length >= 5) return cpPage(res, 429, 'Espera un poco', '<h1>Espera un momento</h1><p class="sub">Tienes varios pagos sin terminar. Prueba de nuevo en un rato.</p>');
+    const pay = String(fp.get('pay') || ''), mans = cpManual(ctx.cfg), MT0 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
+    if (!pay && mans.length && !auto) { // elegir cómo pagar
+      const hid = `<input type="hidden" name="m" value="${months}"><input type="hidden" name="s" value="${scr}">`;
+      const bt = (v, ic0, t, sm) => `<button class="op" name="pay" value="${v}"><span style="font-size:26px">${ic0}</span><span><b>${t}</b><small>${sm}</small></span></button>`;
+      return cpPage(res, 200, 'Cómo pagar', `<h1>¿Cómo quieres pagar?</h1><p class="sub">${MT0[months]} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'} · <b>${H(money(op.price))}</b></p>
+        <form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${hid}${ctx.key ? bt('stripe', '💳', 'Tarjeta', 'Apple Pay, Google Pay… Se renueva al momento') : ''}${mans.map((k) => bt(k, MANUAL[k].i, MANUAL[k].t, 'Se renueva en cuanto confirmemos tu pago')).join('')}</form>
+        <p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">← Volver</a></p>`);
+    }
+    if (MANUAL[pay] && mans.includes(pay)) {
+      const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: pay, manual: true, status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}` };
+      o.ref = o.id.slice(-6);
+      await lock(async () => { db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000; saveDb(); });
+      res.writeHead(303, { Location: `/pagar/${c.id}-${c.payKey}?o=${o.id}`, 'Cache-Control': 'no-store' }); return res.end();
+    }
+    if (!ctx.key) return cpPage(res, 400, 'Elige otra forma', '<h1>Esa forma de pago no está</h1><p class="sub">Vuelve atrás y elige otra.</p>');
     const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: 'stripe', status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}${auto ? ' · automática' : ''}`, auto };
     const base = siteBase() || panelBase(req), back = `${base}/pagar/${c.id}-${c.payKey}?o=${o.id}`;
     let ss;
@@ -5357,6 +5450,17 @@ async function cpRoute(req, res, pathname) {
         if (ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (ss.subscription) o.subId = String(ss.subscription); if (await cpPaid(o, 'comprobado al volver')) saveDb(); });
       } catch { /* se mira otra vez al recargar */ }
     }
+    if (o && o.manual && o.status === 'pending') {
+      const mc = mpCfg(o), amt = H(money(o.amount)), ref = `<b class="code">${H(o.ref)}</b>`, MT1 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
+      const plan = `<div class="acc"><div class="acc-r"><div><small>Plan</small><b>${MT1[o.months] || o.months + ' meses'}</b></div><div><small>Pantallas</small><b>${o.screens || 1}</b></div><div><small>A pagar</small><b>${amt}</b></div></div></div>`;
+      if (o.claimed) return cpPage(res, 200, 'Comprobando tu pago', `<div class="big">⏳</div><h1>¡Gracias! Estamos comprobando tu pago</h1><p class="sub">Nos ha llegado tu aviso del pago por <b>${MANUAL[o.method].t}</b>. En cuanto lo confirmemos, tu cuenta se ${o.wasDemo || c.demo ? 'activa' : 'renueva'} sola y te llega el recibo por Telegram.</p>${plan}<p class="foot">Esta página se actualiza sola. Puedes cerrarla sin miedo.</p><meta http-equiv="refresh" content="30">`);
+      let how = '';
+      if (o.method === 'bizum') how = `<p class="sub">1️⃣ Abre la app de tu banco y haz un <b>Bizum</b> de <b>${amt}</b> a este número:</p><p style="text-align:center;margin:8px 0 14px"><b class="code" style="font-size:26px">${H(mc.bizum || '')}</b></p><p class="sub">2️⃣ En el concepto escribe: ${ref}</p>`;
+      if (o.method === 'paypal') how = `<p class="sub">1️⃣ Pulsa el botón: se abre PayPal con el importe ya puesto (<b>${amt}</b>).</p><a class="btn2" href="https://paypal.me/${encodeURIComponent(mc.paypal || '')}/${(Math.round(o.amount * 100) / 100).toFixed(2)}${H(o.currency)}" target="_blank" rel="noopener noreferrer">🅿️ Pagar ${amt} con PayPal</a><p class="sub" style="margin-top:12px">2️⃣ En la nota escribe: ${ref}</p>`;
+      if (o.method === 'revolut') how = `<p class="sub">1️⃣ Pulsa el botón y paga <b>${amt}</b> en Revolut.</p><a class="btn2" href="https://revolut.me/${encodeURIComponent(mc.revolut || '')}" target="_blank" rel="noopener noreferrer">🔵 Pagar con Revolut</a><p class="sub" style="margin-top:12px">2️⃣ En la nota escribe: ${ref}</p>`;
+      return cpPage(res, 200, 'Paga con ' + MANUAL[o.method].t, `<h1>${MANUAL[o.method].i} Paga con ${MANUAL[o.method].t}</h1>${plan}${how}<p class="sub">3️⃣ Cuando lo hayas enviado, pulsa aquí:</p><form method="post" action="/pagar/${c.id}-${H(c.payKey)}/hecho"><input type="hidden" name="o" value="${H(o.id)}"><button class="op" style="justify-content:center;border:0;background:linear-gradient(90deg,#22c55e,#0ea5e9)"><b>✅ Ya he pagado</b></button></form><p class="foot">Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto confirmemos el pago.<br><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">← Elegir otra forma de pago</a></p>`);
+    }
+    if (o && o.status === 'rejected') return cpPage(res, 200, 'Pago no confirmado', `<div class="big">😕</div><h1>No hemos podido confirmar este pago</h1><p class="sub">Si ya lo enviaste, ${o.vendorId ? 'habla con tu proveedor' : 'escríbenos'} y lo revisamos. Concepto: <b class="code">${H(o.ref || '')}</b></p><p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">Volver a mi cuenta</a></p>`);
     if (o && o.status === 'paid') return cpPage(res, 200, 'Pago recibido', `<div class="big">✅</div><h1 class="ok">¡Pago recibido!</h1><p class="sub">Gracias, ${H(c.panelName)}. Tu cuenta está ${o.wasDemo ? 'activada' : 'renovada'} hasta el <b>${H(fmtD(c.expires))}</b>. No tienes que hacer nada más: sigue viendo como siempre.${o.auto ? '<br><br>🔁 La renovación automática está activa: se cobrará sola cada periodo. Puedes cancelarla cuando quieras desde este mismo enlace.' : ''}</p><a class="btn2" href="/pagar/${c.id}-${H(c.payKey)}/recibo/${H(o.id)}">🧾 Ver mi recibo</a><p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">Ver mi cuenta</a></p>`);
     if (o) return cpPage(res, 200, 'Comprobando', `<div class="big">⏳</div><h1>Comprobando tu pago…</h1><p class="sub">Puede tardar unos segundos. Si ya has pagado, esta página se actualizará sola.</p><meta http-equiv="refresh" content="4">`);
   }
@@ -5378,11 +5482,11 @@ async function cpRoute(req, res, pathname) {
     const subOn = c.sub && c.sub.status === 'active';
     const tabs = scrs.length > 1 ? `<p class="lbl">¿Cuántas pantallas a la vez?</p><div class="tabs">${scrs.map((n) => `<a class="tab${n === sel ? ' on' : ''}" href="/pagar/${c.id}-${H(c.payKey)}?s=${n}"><b>${n}</b><small>${n === 1 ? 'pantalla' : 'pantallas'}${n === cur0 ? ' · la tuya' : ''}</small></a>`).join('')}</div>` : '';
     const change = sel && sel !== cur0 ? `<p class="note">Al pagar, tu cuenta pasa de ${cur0} a <b>${sel} ${sel === 1 ? 'pantalla' : 'pantallas'}</b>.</p>` : '';
-    const autoBox = ctx.cfg.subs && !c.demo && !(subOn && !c.sub.cancelAt) ? `<label class="auto"><input type="checkbox" name="auto" value="1"><span><b>🔁 Renovar automáticamente</b><small>Se cobra solo cada periodo y nunca te quedas sin servicio. Lo cancelas cuando quieras desde aquí.</small></span></label>` : '';
+    const autoBox = ctx.cfg.subs && ctx.key && !c.demo && !(subOn && !c.sub.cancelAt) ? `<label class="auto"><input type="checkbox" name="auto" value="1"><span><b>🔁 Renovar automáticamente</b><small>Se cobra solo cada periodo y nunca te quedas sin servicio. Lo cancelas cuando quieras desde aquí.</small></span></label>` : '';
     const list = sopts.length ? `<p class="lbl">¿Cuánto tiempo?</p><input type="hidden" name="s" value="${sel}">${autoBox}` + sopts.map((x) => `<button class="op${best && x === best && x.m > 1 ? ' best' : ''}" name="m" value="${x.m}"><span><b>${MT[x.m]}${best && x === best && x.m > 1 ? '<span class="tag">MEJOR PRECIO</span>' : ''}</b><small>${sel} ${sel === 1 ? 'pantalla' : 'pantallas'}${x.m > 1 ? ' · ' + money(x.price / x.m) + ' al mes' : ''}</small></span><span class="p">${money(x.price)}</span></button>`).join('')
       : '<p class="sub">Todavía no hay precios para tu plan. Habla con tu proveedor.</p>';
     const subBox = subOn ? `<div class="subbox">🔁 <b>Renovación automática ${c.sub.cancelAt ? 'cancelada' : 'activa'}</b><br><small>${c.sub.cancelAt ? `No se te cobrará más. Tu cuenta sigue hasta el ${H(fmtD(c.expires))}.` : `Cada ${c.sub.months === 1 ? 'mes' : c.sub.months + ' meses'}, ${c.sub.screens || cur0} ${c.sub.screens === 1 ? 'pantalla' : 'pantallas'}. Se cobra sola cuando toca.`}</small>${c.sub.cancelAt ? '' : `<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/cancelar"><button class="lnk">Cancelar la renovación automática</button></form>`}</div>` : '';
-    renew = `<h2>${c.demo ? '🚀 Activa tu cuenta' : '💳 Renovar'}</h2>${subBox}${tabs}${change}<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 Pago seguro a través de Stripe: tarjeta, Apple Pay, Google Pay y más.<br>Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto se confirma el pago.</p>`;
+    renew = `<h2>${c.demo ? '🚀 Activa tu cuenta' : '💳 Renovar'}</h2>${subBox}${tabs}${change}<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 ${[ctx.key ? 'Tarjeta, Apple Pay, Google Pay' : '', ...cpManual(ctx.cfg).map((k) => MANUAL[k].t)].filter(Boolean).join(' · ')}<br>Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto se confirma el pago.</p>`;
   } else renew = `<p class="sub">${c.demo ? 'Para activar tu cuenta' : 'Para renovar'}, habla con tu proveedor.</p>`;
   const owner = db.users.find((u) => u.id === c.ownerId), ap = db.settings.app || {};
   const appOk = ap.file && (ap.public || !owner || owner.role === 'super' || owner.role === 'admin');
@@ -5398,9 +5502,9 @@ const VEND_ROLES = ['reseller', 'sub'];
 const myCp = (me) => (me.clientPay = { on: false, desc: 'Suscripción', prices: {}, key: '', whsec: '', ...(me.clientPay || {}) });
 route('GET', '/api/my-client-pay', VEND_ROLES, ({ me, req }) => {
   const v = myCp(me);
-  return { allowed: !!cpCfg().vendors, cfg: { on: v.on, desc: v.desc, prices: v.prices, hasKey: !!v.key, test: /^sk_test_/.test(v.key || ''), hasWh: !!v.whsec },
+  return { allowed: !!cpCfg().vendors, cfg: { on: v.on, desc: v.desc, prices: v.prices, manual: v.manual || {}, hasKey: !!v.key, test: /^sk_test_/.test(v.key || ''), hasWh: !!v.whsec },
     webhook: `${siteBase() || panelBase(req)}/api/pay/stripe/webhook/u${me.id}`, cost: Object.fromEntries([1, 3, 6, 12].flatMap((m) => [1, 2, 4].map((sc) => [`${m}-${sc}`, costFor(me, m, sc)]))),
-    orders: db.orders.filter((o) => o.kind === 'client' && o.vendorId === me.id).slice(0, 40).map((o) => ({ id: o.id, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '' })) };
+    orders: db.orders.filter((o) => o.kind === 'client' && o.vendorId === me.id).slice(0, 40).map((o) => ({ id: o.id, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', manual: !!o.manual, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1 })) };
 });
 route('PUT', '/api/my-client-pay', VEND_ROLES, async ({ me, body }) => {
   if (!cpCfg().vendors) throw new HttpError(403, 'El cobro a clientes todavía no está disponible para vendedores.');
@@ -5413,14 +5517,15 @@ route('PUT', '/api/my-client-pay', VEND_ROLES, async ({ me, body }) => {
   return lock(async () => {
     if (k) v.key = k;
     if (w) { if (!/^whsec_[A-Za-z0-9]{10,}$/.test(w)) throw new HttpError(400, 'El secreto del webhook empieza por whsec_'); v.whsec = w; }
-    if (body.removeKey) { v.key = ''; v.whsec = ''; v.on = false; }
+    if (body.manual && typeof body.manual === 'object') v.manual = cleanManual(body.manual);
+    if (body.removeKey) { v.key = ''; v.whsec = ''; if (!cpManual(v).length) v.on = false; }
     if (body.desc !== undefined) v.desc = str(body.desc, 60).trim() || 'Suscripción';
     if (body.prices && typeof body.prices === 'object') {
       const out = {};
       for (const m of [1, 3, 6, 12]) for (const sc of [1, 2, 3, 4]) { const x = Math.round(Number(String(body.prices[`${m}-${sc}`] || '').replace(',', '.')) * 100) / 100; if (x >= 0.5 && x <= 10000) out[`${m}-${sc}`] = x; }
       v.prices = out;
     }
-    if (body.on !== undefined) { if (body.on && !v.key) throw new HttpError(400, 'Primero pega la clave secreta de tu Stripe.'); v.on = !!body.on; }
+    if (body.on !== undefined) { if (body.on && !v.key && !cpManual(v).length) throw new HttpError(400, 'Primero conecta tu Stripe o pon tu Bizum, PayPal o Revolut.'); v.on = !!body.on; }
     addLog('ajustes', null, `${me.name}: cobro a sus clientes ${v.on ? 'activado' : 'desactivado'}`, me);
     saveDb();
     return { ok: true };
@@ -5460,7 +5565,8 @@ async function subPoll() {
 setTimeout(() => { subPoll().catch(() => {}); setInterval(() => subPoll().catch(() => {}), 3 * 3600000); }, 90000);
 route('PUT', '/api/client-pay', SUPER, ({ me, body }) => lock(async () => {
   const c = db.settings.clientPay;
-  if (body.on !== undefined) { if (body.on && !(db.payCfg.stripe.on && db.payCfg.stripe.key)) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online.'); c.on = !!body.on; }
+  if (body.manual && typeof body.manual === 'object') c.manual = cleanManual(body.manual);
+  if (body.on !== undefined) { if (body.on && !cpStripeOk() && !cpManual(c).length) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online, o pon tu Bizum, PayPal o Revolut.'); c.on = !!body.on; }
   if (body.desc !== undefined) c.desc = str(body.desc, 60).trim() || 'Suscripción';
   if (body.vendors !== undefined) c.vendors = !!body.vendors;
   if (body.subs !== undefined) c.subs = !!body.subs;
@@ -5474,7 +5580,15 @@ route('PUT', '/api/client-pay', SUPER, ({ me, body }) => lock(async () => {
   return { ok: true, clientPay: c };
 }));
 route('GET', '/api/client-pay', SUPER, () => ({ cfg: cpCfg(), stripe: { on: !!(db.payCfg.stripe.on && db.payCfg.stripe.key), wh: !!db.payCfg.stripe.whsec }, base: siteBase(),
-  orders: db.orders.filter((o) => o.kind === 'client').slice(0, 60).map((o) => ({ id: o.id, clientId: o.clientId, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '' })) }));
+  orders: db.orders.filter((o) => o.kind === 'client').slice(0, 60).map((o) => ({ id: o.id, clientId: o.clientId, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', manual: !!o.manual, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1 })) }));
+
+route('POST', '/api/client-pay/orders/:id/decide', ['super', 'admin', 'reseller', 'sub'], ({ me, params, body }) => lock(async () => {
+  const o = db.orders.find((x) => x.id === String(params.id) && x.kind === 'client');
+  if (!o || !mpConfirmers(o).some((u) => u.id === me.id)) throw new HttpError(404, 'Ese pago no existe.');
+  const msg = await mpDecide(o, !!body.ok, me);
+  mpCloseButtons(o, body.ok ? `✅ Confirmado por ${me.name}` : `❌ No recibido (${me.name})`);
+  return { ok: true, msg };
+}));
 
 /* ---------- Copias de seguridad cifradas (descarga, Telegram y restaurar) ---------- */
 const BK_MAGIC = 'concha-copia';

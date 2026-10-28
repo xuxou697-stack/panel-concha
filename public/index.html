@@ -6508,30 +6508,49 @@ async function rqSet(id, status) { try { await api('POST', `/api/requests/${id}`
 
 /* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
 async function loadCp() { S.cpBusy = true; try { S.cp = await api('GET', isSuper() ? '/api/client-pay' : '/api/my-client-pay'); S.cpAt = Date.now(); } catch (e) { S.cp = { error: e.message }; } S.cpBusy = false; if (S.view === 'cobrocli') render(); }
+/* Bizum, PayPal y Revolut: el cliente paga y pulsa «Ya he pagado»; aquí (o en Telegram) se confirma */
+const MP_T = { bizum: '📱 Bizum', paypal: '🅿️ PayPal', revolut: '🔵 Revolut', stripe: '💳 Tarjeta' };
+function cpManualCard(m) {
+  m = m || {};
+  return `<form id="cpMan" class="ap-card"><h2>🤝 Bizum, PayPal y Revolut</h2>
+    <p class="muted small" style="margin:-4px 0 12px">Rellena solo los que uses (deja vacío el resto). El cliente elige cómo pagar, paga y pulsa <b>«Ya he pagado»</b>. Te llega un aviso por Telegram con dos botones: <b>✅ Ha llegado</b> o <b>❌ No ha llegado</b>. Al confirmarlo, su cuenta se renueva sola y le llega su recibo.</p>
+    <label class="f">📱 Bizum: tu número de teléfono<input name="bizum" inputmode="tel" autocomplete="off" value="${esc(m.bizum || '')}" placeholder="600123456"></label>
+    <label class="f">🅿️ PayPal: tu usuario de paypal.me<input name="paypal" autocomplete="off" value="${esc(m.paypal || '')}" placeholder="tuusuario (de paypal.me/tuusuario)"><small class="muted">Se abre PayPal con el importe ya puesto.</small></label>
+    <label class="f">🔵 Revolut: tu usuario de revolut.me<input name="revolut" autocomplete="off" value="${esc(m.revolut || '')}" placeholder="tuusuario (de revolut.me/tuusuario)"></label>
+    <div class="ap-save"><button class="btn primary" type="submit">💾 Guardar formas de pago</button></div></form>`;
+}
+function cpPendingCard(orders, money) {
+  const pend = (orders || []).filter((o) => o.manual && o.status === 'pending' && o.claimed);
+  if (!pend.length) return '';
+  return `<section class="ap-card" style="border-color:#f59e0b"><h2>⏳ Pagos por confirmar</h2><p class="muted small" style="margin:-4px 0 10px">Mira si te ha llegado el dinero y confirma. También puedes hacerlo desde Telegram.</p>
+    ${pend.map((o) => `<div class="ap-h" style="flex-wrap:wrap;gap:8px"><b>${esc(o.user)}</b><span>${MP_T[o.method] || ''} · <b>${money(o.amount)}</b> · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens} ${o.screens === 1 ? 'pantalla' : 'pant.'} · concepto <b>${esc(o.ref)}</b> · ${fmtTs(o.created, true)}</span>
+      <span style="display:flex;gap:6px;margin-left:auto"><button type="button" class="btn sm primary" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="1">✅ Ha llegado</button><button type="button" class="btn sm ghost" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="0">❌ No ha llegado</button></span></div>`).join('')}</section>`;
+}
+const cpSt = (o) => (o.status === 'pending' && o.manual ? (o.claimed ? ['⏳', 'Por confirmar'] : ['•', 'Sin terminar']) : ({ paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'], rejected: ['❌', 'No recibido'] }[o.status] || ['•', o.status]));
 function vCobroCli() {
-  const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#6366f1 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#3b0764)"><span class="ap-ic">💳</span><div><h1>Cobro a clientes</h1><p>Tus clientes pagan con tarjeta desde su enlace y su cuenta se renueva sola, sin que tengas que hacer nada.</p></div></section>`;
+  const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#6366f1 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#3b0764)"><span class="ap-ic">💳</span><div><h1>Cobro a clientes</h1><p>Tus clientes pagan desde su enlace (tarjeta, Bizum, PayPal o Revolut) y su cuenta se renueva sola.</p></div></section>`;
   if (!isSuper()) return vCobroVend(hero);
   const d = S.cp;
   if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
   if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const c = d.cfg, pr = c.prices || {}, cur = S.d.settings.currency || 'EUR';
   const money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
-  const warn = !d.stripe.on ? `<div class="ap-card" style="border-color:#f59e0b"><b>⚠️ Primero activa Stripe</b><p class="muted small" style="margin:4px 0 8px">El cobro usa tu cuenta de Stripe de Ajustes › Pagos online.</p><button type="button" class="btn" data-view="pagos">Ir a Pagos online</button></div>`
+  const hasMan = ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]);
+  const warn = !d.stripe.on ? (hasMan ? '' : `<div class="ap-card" style="border-color:#f59e0b"><b>⚠️ Activa Stripe o pon Bizum, PayPal o Revolut</b><p class="muted small" style="margin:4px 0 8px">Para la tarjeta se usa tu Stripe de Ajustes › Pagos online. Si no lo usas, rellena más abajo tu Bizum, PayPal o Revolut.</p><button type="button" class="btn" data-view="pagos">Ir a Pagos online</button></div>`)
     : !d.stripe.wh ? `<div class="ap-card" style="border-color:#f59e0b"><b>💡 Recomendado: el webhook de Stripe</b><p class="muted small" style="margin:4px 0 0">Sin él también funciona (se comprueba cuando el cliente vuelve de pagar), pero con el webhook la renovación es segura aunque el cliente cierre la página. Se pone en Ajustes › Pagos online.</p></div>` : '';
   const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a clientes activado' : '⏸️ Cobro a clientes apagado'}</b><small>${c.on ? 'Los avisos de caducidad por Telegram llevan el botón «💳 Pagar y renovar».' : 'Prepara los precios y actívalo cuando quieras.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cp-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
   const table = cpTable(pr, c.desc, 'Son tus precios. Tus resellers y subresellers, si se lo activas, ponen los suyos aparte.');
   const subs = `<section class="ap-card ap-pub${c.subs ? ' on' : ''}"><div class="ap-pubrow"><div><b>🔁 Renovación automática: ${c.subs ? 'ofrecida' : 'no ofrecida'}</b><small>${c.subs ? 'En la página de pago sale la casilla «Renovar automáticamente»: Stripe le cobra solo cada periodo y la cuenta se renueva sola. El cliente la cancela cuando quiera desde su enlace.' : 'Actívala para que tus clientes puedan dejar el pago automático. Recomendado: añade en tu webhook de Stripe los eventos invoice.paid y customer.subscription.deleted.'}</small></div><button type="button" class="ap-big${c.subs ? ' on' : ''}" data-act="cp-subs" aria-pressed="${!!c.subs}"><i></i></button></div></section>`;
-  const vend = `<section class="ap-card ap-pub${c.vendors ? ' on' : ''}"><div class="ap-pubrow"><div><b>👥 Para tus resellers y subresellers: ${c.vendors ? 'activado' : 'apagado'}</b><small>${c.vendors ? 'Les sale «Cobro a clientes» en Ajustes: cada uno pone sus precios y conecta su propio Stripe (el dinero le llega a él y la renovación le descuenta sus créditos).' : 'Mientras esté apagado no lo ven. Actívalo cuando lo tengas preparado.'}</small></div><button type="button" class="ap-big${c.vendors ? ' on' : ''}" data-act="cp-vend" aria-pressed="${!!c.vendors}"><i></i></button></div></section>`;
+  const vend = `<section class="ap-card ap-pub${c.vendors ? ' on' : ''}"><div class="ap-pubrow"><div><b>👥 Para tus resellers y subresellers: ${c.vendors ? 'activado' : 'apagado'}</b><small>${c.vendors ? 'Les sale «Cobro a clientes» en Ajustes: cada uno pone sus precios y cobra con su propio Stripe, Bizum, PayPal o Revolut (el dinero le llega a él y la renovación le descuenta sus créditos).' : 'Mientras esté apagado no lo ven. Actívalo cuando lo tengas preparado.'}</small></div><button type="button" class="ap-big${c.vendors ? ' on' : ''}" data-act="cp-vend" aria-pressed="${!!c.vendors}"><i></i></button></div></section>`;
   const how = `<section class="ap-card"><h2>🧭 Cómo funciona</h2><div class="ap-steps">
     <p><b>1.</b> Cuando a un cliente le quedan los días que tengas en «Avisos de vencimiento», el bot le manda el aviso con el botón <b>💳 Pagar y renovar</b>.</p>
     <p><b>2.</b> El botón abre <b>su página de pago</b> en tu panel, con su nombre, su fecha y los precios de <b>sus pantallas</b>.</p>
-    <p><b>3.</b> Paga con tarjeta, Apple Pay o Google Pay. Al confirmarse, <b>su cuenta se renueva sola</b> y le llega «✅ Pago recibido» por Telegram.</p>
+    <p><b>3.</b> Paga con tarjeta, Apple Pay o Google Pay, o con Bizum, PayPal o Revolut si los has puesto (esos los confirmas tú con un botón). Al confirmarse, <b>su cuenta se renueva sola</b> y le llega su recibo por Telegram.</p>
     <p><b>4.</b> A ti te llega el aviso del cobro y queda apuntado en Movimientos.</p>
     <p><b>5.</b> Su enlace es también su página <b>«Mi cuenta»</b>: su fecha, sus pantallas, la app, la guía de calidad y tu contacto.</p></div>
     <p class="muted small">Solo para <b>tus clientes</b> (y los de tus administradores). Los de resellers y subresellers no, porque el dinero te llegaría a ti. También puedes copiar el enlace de cualquier cliente desde su menú ⋯ › «Enlace de pago», o añadirlo al copiar su mensaje.</p></section>`;
-  const st = { paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'] };
-  const list = `<section class="ap-card"><h2>🧾 Últimos pagos de clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${(st[o.status] || ['•'])[0]} ${esc(o.user)}</b><span>${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}${o.after ? ' · vence ' + fmt(o.after) : ''}</span><em style="color:${o.status === 'paid' ? '#16a34a' : 'var(--muted)'}">${(st[o.status] || ['', o.status])[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
-  return hero + `<div class="ap-grid">${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${subs}${vend}${how}${list}</div>`;
+  const list = `<section class="ap-card"><h2>🧾 Últimos pagos de clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${cpSt(o)[0]} ${esc(o.user)}</b><span>${MP_T[o.method] || ''} · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}${o.after ? ' · vence ' + fmt(o.after) : ''}</span><em style="color:${o.status === 'paid' ? '#16a34a' : 'var(--muted)'}">${cpSt(o)[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
+  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${cpManualCard(c.manual)}${subs}${vend}${how}${list}</div>`;
 }
 function cpTable(pr, desc, note) {
   const M = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '1 año']], SC = [1, 2, 3, 4];
@@ -6547,7 +6566,7 @@ function vCobroVend(hero) {
   if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
   if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const c = d.cfg, cur = S.d.settings.currency || 'EUR', money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
-  const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a tus clientes activado' : '⏸️ Cobro a tus clientes apagado'}</b><small>${c.on ? 'Tus clientes reciben el botón «💳 Pagar y renovar» en el aviso de caducidad.' : c.hasKey ? 'Revisa tus precios y actívalo cuando quieras.' : 'Primero conecta tu Stripe aquí abajo.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cpv-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
+  const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a tus clientes activado' : '⏸️ Cobro a tus clientes apagado'}</b><small>${c.on ? 'Tus clientes reciben el botón «💳 Pagar y renovar» en el aviso de caducidad.' : c.hasKey || ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]) ? 'Revisa tus precios y actívalo cuando quieras.' : 'Primero conecta tu Stripe o pon tu Bizum, PayPal o Revolut aquí abajo.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cpv-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
   const stripe = `<section class="ap-card"><h2>🔑 Tu cuenta de Stripe</h2>
     ${c.hasKey ? `<p class="small">✅ Conectada${c.test ? ' <b>(modo pruebas)</b>' : ''}. El dinero de tus clientes llega a tu Stripe.</p>` : '<p class="muted small" style="margin:-4px 0 10px">El dinero de tus clientes llega directamente a <b>tu</b> Stripe. Crea tu cuenta en stripe.com y pega aquí tu clave secreta.</p>'}
     <form id="cpvKey"><label class="f">${c.hasKey ? 'Cambiar clave secreta' : 'Clave secreta de Stripe'}<input name="key" autocomplete="off" placeholder="sk_live_…"></label>
@@ -6557,9 +6576,8 @@ function vCobroVend(hero) {
       <div class="ap-acts"><button class="btn primary" type="submit">Guardar</button>${c.hasKey ? '<button type="button" class="btn ghost" data-act="cpv-del">Desconectar</button>' : ''}</div></form></section>`;
   const cost = d.cost || {};
   const note = `Cada renovación pagada te descuenta tus créditos de siempre (por ejemplo 1 mes con 1 pantalla: ${plural(cost['1-1'] || 0, 'crédito', 'créditos')}).`;
-  const st = { paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'] };
-  const list = `<section class="ap-card"><h2>🧾 Pagos de tus clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${(st[o.status] || ['•'])[0]} ${esc(o.user)}</b><span>${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}</span><em>${(st[o.status] || ['', o.status])[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
-  return hero + `<div class="ap-grid">${pub}${stripe}<form id="cpForm" class="ap-form">${cpTable(c.prices || {}, c.desc, note)}</form>${list}</div>`;
+  const list = `<section class="ap-card"><h2>🧾 Pagos de tus clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${cpSt(o)[0]} ${esc(o.user)}</b><span>${MP_T[o.method] || ''} · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}</span><em>${cpSt(o)[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
+  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${pub}${cpManualCard(c.manual)}${stripe}<form id="cpForm" class="ap-form">${cpTable(c.prices || {}, c.desc, note)}</form>${list}</div>`;
 }
 document.addEventListener('submit', async (e) => {
   if (!e.target || e.target.id !== 'cpForm') return;
@@ -6567,6 +6585,12 @@ document.addEventListener('submit', async (e) => {
   const f = e.target, prices = {};
   f.querySelectorAll('input[name^=p]').forEach((i) => { if (i.value.trim()) prices[i.name.slice(1)] = i.value.trim(); });
   try { await api('PUT', isSuper() ? '/api/client-pay' : '/api/my-client-pay', { prices, desc: f.elements.desc.value }); toast('Precios guardados ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); }
+});
+document.addEventListener('submit', async (e) => {
+  if (!e.target || e.target.id !== 'cpMan') return;
+  e.preventDefault();
+  const f = e.target, manual = { bizum: f.elements.bizum.value, paypal: f.elements.paypal.value, revolut: f.elements.revolut.value };
+  try { await api('PUT', isSuper() ? '/api/client-pay' : '/api/my-client-pay', { manual }); toast('Formas de pago guardadas ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); }
 });
 document.addEventListener('submit', async (e) => {
   if (!e.target || e.target.id !== 'cpvKey') return;
@@ -6690,6 +6714,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 185, d: '2026-10-28', items: ['🤝 Cobro a clientes con Bizum, PayPal y Revolut: el cliente paga desde su enlace, pulsa «Ya he pagado» y tú lo confirmas con un botón (en Telegram o en el panel). Su cuenta se renueva sola y le llega su recibo'], team: ['🤝 Cobra a tus clientes con Bizum, PayPal o Revolut (y tarjeta si tienes Stripe): Ajustes › Cobro a clientes. Ellos pagan desde su enlace y tú confirmas con un botón'] },
   { v: 184, d: '2026-10-28', items: ['💳 Estadísticas de cada vendedor más claras: su última recarga (cuándo, cuánto y quién la cargó), recargas del mes, lo que gasta y cuántos días le dura el saldo'] },
   { v: 182, d: '2026-10-28', items: ['🧾 Recibo de pago: cuando un cliente paga online le llega un recibo bonito por Telegram (importe, plan, fecha y sus datos de acceso) y un enlace para verlo, imprimirlo o guardarlo en PDF'] },
   { v: 181, d: '2026-10-28', items: ['✨ Novedades a medida: tu equipo solo ve lo nuevo que le sirve; los arreglos y retoques solo los ves tú'] },
@@ -9112,8 +9137,11 @@ document.addEventListener('click', (e) => {
     case 'cp-subs': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.subs); api('PUT', '/api/client-pay', { subs: on }).then(() => { toast(on ? 'Renovación automática ofrecida 🔁' : 'Renovación automática ya no se ofrece'); S.cp = null; loadCp(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cp-vend': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.vendors); api('PUT', '/api/client-pay', { vendors: on }).then(() => { toast(on ? 'Activado para tus vendedores 👥' : 'Apagado para tus vendedores'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cpv-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/my-client-pay', { on }).then(() => { toast(on ? 'Cobro a tus clientes activado ✅' : 'Cobro a tus clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
+    case 'cp-dec': { const ok = el.dataset.ok === '1';
+      dConfirm(ok ? '¿Te ha llegado el pago?' : '¿No te ha llegado?', ok ? 'Su cuenta se renovará ahora y le llegará su recibo por Telegram.' : 'Se le avisará de que no has recibido el pago, para que lo revise contigo.', ok ? '✅ Sí, ha llegado' : '❌ No ha llegado',
+        () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { ok }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), ok ? 'Confirmado' : 'Marcado como no recibido'); } break;
     case 'cpv-wh': copyText(S.cp && S.cp.webhook || '').then(() => toast('Dirección copiada')); break;
-    case 'cpv-del': dConfirm('Desconectar tu Stripe', 'Tus clientes dejarán de poder pagar online hasta que vuelvas a conectarlo.', 'Desconectar', () => api('PUT', '/api/my-client-pay', { removeKey: true }).then(() => { S.cp = null; }), 'Stripe desconectado'); break;
+    case 'cpv-del': dConfirm('Desconectar tu Stripe', 'Tus clientes dejarán de poder pagar con tarjeta hasta que vuelvas a conectarlo (Bizum, PayPal y Revolut siguen funcionando si los tienes puestos).', 'Desconectar', () => api('PUT', '/api/my-client-pay', { removeKey: true }).then(() => { S.cp = null; }), 'Stripe desconectado'); break;
     case 'm-paylink': if (c) dPayLink(c); break;
     case 'pl-copy': { const i = $('#plText'); if (i) copyText(i.value, i).then(() => { const b = $('[data-act=pl-copy]'); if (b) b.textContent = '✓ Copiado'; }).catch((ex) => toast(ex.message, true)); } break;
     case 'app-pub': { const on = !(S.d.settings.app || {}).public; api('PUT', '/api/app-settings', { public: on }).then(() => { toast(on ? 'App visible para todo tu equipo 👀' : 'App oculta: ahora solo la ves tú 🙈'); return reload(); }).catch((e) => toast(e.message, true)); } break;
