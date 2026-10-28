@@ -1589,6 +1589,8 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .uibar span{min-width:0}.uibar button{border:0;border-radius:12px;padding:8px 14px;font:inherit;font-weight:800;color:#4c1d95;background:#fff;cursor:pointer;white-space:nowrap}
 @media (min-width:861px){.uibar{bottom:24px}}
 /* App de clientes */
+.rs-last{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;background:linear-gradient(120deg,color-mix(in srgb,#22c55e 16%,transparent),color-mix(in srgb,#0ea5e9 14%,transparent));border:1px solid color-mix(in srgb,#22c55e 40%,transparent);margin-bottom:12px}.rs-last .rs-ic{font-size:28px}.rs-last small{display:block;color:var(--muted);font-size:12.5px}.rs-last b{display:block;font-size:20px;margin:2px 0}.rs-last b span{font-size:15px;color:var(--muted);font-weight:700}
+.rs-ks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:6px}.rs-k{padding:10px 12px;border-radius:14px;border:1px solid color-mix(in srgb,var(--c) 35%,transparent);background:color-mix(in srgb,var(--c) 9%,transparent)}.rs-k b{display:block;font-size:20px;color:var(--c)}.rs-k small{color:var(--muted);font-size:12px;line-height:1.3}
 .tgshare{margin:12px 0;padding:12px 14px;border-radius:14px;border:1px dashed color-mix(in srgb,#0ea5e9 50%,transparent);background:color-mix(in srgb,#0ea5e9 8%,transparent)}.tgshare>b{display:block}.tgshare small{display:block;color:var(--muted);margin:2px 0 8px}.tgshare .cpy{margin-bottom:8px}.tgshare code{word-break:break-all}
 
 .rq{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}.rq:first-of-type{border-top:0}
@@ -5242,18 +5244,43 @@ async function dLedger(u) {
   } catch (e) { html = `<p class="err">${esc(e.message)}</p>`; }
   showDlg(title, html);
 }
-function dUserStats(u) {
+async function dUserStats(u) {
   const r = { active: 0, soon: 0, expired: 0, demo: 0, trash: 0, off: 0 };
   S.d.clients.forEach((c) => { if (c.ownerId === u.id) r[stage(c)]++; });
   const kids = S.d.users.filter((x) => x.parentId === u.id);
   const fact = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
-  showDlg(`Estadísticas de ${u.name}`, `<dl class="facts">
+  const facts = `<dl class="facts">
     ${fact('Clientes activos', r.active + r.soon)}${fact('De ellos, por vencer', r.soon)}${fact('Vencidos', r.expired)}${fact('Demos en curso', r.demo)}${fact('En la papelera', r.trash)}
     ${fact('Altas y renovaciones este mes', u.salesMonth)}
     ${hasCredits(u) ? fact('Créditos gastados este mes', u.spentMonth) + fact('Saldo', plural(u.credits, 'crédito', 'créditos') + (u.creditPrice ? ` (${eur(u.credits * u.creditPrice)})` : '')) : ''}
     ${kids.length ? fact('Subresellers', kids.map((x) => esc(x.name)).join(', ')) : ''}
     ${fact('Alta en el panel', fmt(u.createdAt))}
-  </dl><button type="button" class="btn" data-act="user-clients" data-id="${u.id}">Ver sus clientes</button>`);
+  </dl>`;
+  const foot = `<div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button type="button" class="btn" data-act="user-clients" data-id="${u.id}">Ver sus clientes</button>${hasCredits(u) ? `<button type="button" class="btn ghost" data-act="user-ledger" data-id="${u.id}">${ic('history')}Todos sus movimientos</button>` : ''}</div>`;
+  const title = `Estadísticas de ${u.name}`;
+  if (!hasCredits(u)) return showDlg(title, facts + foot);
+  showDlg(title, facts + '<p class="muted small">Cargando recargas…</p>' + foot);
+  let led = [];
+  try { led = (await api('GET', `/api/users/${u.id}/ledger`)).ledger || []; } catch (e) { return showDlg(title, facts + `<p class="err">${esc(e.message)}</p>` + foot); }
+  const now = new Date(), ym = now.toISOString().slice(0, 7), d30 = Date.now() - 30 * 864e5;
+  const money = (l) => (l.paid && l.paid.amount ? eur(l.paid.amount) : u.creditPrice ? '≈ ' + eur(l.delta * u.creditPrice) : '');
+  const recs = led.filter((l) => kindOf(l) === 'credito' && l.delta > 0);
+  const recM = recs.filter((l) => String(l.ts).slice(0, 7) === ym);
+  const sumM = recM.reduce((a, l) => a + l.delta, 0);
+  const use = led.filter((l) => ['alta', 'renovacion'].includes(kindOf(l)) && l.delta < 0);
+  const use30 = -use.filter((l) => Date.parse(l.ts) >= d30).reduce((a, l) => a + l.delta, 0);
+  const perDay = use30 / 30, lasts = perDay > 0 && u.credits > 0 ? Math.floor(u.credits / perDay) : null;
+  const last = recs[0];
+  const ago = (ts) => { const d = Math.floor((Date.now() - Date.parse(ts)) / 864e5); return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`; };
+  const box = (n, t, c) => `<div class="rs-k" style="--c:${c}"><b>${n}</b><small>${t}</small></div>`;
+  const html = `
+    <div class="rs-last">${last ? `<span class="rs-ic">💳</span><div class="grow"><small>Última recarga · ${ago(last.ts)}</small><b>+${last.delta} créditos${money(last) ? ` <span>${money(last)}</span>` : ''}</b><div class="small muted">${fmtTs(last.ts, true)}${last.by ? ' · la cargó ' + esc(last.by) : ''}</div></div>`
+      : '<span class="rs-ic">💳</span><div class="grow"><small>Última recarga</small><b>Todavía no ha recargado</b></div>'}</div>
+    <div class="rs-ks">${box(recM.length, recM.length === 1 ? 'recarga este mes' : 'recargas este mes', '#0ea5e9')}${box('+' + sumM, 'créditos recargados este mes' + (u.creditPrice && sumM ? ` (≈ ${eur(sumM * u.creditPrice)})` : ''), '#22c55e')}${box(use30, 'créditos usados en 30 días', '#f59e0b')}${box(lasts === null ? '—' : lasts > 365 ? '+1 año' : plural(lasts, 'día', 'días'), 'le dura el saldo, a este ritmo', '#8b5cf6')}</div>
+    <h2 class="sep">Sus recargas</h2>
+    ${recs.length ? `<ul class="hist">${recs.slice(0, 8).map((l) => `<li><b class="plus">+${l.delta}</b> <span class="muted small">${money(l) ? money(l) + ' · ' : ''}saldo ${l.balance}</span><div>${esc(l.text)}</div><div class="small muted">${fmtTs(l.ts, true)}${l.by ? ', ' + esc(l.by) : ''}</div></li>`).join('')}</ul>${recs.length > 8 ? `<p class="muted small">Y ${recs.length - 8} más en «Todos sus movimientos».</p>` : ''}` : '<p class="muted">Todavía no tiene recargas.</p>'}
+    <h2 class="sep">Resumen</h2>`;
+  showDlg(title, html + facts + foot);
 }
 function dUserMore(u) {
   const it = (act, label, hint, cls = '') => `<button type="button" class="mitem ${cls}" data-act="${act}" data-id="${u.id}">${ic(ICON_ACT[act])}<span>${label}${hint ? `<small>${hint}</small>` : ''}</span></button>`;
@@ -6663,6 +6690,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 184, d: '2026-10-28', items: ['💳 Estadísticas de cada vendedor más claras: su última recarga (cuándo, cuánto y quién la cargó), recargas del mes, lo que gasta y cuántos días le dura el saldo'] },
   { v: 182, d: '2026-10-28', items: ['🧾 Recibo de pago: cuando un cliente paga online le llega un recibo bonito por Telegram (importe, plan, fecha y sus datos de acceso) y un enlace para verlo, imprimirlo o guardarlo en PDF'] },
   { v: 181, d: '2026-10-28', items: ['✨ Novedades a medida: tu equipo solo ve lo nuevo que le sirve; los arreglos y retoques solo los ves tú'] },
   { v: 180, d: '2026-10-28', items: ['👥 Avisos del panel para 2: tu socio puede recibir en su Telegram los mismos avisos que tú (Ajustes › Seguridad)'] },
