@@ -8176,7 +8176,7 @@ function appManifest() {
   const color = /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : '#0b1a23';
   return JSON.stringify({
     name, short_name: name.slice(0, 12), description: 'Gestión de cuentas', lang: 'es', dir: 'ltr',
-    start_url: '/?app=1', scope: '/', id: '/', display: 'standalone', orientation: 'any',
+    start_url: '/?app=1', scope: '/', id: '/panel', display: 'standalone', // id nuevo: Chrome lo ve como app nueva aunque la anterior se borrara orientation: 'any',
     background_color: '#0b1a23', theme_color: color,
     icons: [
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -8195,6 +8195,7 @@ self.addEventListener('fetch', (e) => {
 function appFile(req, res, pathname) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return false;
   if (APP_ICONS[pathname]) { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' }); res.end(req.method === 'HEAD' ? undefined : APP_ICONS[pathname]); return true; }
+  if (pathname === '/instalar' || pathname === '/instalar/') { res.writeHead(302, { Location: '/?app=1#/appinst', 'Cache-Control': 'no-store' }); res.end(); return true; } // enlace fijo para instalar el panel
   if (pathname === '/manifest.webmanifest') { res.writeHead(200, { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' }); res.end(req.method === 'HEAD' ? undefined : appManifest()); return true; }
   if (pathname === '/sw.js') { res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' }); res.end(req.method === 'HEAD' ? undefined : APP_SW); return true; }
   return false;

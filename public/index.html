@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Concha</title>
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="/manifest.webmanifest?v=2">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0b1a23">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2712,7 +2712,7 @@ async function start() {
   try { S.d = kindView(await api('GET', '/api/data', null, { timeout: 30000 })); if (uiOld(S.d.uiVer)) return; } // primera carga: con límite de tiempo
   finally { bootLoading(false); }
   if (S.d.me.mustPw) return showMustPw();
-  $('#gate').hidden = true; $('#app').hidden = false; goHome(); try { history.replaceState(null, '', location.pathname + location.search + '#/' + homeKey()); } catch (e) { /* nada */ } render(); payReturn();
+  $('#gate').hidden = true; $('#app').hidden = false; const wantInst = location.hash === '#/appinst' && !isStandalone(); goHome(); if (wantInst) S.view = 'appinst'; try { history.replaceState(null, '', location.pathname + location.search + '#/' + (wantInst ? 'appinst' : homeKey())); } catch (e) { /* nada */ } render(); payReturn();
 }
 /** Primera entrada (o contraseña puesta por otro): hay que elegir una propia antes de usar el panel */
 function showMustPw() {
@@ -6858,6 +6858,9 @@ function vAppInst() {
     <div class="ap-grid">${other}
       <section class="ap-card" style="text-align:center"><button type="button" class="btn primary" data-act="app-install" style="font-size:16px;padding:14px 22px">📲 Instalar ahora</button>
         <p class="muted small" style="margin:10px 0 0">${isStandalone() ? 'Ya lo estás usando como app 👍' : APP.prompt ? 'Tu navegador lo puede instalar directamente.' : 'Si no se abre la ventana de instalar, sigue los pasos de abajo.'}</p></section>
+      <section class="ap-card"><h2>🔗 Tu enlace para instalar</h2><p class="muted small" style="margin:-4px 0 10px">Guárdalo (en favoritos o mándatelo por Telegram): al abrirlo en Chrome te trae directo aquí para instalar el panel cuando quieras.</p>
+        <div class="ap-link"><code>${esc(location.origin)}/instalar</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(location.origin)}/instalar">Copiar</button></div>
+        <p class="small" style="margin:10px 0 0">💡 <b>Si no te sale «Instalar aplicación»</b>, usa Chrome <b>⋮ › «Añadir a pantalla de inicio»</b>: funciona siempre y se abre igual que una app.</p></section>
       ${stuck}<section class="ap-card ig"><h2>🤖 Android (Chrome)</h2>${step(1, 'Toca el menú <b>⋮</b> arriba a la derecha.')}${step(2, 'Toca <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.')}${step(3, 'Confirma con <b>«Instalar»</b>. ¡Listo!')}</section>
       <section class="ap-card ig"><h2>🍎 iPhone o iPad (Safari)</h2>${step(1, 'Toca <b>Compartir</b> <span class="ig-k">⬆️</span> abajo en la pantalla.')}${step(2, 'Toca <b>«Añadir a pantalla de inicio»</b> <span class="ig-k">➕</span>.')}${step(3, 'Toca <b>«Añadir»</b>. ¡Listo!')}</section>
       <section class="ap-card ig"><h2>💻 Ordenador (Chrome o Edge)</h2>${step(1, 'Pulsa el icono <span class="ig-k">⊕</span> a la derecha de la dirección.')}${step(2, 'Pulsa <b>«Instalar»</b>. Te queda un icono en el escritorio.')}</section>
@@ -6910,6 +6913,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 201, d: '2026-10-29', items: ['📲 Instalar el panel: ahora Chrome lo ve como app nueva (se puede volver a instalar aunque la borraras) y tienes un enlace fijo, /instalar, para instalarlo cuando quieras'] },
   { v: 200, d: '2026-10-29', items: ['📤 Aviso por Telegram cuando un vendedor o administrador descarga la lista de clientes: quién, cuántas cuentas, en qué formato y si lleva contraseñas. Solo es un aviso (no se bloquea). Se apaga en Mi cuenta › Seguridad'] },
   { v: 199, d: '2026-10-29', items: ['🛠️ Repaso completo: en las demos vuelve a salir el tiempo que les queda y en Licencias el aviso de «todavía no ha conectado ningún servidor»'] },
   { v: 198, d: '2026-10-29', items: ['🛠️ Arreglo: en el móvil, el recuadro de «Vence…» de las tarjetas de clientes salía enorme y vacío'] },
