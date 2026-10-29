@@ -6225,7 +6225,7 @@ route('GET', '/api/security', '*', ({ me, req }) => {
   return {
     twoFa: !!(me.totp && me.totp.on), codesLeft: me.totp && me.totp.on ? (me.totp.codes || []).length : 0,
     bot: cfg.token ? cfg.bot || '' : '', tgLinked: !!me.tgChat, tgCount: userChats(me).length, tgLink: cfg.token && cfg.bot ? `https://t.me/${cfg.bot}?start=${userTgCode(me)}` : '',
-    alerts: { login: al.login !== false, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, vendorLogins: me.role === 'super' || me.role === 'reseller' ? al.vendorLogins !== false : al.vendorLogins === true, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
+    alerts: { login: al.login !== false, exports: me.role === 'super' ? al.exports !== false : al.exports === true, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, vendorLogins: me.role === 'super' || me.role === 'reseller' ? al.vendorLogins !== false : al.vendorLogins === true, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
     sessions: list, idleMin: db.settings.security.idleMin,
   };
 });
@@ -6274,9 +6274,21 @@ route('POST', '/api/users/:id/reset2fa', '*', ({ me, params }) => lock(async () 
   if (u.totp) { delete u.totp; dropSessions(u.id); addLog('seguridad', null, `Verificación en dos pasos quitada a ${u.username}`, me); saveDb(); }
   return { ok: true };
 }));
+/* Solo información: cuando alguien del equipo descarga la lista de clientes, se avisa al superadministrador (no se bloquea nada) */
+const EXP_FMT = { xlsx: 'Excel', pdf: 'PDF', sql: 'SQL', csv: 'CSV' };
+route('POST', '/api/export-notice', '*', ({ me, body }) => {
+  const n = Math.max(0, Math.min(1e6, Math.round(Number(body.count) || 0))), fmt = EXP_FMT[body.format] || 'archivo', pw = !!body.withPw;
+  const kinds = (Array.isArray(body.kinds) ? body.kinds : []).filter((k) => ['emby', 'jellyfin', 'plex'].includes(k)).map((k) => ({ emby: 'Emby', jellyfin: 'Jellyfin', plex: 'Plex' }[k]));
+  lock(async () => { addLog('seguridad', null, `${me.name} ha descargado la lista de clientes: ${n} ${n === 1 ? 'cuenta' : 'cuentas'} en ${fmt}${pw ? ', con contraseñas' : ''}`, me); saveDb(); }).catch(() => {});
+  if (me.role !== 'super') {
+    const par = me.parentId ? db.users.find((u) => u.id === me.parentId) : null;
+    notifyStaff('exports', `📤 Descarga de clientes\n\n${me.name} (${ROLE_NAME[me.role] || me.role}${par ? ' de ' + par.name : ''}) ha descargado la lista de clientes:\n▫️ ${n} ${n === 1 ? 'cuenta' : 'cuentas'}${kinds.length ? ' de ' + kinds.join(', ') : ''}\n▫️ En ${fmt}\n▫️ Con contraseñas: ${pw ? 'sí ⚠️' : 'no'}\n${whenTxt()}\n\nSolo es un aviso: la descarga no se ha bloqueado.`);
+  }
+  return { ok: true };
+});
 route('PUT', '/api/security/alerts', '*', ({ me, body }) => lock(async () => {
   const al = me.secAlerts || {};
-  for (const k of ['login', 'servers', 'staffLogins', 'vendorLogins', 'backup', 'payments', 'quality', 'sabotage', 'daily', 'credits']) if (typeof body[k] === 'boolean') al[k] = body[k];
+  for (const k of ['login', 'servers', 'staffLogins', 'vendorLogins', 'backup', 'payments', 'quality', 'sabotage', 'daily', 'credits', 'exports']) if (typeof body[k] === 'boolean') al[k] = body[k];
   me.secAlerts = al; saveDb();
   return { ok: true };
 }));
