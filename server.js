@@ -2710,7 +2710,7 @@ const BOT_CMD = { start: 'estado', suscripcion: 'estado', subscripcion: 'estado'
   problemas: 'problemas', problema: 'problemas', soporte: 'problemas', servidor: 'servidor', funciona: 'servidor',
   instalar: 'guia', guia: 'guia', moonfin: 'guia', datos: 'datos', acceso: 'datos', contrasena: 'datos', aparatos: 'aparatos', dispositivos: 'aparatos', invitar: 'invitar', amigo: 'invitar', precios: 'precios', tarifa: 'precios' };
 const BOT_MENU = [['suscripcion', '📋 Cuántos días te quedan'], ['renovar', '💳 Renovar tu cuenta al momento'], ['problemas', '🛠️ Soluciones rápidas a problemas'], ['servidor', '🟢 ¿Funciona el servidor?'],
-  ['instalar', '📲 Cómo instalar (Moonfin y Emby)'], ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis aparatos conectados'], ['precios', '💶 Precios'], ['invitar', '🎁 Invita a un amigo'],
+  ['instalar', '📲 Cómo instalar la app (Moonfin)'], ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis aparatos conectados'], ['precios', '💶 Precios'], ['invitar', '🎁 Invita a un amigo'],
   ['app', '📲 Descargar la app'], ['calidad', '✨ Ver con la mejor calidad'], ['ayuda', '💬 Ayuda y contacto'], ['stop', '🔕 Dejar de recibir avisos']];
 function tgSetCommands() {
   if (!db.settings.notices.telegram.token) return;
@@ -2744,11 +2744,11 @@ function botAnswer(kind, list) {
   if (kind === 'app') {
     const ap = db.settings.app || {}, c = accs[0], owner = db.users.find((u) => u.id === c.ownerId);
     const ok = ap.file && (ap.public || !owner || owner.role === 'super' || owner.role === 'admin') && siteBase();
-    if (!ok) return { text: '📲 Usa la app de Emby de siempre en tu aparato. Si necesitas ayuda para instalarla, escribe /ayuda.' };
+    if (!ok) return { text: `📲 Usa la app de ${cliJf(c) ? 'Jellyfin' : 'Emby'} de siempre en tu aparato (o 🌙 Moonfin). Si necesitas ayuda para instalarla, escribe /instalar.` };
     return { text: `📲 Nuestra app ${ap.name || ''}\n\nPara móviles Android, Fire Stick y TV Box.\n\n📱 En el móvil: pulsa el botón de abajo y luego «Instalar».\n📺 En Fire Stick: abre la app «Downloader» y escribe ${ap.dlCode ? `el código ${ap.dlCode}` : siteBase() + '/app'}.\n\nAl abrirla, entra con tu usuario y contraseña de siempre.`, kb: { inline_keyboard: [[{ text: '⬇️ Descargar la app', url: siteBase() + '/app' }]] } };
   }
   if (kind === 'calidad') return { text: fillText(tplFor(accs[0].ownerId, 'quality'), accs[0]) };
-  return { text: `🤖 ¿En qué te ayudo? Toca una opción:\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva al momento\n🛠️ /problemas · soluciones rápidas\n🟢 /servidor · ¿funciona el servidor?\n📲 /instalar · cómo instalar (Moonfin y Emby)\n🔑 /datos · tu usuario y contraseña\n📺 /aparatos · tus aparatos conectados\n💶 /precios · tarifas\n🎁 /invitar · invita a un amigo\n📲 /app · descarga la app\n✨ /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
+  return { text: `🤖 ¿En qué te ayudo? Toca una opción:\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva al momento\n🛠️ /problemas · soluciones rápidas\n🟢 /servidor · ¿funciona el servidor?\n📲 /instalar · cómo instalar (Moonfin y ${list.some(cliJf) ? 'Jellyfin' : 'Emby'})\n🔑 /datos · tu usuario y contraseña\n📺 /aparatos · tus aparatos conectados\n💶 /precios · tarifas\n🎁 /invitar · invita a un amigo\n📲 /app · descarga la app\n✨ /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
 }
 /* ---------- Bot: problemas, servidor, pedir, datos, aparatos, precios e invitar ---------- */
 const reqWait = new Map(); // chat -> momento en que pidió /pedir (esperamos el título)
@@ -2767,14 +2767,21 @@ const PROBS = [
 /* Guía de instalación (botón «Límite de transmisión» de /problemas): Moonfin recomendado, Emby con Downloader,
    cómo iniciar sesión y dónde se puede ver. Cada parte va en su mensaje para que se lea fácil */
 const GUIDE_VIDEO = 'https://www.youtube.com/watch?v=uBZW2PYrFmQ';
-const guideKb = (skip) => ({ inline_keyboard: [
+const cliJf = (c) => { const s = c && db.servers.find((x) => x.id === c.serverId); return !!(s && s.kind === 'jellyfin'); };
+const guideKb = (skip, c) => { const jf = cliJf(c); return { inline_keyboard: [
   ...(skip === 'moon' ? [] : [[{ text: '🌙 Instalar Moonfin (recomendado)', callback_data: 'gd:moon' }]]),
-  ...(skip === 'dl' ? [] : [[{ text: '🔥 Instalar Emby con Downloader', callback_data: 'gd:dl' }]]),
+  ...(jf ? (skip === 'jf' ? [] : [[{ text: '📥 Instalar la app Jellyfin', callback_data: 'gd:jf' }]]) : (skip === 'dl' ? [] : [[{ text: '🔥 Instalar Emby con Downloader', callback_data: 'gd:dl' }]])),
   ...(skip === 'login' ? [] : [[{ text: '🔑 Cómo iniciar sesión', callback_data: 'gd:login' }]]),
-  ...(skip === 'where' ? [] : [[{ text: '📱 ¿Dónde puedo ver Emby?', callback_data: 'gd:where' }]]),
-  [{ text: '🎥 Vídeo paso a paso', url: GUIDE_VIDEO }]] });
+  ...(skip === 'where' ? [] : [[{ text: `📱 ¿Dónde puedo ver ${jf ? 'Jellyfin' : 'Emby'}?`, callback_data: 'gd:where' }]]),
+  ...(jf ? [] : [[{ text: '🎥 Vídeo paso a paso', url: GUIDE_VIDEO }]])] }; };
 function guideText(k, c) {
   const s = c ? db.servers.find((x) => x.id === c.serverId) || {} : {};
+  if (s.kind === 'jellyfin') { // clientes de Jellyfin: sus apps y sus pasos
+    if (k === 'main') return `📺 ¿Te dice que hay demasiadas pantallas?\n\nTranquilo, no has hecho nada mal 😊 Tu plan permite ${c && c.screens ? c.screens : 'varias'} ${c && c.screens === 1 ? 'pantalla' : 'pantallas'} a la vez.\n\n💡 Cierra la app en los aparatos que no uses (o mira /aparatos y ciérralos desde aquí).\n\n✅ Y para ver lo mejor posible: 🌙 MOONFIN\n• Se instala desde la tienda oficial (Play Store), como cualquier app\n• Rápido, moderno y compatible con tu servidor\n\n👇 Elige qué quieres hacer:`;
+    if (k === 'jf') return '📥 APP JELLYFIN (gratis)\n\n📺 Android TV / Google TV → busca «Jellyfin» en Play Store\n🔥 Fire TV → busca «Jellyfin» en la tienda de Amazon\n📱 Móvil Android → «Jellyfin» en Play Store\n🍏 iPhone / iPad / Apple TV → «Jellyfin» o «Swiftfin» en la App Store\n\nInstálala, ábrela y añade tu servidor' + (s.publicUrl ? `:\n     🌐 ${s.publicUrl}` : ' (escribe /datos para verlo)') + '\n\n💡 En la tele, Moonfin va aún mejor 🌙';
+    if (k === 'where') return '📱 ¿DÓNDE PUEDO VER JELLYFIN?\n\n📺 LG\n➡️ App Jellyfin de la tienda de tu tele\n\n📺 Samsung\n➡️ Mejor con un Fire TV o Android TV (o el navegador de la tele)\n\n🤖 Android TV / Google TV / Fire TV\n➡️ 🌙 Moonfin (recomendado, desde la tienda)\n➡️ o la app Jellyfin\n\n🍏 Apple TV / iPhone / iPad\n➡️ Jellyfin o Swiftfin, gratis en la App Store\n\n💻 PC / Mac\n➡️ Desde el navegador con el enlace de tu servidor' + (s.publicUrl ? `:\n🌐 ${s.publicUrl}` : '');
+    if (k === 'dl') k = 'jf';
+  }
   if (k === 'main') return '📺 «Su cuenta superó el límite máximo de transmisión»\n\nTranquilo, no has hecho nada mal 😊 Este aviso sale con algunas versiones de la app oficial de Emby en Android TV y Fire TV.\n\n✅ La solución más fácil: 🌙 MOONFIN\nUno de los mejores reproductores que hay:\n• Se instala desde la tienda oficial (Play Store), como cualquier app\n• Sin Downloader y sin códigos\n• Rápido, moderno y compatible con tu servidor\n\n💡 Si usas varios aparatos a la vez, cierra la app en los que no uses (o mira /aparatos).\n\n👇 Elige qué quieres hacer:';
   if (k === 'moon') return '🌙 MOONFIN — LA FORMA MÁS FÁCIL\n\nMoonfin es un reproductor moderno, rápido y muy cómodo. Su gran ventaja: se descarga de la tienda oficial de tu aparato (Play Store), como cualquier app. ¡Nada de Downloader ni de códigos! 🙌\n\n1️⃣ Abre la tienda de apps de tu tele o móvil\n2️⃣ Busca «Moonfin»\n3️⃣ Instálala y ábrela\n4️⃣ Añade la dirección de tu servidor' + (s.publicUrl ? `:\n     🌐 ${s.publicUrl}` : ' (escribe /datos para verla)') + '\n5️⃣ Pon tu usuario y tu contraseña\n\n🎉 ¡Listo! Ya puedes disfrutar de todo tu contenido 🍿';
   if (k === 'dl') return '🔥 EMBY CON DOWNLOADER (solo 1 minuto)\n\n1️⃣ Instala «Downloader» desde la tienda de tu aparato\n2️⃣ Ábrelo y toca la barra para escribir un código\n3️⃣ Escribe el código de tu aparato:\n\n📺 Android TV / Google TV → 5555329\n🔥 Fire TV → 2260055\n📱 Móvil Android → 5393491\n\n¿No funciona alguno? Prueba con 2906753 o con 150976\n\n4️⃣ Descarga Emby y acepta la instalación\n\n🛡️ Si sale un aviso de seguridad es normal: acéptalo solo con estos códigos.\n\n💡 ¿Te parece un lío? Moonfin se instala desde la tienda, sin códigos 🌙';
@@ -2790,7 +2797,7 @@ async function botReply(chat, kind, list) {
   const send = (text, kb, html) => tg('sendMessage', { chat_id: chat, text, disable_web_page_preview: true, ...(html ? { parse_mode: 'HTML' } : {}), ...(kb ? { reply_markup: kb } : {}) });
   if (['estado', 'renovar', 'app', 'calidad', 'ayuda'].includes(kind) || !list.length) { const r = botAnswer(list.length ? kind : 'estado', list); return send(r.text, r.kb); }
   const accs = list.slice(0, 5);
-  if (kind === 'guia') return send(guideText('where', accs[0]) + '\n\n👇 Toca para ver los pasos:', guideKb('where'));
+  if (kind === 'guia') return send(guideText('where', accs[0]) + '\n\n👇 Toca para ver los pasos:', guideKb('where', accs[0]));
   if (kind === 'problemas') return send('🛠️ ¿Qué te pasa? Toca una opción y te digo cómo arreglarlo:', { inline_keyboard: PROBS.map(([k, t]) => [{ text: t, callback_data: 'pb:' + k }]) });
   if (kind === 'servidor') {
     const seen = new Set(), lines = [];
@@ -2860,6 +2867,16 @@ async function botCallback(cq) {
   const chat = cq.message && cq.message.chat && cq.message.chat.id, data = String(cq.data || '');
   await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   if (!chat) return;
+  if (data.startsWith('mc:')) { // el cliente dice desde el recordatorio que ya ha pagado
+    const o = db.orders.find((x) => x.id === data.slice(3) && x.kind === 'client' && x.manual), c = o && db.clients.find((x) => x.id === o.clientId);
+    if (!o || !c || c.tgChat !== chat) return;
+    if (o.status !== 'pending') return tg('sendMessage', { chat_id: chat, text: o.status === 'paid' ? '✅ Este pago ya está confirmado. ¡Gracias!' : 'Este pago ya no está pendiente. Si tienes dudas, escríbenos.' }).catch(() => {});
+    if (!o.claimed) {
+      await lock(async () => { o.claimed = true; o.claimedAt = new Date().toISOString(); addLog('cobro', c, `${c.panelName} dice que ha pagado ${o.amount.toFixed(2)} ${o.currency} por ${MANUAL[o.method].t} (concepto ${o.ref}). Falta confirmarlo`, null); saveDb(); });
+      mpAsk(o).then(() => lock(async () => saveDb())).catch(() => {});
+    }
+    return tg('sendMessage', { chat_id: chat, text: '🙌 ¡Gracias! Lo estamos comprobando. En cuanto lo confirmemos te llega tu recibo por aquí.' }).catch(() => {});
+  }
   if (data.startsWith('mp:')) { // confirmar o rechazar un pago a mano (Bizum, PayPal, Revolut)
     const [, act, oid] = data.split(':'); if (!oid) return;
     const o = db.orders.find((x) => x.id === oid && x.kind === 'client' && x.manual);
@@ -2872,8 +2889,8 @@ async function botCallback(cq) {
   }
   if (data.startsWith('gd:') || data === 'pb:pantallas') {
     const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
-    if (!['main', 'moon', 'dl', 'login', 'where'].includes(k)) return;
-    return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: guideKb(k) });
+    if (!['main', 'moon', 'dl', 'jf', 'login', 'where'].includes(k)) return;
+    return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: guideKb(k, c) });
   }
   if (data.startsWith('pb:')) {
     const p = PROBS.find(([k]) => k === data.slice(3)); if (!p) return;
@@ -5174,16 +5191,80 @@ function cleanManual(b) {
   return out;
 }
 const cpStripeOk = () => !!(db.payCfg.stripe.on && db.payCfg.stripe.key);
+/* PayPal automático (cuenta PayPal Business con su Client ID y Secret): el cliente paga en PayPal y la cuenta se renueva sola.
+   Las claves del superadministrador van en db.payCfg.ppcli; las de cada vendedor en su clientPay.pp (nunca se mandan al navegador) */
+const ppOf = (vendor) => { const x = vendor ? (vendor.clientPay || {}).pp : (db.payCfg || {}).ppcli; return x && x.id && x.secret ? x : null; };
+const ppOfOrder = (o) => ppOf(o.vendorId ? db.users.find((u) => u.id === o.vendorId) : null);
+const ppBase = (pp) => process.env.PAYPAL_API || (pp.mode === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com');
+const ppTokens = new Map();
+async function ppCall(pp, method, path, body) {
+  let t = ppTokens.get(pp.id);
+  if (!t || t.exp < Date.now() + 60000) {
+    let r;
+    try { r = await fetch(ppBase(pp) + '/v1/oauth2/token', { method: 'POST', headers: { Authorization: 'Basic ' + Buffer.from(pp.id + ':' + pp.secret).toString('base64'), 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=client_credentials', signal: AbortSignal.timeout(20000) }); }
+    catch { throw new HttpError(502, 'No se pudo conectar con PayPal.'); }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.access_token) throw new HttpError(400, 'PayPal no acepta esas claves. Revisa el Client ID y el Secret (y si son de pruebas o reales).');
+    t = { tok: j.access_token, exp: Date.now() + (Number(j.expires_in) || 3000) * 1000 }; ppTokens.set(pp.id, t);
+  }
+  let r;
+  try { r = await fetch(ppBase(pp) + path, { method, headers: { Authorization: 'Bearer ' + t.tok, 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000) }); }
+  catch { throw new HttpError(502, 'No se pudo conectar con PayPal.'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new HttpError(502, 'PayPal: ' + ((j.details && j.details[0] && (j.details[0].description || j.details[0].issue)) || j.message || r.status)); e.issue = j.details && j.details[0] && j.details[0].issue; throw e; }
+  return j;
+}
+/** Mira en PayPal un pedido: si el cliente ya lo aprobó se cobra, y si está cobrado y cuadra, se renueva la cuenta */
+async function ppSettle(o, via) {
+  if (!o || !o.ppapi || o.status !== 'pending' || !o.extId) return false;
+  const pp = ppOfOrder(o); if (!pp) return false;
+  let ord = await ppCall(pp, 'GET', `/v2/checkout/orders/${encodeURIComponent(o.extId)}`);
+  if (ord.status === 'APPROVED') {
+    try { ord = await ppCall(pp, 'POST', `/v2/checkout/orders/${encodeURIComponent(o.extId)}/capture`, {}); }
+    catch (e) { if (e.issue !== 'ORDER_ALREADY_CAPTURED') throw e; ord = await ppCall(pp, 'GET', `/v2/checkout/orders/${encodeURIComponent(o.extId)}`); }
+  }
+  if (ord.status !== 'COMPLETED') return false;
+  const cap = (((ord.purchase_units || [])[0] || {}).payments || {}).captures || [];
+  const got = cap.filter((x) => x.status === 'COMPLETED' || x.status === 'PENDING').reduce((a, x) => a + Number((x.amount || {}).value || 0), 0);
+  const curOk = cap.every((x) => String((x.amount || {}).currency_code || '').toUpperCase() === o.currency);
+  if (!cap.length || !curOk || Math.round(got * 100) < Math.round(o.amount * 100)) { o.note = 'PayPal: el importe no cuadra'; return false; }
+  o.capId = cap[0].id;
+  return lock(async () => { if (await cpPaid(o, via)) { saveDb(); return true; } return false; });
+}
+/* Recordatorios (cada uno los enciende o apaga en su «Cobro a clientes»):
+   - al cliente, si eligió Bizum/PayPal/Revolut y a los 15 minutos no ha pulsado «Ya he pagado»
+   - a quien cobra, si un pago sigue sin confirmar a las 3 horas y otra vez a las 24 */
+const cpRemind = (cfg) => ({ client: true, vendor: true, ...((cfg && cfg.remind) || {}) });
+const cfgOfOrder = (o) => (o.vendorId ? ((db.users.find((u) => u.id === o.vendorId) || {}).clientPay || {}) : cpCfg());
+async function cpRemindTick() {
+  const now = Date.now();
+  for (const o of db.orders.slice(0, 400)) {
+    if (o.kind !== 'client' || o.status !== 'pending') continue;
+    const age = now - Date.parse(o.created);
+    if (o.ppapi) { if (age < 3 * 3600000) { try { await ppSettle(o, 'comprobación automática'); } catch (e) { console.error('PayPal:', e.message); } } continue; }
+    if (!o.manual || age > 3 * 86400000) continue;
+    const rm = cpRemind(cfgOfOrder(o)), c = db.clients.find((x) => x.id === o.clientId); if (!c) continue;
+    if (rm.client && !o.claimed && !o.remC && age >= 15 * 60000 && age < 86400000 && c.tgChat && db.settings.notices.telegram.token) {
+      o.remC = new Date().toISOString();
+      const money = Number(o.amount).toLocaleString('es-ES', { style: 'currency', currency: o.currency || 'EUR' }), link = siteBase() && c.payKey ? `${siteBase()}/pagar/${c.id}-${c.payKey}?o=${o.id}` : '';
+      tg('sendMessage', { chat_id: c.tgChat, text: `👋 ¿Ya has hecho el pago de ${money} por ${MANUAL[o.method].t}?\n\nSi ya lo has enviado, pulsa el botón y lo confirmamos enseguida. Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto nos llegue.`,
+        reply_markup: { inline_keyboard: [[{ text: '✅ Ya he pagado', callback_data: 'mc:' + o.id }], ...(/^https:\/\//.test(link) ? [[{ text: '💳 Ver cómo pagar', url: link }]] : [])] } }).catch(() => {});
+    }
+    const late = age >= 24 * 3600000 ? 2 : age >= 3 * 3600000 ? 1 : 0;
+    if (rm.vendor && late > (o.remV || 0)) { o.remV = late; await mpAsk(o, 'late'); }
+  }
+}
+setTimeout(() => { setInterval(() => cpRemindTick().then(() => lock(async () => saveDb())).catch(() => {}), Number(process.env.CP_TICK_MS) || 5 * 60000); }, process.env.CP_TICK_MS ? 2000 : 60000);
 function cpCtx(c) {
   if (!c) return null;
   const o = db.users.find((u) => u.id === c.ownerId);
   if (!o || o.role === 'super' || o.role === 'admin') {
     const cfg = cpCfg();
-    return cfg.on && (cpStripeOk() || cpManual(cfg).length) ? { cfg, key: cpStripeOk() ? db.payCfg.stripe.key : null, vendor: null } : null;
+    return cfg.on && (cpStripeOk() || cpManual(cfg).length || ppOf(null)) ? { cfg, key: cpStripeOk() ? db.payCfg.stripe.key : null, pp: ppOf(null), vendor: null } : null;
   }
   const v = o.clientPay;
-  if (!cpCfg().vendors || o.disabled || !v || !v.on || !(v.key || cpManual(v).length)) return null;
-  return { cfg: v, key: v.key || null, vendor: o };
+  if (!cpCfg().vendors || o.disabled || !v || !v.on || !(v.key || cpManual(v).length || ppOf(o))) return null;
+  return { cfg: v, key: v.key || null, pp: ppOf(o), vendor: o };
 }
 /** Quién puede confirmar un pago a mano: el vendedor de esa cuenta, o el superadministrador (y los admins con avisos de pagos) */
 function mpConfirmers(o) {
@@ -5191,16 +5272,17 @@ function mpConfirmers(o) {
   return db.users.filter((u) => !u.disabled && (u.role === 'super' || (u.role === 'admin' && (u.secAlerts || {}).payments === true)));
 }
 const mpCfg = (o) => (o.vendorId ? ((db.users.find((u) => u.id === o.vendorId) || {}).clientPay || {}) : cpCfg()).manual || {};
-async function mpAsk(o) {
+async function mpAsk(o, early) {
   const c = db.clients.find((x) => x.id === o.clientId); if (!c) return;
   const money = Number(o.amount).toLocaleString('es-ES', { style: 'currency', currency: o.currency || 'EUR' });
-  const text = `💰 Pago por confirmar\n\n${c.panelName} (@${c.embyName}) dice que te ha pagado ${money} por ${MANUAL[o.method].t}.\n📦 ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens || 1} ${o.screens === 1 ? 'pantalla' : 'pantallas'}\n🔖 Concepto: ${o.ref}\n\nMira tu ${MANUAL[o.method].t} y confirma 👇\nAl confirmar, su cuenta se renueva sola y le llega su recibo.`;
+  const text = (early === 'late' ? `⏰ Pago sin confirmar todavía\n\n${c.panelName} (@${c.embyName}) ${o.claimed ? 'dice que ya te ha pagado' : 'iba a pagarte'} ${money} por ${MANUAL[o.method].t} hace ${Math.round((Date.now() - Date.parse(o.created)) / 3600000)} horas.` : early ? `🕐 Pago en camino\n\n${c.panelName} (@${c.embyName}) va a pagarte ${money} por ${MANUAL[o.method].t}.` : `💰 Pago por confirmar\n\n${c.panelName} (@${c.embyName}) dice que ya te ha pagado ${money} por ${MANUAL[o.method].t}.`)
+    + `\n📦 ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens || 1} ${o.screens === 1 ? 'pantalla' : 'pantallas'}\n🔖 Concepto: ${o.ref}\n\n${early === true ? 'Cuando te llegue el dinero' : 'Mira tu ' + MANUAL[o.method].t + ' y confirma'} 👇\nAl confirmar, su cuenta se renueva sola y le llega su recibo.`;
   const kb = { inline_keyboard: [[{ text: '✅ Sí, ha llegado', callback_data: 'mp:ok:' + o.id }], [{ text: '❌ No ha llegado', callback_data: 'mp:no:' + o.id }]] };
   const msgs = [];
   for (const u of mpConfirmers(o)) for (const chat of userChats(u)) {
     try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch (e) { console.error('Telegram (pago por confirmar):', e.message); }
   }
-  o.mpMsgs = msgs;
+  o.mpMsgs = [...(o.mpMsgs || []), ...msgs].slice(-12);
 }
 /** Confirma (ok) o rechaza un pago a mano. Se llama dentro de lock() */
 async function mpDecide(o, ok, u) {
@@ -5254,7 +5336,7 @@ async function cpPaid(o, via) {
   if (o.screens && [1, 2, 3, 4].includes(o.screens)) c.screens = o.screens; // eligió otras pantallas al pagar
   delete c.expiresAt; delete c.off; delete c.offBy; delete c.trashedAt; delete c.trashReason;
   try { await grantAccess(c); delete c.lastError; }
-  catch (e) { c.lastError = e.message; notifyStaff('payments', `⚠️ ${c.panelName} ha pagado y la fecha ya está renovada, pero Emby dio un error al dar acceso: ${e.message}. El vigilante lo volverá a intentar.`); }
+  catch (e) { c.lastError = e.message; notifyStaff('payments', `⚠️ ${c.panelName} ha pagado y la fecha ya está renovada, pero ${srvKind(db.servers.find((x) => x.id === c.serverId))} dio un error al dar acceso: ${e.message}. El vigilante lo volverá a intentar.`); }
   const what = `${o.months} ${o.months === 1 ? 'mes' : 'meses'}, ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}${oldScr && oldScr !== c.screens ? ` (antes ${oldScr})` : ''}`;
   const vend = o.vendorId ? db.users.find((u) => u.id === o.vendorId) : null;
   if (vend) { // la renovación le cuesta sus créditos, como si la hiciera él (aunque se quede en negativo: el cliente ya ha pagado)
@@ -5264,7 +5346,7 @@ async function cpPaid(o, via) {
     notifyUser(vend, `💳 Tu cliente ${c.panelName} ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola hasta el ${c.expires.split('-').reverse().join('/')}.${cost ? `\nSe han descontado ${cost} créditos. Saldo: ${vend.credits}.` : ''}${vend.credits < 0 ? '\n⚠️ Tu saldo está en negativo: pide una recarga.' : ''}`);
   }
   addLog('renovacion', c, `${o.wasDemo ? 'Demo convertida en cuenta pagando online' : o.cycle ? 'Renovada sola (renovación automática)' : 'Renovada pagando online'} (${what}): ${o.amount.toFixed(2)} ${o.currency}. Vence el ${c.expires}`, null);
-  addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con ${o.manual ? MANUAL[o.method].t : 'tarjeta'} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
+  addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
   if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}`);
@@ -5283,7 +5365,7 @@ function receiptTg(c, o) {
   const s = db.servers.find((x) => x.id === c.serverId) || {}, brand = db.settings.brand.name || 'Panel';
   const auto = !!(o.subId || o.cycle) && c.sub && c.sub.status === 'active' && !c.sub.cancelAt;
   const text = `🧾 <b>RECIBO DE PAGO</b> · ${hEsc(brand)}\n<code>Nº ${hEsc(o.num || o.id)}  ·  ${hEsc(rcWhen(o.paidAt))}</code>\n\n`
-    + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 ${o.manual ? 'Pagado por ' + hEsc(MANUAL[o.method].t) : 'Pago online con tarjeta · seguro'}\n👤 ${hEsc(c.panelName)}\n\n`
+    + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 ${MANUAL[o.method] ? 'Pagado por ' + hEsc(MANUAL[o.method].t) : 'Pago online con tarjeta · seguro'}\n👤 ${hEsc(c.panelName)}\n\n`
     + `📦 <b>Tu plan</b>\n▫️ ${o.wasDemo ? 'Alta' : 'Renovación'}: ${hEsc(rcPlan(o))}\n▫️ Válida hasta: <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`
     + (o.expiresBefore && !o.wasDemo ? `\n▫️ <i>Antes vencía el ${hEsc(rcFmtD(o.expiresBefore))}</i>` : '')
     + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '') + '\n\n'
@@ -5409,19 +5491,34 @@ async function cpRoute(req, res, pathname) {
     const open = db.orders.filter((o) => o.clientId === c.id && o.status === 'pending' && Date.now() - Date.parse(o.created) < 3600000);
     if (ctx.vendor) { const cost = costFor(ctx.vendor, months, scr); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
     if (open.length >= 5) return cpPage(res, 429, 'Espera un poco', '<h1>Espera un momento</h1><p class="sub">Tienes varios pagos sin terminar. Prueba de nuevo en un rato.</p>');
-    const pay = String(fp.get('pay') || ''), mans = cpManual(ctx.cfg), MT0 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
-    if (!pay && mans.length && !auto) { // elegir cómo pagar
+    const pay = String(fp.get('pay') || ''), mans = cpManual(ctx.cfg).filter((k) => !(k === 'paypal' && ctx.pp)), MT0 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
+    if (!pay && (mans.length || ctx.pp) && !auto) { // elegir cómo pagar
       const hid = `<input type="hidden" name="m" value="${months}"><input type="hidden" name="s" value="${scr}">`;
       const bt = (v, ic0, t, sm) => `<button class="op" name="pay" value="${v}"><span style="font-size:26px">${ic0}</span><span><b>${t}</b><small>${sm}</small></span></button>`;
       return cpPage(res, 200, 'Cómo pagar', `<h1>¿Cómo quieres pagar?</h1><p class="sub">${MT0[months]} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'} · <b>${H(money(op.price))}</b></p>
-        <form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${hid}${ctx.key ? bt('stripe', '💳', 'Tarjeta', 'Apple Pay, Google Pay… Se renueva al momento') : ''}${mans.map((k) => bt(k, MANUAL[k].i, MANUAL[k].t, 'Se renueva en cuanto confirmemos tu pago')).join('')}</form>
+        <form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${hid}${ctx.key ? bt('stripe', '💳', 'Tarjeta', 'Apple Pay, Google Pay… Se renueva al momento') : ''}${ctx.pp ? bt('ppapi', '🅿️', 'PayPal', 'Con tu cuenta PayPal o tarjeta. Se renueva al momento') : ''}${mans.map((k) => bt(k, MANUAL[k].i, MANUAL[k].t, 'Se renueva en cuanto confirmemos tu pago')).join('')}</form>
         <p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">← Volver</a></p>`);
     }
     if (MANUAL[pay] && mans.includes(pay)) {
       const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: pay, manual: true, status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}` };
       o.ref = o.id.slice(-6);
       await lock(async () => { db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000; saveDb(); });
+      mpAsk(o, true).then(() => lock(async () => saveDb())).catch(() => {}); // aviso ya: por si el cliente paga y no vuelve a pulsar «Ya he pagado»
       res.writeHead(303, { Location: `/pagar/${c.id}-${c.payKey}?o=${o.id}`, 'Cache-Control': 'no-store' }); return res.end();
+    }
+    if (pay === 'ppapi' && ctx.pp) {
+      const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: 'paypal', ppapi: true, status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}` };
+      const base = siteBase() || panelBase(req);
+      let ord;
+      try {
+        ord = await ppCall(ctx.pp, 'POST', '/v2/checkout/orders', { intent: 'CAPTURE', purchase_units: [{ reference_id: o.id, custom_id: o.id, description: `${String(ctx.cfg.desc || 'Suscripción').slice(0, 60)} · ${o.pack}`, amount: { currency_code: cur, value: (Math.round(op.price * 100) / 100).toFixed(2) } }],
+          payment_source: { paypal: { experience_context: { brand_name: String(db.settings.brand.name || 'Panel').slice(0, 120), user_action: 'PAY_NOW', shipping_preference: 'NO_SHIPPING', landing_page: 'NO_PREFERENCE', return_url: `${base}/pagar/${c.id}-${c.payKey}?o=${o.id}`, cancel_url: `${base}/pagar/${c.id}-${c.payKey}?cancelado=1` } } } });
+      } catch (e) { console.error('PayPal (cobro a clientes):', e.message); return cpPage(res, 502, 'Error', '<h1>No se pudo abrir PayPal</h1><p class="sub">Inténtalo de nuevo en un momento o elige otra forma de pago.</p>'); }
+      const go = (ord.links || []).find((l) => l.rel === 'payer-action' || l.rel === 'approve');
+      if (!ord.id || !go) return cpPage(res, 502, 'Error', '<h1>No se pudo abrir PayPal</h1><p class="sub">Inténtalo de nuevo en un momento o elige otra forma de pago.</p>');
+      o.extId = ord.id;
+      await lock(async () => { db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000; saveDb(); });
+      res.writeHead(303, { Location: go.href, 'Cache-Control': 'no-store' }); return res.end();
     }
     if (!ctx.key) return cpPage(res, 400, 'Elige otra forma', '<h1>Esa forma de pago no está</h1><p class="sub">Vuelve atrás y elige otra.</p>');
     const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: 'stripe', status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}${auto ? ' · automática' : ''}`, auto };
@@ -5444,7 +5541,8 @@ async function cpRoute(req, res, pathname) {
   const oid = q.get('o');
   if (oid) {
     const o = db.orders.find((x) => x.id === oid && x.clientId === c.id);
-    if (o && o.status === 'pending' && o.extId) {
+    if (o && o.status === 'pending' && o.ppapi) { try { await ppSettle(o, 'comprobado al volver de PayPal'); } catch (e) { console.error('PayPal:', e.message); } }
+    if (o && o.status === 'pending' && o.extId && !o.ppapi) {
       try {
         const ss = await stripeCall('GET', `/v1/checkout/sessions/${encodeURIComponent(o.extId)}`, null, orderKey(o));
         if (ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (ss.subscription) o.subId = String(ss.subscription); if (await cpPaid(o, 'comprobado al volver')) saveDb(); });
@@ -5486,7 +5584,7 @@ async function cpRoute(req, res, pathname) {
     const list = sopts.length ? `<p class="lbl">¿Cuánto tiempo?</p><input type="hidden" name="s" value="${sel}">${autoBox}` + sopts.map((x) => `<button class="op${best && x === best && x.m > 1 ? ' best' : ''}" name="m" value="${x.m}"><span><b>${MT[x.m]}${best && x === best && x.m > 1 ? '<span class="tag">MEJOR PRECIO</span>' : ''}</b><small>${sel} ${sel === 1 ? 'pantalla' : 'pantallas'}${x.m > 1 ? ' · ' + money(x.price / x.m) + ' al mes' : ''}</small></span><span class="p">${money(x.price)}</span></button>`).join('')
       : '<p class="sub">Todavía no hay precios para tu plan. Habla con tu proveedor.</p>';
     const subBox = subOn ? `<div class="subbox">🔁 <b>Renovación automática ${c.sub.cancelAt ? 'cancelada' : 'activa'}</b><br><small>${c.sub.cancelAt ? `No se te cobrará más. Tu cuenta sigue hasta el ${H(fmtD(c.expires))}.` : `Cada ${c.sub.months === 1 ? 'mes' : c.sub.months + ' meses'}, ${c.sub.screens || cur0} ${c.sub.screens === 1 ? 'pantalla' : 'pantallas'}. Se cobra sola cuando toca.`}</small>${c.sub.cancelAt ? '' : `<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/cancelar"><button class="lnk">Cancelar la renovación automática</button></form>`}</div>` : '';
-    renew = `<h2>${c.demo ? '🚀 Activa tu cuenta' : '💳 Renovar'}</h2>${subBox}${tabs}${change}<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 ${[ctx.key ? 'Tarjeta, Apple Pay, Google Pay' : '', ...cpManual(ctx.cfg).map((k) => MANUAL[k].t)].filter(Boolean).join(' · ')}<br>Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto se confirma el pago.</p>`;
+    renew = `<h2>${c.demo ? '🚀 Activa tu cuenta' : '💳 Renovar'}</h2>${subBox}${tabs}${change}<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 ${[ctx.key ? 'Tarjeta, Apple Pay, Google Pay' : '', ctx.pp ? 'PayPal' : '', ...cpManual(ctx.cfg).filter((k) => !(k === 'paypal' && ctx.pp)).map((k) => MANUAL[k].t)].filter(Boolean).join(' · ')}<br>Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto se confirma el pago.</p>`;
   } else renew = `<p class="sub">${c.demo ? 'Para activar tu cuenta' : 'Para renovar'}, habla con tu proveedor.</p>`;
   const owner = db.users.find((u) => u.id === c.ownerId), ap = db.settings.app || {};
   const appOk = ap.file && (ap.public || !owner || owner.role === 'super' || owner.role === 'admin');
@@ -5502,14 +5600,15 @@ const VEND_ROLES = ['reseller', 'sub'];
 const myCp = (me) => (me.clientPay = { on: false, desc: 'Suscripción', prices: {}, key: '', whsec: '', ...(me.clientPay || {}) });
 route('GET', '/api/my-client-pay', VEND_ROLES, ({ me, req }) => {
   const v = myCp(me);
-  return { allowed: !!cpCfg().vendors, cfg: { on: v.on, desc: v.desc, prices: v.prices, manual: v.manual || {}, hasKey: !!v.key, test: /^sk_test_/.test(v.key || ''), hasWh: !!v.whsec },
+  return { allowed: !!cpCfg().vendors, cfg: { on: v.on, desc: v.desc, prices: v.prices, manual: v.manual || {}, remind: cpRemind(v), pp: v.pp && v.pp.id ? { on: true, mode: v.pp.mode || 'live', id: v.pp.id.slice(0, 6) + '…' } : { on: false }, hasKey: !!v.key, test: /^sk_test_/.test(v.key || ''), hasWh: !!v.whsec },
     webhook: `${siteBase() || panelBase(req)}/api/pay/stripe/webhook/u${me.id}`, cost: Object.fromEntries([1, 3, 6, 12].flatMap((m) => [1, 2, 4].map((sc) => [`${m}-${sc}`, costFor(me, m, sc)]))),
-    orders: db.orders.filter((o) => o.kind === 'client' && o.vendorId === me.id).slice(0, 40).map((o) => ({ id: o.id, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', manual: !!o.manual, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1 })) };
+    orders: db.orders.filter((o) => o.kind === 'client' && o.vendorId === me.id).slice(0, 40).map((o) => ({ id: o.id, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', ppapi: !!o.ppapi, manual: !!o.manual, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1 })) };
 });
 route('PUT', '/api/my-client-pay', VEND_ROLES, async ({ me, body }) => {
   if (!cpCfg().vendors) throw new HttpError(403, 'El cobro a clientes todavía no está disponible para vendedores.');
   const v = myCp(me);
   const k = str(body.key, 200), w = str(body.whsec, 200);
+  const ppNew = await ppCheck(body.pp);
   if (k) {
     if (!/^(sk|rk)_(live|test)_[A-Za-z0-9]{10,}$/.test(k)) throw new HttpError(400, 'La clave de Stripe debe empezar por sk_live_ (o sk_test_ para pruebas).');
     try { await stripeCall('GET', '/v1/balance', null, k); } catch (e) { throw new HttpError(400, 'Stripe no acepta esa clave: ' + e.message); }
@@ -5518,14 +5617,17 @@ route('PUT', '/api/my-client-pay', VEND_ROLES, async ({ me, body }) => {
     if (k) v.key = k;
     if (w) { if (!/^whsec_[A-Za-z0-9]{10,}$/.test(w)) throw new HttpError(400, 'El secreto del webhook empieza por whsec_'); v.whsec = w; }
     if (body.manual && typeof body.manual === 'object') v.manual = cleanManual(body.manual);
-    if (body.removeKey) { v.key = ''; v.whsec = ''; if (!cpManual(v).length) v.on = false; }
+    if (ppNew) v.pp = ppNew;
+    if (body.pp && body.pp.remove) { v.pp = null; if (!v.key && !cpManual(v).length) v.on = false; }
+    if (body.remind && typeof body.remind === 'object') v.remind = { client: body.remind.client !== false, vendor: body.remind.vendor !== false };
+    if (body.removeKey) { v.key = ''; v.whsec = ''; if (!cpManual(v).length && !ppOf(me)) v.on = false; }
     if (body.desc !== undefined) v.desc = str(body.desc, 60).trim() || 'Suscripción';
     if (body.prices && typeof body.prices === 'object') {
       const out = {};
       for (const m of [1, 3, 6, 12]) for (const sc of [1, 2, 3, 4]) { const x = Math.round(Number(String(body.prices[`${m}-${sc}`] || '').replace(',', '.')) * 100) / 100; if (x >= 0.5 && x <= 10000) out[`${m}-${sc}`] = x; }
       v.prices = out;
     }
-    if (body.on !== undefined) { if (body.on && !v.key && !cpManual(v).length) throw new HttpError(400, 'Primero conecta tu Stripe o pon tu Bizum, PayPal o Revolut.'); v.on = !!body.on; }
+    if (body.on !== undefined) { if (body.on && !v.key && !cpManual(v).length && !ppOf(me)) throw new HttpError(400, 'Primero conecta tu Stripe o PayPal, o pon tu Bizum, PayPal o Revolut.'); v.on = !!body.on; }
     addLog('ajustes', null, `${me.name}: cobro a sus clientes ${v.on ? 'activado' : 'desactivado'}`, me);
     saveDb();
     return { ok: true };
@@ -5563,10 +5665,13 @@ async function subPoll() {
   }
 }
 setTimeout(() => { subPoll().catch(() => {}); setInterval(() => subPoll().catch(() => {}), 3 * 3600000); }, 90000);
-route('PUT', '/api/client-pay', SUPER, ({ me, body }) => lock(async () => {
+route('PUT', '/api/client-pay', SUPER, async ({ me, body }) => { const ppNew = await ppCheck(body.pp); return lock(async () => {
   const c = db.settings.clientPay;
   if (body.manual && typeof body.manual === 'object') c.manual = cleanManual(body.manual);
-  if (body.on !== undefined) { if (body.on && !cpStripeOk() && !cpManual(c).length) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online, o pon tu Bizum, PayPal o Revolut.'); c.on = !!body.on; }
+  if (ppNew) db.payCfg.ppcli = ppNew;
+  if (body.pp && body.pp.remove) db.payCfg.ppcli = null;
+  if (body.remind && typeof body.remind === 'object') c.remind = { client: body.remind.client !== false, vendor: body.remind.vendor !== false };
+  if (body.on !== undefined) { if (body.on && !cpStripeOk() && !cpManual(c).length && !ppOf(null)) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online, conecta PayPal, o pon tu Bizum, PayPal o Revolut.'); c.on = !!body.on; }
   if (body.desc !== undefined) c.desc = str(body.desc, 60).trim() || 'Suscripción';
   if (body.vendors !== undefined) c.vendors = !!body.vendors;
   if (body.subs !== undefined) c.subs = !!body.subs;
@@ -5578,9 +5683,20 @@ route('PUT', '/api/client-pay', SUPER, ({ me, body }) => lock(async () => {
   addLog('ajustes', null, `Cobro a clientes: ${c.on ? 'activado' : 'desactivado'}${c.vendors ? ' · permitido a los vendedores' : ''}`, me);
   saveDb();
   return { ok: true, clientPay: c };
-}));
-route('GET', '/api/client-pay', SUPER, () => ({ cfg: cpCfg(), stripe: { on: !!(db.payCfg.stripe.on && db.payCfg.stripe.key), wh: !!db.payCfg.stripe.whsec }, base: siteBase(),
-  orders: db.orders.filter((o) => o.kind === 'client').slice(0, 60).map((o) => ({ id: o.id, clientId: o.clientId, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', manual: !!o.manual, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1 })) }));
+}); });
+/** Comprueba unas claves nuevas de PayPal antes de guardarlas */
+async function ppCheck(b) {
+  if (!b || typeof b !== 'object' || b.remove) return null;
+  const id = str(b.id, 200).trim(), secret = str(b.secret, 200).trim(), mode = b.mode === 'sandbox' ? 'sandbox' : 'live';
+  if (!id && !secret) return null;
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(id) || !/^[A-Za-z0-9_-]{20,}$/.test(secret)) throw new HttpError(400, 'Pega el Client ID y el Secret de PayPal completos (sin espacios).');
+  const pp = { id, secret, mode };
+  ppTokens.delete(id);
+  await ppCall(pp, 'GET', '/v1/identity/oauth2/userinfo?schema=paypalv1.1').catch((e) => { if (/no acepta esas claves|conectar/.test(e.message)) throw e; });
+  return pp;
+}
+route('GET', '/api/client-pay', SUPER, () => ({ cfg: { ...cpCfg(), remind: cpRemind(cpCfg()) }, pp: ppOf(null) ? { on: true, mode: ppOf(null).mode || 'live', id: ppOf(null).id.slice(0, 6) + '…' } : { on: false }, stripe: { on: !!(db.payCfg.stripe.on && db.payCfg.stripe.key), wh: !!db.payCfg.stripe.whsec }, base: siteBase(),
+  orders: db.orders.filter((o) => o.kind === 'client').slice(0, 60).map((o) => ({ id: o.id, clientId: o.clientId, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', ppapi: !!o.ppapi, manual: !!o.manual, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1 })) }));
 
 route('POST', '/api/client-pay/orders/:id/decide', ['super', 'admin', 'reseller', 'sub'], ({ me, params, body }) => lock(async () => {
   const o = db.orders.find((x) => x.id === String(params.id) && x.kind === 'client');

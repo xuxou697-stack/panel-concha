@@ -317,8 +317,10 @@ table.prices input{width:92px;background:var(--bg);border:1px solid var(--line);
 /* Menu: un color para cada apartado, para distinguirlos de un vistazo */
 .nav .g-cli{--gc:#5aa9f0}.nav .g-demo{--gc:#f0b545}.nav .g-emby{--gc:#a9a6ff}.nav .g-mon{--gc:#3fd0b5}
 .nav .g-al{--gc:#f0725f}.nav .g-ven{--gc:#ec86b4}.nav .g-pan{--gc:#8fd36a}.nav .g-aj{--gc:#9fb4bf}
+.nav .g-msg{--gc:#c58cf2}.nav .g-din{--gc:#8fd36a}.nav .g-cta{--gc:#7cc4e8}.nav .g-sys{--gc:#9fb4bf}
 :root[data-theme="light"] .nav .g-cli{--gc:#1f6fc0}:root[data-theme="light"] .nav .g-demo{--gc:#a8650a}:root[data-theme="light"] .nav .g-emby{--gc:#5b54c9}:root[data-theme="light"] .nav .g-mon{--gc:#0f7f6a}
 :root[data-theme="light"] .nav .g-al{--gc:#c23d29}:root[data-theme="light"] .nav .g-ven{--gc:#b23a72}:root[data-theme="light"] .nav .g-pan{--gc:#3f7d1d}:root[data-theme="light"] .nav .g-aj{--gc:#58717d}
+:root[data-theme="light"] .nav .g-msg{--gc:#8a3fc0}:root[data-theme="light"] .nav .g-din{--gc:#3f7d1d}:root[data-theme="light"] .nav .g-cta{--gc:#1d6f99}:root[data-theme="light"] .nav .g-sys{--gc:#58717d}
 .nav .grp[class*="g-"]{margin-top:10px}
 .nav .grp[class*="g-"] > .ic:first-child{width:28px;height:28px;padding:6px;border-radius:8px;flex:none;color:var(--gc);background:color-mix(in srgb,var(--gc) 18%,transparent)}
 .nav .grp[class*="g-"][aria-expanded="true"] .t{color:var(--gc)}
@@ -2409,62 +2411,87 @@ const noCli = () => me().role === 'admin' && !canDo('clients');
 /** Menu lateral agrupado. v = vista, f = filtro de la lista, a = accion, h = titulo de grupo, l = nivel */
 /** Menu lateral por grupos plegables. v = vista, f = filtro de la lista, i = icono, n = contador, hot = contador que pide atencion */
 function navGroups() {
+  /* Menú por temas (v189): Inicio · Clientes · Demos · En directo · Mensajes · Dinero · Equipo · Servidores · Mi cuenta · Sistema.
+     Son las mismas pantallas y los mismos permisos de siempre, solo ordenadas */
   const cnt = { soon: 0, expired: 0, demo: 0, off: 0 };
   live().forEach((c) => { const st = stage(c); if (cnt[st] !== undefined) cnt[st]++; });
   const unpaid = S.d.clients.filter((c) => c.paid === false && c.status !== 'trash').length;
+  const sys = canDo('system');
+  // 👥 Clientes: solo las cuentas
   const cli = [
     { v: 'cuentas', f: 'all', t: 'Lista', i: 'list', n: live().length },
     { v: 'nuevo', t: 'Nuevo', i: 'userplus' },
     { v: 'cuentas', f: 'soon', t: 'Por vencer', i: 'clock', n: cnt.soon },
-    { v: 'calendario', t: 'Calendario', i: 'calendar' },
     { v: 'cuentas', f: 'expired', t: 'Vencidos', i: 'alert', n: cnt.expired, hot: true },
     { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off },
-    { v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid },
-    { v: 'compartidas', t: 'Cuentas compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true },
-    { v: 'mensajecli', t: 'Mensaje a clientes', i: 'send' },
-    { v: 'avisos', t: 'Avisos de vencimiento', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length }];
+    { v: 'calendario', t: 'Calendario', i: 'calendar' },
+    { v: 'compartidas', t: 'Compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true }];
   if (staff() && !pays()) cli.push({ v: 'fechas', t: 'Ajustar fechas', i: 'calendar' });
   if (staff() && canDo('reports')) cli.push({ v: 'auditoria', t: 'Auditoría', i: 'check' });
   cli.push({ v: 'movimientos', t: 'Movimientos', i: 'history' }, { v: 'papelera', t: 'Papelera', i: 'trash', n: trash().length });
-  const emby = [];
-  if (canDo('viewServers')) emby.push({ v: 'servidores', t: 'Servidores', i: 'server' }, { v: 'estado', t: 'Estado del servidor', i: 'chart' });
-  if (canDo('system')) emby.push({ v: 'plantillas', t: 'Plantillas de mensajes', i: 'msg' });
-  if (staff() && canDo('servers') && kindTab() !== 'jellyfin') emby.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' }); // ajuste que solo tiene Emby
-  // «En directo» se quitó del menú: el Monitor muestra lo mismo y más. El Calendario pasó a Clientes.
+  // 🖥️ Servidores
+  const srv = [];
+  if (canDo('viewServers')) srv.push({ v: 'servidores', t: 'Servidores', i: 'server' }, { v: 'estado', t: 'Estado del servidor', i: 'chart' });
+  if (staff() && canDo('servers') && kindTab() !== 'jellyfin') srv.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' }); // ajuste que solo tiene Emby
+  // 💬 Mensajes
+  const msg = [
+    { v: 'mensajecli', t: 'A los clientes', i: 'send' },
+    { v: 'avisos', t: 'Avisos al caducar', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length },
+    { v: 'avisotv', t: 'Aviso en la tele', i: 'tv' },
+    { v: 'plantillas', t: sys ? 'Plantillas' : 'Mis mensajes', i: 'msg' }];
   let g = [
     { k: 'ini', items: [{ v: 'resumen', t: 'Resumen', i: 'grid' }] },
     { k: 'cli', t: 'Clientes', i: 'users', items: cli },
     { k: 'demo', t: 'Demos', i: 'timer', items: [
       { v: 'demonueva', t: 'Nueva', i: 'plus' }, { v: 'cuentas', f: 'demo', t: 'Activas', i: 'play', n: cnt.demo },
       { v: 'demosvencidas', t: 'Vencidas', i: 'clock', n: trash().filter((c) => c.demo).length }, { v: 'seguimiento', t: 'Seguimiento', i: 'send', n: S.d.followPending || 0, hot: true }] },
-    ...(emby.length ? [{ k: 'emby', t: 'Emby', i: 'server', items: emby }] : []),
-    ...(noCli() ? [] : [{ k: 'mon', t: 'Monitor', i: 'radio', items: [{ v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'inactivos', t: 'Inactivos', i: 'pause' }, ...(staff() && canDo('reports') ? [{ v: 'uso', t: 'Estadísticas de uso', i: 'chart' }] : [])] }]),
-    { k: 'al', t: 'Alertas', i: 'bell', items: [
-      { v: 'altrans', t: 'Transcode', i: 'bolt' }, { v: 'alses', t: 'Sesiones excedidas', i: 'screen' }, { v: 'alhist', t: 'Historial de alertas', i: 'history', n: S.d.alertsUnread, hot: true }] },
+    { k: 'mon', t: 'En directo', i: 'radio', items: [
+      { v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'altrans', t: 'Transcode', i: 'bolt' }, { v: 'alses', t: 'Pantallas de más', i: 'screen' },
+      { v: 'alhist', t: 'Alertas', i: 'history', n: S.d.alertsUnread, hot: true }, { v: 'inactivos', t: 'Inactivos', i: 'pause' },
+      ...(staff() && canDo('reports') ? [{ v: 'uso', t: 'Uso y consumo', i: 'chart' }] : [])] },
+    { k: 'msg', t: 'Mensajes', i: 'msg', items: msg },
   ];
-  // Un administrador sin permiso de clientes se queda con su resumen basico
-  if (noCli()) g = g.filter((x) => x.k === 'ini' || (x.k === 'emby' && emby.length));
-  const venOk = me().role === 'admin' ? canDo('resellers') || canDo('credits') : me().role !== 'sub';
-  if (venOk) g.push({ k: 'ven', t: staff() ? 'Vendedores' : 'Subresellers', i: 'user', items: [
-    { v: 'equipo', t: 'Activos', i: 'users' }, { v: 'atencion', t: 'Atención', i: 'alert', n: S.d.teamCount || 0, hot: true }, { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length }, { v: 'stats', t: 'Estadísticas', i: 'chart' }, { v: 'mensajeeq', t: staff() ? 'Mensaje al equipo' : 'Mensaje a subresellers', i: 'send' },
-    ...(isSuper() || (me().role === 'admin' && canDo('credits')) || me().role === 'reseller' ? [{ v: 'cobrosven', t: 'Cobros y deudas', i: 'wallet', n: S.d.users.filter((x) => x.debt > 0).length, hot: true }] : []),
-    ...(staff() && canDo('resellers') ? [{ v: 'venajustes', t: 'Ajustes vendedores', i: 'sliders' }] : [])] });
-  if (canDo('admins')) g.push({ k: 'adm', items: [{ v: 'admins', t: 'Administradores', i: 'shield' }] });
-  const sys = canDo('system');
-  g.push({ k: 'pan', t: 'Panel', i: 'coins', items: [{ v: 'creditos', t: 'Créditos', i: 'coins' }, ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []), ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Informe de ingresos', i: 'wallet' }] : []), ...(isSuper() ? [{ v: 'gastos', t: 'Gastos', i: 'calendar', n: S.d.expDue || 0, hot: true }] : []), ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'wallet' }] : [])] });
-  g.push({ k: 'aj', t: 'Ajustes', i: 'sliders', items: [
-    { v: 'perfil', t: 'Perfil', i: 'user' },
-    ...(!isStandalone() ? [{ v: 'appinst', t: 'Instalar el panel', i: 'download' }] : []),
-    ...(!canDo('system') ? [{ v: 'plantillas', t: 'Mis mensajes', i: 'msg' }] : []),
-    ...(!noCli() ? [{ v: 'avisotv', t: 'Aviso en la tele', i: 'tv' }] : []),
-    ...(isSuper() || appHas() ? [{ v: 'appcli', t: 'App de clientes', i: 'screen' }] : []),
-    { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
-    ...(isSuper() ? [{ v: 'copias', t: 'Copias de seguridad', i: 'download' }, { v: 'pagos', t: 'Pagos online', i: 'wallet' }] : []),
+  // Un administrador sin permiso de clientes se queda con su resumen, sus servidores y las plantillas
+  if (noCli()) { g = g.filter((x) => x.k === 'ini'); if (sys) srv.push({ v: 'plantillas', t: 'Plantillas de mensajes', i: 'msg' }); }
+  // 💶 Dinero
+  const din = [
+    ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Ingresos', i: 'chart' }] : []),
+    ...(isSuper() ? [{ v: 'gastos', t: 'Gastos', i: 'calendar', n: S.d.expDue || 0, hot: true }] : []),
     ...(isSuper() || (['reseller', 'sub'].includes(me().role) && S.d.settings.clientPay && S.d.settings.clientPay.vendors) ? [{ v: 'cobrocli', t: 'Cobro a clientes', i: 'wallet' }] : []),
-    ...(sys ? [{ v: 'tiempos', t: 'Tiempos', i: 'clock' }, { v: 'retencion', t: 'Retención de datos', i: 'box' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }] : []),
+    ...(!noCli() ? [{ v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid }] : []),
+    ...(isSuper() || (me().role === 'admin' && canDo('credits')) || me().role === 'reseller' ? [{ v: 'cobrosven', t: 'Deudas del equipo', i: 'users', n: S.d.users.filter((x) => x.debt > 0).length, hot: true }] : []),
+    { v: 'creditos', t: 'Créditos', i: 'coins' },
+    ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'coins' }] : []),
+    ...(isSuper() ? [{ v: 'pagos', t: 'Pagos online', i: 'wallet' }] : [])];
+  g.push({ k: 'din', t: 'Dinero', i: 'wallet', items: din });
+  // 🧑‍💼 Equipo
+  const venOk = me().role === 'admin' ? canDo('resellers') || canDo('credits') : me().role !== 'sub';
+  const eq = venOk ? [
+    { v: 'equipo', t: staff() ? 'Vendedores' : 'Subresellers', i: 'users' }, { v: 'atencion', t: 'Atención', i: 'alert', n: S.d.teamCount || 0, hot: true },
+    { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length }, { v: 'stats', t: 'Estadísticas', i: 'chart' },
+    { v: 'mensajeeq', t: staff() ? 'Mensaje al equipo' : 'Mensaje a subresellers', i: 'send' },
+    ...(staff() && canDo('resellers') ? [{ v: 'venajustes', t: 'Reglas del equipo', i: 'sliders' }] : [])] : [];
+  if (canDo('admins')) eq.push({ v: 'admins', t: 'Administradores', i: 'shield' });
+  if (eq.length) g.push({ k: 'ven', t: staff() ? 'Equipo' : 'Subresellers', i: 'user', items: eq });
+  if (srv.length) g.push({ k: 'emby', t: 'Servidores', i: 'server', items: srv });
+  // 👤 Mi cuenta
+  const cta = [
+    { v: 'perfil', t: 'Perfil', i: 'user' },
+    { v: 'seguridad', t: 'Seguridad', i: 'shield', n: me().twoFa ? 0 : (isSuper() ? '!' : 0), hot: true },
+    ...(!isStandalone() ? [{ v: 'appinst', t: 'Instalar el panel', i: 'download' }] : []),
+    ...(staff() || me().role === 'reseller' ? [{ v: 'accesos', t: 'Mis accesos', i: 'lock' }] : [])];
+  // ⚙️ Sistema
+  const sy = [
+    ...(sys ? [{ v: 'notifs', t: 'Notificaciones', i: 'bell' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'tiempos', t: 'Tiempos', i: 'clock' }] : []),
+    ...(isSuper() ? [{ v: 'copias', t: 'Copias seguridad', i: 'download' }] : []),
+    ...(sys ? [{ v: 'retencion', t: 'Retención', i: 'box' }] : []),
+    ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []),
     ...(staff() && !noCli() && !me().useCredits ? [{ v: 'importar', t: 'Importar', i: 'download' }] : []),
-    ...(staff() && canDo('reports') ? [{ v: 'logs', t: 'Logs de actividad', i: 'signal' }] : []),
-    ...(staff() || me().role === 'reseller' ? [{ v: 'accesos', t: 'Historial de accesos', i: 'lock' }] : [])] });
+    ...(staff() && canDo('reports') ? [{ v: 'logs', t: 'Logs de actividad', i: 'signal' }] : [])];
+  const appItem = isSuper() || appHas() ? [{ v: 'appcli', t: 'App de clientes', i: 'screen' }] : [];
+  if (sy.length) sy.splice(sys ? 3 : 0, 0, ...appItem); else cta.push(...appItem); // sin «Sistema», la app va en Mi cuenta
+  g.push({ k: 'cta', t: 'Mi cuenta', i: 'shield', items: cta });
+  if (sy.length) g.push({ k: 'sys', t: 'Sistema', i: 'sliders', items: sy });
   if (sys) g.push({ k: 'guia', items: [{ v: 'guia', t: 'Guía de inicio rápido', i: 'note' }] });
   return g;
 }
@@ -6510,6 +6537,7 @@ async function rqSet(id, status) { try { await api('POST', `/api/requests/${id}`
 async function loadCp() { S.cpBusy = true; try { S.cp = await api('GET', isSuper() ? '/api/client-pay' : '/api/my-client-pay'); S.cpAt = Date.now(); } catch (e) { S.cp = { error: e.message }; } S.cpBusy = false; if (S.view === 'cobrocli') render(); }
 /* Bizum, PayPal y Revolut: el cliente paga y pulsa «Ya he pagado»; aquí (o en Telegram) se confirma */
 const MP_T = { bizum: '📱 Bizum', paypal: '🅿️ PayPal', revolut: '🔵 Revolut', stripe: '💳 Tarjeta' };
+const cpUrl = () => (isSuper() ? '/api/client-pay' : '/api/my-client-pay');
 function cpManualCard(m) {
   m = m || {};
   return `<form id="cpMan" class="ap-card"><h2>🤝 Bizum, PayPal y Revolut</h2>
@@ -6519,14 +6547,36 @@ function cpManualCard(m) {
     <label class="f">🔵 Revolut: tu usuario de revolut.me<input name="revolut" autocomplete="off" value="${esc(m.revolut || '')}" placeholder="tuusuario (de revolut.me/tuusuario)"></label>
     <div class="ap-save"><button class="btn primary" type="submit">💾 Guardar formas de pago</button></div></form>`;
 }
+/* Opciones de cobro de cada uno: PayPal automático y recordatorios */
+function cpPayPalCard(pp) {
+  pp = pp || {};
+  return `<form id="cpPP" class="ap-card ap-pub${pp.on ? ' on' : ''}"><h2>🅿️ PayPal automático ${pp.on ? '<span class="pillst on">Conectado</span>' : '<span class="pillst off">Sin conectar</span>'}</h2>
+    <p class="muted small" style="margin:-4px 0 12px">Como Stripe: el cliente paga en PayPal (con su cuenta o con tarjeta) y <b>su cuenta se renueva sola al momento</b>, sin que tengas que confirmar nada. Necesitas una cuenta <b>PayPal Business</b> (es gratis).</p>
+    ${pp.on ? `<p class="small">✅ Conectado${pp.mode === 'sandbox' ? ' <b>(modo pruebas)</b>' : ''} · Client ID ${esc(pp.id || '')}. Tus clientes ven «PayPal» y se renueva solo.</p>` : ''}
+    <details${pp.on ? '' : ' open'}><summary class="small"><b>${pp.on ? 'Cambiar las claves' : 'Cómo conectarlo (5 minutos)'}</b></summary>
+      <ol class="steps small"><li>Entra en <b>developer.paypal.com</b> con tu cuenta PayPal Business.</li><li>Ve a <b>Apps &amp; Credentials</b>, arriba elige <b>Live</b> y pulsa <b>Create App</b>.</li><li>Copia el <b>Client ID</b> y el <b>Secret</b> y pégalos aquí.</li></ol>
+      <label class="f">Client ID<input name="id" autocomplete="off" placeholder="AXy…"></label>
+      <label class="f">Secret<input name="secret" autocomplete="off" type="password" placeholder="EL…"></label>
+      <label class="f">Tipo de claves<select name="mode"><option value="live">Reales (cobros de verdad)</option><option value="sandbox">De pruebas (sandbox)</option></select></label>
+      <div class="ap-acts"><button class="btn primary" type="submit">Conectar PayPal</button></div></details>
+    ${pp.on ? '<div class="ap-acts"><button type="button" class="btn ghost" data-act="cp-pp-off">Desconectar PayPal</button></div>' : ''}
+    <p class="muted small" style="margin-top:8px">Si lo conectas, «PayPal» deja de ser a mano: ya no hace falta confirmar esos pagos.</p></form>`;
+}
+function cpRemindCard(r) {
+  r = r || {};
+  const row = (k, on, t, sm) => `<div class="ap-pubrow" style="margin-top:10px"><div><b>${t}</b><small>${sm}</small></div><button type="button" class="ap-big${on ? ' on' : ''}" data-act="cp-rem" data-k="${k}" aria-pressed="${!!on}"><i></i></button></div>`;
+  return `<section class="ap-card"><h2>🔔 Recordatorios automáticos</h2><p class="muted small" style="margin:-4px 0 0">Para Bizum, PayPal y Revolut a mano. Así ningún pago se queda olvidado.</p>
+    ${row('client', r.client !== false, '👋 Al cliente', 'Si a los 15 minutos no ha pulsado «Ya he pagado», el bot le pregunta si ya ha pagado, con el botón para avisarte.')}
+    ${row('vendor', r.vendor !== false, '⏰ A ti', 'Si un pago sigue sin confirmar a las 3 horas (y otra vez a las 24), te lo vuelve a recordar con los botones.')}</section>`;
+}
 function cpPendingCard(orders, money) {
-  const pend = (orders || []).filter((o) => o.manual && o.status === 'pending' && o.claimed);
+  const pend = (orders || []).filter((o) => o.manual && o.status === 'pending').sort((a, b) => (b.claimed ? 1 : 0) - (a.claimed ? 1 : 0));
   if (!pend.length) return '';
-  return `<section class="ap-card" style="border-color:#f59e0b"><h2>⏳ Pagos por confirmar</h2><p class="muted small" style="margin:-4px 0 10px">Mira si te ha llegado el dinero y confirma. También puedes hacerlo desde Telegram.</p>
-    ${pend.map((o) => `<div class="ap-h" style="flex-wrap:wrap;gap:8px"><b>${esc(o.user)}</b><span>${MP_T[o.method] || ''} · <b>${money(o.amount)}</b> · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens} ${o.screens === 1 ? 'pantalla' : 'pant.'} · concepto <b>${esc(o.ref)}</b> · ${fmtTs(o.created, true)}</span>
+  return `<section class="ap-card" style="border-color:#f59e0b"><h2>⏳ Pagos por confirmar</h2><p class="muted small" style="margin:-4px 0 10px">Mira si te ha llegado el dinero y confirma (aunque el cliente no haya pulsado «Ya he pagado»). También puedes hacerlo desde Telegram.</p>
+    ${pend.map((o) => `<div class="ap-h" style="flex-wrap:wrap;gap:8px"><b>${esc(o.user)}</b><span>${MP_T[o.method] || ''} · <b>${money(o.amount)}</b> · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens} ${o.screens === 1 ? 'pantalla' : 'pant.'} · concepto <b>${esc(o.ref)}</b> · ${fmtTs(o.created, true)}${o.claimed ? ' · <b style="color:#16a34a">dice que ya ha pagado</b>' : ' · <i>aún no ha pulsado «Ya he pagado»</i>'}</span>
       <span style="display:flex;gap:6px;margin-left:auto"><button type="button" class="btn sm primary" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="1">✅ Ha llegado</button><button type="button" class="btn sm ghost" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="0">❌ No ha llegado</button></span></div>`).join('')}</section>`;
 }
-const cpSt = (o) => (o.status === 'pending' && o.manual ? (o.claimed ? ['⏳', 'Por confirmar'] : ['•', 'Sin terminar']) : ({ paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'], rejected: ['❌', 'No recibido'] }[o.status] || ['•', o.status]));
+const cpSt = (o) => (o.status === 'pending' && o.manual ? (o.claimed ? ['⏳', 'Por confirmar'] : ['🕐', 'Sin confirmar']) : ({ paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'], rejected: ['❌', 'No recibido'] }[o.status] || ['•', o.status]));
 function vCobroCli() {
   const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#6366f1 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#3b0764)"><span class="ap-ic">💳</span><div><h1>Cobro a clientes</h1><p>Tus clientes pagan desde su enlace (tarjeta, Bizum, PayPal o Revolut) y su cuenta se renueva sola.</p></div></section>`;
   if (!isSuper()) return vCobroVend(hero);
@@ -6535,7 +6585,7 @@ function vCobroCli() {
   if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const c = d.cfg, pr = c.prices || {}, cur = S.d.settings.currency || 'EUR';
   const money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
-  const hasMan = ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]);
+  const hasMan = ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]) || !!(d.pp && d.pp.on);
   const warn = !d.stripe.on ? (hasMan ? '' : `<div class="ap-card" style="border-color:#f59e0b"><b>⚠️ Activa Stripe o pon Bizum, PayPal o Revolut</b><p class="muted small" style="margin:4px 0 8px">Para la tarjeta se usa tu Stripe de Ajustes › Pagos online. Si no lo usas, rellena más abajo tu Bizum, PayPal o Revolut.</p><button type="button" class="btn" data-view="pagos">Ir a Pagos online</button></div>`)
     : !d.stripe.wh ? `<div class="ap-card" style="border-color:#f59e0b"><b>💡 Recomendado: el webhook de Stripe</b><p class="muted small" style="margin:4px 0 0">Sin él también funciona (se comprueba cuando el cliente vuelve de pagar), pero con el webhook la renovación es segura aunque el cliente cierre la página. Se pone en Ajustes › Pagos online.</p></div>` : '';
   const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a clientes activado' : '⏸️ Cobro a clientes apagado'}</b><small>${c.on ? 'Los avisos de caducidad por Telegram llevan el botón «💳 Pagar y renovar».' : 'Prepara los precios y actívalo cuando quieras.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cp-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
@@ -6550,7 +6600,7 @@ function vCobroCli() {
     <p><b>5.</b> Su enlace es también su página <b>«Mi cuenta»</b>: su fecha, sus pantallas, la app, la guía de calidad y tu contacto.</p></div>
     <p class="muted small">Solo para <b>tus clientes</b> (y los de tus administradores). Los de resellers y subresellers no, porque el dinero te llegaría a ti. También puedes copiar el enlace de cualquier cliente desde su menú ⋯ › «Enlace de pago», o añadirlo al copiar su mensaje.</p></section>`;
   const list = `<section class="ap-card"><h2>🧾 Últimos pagos de clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${cpSt(o)[0]} ${esc(o.user)}</b><span>${MP_T[o.method] || ''} · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}${o.after ? ' · vence ' + fmt(o.after) : ''}</span><em style="color:${o.status === 'paid' ? '#16a34a' : 'var(--muted)'}">${cpSt(o)[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
-  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${cpManualCard(c.manual)}${subs}${vend}${how}${list}</div>`;
+  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${cpPayPalCard(d.pp)}${cpManualCard(c.manual)}${cpRemindCard(c.remind)}${subs}${vend}${how}${list}</div>`;
 }
 function cpTable(pr, desc, note) {
   const M = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '1 año']], SC = [1, 2, 3, 4];
@@ -6566,7 +6616,7 @@ function vCobroVend(hero) {
   if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
   if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const c = d.cfg, cur = S.d.settings.currency || 'EUR', money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
-  const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a tus clientes activado' : '⏸️ Cobro a tus clientes apagado'}</b><small>${c.on ? 'Tus clientes reciben el botón «💳 Pagar y renovar» en el aviso de caducidad.' : c.hasKey || ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]) ? 'Revisa tus precios y actívalo cuando quieras.' : 'Primero conecta tu Stripe o pon tu Bizum, PayPal o Revolut aquí abajo.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cpv-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
+  const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a tus clientes activado' : '⏸️ Cobro a tus clientes apagado'}</b><small>${c.on ? 'Tus clientes reciben el botón «💳 Pagar y renovar» en el aviso de caducidad.' : c.hasKey || (c.pp && c.pp.on) || ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]) ? 'Revisa tus precios y actívalo cuando quieras.' : 'Primero conecta tu Stripe o pon tu Bizum, PayPal o Revolut aquí abajo.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cpv-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
   const stripe = `<section class="ap-card"><h2>🔑 Tu cuenta de Stripe</h2>
     ${c.hasKey ? `<p class="small">✅ Conectada${c.test ? ' <b>(modo pruebas)</b>' : ''}. El dinero de tus clientes llega a tu Stripe.</p>` : '<p class="muted small" style="margin:-4px 0 10px">El dinero de tus clientes llega directamente a <b>tu</b> Stripe. Crea tu cuenta en stripe.com y pega aquí tu clave secreta.</p>'}
     <form id="cpvKey"><label class="f">${c.hasKey ? 'Cambiar clave secreta' : 'Clave secreta de Stripe'}<input name="key" autocomplete="off" placeholder="sk_live_…"></label>
@@ -6577,7 +6627,7 @@ function vCobroVend(hero) {
   const cost = d.cost || {};
   const note = `Cada renovación pagada te descuenta tus créditos de siempre (por ejemplo 1 mes con 1 pantalla: ${plural(cost['1-1'] || 0, 'crédito', 'créditos')}).`;
   const list = `<section class="ap-card"><h2>🧾 Pagos de tus clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${cpSt(o)[0]} ${esc(o.user)}</b><span>${MP_T[o.method] || ''} · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}</span><em>${cpSt(o)[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
-  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${pub}${cpManualCard(c.manual)}${stripe}<form id="cpForm" class="ap-form">${cpTable(c.prices || {}, c.desc, note)}</form>${list}</div>`;
+  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${pub}${cpPayPalCard(c.pp)}${cpManualCard(c.manual)}${cpRemindCard(c.remind)}${stripe}<form id="cpForm" class="ap-form">${cpTable(c.prices || {}, c.desc, note)}</form>${list}</div>`;
 }
 document.addEventListener('submit', async (e) => {
   if (!e.target || e.target.id !== 'cpForm') return;
@@ -6585,6 +6635,14 @@ document.addEventListener('submit', async (e) => {
   const f = e.target, prices = {};
   f.querySelectorAll('input[name^=p]').forEach((i) => { if (i.value.trim()) prices[i.name.slice(1)] = i.value.trim(); });
   try { await api('PUT', isSuper() ? '/api/client-pay' : '/api/my-client-pay', { prices, desc: f.elements.desc.value }); toast('Precios guardados ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); }
+});
+document.addEventListener('submit', async (e) => {
+  if (!e.target || e.target.id !== 'cpPP') return;
+  e.preventDefault();
+  const f = e.target, pp = { id: f.elements.id.value.trim(), secret: f.elements.secret.value.trim(), mode: f.elements.mode.value };
+  if (!pp.id || !pp.secret) return toast('Pega el Client ID y el Secret', true);
+  const b = f.querySelector('button[type=submit]'); if (b) { b.disabled = true; b.textContent = 'Comprobando…'; }
+  try { await api('PUT', cpUrl(), { pp }); toast('PayPal conectado ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); if (b) { b.disabled = false; b.textContent = 'Conectar PayPal'; } }
 });
 document.addEventListener('submit', async (e) => {
   if (!e.target || e.target.id !== 'cpMan') return;
@@ -6714,6 +6772,10 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 189, d: '2026-10-29', items: ['🧭 Menú nuevo, ordenado por temas: Clientes, Demos, En directo, Mensajes, Dinero, Equipo, Servidores, Mi cuenta y Sistema. Las mismas pantallas de siempre, cada una en su sitio'], team: ['🧭 Menú nuevo, más ordenado: Clientes, Demos, En directo, Mensajes, Dinero y Mi cuenta. Las mismas pantallas de siempre, cada una en su sitio'] },
+  { v: 188, d: '2026-10-29', items: ['🟣 Bot para clientes de Jellyfin: la guía de instalación, «¿Dónde puedo ver…?» y la ayuda ya hablan de Jellyfin y sus apps (no de Emby)'], team: ['🟣 Los clientes de Jellyfin reciben en el bot su propia guía de instalación y ayuda'] },
+  { v: 187, d: '2026-10-28', items: ['🅿️ PayPal automático: conecta tu PayPal Business y tus clientes pagan con PayPal y se renuevan solos, como con Stripe', '🔔 Recordatorios automáticos (los enciendes o apagas): al cliente si no pulsa «Ya he pagado» y a ti si un pago sigue sin confirmar'], team: ['🅿️ PayPal automático: conecta tu PayPal Business en Cobro a clientes y tus clientes se renuevan solos al pagar', '🔔 Recordatorios automáticos de pagos (al cliente y a ti), que puedes encender o apagar'] },
+  { v: 186, d: '2026-10-28', items: ['🤝 Bizum, PayPal y Revolut: el aviso llega en cuanto el cliente elige cómo pagar, y puedes confirmar el pago aunque no haya pulsado «Ya he pagado»'] },
   { v: 185, d: '2026-10-28', items: ['🤝 Cobro a clientes con Bizum, PayPal y Revolut: el cliente paga desde su enlace, pulsa «Ya he pagado» y tú lo confirmas con un botón (en Telegram o en el panel). Su cuenta se renueva sola y le llega su recibo'], team: ['🤝 Cobra a tus clientes con Bizum, PayPal o Revolut (y tarjeta si tienes Stripe): Ajustes › Cobro a clientes. Ellos pagan desde su enlace y tú confirmas con un botón'] },
   { v: 184, d: '2026-10-28', items: ['💳 Estadísticas de cada vendedor más claras: su última recarga (cuándo, cuánto y quién la cargó), recargas del mes, lo que gasta y cuántos días le dura el saldo'] },
   { v: 182, d: '2026-10-28', items: ['🧾 Recibo de pago: cuando un cliente paga online le llega un recibo bonito por Telegram (importe, plan, fecha y sus datos de acceso) y un enlace para verlo, imprimirlo o guardarlo en PDF'] },
@@ -9137,6 +9199,8 @@ document.addEventListener('click', (e) => {
     case 'cp-subs': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.subs); api('PUT', '/api/client-pay', { subs: on }).then(() => { toast(on ? 'Renovación automática ofrecida 🔁' : 'Renovación automática ya no se ofrece'); S.cp = null; loadCp(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cp-vend': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.vendors); api('PUT', '/api/client-pay', { vendors: on }).then(() => { toast(on ? 'Activado para tus vendedores 👥' : 'Apagado para tus vendedores'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cpv-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/my-client-pay', { on }).then(() => { toast(on ? 'Cobro a tus clientes activado ✅' : 'Cobro a tus clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
+    case 'cp-pp-off': dConfirm('Desconectar PayPal', 'Tus clientes dejarán de poder pagar con PayPal automático (si tienes PayPal a mano puesto, vuelve a salir ese).', 'Desconectar', () => api('PUT', cpUrl(), { pp: { remove: true } }).then(() => { S.cp = null; loadCp(); }), 'PayPal desconectado'); break;
+    case 'cp-rem': { const r = { ...((S.cp && S.cp.cfg && S.cp.cfg.remind) || {}) }; r[el.dataset.k] = r[el.dataset.k] === false; api('PUT', cpUrl(), { remind: r }).then(() => { toast(r[el.dataset.k] ? 'Recordatorio activado 🔔' : 'Recordatorio apagado'); S.cp = null; loadCp(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'cp-dec': { const ok = el.dataset.ok === '1';
       dConfirm(ok ? '¿Te ha llegado el pago?' : '¿No te ha llegado?', ok ? 'Su cuenta se renovará ahora y le llegará su recibo por Telegram.' : 'Se le avisará de que no has recibido el pago, para que lo revise contigo.', ok ? '✅ Sí, ha llegado' : '❌ No ha llegado',
         () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { ok }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), ok ? 'Confirmado' : 'Marcado como no recibido'); } break;
