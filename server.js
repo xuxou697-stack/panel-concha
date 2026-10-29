@@ -262,6 +262,7 @@ function addLedger(user, delta, text, by, kind, paid) {
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 async function emby(server, method, p, body) {
   if (server && server.kind === 'jellyfin') return jelly(server, method, p, body); // Jellyfin va por su propio camino; Emby sigue igual
+  if (server && server.kind === 'plex') return plexApi(server, method, p, body); // Plex, igual: por su propio camino
   let res;
   try {
     // La clave va en la cabecera y también en la dirección (api_key): algunos proxys delante de Emby quitan las cabeceras
@@ -388,6 +389,288 @@ async function jelly(server, method, p, body, raw) {
   if (method === 'GET' && /^\/Sessions(\?|$)/.test(p) && Array.isArray(data)) data.forEach((x) => { const ti = x && x.TranscodingInfo; if (ti && typeof ti.TranscodeReasons === 'string') ti.TranscodeReasons = ti.TranscodeReasons.split(/\s*,\s*/).filter(Boolean); });
   if (method === 'POST' && p === '/Users/New') jfUserIn(data);
   return data;
+}
+/* ---------- Plex ----------
+ * Plex no tiene usuarios con contraseña en el servidor: cada cliente tiene su cuenta de plex.tv y el servidor se le
+ * «comparte» (invitación) con las bibliotecas de su paquete. Aquí se traduce lo que el resto del panel pide a Emby
+ * (usuarios, políticas, sesiones, bibliotecas…) a lo que Plex sabe hacer, para que todo lo demás funcione igual.
+ * Lo que el panel guarda de cada cuenta de Plex va en db.plexReg[servidor].users[id] (nunca se manda al navegador). */
+const PLEX_TV = process.env.PLEX_TV || 'https://plex.tv';
+const pxHdr = (tok) => ({ 'X-Plex-Token': tok || '', 'X-Plex-Client-Identifier': 'concha-panel', 'X-Plex-Product': 'Concha', 'X-Plex-Version': '1.0', 'X-Plex-Device-Name': 'Concha', Accept: 'application/json' });
+function pxReg(s) { db.plexReg = db.plexReg || {}; const r = (db.plexReg[s.id] = db.plexReg[s.id] || { users: {} }); r.users = r.users || {}; return r; }
+const pxUnesc = (v) => String(v).replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+/** Lector mínimo de XML (plex.tv contesta en XML en algunas rutas): lista de { a: atributos, inner } de una etiqueta */
+function xmlEls(text, tag) {
+  const out = [], re = new RegExp(`<${tag}\\b([^>]*?)(\\/>|>([\\s\\S]*?)<\\/${tag}>)`, 'g');
+  let m;
+  while ((m = re.exec(String(text || '')))) { const a = {}; m[1].replace(/([\w:.-]+)="([^"]*)"/g, (_, k, v) => { a[k] = pxUnesc(v); return ''; }); out.push({ a, inner: m[3] || '' }); }
+  return out;
+}
+async function pxFetch(s, url, method, body, tok, form) {
+  let res;
+  const tv = url.startsWith(PLEX_TV);
+  try {
+    res = await fetch(url, { method, headers: { ...pxHdr(tok === '-' ? '' : (tok || s.apiKey)), ...(body ? { 'Content-Type': form ? 'application/x-www-form-urlencoded' : 'application/json' } : {}) },
+      body: body ? (form ? new URLSearchParams(body).toString() : JSON.stringify(body)) : undefined, signal: AbortSignal.timeout(20000) });
+  } catch (e) {
+    const err = new Error(tv ? `No se pudo conectar con plex.tv (${e.name === 'TimeoutError' ? 'no responde' : 'sin conexión'}). Inténtalo en un momento.`
+      : `No se pudo conectar con "${s.name}" (${e.name === 'TimeoutError' ? 'no responde' : 'sin conexión'}). Revisa que Plex esté encendido y que la dirección sea la correcta (por ejemplo http://IP:32400).`);
+    err.embyStatus = 0; throw err;
+  }
+  const text = await res.text();
+  if (!res.ok) {
+    const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    let msg = `Plex respondió con error ${res.status}${plain ? ': ' + plain.slice(0, 160) : ''}`;
+    if (res.status === 401) msg = `Plex ha rechazado el token de "${s.name}". Copia otra vez tu token de Plex (X-Plex-Token) y pégalo en el servidor.`;
+    const err = new Error(msg); err.embyStatus = res.status; err.body = text; throw err;
+  }
+  if (!text.trim()) return null;
+  if (/^\s*</.test(text)) return { xml: text };
+  try { return JSON.parse(text); } catch { return { xml: text }; }
+}
+const pxLocal = (s, path, method = 'GET') => pxFetch(s, s.url + path, method);
+const pxTv = (s, path, method = 'GET', body, tok, form) => pxFetch(s, PLEX_TV + path, method, body, tok, form);
+const pxMC = (r) => (r && r.MediaContainer) || {};
+async function pxMid(s) {
+  if (s.embyServerId) return s.embyServerId;
+  const mc = pxMC(await pxLocal(s, '/'));
+  if (!mc.machineIdentifier) { const err = new Error(`"${s.name}" no ha contestado como un servidor Plex. Revisa la dirección (por ejemplo http://IP:32400).`); err.embyStatus = 502; throw err; }
+  s.embyServerId = String(mc.machineIdentifier); return s.embyServerId;
+}
+/** Bibliotecas del servidor (clave local) -> su número en plex.tv, que es el que se usa al compartir */
+async function pxSections(s, fresh) {
+  const r = pxReg(s);
+  if (!fresh && r.sec && Date.now() - (r.secAt || 0) < 600000) return r.sec;
+  const mid = await pxMid(s), x = await pxTv(s, `/api/servers/${encodeURIComponent(mid)}`), sec = {};
+  if (x && x.xml) for (const e of xmlEls(x.xml, 'Section')) { if (e.a.key && e.a.id) sec[e.a.key] = e.a.id; }
+  else for (const sv of [].concat(pxMC(x).Server || [])) for (const z of [].concat(sv.Section || [])) if (z.key && z.id) sec[String(z.key)] = String(z.id);
+  r.sec = sec; r.secAt = Date.now(); return sec;
+}
+/** A quién está compartido el servidor ahora mismo (según plex.tv) */
+async function pxShares(s) {
+  const mid = await pxMid(s), x = await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers`), out = [];
+  const one = (a, secs) => ({ id: String(a.id || ''), uid: String(a.userID || a.userId || ''), name: a.username || a.email || a.invitedEmail || '', email: a.email || a.invitedEmail || '',
+    accepted: !!(a.acceptedAt && String(a.acceptedAt) !== '0') || a.accepted === '1' || a.accepted === true,
+    keys: secs.filter((z) => String(z.shared) === '1' || z.shared === true).map((z) => String(z.key)) });
+  if (x && x.xml) for (const e of xmlEls(x.xml, 'SharedServer')) out.push(one(e.a, xmlEls(e.inner, 'Section').map((z) => z.a)));
+  else for (const a of [].concat(pxMC(x).SharedServer || [])) out.push(one(a, [].concat(a.Section || [])));
+  return out.filter((x0) => x0.id);
+}
+const pxNorm = (v) => String(v || '').trim().toLowerCase();
+const pxPolicy = (e) => {
+  const p = { ...(e.pol || {}) }, on = !!e.shareId;
+  return { ...p, IsAdministrator: false, EnableVideoPlaybackTranscoding: false, IsDisabled: !on, EnableAllFolders: on && !!p.EnableAllFolders, EnabledFolders: on && !p.EnableAllFolders ? (p.EnabledFolders || []) : [], SimultaneousStreamLimit: Number(p.SimultaneousStreamLimit) || 0 };
+};
+const pxUserOut = (id, e) => ({ Id: id, Name: e.name, Policy: pxPolicy(e), PlexPending: !!e.shareId && !e.accepted, PlexEmail: e.email || '' });
+/** Las cuentas de Plex que ya estaban compartidas (por ejemplo, para importarlas): se apuntan en el registro */
+async function pxSync(s) {
+  const r = pxReg(s), shares = await pxShares(s), byShare = new Map(shares.map((x) => [x.id, x]));
+  for (const e of Object.values(r.users)) { const sh = e.shareId && byShare.get(e.shareId); if (sh) { e.accepted = sh.accepted; if (sh.uid) e.uid = sh.uid; } }
+  for (const sh of shares) {
+    if (Object.values(r.users).some((e) => e.shareId === sh.id)) continue;
+    const id = 'pu' + (sh.uid || sh.id);
+    if (!r.users[id]) r.users[id] = { name: sh.name, email: sh.email, uid: sh.uid, shareId: sh.id, accepted: sh.accepted, pol: { EnableAllFolders: false, EnabledFolders: sh.keys, SimultaneousStreamLimit: 0 } };
+  }
+  r.syncAt = Date.now();
+  return r;
+}
+/** Crea una cuenta nueva en plex.tv para el cliente (como hacen otros paneles: email + contraseña) */
+async function pxSignup(s, email, password) {
+  const username = (email.split('@')[0].replace(/[^A-Za-z0-9]/g, '').slice(0, 14) || 'user') + crypto.randomBytes(2).toString('hex');
+  let u;
+  try { u = await pxTv(s, '/api/v2/users', 'POST', { email, password, username }, '-', true); }
+  catch (e) {
+    const t = String(e.body || '');
+    if (/email.*(taken|exists|use)/i.test(t)) throw new HttpError(409, 'Ese email ya tiene una cuenta de Plex. Elige «Ya tiene cuenta de Plex» y se le invitará.');
+    if (/password/i.test(t)) throw new HttpError(400, 'Plex no acepta esa contraseña: usa al menos 8 caracteres, con letras y números.');
+    throw new HttpError(502, 'Plex no ha dejado crear la cuenta ahora (' + e.message.slice(0, 120) + '). Prueba con «Ya tiene cuenta de Plex».');
+  }
+  const x = u && u.xml ? (xmlEls(u.xml, 'user')[0] || {}).a || {} : (u && (u.user || u)) || {};
+  return { uid: String(x.id || ''), token: x.authToken || x.authentication_token || x.authenticationToken || '', username: x.username || username };
+}
+/** Entra con la cuenta de Plex que ya tiene el cliente (si nos da su contraseña) para aceptar la invitación por él */
+async function pxSignin(s, login, password) {
+  let u;
+  try { u = await pxTv(s, '/api/v2/users/signin', 'POST', { login, password, rememberMe: 'false' }, '-', true); }
+  catch (e) {
+    if (e.embyStatus === 401 || e.embyStatus === 422) throw new HttpError(400, 'Plex dice que ese email o esa contraseña no son correctos. Revísalos, o deja la contraseña vacía y que el cliente acepte la invitación desde su email.');
+    throw new HttpError(502, 'No se pudo entrar en la cuenta de Plex del cliente (' + e.message.slice(0, 120) + '). Deja la contraseña vacía y que acepte la invitación desde su email.');
+  }
+  const x = u && u.xml ? (xmlEls(u.xml, 'user')[0] || {}).a || {} : (u && (u.user || u)) || {};
+  const token = x.authToken || x.authentication_token || x.authenticationToken || '';
+  if (!token) throw new HttpError(400, 'Plex no ha dejado entrar en esa cuenta (puede tener la verificación en dos pasos). Deja la contraseña vacía y que acepte la invitación desde su email.');
+  return { uid: String(x.id || ''), token };
+}
+/** Con la cuenta del cliente, acepta la invitación del servidor (cuentas creadas por el panel, o si nos dio su contraseña) */
+async function pxAccept(s, e) {
+  if (!e.token) return false;
+  const x = await pxTv(s, '/api/invites/requests', 'GET', null, e.token);
+  const inv = x && x.xml ? xmlEls(x.xml, 'Invite').map((z) => z.a) : [].concat(pxMC(x).Invite || []);
+  let ok = false;
+  for (const v of inv) {
+    if (String(v.server) !== '1' && v.server !== true) continue;
+    await pxTv(s, `/api/invites/requests/${encodeURIComponent(v.id)}?friend=${v.friend ? 1 : 0}&server=1&home=0`, 'PUT', null, e.token);
+    ok = true;
+  }
+  if (ok) { e.accepted = true; delete e.token; }
+  return ok;
+}
+/** Comparte (o deja de compartir) el servidor con las bibliotecas que tocan */
+async function pxApply(s, id, e, pol) {
+  const mid = await pxMid(s);
+  const want = !pol.IsDisabled && (pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0);
+  if (!want) {
+    if (e.shareId) { try { await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers/${encodeURIComponent(e.shareId)}`, 'DELETE'); } catch (er) { if (er.embyStatus !== 404) throw er; } }
+    e.shareId = null; e.accepted = false;
+    return;
+  }
+  let sec = await pxSections(s);
+  const keys = pol.EnableAllFolders ? Object.keys(sec) : (pol.EnabledFolders || []).map(String);
+  if (keys.some((k) => !sec[k])) sec = await pxSections(s, true);
+  const ids = keys.map((k) => sec[k]).filter(Boolean).map(Number);
+  if (!ids.length) { const err = new Error('Plex no reconoce las bibliotecas del paquete. Entra en Servidores › Contenido, vuelve a marcarlas y guarda.'); err.embyStatus = 400; throw err; }
+  if (e.shareId) {
+    try { await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers/${encodeURIComponent(e.shareId)}`, 'PUT', { server_id: mid, shared_server: { library_section_ids: ids } }); return; }
+    catch (er) { if (er.embyStatus !== 404) throw er; e.shareId = null; }
+  }
+  let x;
+  try { x = await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers`, 'POST', { server_id: mid, shared_server: { library_section_ids: ids, invited_email: e.email || e.name }, sharing_settings: {} }); }
+  catch (er) {
+    const t = String(er.body || '');
+    if (/already|existe/i.test(t)) { await pxSync(s); const sh = Object.values(pxReg(s).users).find((z) => z !== e && z.shareId && [pxNorm(z.name), pxNorm(z.email)].includes(pxNorm(e.email || e.name))); if (sh) { e.shareId = sh.shareId; e.uid = sh.uid; e.accepted = sh.accepted; return pxApply(s, id, e, pol); } }
+    if (er.embyStatus === 400 || er.embyStatus === 404 || er.embyStatus === 422) throw new HttpError(400, `Plex no ha podido invitar a «${e.email || e.name}». Revisa que el email o el usuario de Plex esté bien escrito.`);
+    throw er;
+  }
+  const a = x && x.xml ? (xmlEls(x.xml, 'SharedServer')[0] || {}).a || {} : (x && (x.SharedServer || x.shared_server || x)) || {};
+  e.shareId = String(a.id || ''); if (a.userID || a.userId) e.uid = String(a.userID || a.userId);
+  e.accepted = !!(a.acceptedAt && String(a.acceptedAt) !== '0');
+  if (!e.shareId) { await pxSync(s); }
+  if (e.token) await pxAccept(s, e).catch((er) => console.error('Plex (aceptar invitación):', er.message));
+}
+/** Sesiones de Plex con la forma de las de Emby (lo que usa el Monitor, las pantallas, las estadísticas…) */
+function pxSessionsOut(s, mc) {
+  const r = pxReg(s), byUid = new Map(Object.entries(r.users).filter(([, e]) => e.uid).map(([id, e]) => [String(e.uid), id]));
+  return [].concat(mc.Metadata || []).map((m) => {
+    const u = m.User || {}, pl = m.Player || {}, ses = m.Session || {}, tr = m.TranscodeSession || null;
+    const vd = tr && tr.videoDecision === 'transcode', ad = tr && tr.audioDecision === 'transcode';
+    const ep = m.type === 'episode';
+    return { Id: String(ses.id || m.sessionKey || ''), UserId: byUid.get(String(u.id)) || 'plex-' + String(u.id || ''), UserName: u.title || '', DeviceName: pl.title || pl.device || 'Aparato', DeviceId: pl.machineIdentifier || '', Client: pl.product || 'Plex',
+      RemoteEndPoint: pl.address || '', LastActivityDate: new Date().toISOString(),
+      NowPlayingItem: { Id: String(m.ratingKey || ''), Name: m.title || '', Type: ep ? 'Episode' : m.type === 'movie' ? 'Movie' : m.type || '', SeriesName: m.grandparentTitle || '', SeriesId: String(m.grandparentRatingKey || ''), ProductionYear: m.year || '', RunTimeTicks: (Number(m.duration) || 0) * 1e4, IndexNumber: m.index, ParentIndexNumber: m.parentIndex },
+      PlayState: { PositionTicks: (Number(m.viewOffset) || 0) * 1e4, IsPaused: pl.state === 'paused', PlayMethod: vd || ad ? 'Transcode' : tr ? 'DirectStream' : 'DirectPlay' },
+      ...(tr ? { TranscodingInfo: { IsVideoDirect: !vd, IsAudioDirect: !ad, VideoCodec: tr.videoCodec || '', AudioCodec: tr.audioCodec || '', Width: tr.width, Height: tr.height, TranscodeReasons: [] } } : {}) };
+  });
+}
+async function plexApi(s, method, p, body) {
+  const path = p.split('?')[0], q = new URLSearchParams(p.split('?')[1] || '');
+  const r = pxReg(s);
+  if (method === 'GET' && path === '/System/Info') {
+    const mc = pxMC(await pxLocal(s, '/'));
+    if (!mc.machineIdentifier) { const err = new Error(`"${s.name}" no ha contestado como un servidor Plex. Revisa la dirección (por ejemplo http://IP:32400).`); err.embyStatus = 502; throw err; }
+    return { Id: String(mc.machineIdentifier), ServerName: mc.friendlyName || 'Plex', Version: mc.version || '', OperatingSystemDisplayName: mc.platform || '' };
+  }
+  if (method === 'GET' && path === '/Library/VirtualFolders') {
+    const mc = pxMC(await pxLocal(s, '/library/sections'));
+    return [].concat(mc.Directory || []).map((d) => ({ Name: d.title, ItemId: String(d.key), Guid: String(d.key), CollectionType: d.type === 'movie' ? 'movies' : d.type === 'show' ? 'tvshows' : d.type === 'artist' ? 'music' : d.type, Locations: [].concat(d.Location || []).map((l) => l.path) }));
+  }
+  if (method === 'GET' && path === '/Items' && q.get('ParentId')) {
+    const mc = pxMC(await pxLocal(s, `/library/sections/${encodeURIComponent(q.get('ParentId'))}/all?X-Plex-Container-Start=0&X-Plex-Container-Size=0`));
+    return { Items: [], TotalRecordCount: Number(mc.totalSize != null ? mc.totalSize : mc.size) || 0 };
+  }
+  if (method === 'POST' && path === '/Library/Refresh') { await pxLocal(s, '/library/sections/all/refresh'); return null; }
+  let m = /^\/Items\/([^/]+)\/Refresh$/.exec(path);
+  if (method === 'POST' && m) { await pxLocal(s, `/library/sections/${encodeURIComponent(m[1])}/refresh`); return null; }
+  if (method === 'GET' && path === '/Sessions') return pxSessionsOut(s, pxMC(await pxLocal(s, '/status/sessions')));
+  if (method === 'POST' && /^\/Sessions\/[^/]+\/Message$/.test(path)) { const sid = path.split('/')[2]; if (body && body.Text) r.msg = { ...(r.msg || {}), [sid]: String(body.Text).slice(0, 200) }; return null; } // Plex no tiene mensajes: el texto va como motivo al cortar
+  m = /^\/Sessions\/([^/]+)\/Playing\/Stop$/.exec(path);
+  if (method === 'POST' && m) {
+    const why = (r.msg && r.msg[m[1]]) || 'Reproducción detenida por el panel.'; if (r.msg) delete r.msg[m[1]];
+    await pxLocal(s, `/status/sessions/terminate?sessionId=${encodeURIComponent(m[1])}&reason=${encodeURIComponent(why)}`);
+    return null;
+  }
+  if (method === 'DELETE' && path === '/Devices') {
+    const dev = q.get('Id') || q.get('id');
+    for (const x of pxSessionsOut(s, pxMC(await pxLocal(s, '/status/sessions')))) if (x.DeviceId === dev) await pxLocal(s, `/status/sessions/terminate?sessionId=${encodeURIComponent(x.Id)}&reason=${encodeURIComponent('Sesión cerrada desde el panel.')}`).catch(() => {});
+    return null;
+  }
+  if (method === 'GET' && path === '/Devices') return { Items: [] };
+  if (method === 'GET' && path === '/Auth/Keys') return { Items: [] };
+  if (method === 'GET' && path === '/ScheduledTasks') return [];
+  if (method === 'GET' && path === '/System/ActivityLog/Entries') return { Items: [], TotalRecordCount: 0 };
+  if (method === 'POST' && path === '/System/Restart') { const err = new Error('Plex no se puede reiniciar desde el panel. Reinícialo en tu servidor.'); err.embyStatus = 400; throw err; }
+  // Usuarios
+  if (method === 'GET' && (path === '/Users' || path === '/Users/Query')) {
+    if (!r.syncAt || Date.now() - r.syncAt > 120000) await pxSync(s).catch((e) => { if (!Object.keys(r.users).length) throw e; });
+    const all = Object.entries(r.users).map(([id, e]) => pxUserOut(id, e));
+    if (path === '/Users') return all;
+    const start = Number(q.get('StartIndex')) || 0, lim = Number(q.get('Limit')) || 1000;
+    return { Items: all.slice(start, start + lim), TotalRecordCount: all.length };
+  }
+  if (method === 'POST' && path === '/Users/New') {
+    const name = String((body && body.Name) || '').trim(), email = String((body && body.Email) || name).trim();
+    if (!name) { const err = new Error('Escribe el email o el usuario de Plex del cliente.'); err.embyStatus = 400; throw err; }
+    await pxSync(s).catch(() => {});
+    if (Object.values(r.users).some((e) => e.shareId && [pxNorm(e.name), pxNorm(e.email)].includes(pxNorm(name)))) throw new HttpError(409, `«${name}» ya tiene acceso a este servidor Plex. Si es un cliente que ya tenías, impórtalo con «Importar».`);
+    const id = 'px' + crypto.randomBytes(6).toString('hex'), e = { name, email: /@/.test(email) ? email : '', pol: { IsDisabled: true, EnableAllFolders: false, EnabledFolders: [] } };
+    if (body && body.PlexNew) {
+      if (!/@/.test(email)) throw new HttpError(400, 'Para crear una cuenta de Plex nueva hace falta un email.');
+      const acc = await pxSignup(s, email, String(body.Password || ''));
+      e.uid = acc.uid; e.token = acc.token; e.created = true; e.username = acc.username;
+    } else if (body && body.Password) { // ya tiene cuenta y nos da su contraseña: el panel acepta la invitación por él
+      const acc = await pxSignin(s, email || name, String(body.Password));
+      e.uid = acc.uid || e.uid; e.token = acc.token;
+    }
+    r.users[id] = e;
+    return { Id: id, Name: name };
+  }
+  m = /^\/Users\/([^/]+)(\/Policy|\/Password)?$/.exec(path);
+  if (m) {
+    const id = decodeURIComponent(m[1]), e = r.users[id];
+    if (!e) { const err = new Error('Plex no encuentra esa cuenta en este servidor.'); err.embyStatus = 404; throw err; }
+    if (method === 'GET' && !m[2]) return pxUserOut(id, e);
+    if (method === 'POST' && m[2] === '/Policy') {
+      const pol = { ...(e.pol || {}), ...(body || {}) };
+      await pxApply(s, id, e, pol);
+      e.pol = { EnableAllFolders: !!pol.EnableAllFolders, EnabledFolders: pol.EnableAllFolders ? [] : (pol.EnabledFolders || []).map(String), SimultaneousStreamLimit: Number(pol.SimultaneousStreamLimit) || 0, IsDisabled: !e.shareId };
+      return null;
+    }
+    if (method === 'POST' && m[2] === '/Password') return null; // en Plex la contraseña es la de su cuenta de plex.tv: la cambia el cliente allí
+    if (method === 'DELETE' && !m[2]) { await pxApply(s, id, e, { IsDisabled: true }); delete r.users[id]; return null; }
+  }
+  const err = new Error(`Esto todavía no se puede hacer con Plex (${method} ${path}).`); err.embyStatus = 501; throw err;
+}
+/** ¿La invitación de Plex de esta cuenta está todavía sin aceptar? */
+function pxPendingOf(c) {
+  const s = db.servers.find((x) => x.id === c.serverId);
+  if (!s || s.kind !== 'plex' || !c.embyId) return false;
+  const e = ((db.plexReg || {})[s.id] || { users: {} }).users[c.embyId];
+  return !!(e && e.shareId && !e.accepted);
+}
+/** Cada 10 minutos se mira en plex.tv quién ha aceptado ya su invitación */
+async function pxSyncAll() {
+  let n = 0;
+  for (const s of db.servers.filter((x) => x.kind === 'plex' && !x.off)) { try { await pxSync(s); n++; } catch (e) { console.error('Plex (invitaciones):', e.message); } }
+  if (n) await lock(async () => saveDb());
+  return n;
+}
+setTimeout(() => { if (db.servers.some((x) => x.kind === 'plex')) pxSyncAll().catch(() => {}); setInterval(() => { if (db.servers.some((x) => x.kind === 'plex')) pxSyncAll().catch(() => {}); }, 10 * 60000); }, 45000);
+/** Plex no limita las pantallas por usuario: el panel corta las reproducciones que sobran */
+const pxOver = new Map();
+async function plexScreens(s, list, byEmby) {
+  const by = new Map();
+  for (const x of list) { if (!x.NowPlayingItem || !byEmby.has(x.UserId)) continue; if (!by.has(x.UserId)) by.set(x.UserId, []); by.get(x.UserId).push(x); }
+  for (const [uid, xs] of by) {
+    const c = byEmby.get(uid), lim = Number(c.screens) || 0;
+    if (!lim || xs.length <= lim) { pxOver.delete(s.id + ':' + uid); continue; }
+    const k = s.id + ':' + uid, n = (pxOver.get(k) || 0) + 1; pxOver.set(k, n);
+    if (n < 2) continue; // se espera a la siguiente revisión, por si estaba cambiando de aparato
+    for (const x of xs.slice(lim)) {
+      try {
+        await stopSession(s, x, lim === 1 ? 'Tu cuenta es de 1 pantalla y ya se está viendo en otro aparato. Ciérralo para ver aquí.' : `Tu cuenta es de ${lim} pantallas y ya se están usando todas. Cierra otro aparato para ver aquí.`);
+        await lock(async () => { addLog('monitor', c, `Plex: cortada una reproducción en ${x.DeviceName || 'un aparato'} (más de ${lim} ${lim === 1 ? 'pantalla' : 'pantallas'} a la vez)`, null); saveDb(); });
+      } catch (e) { console.error('Plex (pantallas):', e.message); }
+    }
+  }
 }
 /** Una sola vez: a las cuentas de Jellyfin que tenían el límite justo se les pone el margen de 1 aparato (solo ese ajuste) */
 async function jfMarginOnce() {
@@ -528,9 +811,10 @@ async function libCheckNow(id) {
   });
   if (note) notifyStaff('servers', `${note}\n${whenTxt()}`);
 }
-const srvKind = (s) => (s && s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby');
+const srvKind = (s) => (s && s.kind === 'jellyfin' ? 'Jellyfin' : s && s.kind === 'plex' ? 'Plex' : 'Emby');
+const kindOf = (s) => (s && s.kind === 'jellyfin' ? 'jellyfin' : s && s.kind === 'plex' ? 'plex' : 'emby');
 /** Pestaña desde la que se pide algo «para todos» (Emby o Jellyfin). Sin pestaña, vale todo, como siempre */
-const kindMatch = (kind, s) => !(kind === 'emby' || kind === 'jellyfin') || (s && s.kind === 'jellyfin' ? 'jellyfin' : 'emby') === kind;
+const kindMatch = (kind, s) => !(kind === 'emby' || kind === 'jellyfin' || kind === 'plex') || kindOf(s) === kind;
 function serverById(id) {
   const s = db.servers.find((x) => x.id === Number(id));
   if (!s) throw new HttpError(404, 'Ese servidor ya no existe.');
@@ -1874,14 +2158,17 @@ function clientFor(me, id) {
 }
 
 /* ---------- Creditos ---------- */
-function price(months, screens) {
-  const row = db.settings.prices[months];
+/** Tabla de créditos de cada plataforma: Jellyfin y Plex pueden tener la suya; si no, usan la de Emby (la de siempre) */
+function priceTable(kind) { const t = kind && kind !== 'emby' && db.settings.pricesBy && db.settings.pricesBy[kind]; return t || db.settings.prices; }
+const kindOfClient = (c) => kindOf(c && db.servers.find((x) => x.id === c.serverId));
+function price(months, screens, kind) {
+  const row = priceTable(kind)[months];
   const v = row && row[screens];
   if (!Number.isInteger(v) || v < 0) throw new HttpError(400, 'Esa combinación de meses y pantallas no tiene precio.');
   return v;
 }
 /** Administradores y superadministrador no gastan creditos */
-function costFor(me, months, screens) { return paysCredits(me) ? price(months, screens) : 0; }
+function costFor(me, months, screens, kind) { return paysCredits(me) ? price(months, screens, kind) : 0; }
 function ensureCredits(me, cost) {
   if (cost > 0) debtGate(me);
   if (cost > me.credits && !me.allowNegative) throw new HttpError(400, `No tienes créditos suficientes: hacen falta ${cost} y tienes ${me.credits}. Pide una recarga a tu administrador.`);
@@ -1937,7 +2224,7 @@ function readNewPassword(v, min = 8) {
 }
 function assertEmbyNameFree(server, embyName) {
   if (db.clients.some((c) => c.serverId === server.id && c.embyName.toLowerCase() === embyName.toLowerCase())) {
-    throw new HttpError(409, 'Ya hay una cuenta con ese usuario de Emby en el panel.');
+    throw new HttpError(409, `Ya hay una cuenta con ese usuario de ${srvKind(server)} en el panel.`);
   }
 }
 const pubUser = (u) => ({
@@ -1994,14 +2281,14 @@ function kindsOf(me) {
   return out.length ? out : lic; // en un panel alquilado solo de Jellyfin, los vendedores venden Jellyfin
 }
 /** Lo que incluye la licencia de este panel: Emby, Jellyfin o los dos (el panel principal, siempre los dos) */
-const KINDS_ALL = ['emby', 'jellyfin'];
+const KINDS_ALL = ['emby', 'jellyfin', 'plex'];
 const kindsClean = (v) => (Array.isArray(v) ? KINDS_ALL.filter((k) => v.includes(k)) : []);
 function licKinds() {
   if (!LIC_CLIENT) return KINDS_ALL;
   const k = kindsClean((db.licState || {}).platforms);
-  return k.length ? k : KINDS_ALL;
+  return k.length ? k : ['emby', 'jellyfin']; // un panel alquilado sin elegir: Emby y Jellyfin, como siempre
 }
-const jfHidden = (me, s) => !!s && !kindsOf(me).includes(s.kind === 'jellyfin' ? 'jellyfin' : 'emby');
+const jfHidden = (me, s) => !!s && !kindsOf(me).includes(kindOf(s));
 function serversFor(me) { return serversFor0(me).filter((s) => !jfHidden(me, s)); }
 function serversFor0(me) {
   if (!me || isStaff(me)) return db.servers;
@@ -2045,8 +2332,8 @@ function readVendorOptions(me, body, u) {
   }
   if (body.serverIds !== undefined) u.serverIds = (Array.isArray(body.serverIds) ? body.serverIds.map(Number) : []).filter((id) => db.servers.some((x) => x.id === id));
   if (body.platforms !== undefined && me.role === 'super') { // solo el superadministrador decide si vende Emby, Jellyfin o los dos
-    const k = (Array.isArray(body.platforms) ? body.platforms : []).filter((x) => x === 'emby' || x === 'jellyfin');
-    if (!k.length) throw new HttpError(400, 'Marca al menos Emby o Jellyfin.');
+    const k = (Array.isArray(body.platforms) ? body.platforms : []).filter((x) => x === 'emby' || x === 'jellyfin' || x === 'plex');
+    if (!k.length) throw new HttpError(400, 'Marca al menos Emby, Jellyfin o Plex.');
     if (k.length === 1 && k[0] === 'emby') delete u.platforms; else u.platforms = [...new Set(k)];
   }
 }
@@ -2076,10 +2363,10 @@ function publicData(me) {
     if (l.type !== 'demo' && l.actorId != null) sales.set(l.actorId, (sales.get(l.actorId) || 0) + 1);
   }
   // Con servidores Jellyfin, además, las mismas cuentas separadas por Emby y por Jellyfin (para cada pestaña)
-  if (db.servers.some((x) => x.kind === 'jellyfin')) {
-    const kindOfClient = new Map(db.clients.map((c) => [c.id, (db.servers.find((x) => x.id === c.serverId) || {}).kind === 'jellyfin' ? 'jellyfin' : 'emby']));
+  if (db.servers.some((x) => x.kind === 'jellyfin' || x.kind === 'plex')) {
+    const kindOfClient = new Map(db.clients.map((c) => [c.id, kindOf(db.servers.find((x) => x.id === c.serverId))]));
     stats.byKind = {};
-    for (const kind of ['emby', 'jellyfin']) {
+    for (const kind of ['emby', 'jellyfin', 'plex']) {
       const st = { today: {}, month: {} }, bd = new Map();
       for (const k of ['alta', 'renovacion', 'demo']) { st.today[k] = [0, 0]; st.month[k] = [0, 0]; }
       for (let k = 0; k < 30; k++) bd.set(addDays(from, k), { d: addDays(from, k), alta: 0, renovacion: 0 });
@@ -2140,10 +2427,10 @@ function publicData(me) {
       app: me.role === 'super' || (db.settings.app || {}).public ? db.settings.app : { ...db.settings.app, file: false, tag: false, inMsg: false },
       clientPay: isStaff(me) ? db.settings.clientPay : { vendors: !!(db.settings.clientPay || {}).vendors } },
     servers: serversFor(me).map((s) => (seeServers
-      ? { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
-      : { id: s.id, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
+      ? { id: s.id, kind: kindOf(s), name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
+      : { id: s.id, kind: kindOf(s), name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
-    clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId)) && !jfHidden(me, db.servers.find((x) => x.id === c.serverId))).map((c) => ({ ...c, tgChat: undefined, payKey: undefined, payLink: (isStaff(me) || c.ownerId === me.id) && siteBase() && cpEligible(c) ? cpLink(c) : '', tgLinked: !!c.tgChat, tgCode: tgCode(c) })),
+    clients: db.clients.filter((c) => seeClients && (!vis || vis.has(c.ownerId)) && !jfHidden(me, db.servers.find((x) => x.id === c.serverId))).map((c) => ({ ...c, tgChat: undefined, payKey: undefined, payLink: (isStaff(me) || c.ownerId === me.id) && siteBase() && cpEligible(c) ? cpLink(c) : '', tgLinked: !!c.tgChat, tgCode: tgCode(c), ...(pxPendingOf(c) ? { plexPending: true } : {}) })),
     log: db.log.filter((l) => l.type !== 'login' && seeClients && (!vis ? true : (l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)).slice(0, 500),
     ledger: db.ledger.filter((l) => (adm && !P.reports ? l.userId === me.id : !vis || vis.has(l.userId))).slice(0, 500),
     lastRun: db.lastRun,
@@ -2361,6 +2648,17 @@ route('PUT', '/api/settings', SUPER, ({ me, body }) => lock(async () => {
     }
     g.prices = prices;
   }
+  if (body.pricesBy !== undefined && body.pricesBy && typeof body.pricesBy === 'object') { // precios propios de Jellyfin o Plex (null = los mismos que Emby)
+    g.pricesBy = { ...(g.pricesBy || {}) };
+    for (const k of ['jellyfin', 'plex']) {
+      if (!(k in body.pricesBy)) continue;
+      const t = body.pricesBy[k];
+      if (!t) { delete g.pricesBy[k]; continue; }
+      const out = {};
+      for (const m of MONTHS) { out[m] = {}; for (const s0 of SCREENS) out[m][s0] = num(t[m] && t[m][s0], 0, 999, `Precio ${k === 'plex' ? 'Plex' : 'Jellyfin'} de ${m} meses y ${s0} pantallas`); }
+      g.pricesBy[k] = out;
+    }
+  }
   if (body.graceDays !== undefined) g.graceDays = num(body.graceDays, 0, 90, 'Días de gracia');
   if (body.purgeDays !== undefined) g.purgeDays = num(body.purgeDays, 0, 3650, 'Días en la papelera');
   if (body.demoPurgeDays !== undefined) g.demoPurgeDays = num(body.demoPurgeDays, 0, 30, 'Días que se guardan las demos terminadas');
@@ -2462,11 +2760,12 @@ function fillText(text, c) {
   const s = db.servers.find((x) => x.id === c.serverId) || {};
   const left = diffDays(c.expires, today());
   const vars = { nombre: c.panelName, usuario: c.embyName, servidor: s.name || '', direccion: s.publicUrl || '', vence: c.expires.split('-').reverse().join('/'),
-    cuando: leftWords(left), dias: String(Math.max(0, left)), pantallas: c.screens ? String(c.screens) : 'sin límite', contenido: c.quality ? QUALITIES[c.quality] : '', 'contraseña': 'la que ya tienes' };
+    cuando: leftWords(left), dias: String(Math.max(0, left)), pantallas: c.screens ? String(c.screens) : 'sin límite', contenido: c.quality ? QUALITIES[c.quality] : '', 'contraseña': s.kind === 'plex' && !c.password ? 'la de tu cuenta de Plex' : 'la que ya tienes' };
+  if (s.kind === 'plex' && !vars.direccion) vars.direccion = 'app.plex.tv';
   // Vale {nombre} y también [nombre]; «fecha», «caducidad» y «cliente» se entienden como {vence} y {nombre}
   const alias = { contrasena: 'contraseña', 'dirección': 'direccion', fecha: 'vence', caducidad: 'vence', vencimiento: 'vence', cliente: 'nombre', user: 'usuario' };
   const out = String(text || '').replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
-  return s.kind === 'jellyfin' ? out.replace(/\bEmby\b/g, 'Jellyfin') : out; // cliente de Jellyfin: el mensaje habla de Jellyfin
+  return s.kind === 'jellyfin' ? out.replace(/\bEmby\b/g, 'Jellyfin') : s.kind === 'plex' ? out.replace(/\bEmby\b/g, 'Plex') : out; // cliente de Jellyfin o Plex: el mensaje habla de lo suyo
 }
 const dueSoon = (c, days, t) => { if (c.demo || c.status !== 'active') return false; const left = diffDays(c.expires, t); return left >= 0 && left <= days; };
 /* 1) Mensaje en la pantalla de Emby, cuando el cliente esta viendo.
@@ -2744,11 +3043,11 @@ function botAnswer(kind, list) {
   if (kind === 'app') {
     const ap = db.settings.app || {}, c = accs[0], owner = db.users.find((u) => u.id === c.ownerId);
     const ok = ap.file && (ap.public || !owner || owner.role === 'super' || owner.role === 'admin') && siteBase();
-    if (!ok) return { text: `📲 Usa la app de ${cliJf(c) ? 'Jellyfin' : 'Emby'} de siempre en tu aparato (o 🌙 Moonfin). Si necesitas ayuda para instalarla, escribe /instalar.` };
+    if (!ok) return { text: `📲 Usa la app de ${cliKindName(c)} de siempre en tu aparato${cliPx(c) ? '' : ' (o 🌙 Moonfin)'}. Si necesitas ayuda para instalarla, escribe /instalar.` };
     return { text: `📲 Nuestra app ${ap.name || ''}\n\nPara móviles Android, Fire Stick y TV Box.\n\n📱 En el móvil: pulsa el botón de abajo y luego «Instalar».\n📺 En Fire Stick: abre la app «Downloader» y escribe ${ap.dlCode ? `el código ${ap.dlCode}` : siteBase() + '/app'}.\n\nAl abrirla, entra con tu usuario y contraseña de siempre.`, kb: { inline_keyboard: [[{ text: '⬇️ Descargar la app', url: siteBase() + '/app' }]] } };
   }
   if (kind === 'calidad') return { text: fillText(tplFor(accs[0].ownerId, 'quality'), accs[0]) };
-  return { text: `🤖 ¿En qué te ayudo? Toca una opción:\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva al momento\n🛠️ /problemas · soluciones rápidas\n🟢 /servidor · ¿funciona el servidor?\n📲 /instalar · cómo instalar (Moonfin y ${list.some(cliJf) ? 'Jellyfin' : 'Emby'})\n🔑 /datos · tu usuario y contraseña\n📺 /aparatos · tus aparatos conectados\n💶 /precios · tarifas\n🎁 /invitar · invita a un amigo\n📲 /app · descarga la app\n✨ /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
+  return { text: `🤖 ¿En qué te ayudo? Toca una opción:\n\n📋 /suscripcion · cuántos días te quedan\n💳 /renovar · renueva al momento\n🛠️ /problemas · soluciones rápidas\n🟢 /servidor · ¿funciona el servidor?\n📲 /instalar · cómo instalar (${list.some(cliPx) ? 'Plex' : 'Moonfin y ' + (list.some(cliJf) ? 'Jellyfin' : 'Emby')})\n🔑 /datos · tu usuario y contraseña\n📺 /aparatos · tus aparatos conectados\n💶 /precios · tarifas\n🎁 /invitar · invita a un amigo\n📲 /app · descarga la app\n✨ /calidad · ver con la mejor calidad\n🔕 /stop · dejar de recibir avisos${contact ? '\n\n💬 ¿Hablamos?\n' + contact : ''}` };
 }
 /* ---------- Bot: problemas, servidor, pedir, datos, aparatos, precios e invitar ---------- */
 const reqWait = new Map(); // chat -> momento en que pidió /pedir (esperamos el título)
@@ -2768,7 +3067,15 @@ const PROBS = [
    cómo iniciar sesión y dónde se puede ver. Cada parte va en su mensaje para que se lea fácil */
 const GUIDE_VIDEO = 'https://www.youtube.com/watch?v=uBZW2PYrFmQ';
 const cliJf = (c) => { const s = c && db.servers.find((x) => x.id === c.serverId); return !!(s && s.kind === 'jellyfin'); };
-const guideKb = (skip, c) => { const jf = cliJf(c); return { inline_keyboard: [
+const cliPx = (c) => { const s = c && db.servers.find((x) => x.id === c.serverId); return !!(s && s.kind === 'plex'); };
+const cliKindName = (c) => (cliPx(c) ? 'Plex' : cliJf(c) ? 'Jellyfin' : 'Emby');
+const guideKb = (skip, c) => { const jf = cliJf(c);
+  if (cliPx(c)) return { inline_keyboard: [ // clientes de Plex: su invitación, su app y cómo entrar
+    ...(skip === 'pxinv' ? [] : [[{ text: '📩 Aceptar la invitación', callback_data: 'gd:pxinv' }]]),
+    ...(skip === 'pxapp' ? [] : [[{ text: '📥 Instalar la app Plex', callback_data: 'gd:pxapp' }]]),
+    ...(skip === 'login' ? [] : [[{ text: '🔑 Cómo iniciar sesión', callback_data: 'gd:login' }]]),
+    ...(skip === 'where' ? [] : [[{ text: '📱 ¿Dónde puedo ver Plex?', callback_data: 'gd:where' }]])] };
+  return { inline_keyboard: [
   ...(skip === 'moon' ? [] : [[{ text: '🌙 Instalar Moonfin (recomendado)', callback_data: 'gd:moon' }]]),
   ...(jf ? (skip === 'jf' ? [] : [[{ text: '📥 Instalar la app Jellyfin', callback_data: 'gd:jf' }]]) : (skip === 'dl' ? [] : [[{ text: '🔥 Instalar Emby con Downloader', callback_data: 'gd:dl' }]])),
   ...(skip === 'login' ? [] : [[{ text: '🔑 Cómo iniciar sesión', callback_data: 'gd:login' }]]),
@@ -2776,6 +3083,15 @@ const guideKb = (skip, c) => { const jf = cliJf(c); return { inline_keyboard: [
   ...(jf ? [] : [[{ text: '🎥 Vídeo paso a paso', url: GUIDE_VIDEO }]])] }; };
 function guideText(k, c) {
   const s = c ? db.servers.find((x) => x.id === c.serverId) || {} : {};
+  if (s.kind === 'plex') { // clientes de Plex: invitación, app oficial de Plex y su propia cuenta
+    const acc = c && c.plexNew ? `\n\n👤 Tu cuenta de Plex: ${c.embyName}\n🔒 Tu contraseña: escribe /datos para verla` : '';
+    if (k === 'main') return `📺 ¿Te dice que hay demasiadas pantallas?\n\nTranquilo 😊 Tu plan permite ${c && c.screens ? c.screens : 'varias'} ${c && c.screens === 1 ? 'pantalla' : 'pantallas'} a la vez. Si ves en más aparatos de los que tienes, la reproducción que sobra se corta sola.\n\n💡 Cierra Plex en los aparatos que no uses (o mira /aparatos).\n\n👇 Elige qué quieres hacer:`;
+    if (k === 'pxinv') return (c && c.plexNew ? '📩 TU INVITACIÓN\n\n✅ Tu cuenta de Plex la hemos creado nosotros y la invitación ya está aceptada: solo tienes que entrar en la app con tu email y tu contraseña.' : '📩 ACEPTA LA INVITACIÓN (1 vez)\n\n1️⃣ Mira tu email: te ha llegado una invitación de Plex\n2️⃣ Pulsa «Aceptar»\n     (o entra en app.plex.tv › Ajustes › Amigos y comparte, y acéptala)\n3️⃣ ¡Listo! El servidor ya te sale en la app de Plex\n\n💡 ¿No te llega? Mira en «Spam» o escríbenos.') + acc;
+    if (k === 'pxapp') return '📥 APP PLEX (gratis)\n\n📺 Smart TV (Samsung, LG…) → busca «Plex» en la tienda de tu tele\n🤖 Android TV / Google TV → «Plex» en Play Store\n🔥 Fire TV → «Plex» en la tienda de Amazon\n🍏 iPhone / iPad / Apple TV → «Plex» en la App Store\n💻 PC / Mac → app.plex.tv en el navegador\n\nÁbrela y entra con tu cuenta de Plex.' + acc;
+    if (k === 'login') return '🔑 CÓMO INICIAR SESIÓN\n\n1️⃣ Abre la app de Plex\n2️⃣ Pulsa «Iniciar sesión» y entra con tu cuenta de Plex' + (c ? `: ${c.embyName}` : '') + '\n   (en la tele te sale un código: escríbelo en plex.tv/link desde el móvil)\n3️⃣ En el menú, elige nuestro servidor ✅\n\n🔐 ' + (c && c.plexNew ? '¿No recuerdas la contraseña? Escribe /datos y te la enseño.' : '¿Olvidaste la contraseña? Cámbiala en plex.tv con «¿Olvidaste tu contraseña?».');
+    if (k === 'where') return '📱 ¿DÓNDE PUEDO VER PLEX?\n\n📺 Smart TV Samsung / LG / Android TV\n➡️ App Plex de la tienda de tu tele\n\n🔥 Fire TV\n➡️ App Plex de la tienda de Amazon\n\n🍏 Apple TV / iPhone / iPad\n➡️ Plex, gratis en la App Store\n\n💻 PC / Mac\n➡️ En el navegador: app.plex.tv';
+    return guideText(['moon', 'dl', 'jf'].includes(k) ? 'pxapp' : 'where', c);
+  }
   if (s.kind === 'jellyfin') { // clientes de Jellyfin: sus apps y sus pasos
     if (k === 'main') return `📺 ¿Te dice que hay demasiadas pantallas?\n\nTranquilo, no has hecho nada mal 😊 Tu plan permite ${c && c.screens ? c.screens : 'varias'} ${c && c.screens === 1 ? 'pantalla' : 'pantallas'} a la vez.\n\n💡 Cierra la app en los aparatos que no uses (o mira /aparatos y ciérralos desde aquí).\n\n✅ Y para ver lo mejor posible: 🌙 MOONFIN\n• Se instala desde la tienda oficial (Play Store), como cualquier app\n• Rápido, moderno y compatible con tu servidor\n\n👇 Elige qué quieres hacer:`;
     if (k === 'jf') return '📥 APP JELLYFIN (gratis)\n\n📺 Android TV / Google TV → busca «Jellyfin» en Play Store\n🔥 Fire TV → busca «Jellyfin» en la tienda de Amazon\n📱 Móvil Android → «Jellyfin» en Play Store\n🍏 iPhone / iPad / Apple TV → «Jellyfin» o «Swiftfin» en la App Store\n\nInstálala, ábrela y añade tu servidor' + (s.publicUrl ? `:\n     🌐 ${s.publicUrl}` : ' (escribe /datos para verlo)') + '\n\n💡 En la tele, Moonfin va aún mejor 🌙';
@@ -2816,7 +3132,7 @@ async function botReply(chat, kind, list) {
   }
   if (kind === 'datos') {
     const parts = accs.map((c) => { const s = db.servers.find((x) => x.id === c.serverId) || {};
-      return `🔑 <b>Tus datos${accs.length > 1 ? ' · ' + hEsc(c.panelName) : ''}</b>\n\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : '<i>pídenosla y te la damos</i>'}${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}`; });
+      return `🔑 <b>Tus datos${accs.length > 1 ? ' · ' + hEsc(c.panelName) : ''}</b>\n\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : cliPx(c) ? '<i>la de tu cuenta de Plex</i>' : '<i>pídenosla y te la damos</i>'}${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}`; });
     return send(parts.join('\n\n') + '\n\n🤫 No compartas tus datos con nadie.', null, true);
   }
   if (kind === 'aparatos') {
@@ -2889,7 +3205,7 @@ async function botCallback(cq) {
   }
   if (data.startsWith('gd:') || data === 'pb:pantallas') {
     const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
-    if (!['main', 'moon', 'dl', 'jf', 'login', 'where'].includes(k)) return;
+    if (!['main', 'moon', 'dl', 'jf', 'pxinv', 'pxapp', 'login', 'where'].includes(k)) return;
     return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: guideKb(k, c) });
   }
   if (data.startsWith('pb:')) {
@@ -3039,9 +3355,10 @@ route('PUT', '/api/templates', SUPER, ({ body }) => lock(async () => {
 route('POST', '/api/servers', SUPER, ({ me, body }) => lock(async () => {
   const s = { id: 0, name: str(body.name, 60), url: cleanUrl(body.url), publicUrl: str(body.publicUrl, 200), apiKey: str(body.apiKey, 200), packages: {}, maxClients: readMaxClients(body.maxClients, 0) };
   if (body.kind === 'jellyfin') s.kind = 'jellyfin'; // los servidores Emby no llevan marca: quedan exactamente igual que siempre
-  if (!licKinds().includes(s.kind === 'jellyfin' ? 'jellyfin' : 'emby')) throw new HttpError(403, `Tu panel no incluye ${s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby'}. Si lo quieres, pídelo a quien te alquila el panel.`);
+  if (body.kind === 'plex') s.kind = 'plex';
+  if (!licKinds().includes(kindOf(s))) throw new HttpError(403, `Tu panel no incluye ${srvKind(s)}. Si lo quieres, pídelo a quien te alquila el panel.`);
   if (!s.name) throw new HttpError(400, 'Ponle un nombre al servidor.');
-  if (!s.apiKey) throw new HttpError(400, 'Falta la API key.');
+  if (!s.apiKey) throw new HttpError(400, s.kind === 'plex' ? 'Falta el token de Plex (X-Plex-Token).' : 'Falta la API key.');
   const info = await emby(s, 'GET', '/System/Info');
   if (info && info.Id) s.embyServerId = String(info.Id).slice(0, 64);
   s.id = newId();
@@ -3397,7 +3714,7 @@ route('POST', '/api/import/rows', STAFF, ({ me, body }) => lock(async () => {
 /* Cuentas */
 async function createInEmby(c, password) {
   const s = serverOf(c);
-  const created = await emby(s, 'POST', '/Users/New', { Name: c.embyName });
+  const created = await emby(s, 'POST', '/Users/New', s.kind === 'plex' ? { Name: c.embyName, Email: c.embyName, PlexNew: !!c.plexNew, Password: password } : { Name: c.embyName });
   c.embyId = created.Id;
   c.embyName = created.Name || c.embyName;
   try {
@@ -3412,19 +3729,20 @@ route('POST', '/api/clients', '*', ({ me, body }) => lock(async () => {
   const s = serverById(body.serverId);
   assertServerAllowed(me, s);
   const embyName = str(body.embyName, 60);
-  const password = readNewPassword(body.password, 4);
-  if (!embyName) throw new HttpError(400, 'Escribe el nombre de usuario de Emby.');
+  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readNewPassword(body.password, 4);
+  if (!embyName) throw new HttpError(400, s.kind === 'plex' ? 'Escribe el email (o el usuario) de Plex del cliente.' : 'Escribe el nombre de usuario de Emby.');
+  if (s.kind === 'plex' && body.plexNew && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(embyName)) throw new HttpError(400, 'Para crear la cuenta de Plex escribe un email válido.');
   assertEmbyNameFree(s, embyName);
   const plan = readPlan(body, null);
   const owner = isStaff(me) && body.ownerId ? userById(body.ownerId) : me;
-  const cost = costFor(me, plan.months, plan.screens);
+  const cost = costFor(me, plan.months, plan.screens, kindOf(s));
   ensureCredits(me, cost);
   const c = {
     id: newId(), serverId: s.id, ownerId: owner.id, embyId: '', embyName,
     panelName: str(body.panelName, 80) || embyName, note: str(body.note, 300),
     createdAt: today(), expires: addMonths(today(), plan.months), status: 'active', demo: false,
     screens: plan.screens, quality: plan.quality, lastMonths: plan.months,
-    ...readContact(body, null), paid: body.paid !== false,
+    ...readContact(body, null), paid: body.paid !== false, ...(s.kind === 'plex' && body.plexNew ? { plexNew: true } : {}),
   };
   await createInEmby(c, password);
   c.password = password;
@@ -3457,9 +3775,9 @@ route('POST', '/api/demos', '*', ({ me, body }) => lock(async () => {
   assertServerAllowed(me, s);
   if (!isStaff(me) && me.allowDemos === false) throw new HttpError(403, 'Tu usuario no tiene permiso para crear demos.');
   const embyName = str(body.embyName, 60);
-  const password = readNewPassword(body.password, 4);
+  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readNewPassword(body.password, 4);
   const hours = Number(body.hours);
-  if (!embyName) throw new HttpError(400, 'Escribe el nombre de usuario de Emby.');
+  if (!embyName) throw new HttpError(400, s.kind === 'plex' ? 'Escribe el email (o el usuario) de Plex del cliente.' : 'Escribe el nombre de usuario de Emby.');
   if (!db.settings.demoHours.includes(hours)) throw new HttpError(400, 'Elige una duración de demo válida.');
   if (!QUALITIES[body.quality]) throw new HttpError(400, 'Elige el contenido: Básico o 4K.');
   assertEmbyNameFree(s, embyName);
@@ -3473,7 +3791,7 @@ route('POST', '/api/demos', '*', ({ me, body }) => lock(async () => {
     panelName: str(body.panelName, 80) || embyName, note: str(body.note, 300),
     createdAt: today(), expires: localDate(end), expiresAt: end.toISOString(), status: 'active', demo: true,
     screens: 1, quality: body.quality,
-    ...readContact(body, null), paid: true,
+    ...readContact(body, null), paid: true, ...(s.kind === 'plex' && body.plexNew ? { plexNew: true } : {}),
   };
   await createInEmby(c, password);
   c.password = password;
@@ -3490,6 +3808,7 @@ route('PUT', '/api/clients/:id', '*', ({ me, params, body }) => lock(async () =>
   const s = serverOf(c);
   const changes = [];
   const newPassword = typeof body.password === 'string' && body.password ? readNewPassword(body.password, 4) : '';
+  if (newPassword && s.kind === 'plex') throw new HttpError(400, 'En Plex la contraseña es la de la cuenta de plex.tv del cliente: la cambia él en plex.tv.');
   readContact(body, c); // valida antes de tocar nada
   if (!isStaff(me) && body.expires !== undefined && body.expires !== c.expires) throw new HttpError(403, 'La fecha de caducidad no se puede cambiar a mano. Usa «Renovar».');
   if (isStaff(me)) {
@@ -3544,7 +3863,7 @@ route('PUT', '/api/clients/:id', '*', ({ me, params, body }) => lock(async () =>
 route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(async () => {
   const c = clientFor(me, params.id);
   const plan = readPlan(body, c);
-  const cost = costFor(me, plan.months, plan.screens);
+  const cost = costFor(me, plan.months, plan.screens, kindOfClient(c));
   ensureCredits(me, cost);
   const t = today();
   // Si aun no ha vencido se suma a su fecha; si ya vencio o era una demo, cuenta desde hoy
@@ -3575,7 +3894,7 @@ function screensCost(c, n) {
   const days = Math.max(1, diffDays(c.expires, today()) + 1);
   const cols = Object.keys(db.settings.prices).map(Number).filter((m) => m > 0).sort((a, b) => a - b);
   const col = cols.find((m) => m * 30 >= days) || cols[cols.length - 1];
-  return Math.max(0, price(col, n) - price(col, old));
+  return Math.max(0, price(col, n, kindOfClient(c)) - price(col, old, kindOfClient(c)));
 }
 route('POST', '/api/clients/:id/screens', '*', ({ me, params, body }) => lock(async () => {
   const c = clientFor(me, params.id);
@@ -3750,11 +4069,11 @@ async function repairClient(me, c) {
   try { before = await readPolicy(s, c.embyId); }
   catch (e) {
     if (e.embyStatus !== 404) throw e;
-    if (!c.password) throw new HttpError(400, 'El usuario ya no existe en Emby y el panel no tiene su contraseña para crearlo de nuevo. Dale de baja y crea la cuenta otra vez.');
+    if (!c.password && s.kind !== 'plex') throw new HttpError(400, 'El usuario ya no existe en Emby y el panel no tiene su contraseña para crearlo de nuevo. Dale de baja y crea la cuenta otra vez.');
     if (!c.quality) throw new HttpError(400, 'El usuario ya no existe en Emby. Asígnale contenido Básico o 4K antes de repararlo.');
     const created = await emby(s, 'POST', '/Users/New', { Name: c.embyName });
     c.embyId = created.Id;
-    await setEmbyPassword(s, c.embyId, c.password, true);
+    if (s.kind !== 'plex') await setEmbyPassword(s, c.embyId, c.password, true);
     recreated = true;
     say(false, 'El usuario no existía en Emby: se ha creado de nuevo con su contraseña.');
   }
@@ -3789,10 +4108,11 @@ async function moveClient(me, c, to, passwordIn) {
   if (c.serverId !== to.id && c.status !== 'trash') assertRoom(to);
   const from = serverOf(c);
   if (to.id === from.id) throw new HttpError(400, 'La cuenta ya está en ese servidor.');
+  if ((from.kind === 'plex') !== (to.kind === 'plex')) throw new HttpError(400, 'Una cuenta de Plex solo se puede pasar a otro servidor Plex (y una de Emby o Jellyfin, a uno que no sea Plex).');
   if (!c.quality) throw new HttpError(400, 'Usa bibliotecas propias del servidor actual. Asígnale contenido Básico o 4K antes de transferirla.');
   if (!packageReady(to, c.quality)) throw new HttpError(400, `El contenido ${QUALITIES[c.quality]} aún no está configurado en "${to.name}".`);
   const password = passwordIn ? readNewPassword(passwordIn, 4) : c.password;
-  if (!password) throw new HttpError(400, 'El panel no tiene guardada su contraseña. Cámbiala primero o transfiérela sola escribiendo una nueva.');
+  if (!password && to.kind !== 'plex') throw new HttpError(400, 'El panel no tiene guardada su contraseña. Cámbiala primero o transfiérela sola escribiendo una nueva.');
   if (db.clients.some((x) => x.id !== c.id && x.serverId === to.id && x.embyName.toLowerCase() === c.embyName.toLowerCase())) throw new HttpError(409, 'En ese servidor ya hay una cuenta con el mismo usuario de Emby.');
   const old = { serverId: c.serverId, embyId: c.embyId };
   const created = await emby(to, 'POST', '/Users/New', { Name: c.embyName });
@@ -4614,7 +4934,13 @@ async function watchServers() {
     health.set(s.id, h);
   }
 }
-route('GET', '/api/health', '*', ({ me }) => ({ servers: serversFor(me).map((s) => { const h = health.get(s.id); return { id: s.id, name: s.name, kind: s.kind === 'jellyfin' ? 'jellyfin' : 'emby', ok: h ? !h.down : null, since: h && h.down ? h.since : null, lastUp: (h && h.lastUp) || null, lastMins: (h && h.lastMins) || 0, checked: h ? h.checked : null, version: h ? h.version || '' : '', ms: h ? h.ms || 0 : 0 }; }) }));
+/* Plex: «Comprobar invitaciones» */
+route('POST', '/api/plex/check', '*', async ({ me }) => {
+  await pxSyncAll();
+  const vis = visibleOwners(me), mine = db.clients.filter((c) => (!vis || vis.has(c.ownerId)) && c.status !== 'trash' && cliPx(c));
+  return { ok: true, total: mine.length, pending: mine.filter(pxPendingOf).length };
+});
+route('GET', '/api/health', '*', ({ me }) => ({ servers: serversFor(me).map((s) => { const h = health.get(s.id); return { id: s.id, name: s.name, kind: kindOf(s), ok: h ? !h.down : null, since: h && h.down ? h.since : null, lastUp: (h && h.lastUp) || null, lastMins: (h && h.lastMins) || 0, checked: h ? h.checked : null, version: h ? h.version || '' : '', ms: h ? h.ms || 0 : 0 }; }) }));
 
 /* ---------- Estadísticas de uso: el panel apunta cada minuto lo que se está viendo ---------- */
 const PLAY_MS = Number(process.env.PLAY_MS) || 60000;
@@ -4666,7 +4992,8 @@ async function recordUsage() {
       for (const x of list || []) if (x.NowPlayingItem && !(x.PlayState || {}).IsPaused && byEmby.has(x.UserId)) { const c = byEmby.get(x.UserId); if (!playing.has(c)) playing.set(c, new Set()); playing.get(c).add(x.DeviceId || x.Id); }
       for (const [c, devs] of playing) if (devs.size > 1) multiNow.set(c.id, devs.size);
       await pauseCheck(s, list || [], byEmby);
-      await appOnlyCheck(s, list || [], byEmby);
+      if (s.kind === 'plex') await plexScreens(s, list || [], byEmby); // Plex no limita pantallas: lo hace el panel
+      else await appOnlyCheck(s, list || [], byEmby);
       for (const x of list || []) {
         recordConn(byEmby.get(x.UserId), x);
         const it = x.NowPlayingItem;
@@ -5314,7 +5641,7 @@ function cpOptions(c, ctx, scr) {
 }
 /** Pantallas que el cliente puede elegir al pagar: las que tienen algún precio (y, si es de un vendedor, las que tienen precio en créditos) */
 function cpScreens(c, ctx) {
-  const ok = (sc) => { if (!ctx || !ctx.vendor) return true; try { costFor(ctx.vendor, 1, sc); return true; } catch { return false; } };
+  const ok = (sc) => { if (!ctx || !ctx.vendor) return true; try { costFor(ctx.vendor, 1, sc, kindOfClient(c)); return true; } catch { return false; } };
   return [1, 2, 3, 4].filter((sc) => cpOptions(c, ctx, sc).length && ok(sc));
 }
 const cpReady = () => true; // cada cuenta lo decide cpCtx
@@ -5340,7 +5667,7 @@ async function cpPaid(o, via) {
   const what = `${o.months} ${o.months === 1 ? 'mes' : 'meses'}, ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}${oldScr && oldScr !== c.screens ? ` (antes ${oldScr})` : ''}`;
   const vend = o.vendorId ? db.users.find((u) => u.id === o.vendorId) : null;
   if (vend) { // la renovación le cuesta sus créditos, como si la hiciera él (aunque se quede en negativo: el cliente ya ha pagado)
-    const cost = costFor(vend, o.months, c.screens || 1);
+    const cost = costFor(vend, o.months, c.screens || 1, kindOfClient(c));
     spend(vend, cost, `Renovación pagada online por el cliente: ${c.embyName} (${what})`);
     if (cost > 0) c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: vend.id, credits: cost, from: base, to: c.expires, kind: 'renovacion' }].slice(-24);
     notifyUser(vend, `💳 Tu cliente ${c.panelName} ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola hasta el ${c.expires.split('-').reverse().join('/')}.${cost ? `\nSe han descontado ${cost} créditos. Saldo: ${vend.credits}.` : ''}${vend.credits < 0 ? '\n⚠️ Tu saldo está en negativo: pide una recarga.' : ''}`);
@@ -5366,10 +5693,10 @@ function receiptTg(c, o) {
   const auto = !!(o.subId || o.cycle) && c.sub && c.sub.status === 'active' && !c.sub.cancelAt;
   const text = `🧾 <b>RECIBO DE PAGO</b> · ${hEsc(brand)}\n<code>Nº ${hEsc(o.num || o.id)}  ·  ${hEsc(rcWhen(o.paidAt))}</code>\n\n`
     + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 ${MANUAL[o.method] ? 'Pagado por ' + hEsc(MANUAL[o.method].t) : 'Pago online con tarjeta · seguro'}\n👤 ${hEsc(c.panelName)}\n\n`
-    + `📦 <b>Tu plan</b>\n▫️ ${o.wasDemo ? 'Alta' : 'Renovación'}: ${hEsc(rcPlan(o))}\n▫️ Válida hasta: <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`
+    + `📦 <b>Tu plan</b>${db.servers.some((x) => x.kind === 'jellyfin' || x.kind === 'plex') ? `\n▫️ Plataforma: <b>${hEsc(srvKind(s))}</b>` : ''}\n▫️ ${o.wasDemo ? 'Alta' : 'Renovación'}: ${hEsc(rcPlan(o))}\n▫️ Válida hasta: <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`
     + (o.expiresBefore && !o.wasDemo ? `\n▫️ <i>Antes vencía el ${hEsc(rcFmtD(o.expiresBefore))}</i>` : '')
     + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '') + '\n\n'
-    + `🔑 <b>Tus datos de acceso</b>${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : '<i>la de siempre</i>'}\n\n`
+    + `🔑 <b>Tus datos de acceso</b>${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}\n👤 ${s.kind === 'plex' ? 'Cuenta de Plex' : 'Usuario'}: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : s.kind === 'plex' ? '<i>la de tu cuenta de Plex</i>' : '<i>la de siempre</i>'}\n\n`
     + `🍿 ${o.wasDemo ? 'Tu cuenta ya está activada' : 'No tienes que hacer nada'}: sigue viendo como siempre.\n💙 ¡Gracias por confiar en ${hEsc(brand)}!`;
   const url = rcUrl(c, o), kb = [];
   if (url) kb.push([{ text: '📄 Ver recibo completo', url }]);
@@ -5404,7 +5731,7 @@ function receiptPage(res, c, o) {
 <div class="sec"><h2>Cliente</h2>${row('Nombre', H(c.panelName))}${row('Usuario', H(c.embyName))}</div>
 <div class="sec"><h2>Concepto</h2>${row(o.wasDemo ? 'Alta de cuenta' : 'Renovación', H(rcPlan(o)))}${o.expiresFrom && !o.wasDemo ? row('Desde', H(rcFmtD(o.expiresFrom))) : ''}${row('Válida hasta', H(rcFmtD(o.expiresAfter)))}${o.subId || o.cycle ? row('Renovación automática', 'Sí') : ''}</div>
 <div class="sec"><h2>Pago</h2>${row('Forma de pago', H(payMethodTxt(o)))}${row('Referencia', H(o.id))}</div>
-${s.publicUrl ? `<div class="sec"><h2>Tu servidor</h2>${row('Dirección', H(s.publicUrl))}</div>` : ''}
+${s.publicUrl || db.servers.some((x) => x.kind === 'jellyfin' || x.kind === 'plex') ? `<div class="sec"><h2>Tu servidor</h2>${db.servers.some((x) => x.kind === 'jellyfin' || x.kind === 'plex') ? row('Plataforma', H(srvKind(s))) : ''}${s.publicUrl ? row('Dirección', H(s.publicUrl)) : ''}</div>` : ''}
 </div>
 <div class="act"><button type="button" id="pr">🖨️ Imprimir o guardar PDF</button><a href="/pagar/${c.id}-${H(c.payKey)}">🏠 Mi cuenta</a></div>
 <div class="ft">Justificante de tu pago a <b>${brand}</b>. Guárdalo por si lo necesitas.${contact ? '<br>¿Dudas? ' + contact : ''}</div>
@@ -5489,7 +5816,7 @@ async function cpRoute(req, res, pathname) {
     const op = cpScreens(c, ctx).includes(scr) ? cpOptions(c, ctx, scr).find((x) => x.m === months) : null;
     if (!op) return cpPage(res, 400, 'Opción no válida', '<h1>Esa opción ya no está</h1><p class="sub">Vuelve atrás y elige otra.</p>');
     const open = db.orders.filter((o) => o.clientId === c.id && o.status === 'pending' && Date.now() - Date.parse(o.created) < 3600000);
-    if (ctx.vendor) { const cost = costFor(ctx.vendor, months, scr); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
+    if (ctx.vendor) { const cost = costFor(ctx.vendor, months, scr, kindOfClient(c)); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
     if (open.length >= 5) return cpPage(res, 429, 'Espera un poco', '<h1>Espera un momento</h1><p class="sub">Tienes varios pagos sin terminar. Prueba de nuevo en un rato.</p>');
     const pay = String(fp.get('pay') || ''), mans = cpManual(ctx.cfg).filter((k) => !(k === 'paypal' && ctx.pp)), MT0 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
     if (!pay && (mans.length || ctx.pp) && !auto) { // elegir cómo pagar
@@ -6090,7 +6417,8 @@ route('GET', '/api/poster/:sid/:item', '*', async ({ params }) => {
     try {
       // Jellyfin no lleva el prefijo /emby y la clave va en la cabecera Authorization
       const jf = s.kind === 'jellyfin';
-      r = await fetch(`${s.url}${jf ? '' : '/emby'}/Items/${params.item}/Images/Primary?maxHeight=330&quality=80`, { headers: jf ? { Authorization: `MediaBrowser Client="Concha", Device="Panel", DeviceId="concha-panel", Version="1.0", Token="${s.apiKey || ''}"` } : { 'X-Emby-Token': s.apiKey }, signal: AbortSignal.timeout(15000) });
+      if (s.kind === 'plex') r = await fetch(`${s.url}/photo/:/transcode?width=220&height=330&minSize=1&url=${encodeURIComponent('/library/metadata/' + params.item + '/thumb')}`, { headers: { 'X-Plex-Token': s.apiKey || '' }, signal: AbortSignal.timeout(15000) });
+      else r = await fetch(`${s.url}${jf ? '' : '/emby'}/Items/${params.item}/Images/Primary?maxHeight=330&quality=80`, { headers: jf ? { Authorization: `MediaBrowser Client="Concha", Device="Panel", DeviceId="concha-panel", Version="1.0", Token="${s.apiKey || ''}"` } : { 'X-Emby-Token': s.apiKey }, signal: AbortSignal.timeout(15000) });
     } catch { throw new HttpError(502, 'Sin carátula.'); }
     const type = (r.headers.get('content-type') || '').split(';')[0];
     if (!r.ok || !/^image\/(jpeg|png|webp|gif)$/.test(type)) {
@@ -7446,7 +7774,7 @@ function licView(l) {
   const { tokenHash, ...rest } = l; // la clave nunca sale del panel
   const left = diffDays(l.until, today());
   const state = l.blocked ? 'blocked' : left < -LIC_GRACE ? 'locked' : left < 0 ? 'grace' : left <= 7 ? 'soon' : 'ok';
-  return { ...rest, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : KINDS_ALL, left, state, online: !!l.lastCheck && Date.now() - Date.parse(l.lastCheck) < 3 * 3600e3 };
+  return { ...rest, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : ['emby', 'jellyfin'], left, state, online: !!l.lastCheck && Date.now() - Date.parse(l.lastCheck) < 3 * 3600e3 };
 }
 function licFind(id) { const l = db.licenses.find((x) => x.id === Number(id)); if (!l) throw new HttpError(404, 'Esa licencia no existe.'); return l; }
 function licGuard() { if (LIC_CLIENT) throw new HttpError(403, 'Este es un panel alquilado: las licencias se llevan desde el panel principal.'); }
@@ -7457,7 +7785,7 @@ function licFields(l, body) {
   if (body.contact !== undefined) l.contact = str(body.contact, 80);
   if (body.notes !== undefined) l.notes = str(body.notes, 300);
   if (body.price !== undefined) { const p = Math.round(Number(body.price) * 100) / 100; if (!(p >= 0) || p > 100000) throw new HttpError(400, 'El precio no es válido.'); l.price = p; }
-  if (body.platforms !== undefined) { const k = kindsClean(body.platforms); if (!k.length) throw new HttpError(400, 'Elige Emby, Jellyfin o los dos.'); l.platforms = k; }
+  if (body.platforms !== undefined) { const k = kindsClean(body.platforms); if (!k.length) throw new HttpError(400, 'Deja encendida al menos una plataforma: Emby, Jellyfin o Plex.'); l.platforms = k; }
   if (body.until !== undefined) { const d = str(body.until, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new HttpError(400, 'La fecha no es válida.'); l.until = d; }
 }
 route('GET', '/api/licenses', SUPER, () => { licGuard(); return { list: db.licenses.map(licView), contact: db.settings.licContact, grace: LIC_GRACE, today: today() }; });
@@ -7513,8 +7841,18 @@ route('DELETE', '/api/licenses/:id', SUPER, ({ me, params }) => lock(async () =>
 /** Resumen (solo números y nombres de servidores, sin datos de clientes) que un panel alquilado manda al principal */
 function licStatsOut() {
   const live = db.clients.filter((c) => c.status !== 'trash');
-  const kind = (s) => (s.kind === 'jellyfin' ? 'jellyfin' : 'emby');
+  const kind = (s) => kindOf(s), month = today().slice(0, 7);
+  const byKind = { emby: 0, jellyfin: 0, plex: 0 };
+  for (const c of live) if (!c.demo && c.status === 'active') byKind[kind(db.servers.find((x) => x.id === c.serverId))]++;
+  const at = (u) => (u && u.lastLogin && u.lastLogin.at) || '';
+  const sup = db.users.find((u) => u.role === 'super'), last = db.users.map(at).filter(Boolean).sort().pop() || '';
+  const vend = db.users.filter((u) => u.role === 'reseller' || u.role === 'sub');
   return {
+    byKind, total: live.filter((c) => !c.demo).length, trash: db.clients.filter((c) => c.status === 'trash').length,
+    resellers: vend.filter((u) => u.role === 'reseller').length, subs: vend.filter((u) => u.role === 'sub').length,
+    superLogin: at(sup), lastLogin: last, lastAction: (db.log[0] && db.log[0].ts) || '', ver: String(indexFile().ver || '').slice(0, 20),
+    renewMonth: db.log.filter((l) => l.type === 'renovacion' && String(l.ts).slice(0, 7) === month).length,
+    newVendors: vend.filter((u) => u.createdAt).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 6).map((u) => ({ name: String(u.name || '').slice(0, 40), role: u.role, at: String(u.createdAt).slice(0, 25), parent: u.parentId ? String((db.users.find((x) => x.id === u.parentId) || {}).name || '').slice(0, 40) : '', clients: live.filter((c) => c.ownerId === u.id).length })),
     servers: db.servers.slice(0, 30).map((s) => ({ name: String(s.name || '').slice(0, 40), kind: kind(s), off: !!s.off })),
     active: live.filter((c) => !c.demo && c.status === 'active').length,
     expired: live.filter((c) => !c.demo && c.status !== 'active').length,
@@ -7528,8 +7866,13 @@ function licStatsIn(x) {
   if (!x || typeof x !== 'object') return null;
   const n = (v) => Math.max(0, Math.min(1e6, Math.round(Number(v) || 0)));
   return {
-    servers: (Array.isArray(x.servers) ? x.servers : []).slice(0, 30).map((s) => ({ name: str(String((s && s.name) || ''), 40), kind: s && s.kind === 'jellyfin' ? 'jellyfin' : 'emby', off: !!(s && s.off) })),
+    servers: (Array.isArray(x.servers) ? x.servers : []).slice(0, 30).map((s) => ({ name: str(String((s && s.name) || ''), 40), kind: s && (s.kind === 'jellyfin' || s.kind === 'plex') ? s.kind : 'emby', off: !!(s && s.off) })),
     active: n(x.active), expired: n(x.expired), demos: n(x.demos), vendors: n(x.vendors), admins: n(x.admins), newMonth: n(x.newMonth), at: new Date().toISOString(),
+    ...(x.byKind && typeof x.byKind === 'object' ? { byKind: { emby: n(x.byKind.emby), jellyfin: n(x.byKind.jellyfin), plex: n(x.byKind.plex) } } : {}),
+    ...(x.total !== undefined ? { total: n(x.total), trash: n(x.trash), resellers: n(x.resellers), subs: n(x.subs), renewMonth: n(x.renewMonth) } : {}),
+    ...['superLogin', 'lastLogin', 'lastAction'].reduce((o, k) => { const v = String(x[k] || ''); if (/^\d{4}-\d{2}-\d{2}T[\d:.]+Z?$/.test(v)) o[k] = v.slice(0, 30); return o; }, {}),
+    ...(x.ver ? { ver: str(String(x.ver), 20) } : {}),
+    ...(Array.isArray(x.newVendors) ? { newVendors: x.newVendors.slice(0, 6).map((v) => ({ name: str(String((v && v.name) || ''), 40), role: v && v.role === 'sub' ? 'sub' : 'reseller', at: /^\d{4}-\d{2}-\d{2}/.test(String(v && v.at)) ? String(v.at).slice(0, 25) : '', parent: str(String((v && v.parent) || ''), 40), clients: n(v && v.clients) })) } : {}),
   };
 }
 route('POST', '/api/license/check', null, ({ req, body }) => {
@@ -7543,7 +7886,7 @@ route('POST', '/api/license/check', null, ({ req, body }) => {
   l.lastCheck = new Date().toISOString(); l.lastIp = ip.slice(0, 45);
   const st = licStatsIn(body && body.stats); if (st) l.stats = st;
   if (first || !l._saved || Date.now() - l._saved > 3600e3) { l._saved = Date.now(); saveDb(); }
-  return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : KINDS_ALL, grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
+  return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : ['emby', 'jellyfin'], grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
 });
 /* Avisos diarios en el panel principal: 7, 3 y 1 día antes, el día que vence y cuando se pausa */
 function licDaily() {

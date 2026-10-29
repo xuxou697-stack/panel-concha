@@ -1593,6 +1593,33 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 /* App de clientes */
 .rs-last{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;background:linear-gradient(120deg,color-mix(in srgb,#22c55e 16%,transparent),color-mix(in srgb,#0ea5e9 14%,transparent));border:1px solid color-mix(in srgb,#22c55e 40%,transparent);margin-bottom:12px}.rs-last .rs-ic{font-size:28px}.rs-last small{display:block;color:var(--muted);font-size:12.5px}.rs-last b{display:block;font-size:20px;margin:2px 0}.rs-last b span{font-size:15px;color:var(--muted);font-weight:700}
 .rs-ks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:6px}.rs-k{padding:10px 12px;border-radius:14px;border:1px solid color-mix(in srgb,var(--c) 35%,transparent);background:color-mix(in srgb,var(--c) 9%,transparent)}.rs-k b{display:block;font-size:20px;color:var(--c)}.rs-k small{color:var(--muted);font-size:12px;line-height:1.3}
+/* Tarjetas de clientes y demos (v191): mismo estilo que la Papelera */
+.clv .ccard.v2{border-top:4px solid var(--sc,var(--line));padding-top:14px;gap:10px}
+.ccard.v2 .cw{padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--sc,#6366f1) 9%,var(--raised))}
+.ccard.v2 .cw .tr-wt b{font-size:15px}.ccard.v2 .cw-bar{height:8px;border-radius:99px;background:color-mix(in srgb,var(--sc,#6366f1) 16%,transparent);margin:8px 0 6px;overflow:hidden}
+.ccard.v2 .cw-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,color-mix(in srgb,var(--sc,#22c55e) 70%,#0ea5e9),var(--sc,#22c55e))}
+.ccard.v2 .cfx{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.ccard.v2 .cfx>div{padding:8px 10px;border-radius:12px;background:var(--raised);min-width:0}
+.ccard.v2 .cfx small{display:block;color:var(--muted);font-size:11.5px}.ccard.v2 .cfx b{display:block;font-size:13.5px;min-width:0}
+.ccard.v2 .cfv{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:0;border:0;background:none;color:var(--text);font:inherit;font-weight:700;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.ccard.v2 span.cfv{cursor:default}
+.ccard.v2 .cfv .tpc{width:14px;height:14px;flex:none;opacity:.6}
+.ccard.v2 .cq{display:flex;flex-wrap:wrap;gap:6px}.ccard.v2 .cq a.btn{text-decoration:none;color:inherit}
+@media (max-width:420px){.ccard.v2 .cfx{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Papelera (v190): tarjetas alegres y claras */
+.tr-ks{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 14px}
+.tr-k{position:relative;padding:14px 14px 12px;border-radius:18px;border:1px solid color-mix(in srgb,var(--k) 35%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--k) 16%,transparent),color-mix(in srgb,var(--k) 4%,transparent))}
+.tr-k span{position:absolute;right:12px;top:10px;font-size:22px;opacity:.9}.tr-k b{display:block;font-size:28px;line-height:1.1;color:var(--k)}.tr-k small{color:var(--muted);font-size:12.5px}
+.tr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:12px}
+.tr-c{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:20px;background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--k);box-shadow:0 14px 30px -24px var(--k)}
+.tr-c header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.tr-who{flex:1;min-width:0}.tr-who .name{font-size:17px;font-weight:800}
+.tr-av{width:46px;height:46px;border-radius:14px;border:0;flex:none;cursor:pointer;display:grid;place-items:center;color:#fff;font-weight:900;font-size:20px;background:linear-gradient(135deg,var(--k),color-mix(in srgb,var(--k) 40%,#1e1b4b))}
+.tr-chip{padding:5px 10px;border-radius:99px;font-size:12.5px;font-weight:700;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--text);white-space:nowrap}
+.tr-when{padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--k) 8%,var(--raised))}.tr-wt{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.tr-wt small{color:var(--muted)}
+.tr-bar{height:8px;border-radius:99px;background:color-mix(in srgb,var(--k) 15%,transparent);margin:8px 0 6px;overflow:hidden}.tr-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#22c55e,#eab308,#f97316,#ef4444)}
+.tr-f{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tr-f div{padding:8px 10px;border-radius:12px;background:var(--raised)}.tr-f small{display:block;color:var(--muted);font-size:11.5px}.tr-f b{font-size:14px;word-break:break-word}
+.tr-why{margin:0;font-size:13.5px;color:var(--muted)}
+.tr-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.tr-acts a.btn{text-decoration:none;color:inherit}.tr-sp{flex:1}
+.tr-empty{display:grid;place-items:center;gap:6px;text-align:center;padding:48px 16px;border-radius:22px;border:1px dashed var(--line);background:var(--panel)}.tr-empty span{font-size:46px}.tr-empty b{font-size:19px}.tr-empty small{color:var(--muted)}
+@media (max-width:560px){.tr-f{grid-template-columns:repeat(2,minmax(0,1fr))}.tr-sp{display:none}}
 .tgshare{margin:12px 0;padding:12px 14px;border-radius:14px;border:1px dashed color-mix(in srgb,#0ea5e9 50%,transparent);background:color-mix(in srgb,#0ea5e9 8%,transparent)}.tgshare>b{display:block}.tgshare small{display:block;color:var(--muted);margin:2px 0 8px}.tgshare .cpy{margin-bottom:8px}.tgshare code{word-break:break-all}
 
 .rq{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}.rq:first-of-type{border-top:0}
@@ -1897,7 +1924,17 @@ form.formpage.bz>.dfoot .btn.primary,.bzs .btn.primary{border:0;color:#fff;font-
 .lplat input:checked+.bo{border-color:#38bdf8;box-shadow:0 0 0 2px color-mix(in srgb,#38bdf8 40%,transparent)}
 .lplat input:focus-visible+span{outline:2px solid var(--text)}
 .lplc{display:inline-flex;align-items:center;gap:6px;font-weight:700}
-.lplc.em{color:#7fd677}.lplc.jf{color:#c9a8ff}.lplc.bo{color:#7dd3fc}
+.lplc.em{color:#7fd677}.lplc.jf{color:#c9a8ff}.lplc.bo{color:#7dd3fc}.lplc.px{color:#f6c453}
+.lplat .px i,.lplc.px i{background:#e5a00d;clip-path:polygon(15% 0,55% 0,100% 50%,55% 100%,15% 100%,60% 50%)}
+.lplat input:checked+.px{border-color:#e5a00d;box-shadow:0 0 0 2px color-mix(in srgb,#e5a00d 40%,transparent)}
+.lplat span small{font-size:11px;font-weight:600;color:var(--muted)}.lplat input:checked+span small{color:var(--ok,#22c55e)}
+.lplat input:not(:checked)+span{opacity:.6}
+.lplcs{display:inline-flex;gap:6px;flex-wrap:wrap}
+button.lplc{border:1px solid color-mix(in srgb,currentColor 40%,transparent);background:color-mix(in srgb,currentColor 10%,transparent);padding:3px 9px;border-radius:99px;font:inherit;font-size:12px;cursor:pointer}
+button.lplc.off{color:var(--muted);background:none;border-style:dashed;text-decoration:line-through;opacity:.7}
+.lsv span.px{background:color-mix(in srgb,#e5a00d 20%,transparent);color:#f6c453}
+.lpeople{display:grid;gap:6px;margin-top:10px}.lpeople div{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:10px;background:var(--surface);font-size:13px}.lpeople small{color:var(--muted)}
+.lwhen{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin-top:10px}.lwhen div{padding:8px 10px;border-radius:10px;background:var(--surface)}.lwhen small{display:block;color:var(--muted);font-size:11px}.lwhen b{font-size:13.5px}
 /* Ticket animado al renovar o crear, antes de la tarjeta del mensaje */
 .cele{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:16px;background:rgba(4,12,13,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:celeIn .25s ease both}
 .cele.out{animation:celeOut .3s ease both}
@@ -1963,6 +2000,29 @@ textarea.typing{caret-color:transparent}
 .ks-b.em[aria-pressed="true"]{background:color-mix(in srgb,#52b54b 22%,transparent);color:#8ee086;box-shadow:inset 0 0 0 1px #52b54b}
 .ks-b.jf[aria-pressed="true"]{background:linear-gradient(120deg,color-mix(in srgb,#a46bff 30%,transparent),color-mix(in srgb,#00a4dc 20%,transparent));color:#d6bfff;box-shadow:inset 0 0 0 1px #a46bff}
 body.jf #main{box-shadow:inset 0 3px 0 #a46bff}
+.kico{display:inline-block;width:11px;height:11px;flex:none;margin-right:5px;vertical-align:-1px}
+.kico.em{background:#52b54b;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}.kico.jf{background:linear-gradient(135deg,#a46bff,#00a4dc);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.kico.px{background:#e5a00d;clip-path:polygon(15% 0,55% 0,100% 50%,55% 100%,15% 100%,60% 50%)}
+.ks-n{min-width:20px;padding:1px 7px;border-radius:99px;font-size:11.5px;font-weight:800;background:color-mix(in srgb,currentColor 16%,transparent)}
+.ksw.ksw-top{margin:0 0 14px}
+.nwk{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.nwk button{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 10px;border-radius:16px;border:1.5px solid var(--line);background:var(--raised);color:var(--text);font:inherit;font-weight:800;font-size:15px;cursor:pointer}
+.nwk button .kico{width:18px;height:18px;margin:0}.nwk button small{display:block;font-weight:600;font-size:11.5px;color:var(--muted)}
+.nwk button[aria-pressed="true"].em{border-color:#52b54b;background:color-mix(in srgb,#52b54b 16%,var(--raised))}.nwk button[aria-pressed="true"].jf{border-color:#a46bff;background:color-mix(in srgb,#a46bff 16%,var(--raised))}.nwk button[aria-pressed="true"].px{border-color:#e5a00d;background:color-mix(in srgb,#e5a00d 16%,var(--raised))}
+.pzk{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.pzk button{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--raised);color:var(--text);font:inherit;font-weight:700;cursor:pointer}.pzk button[aria-pressed="true"]{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 16%,var(--raised))}
+.ks-b.px .ks-i{background:#e5a00d;clip-path:polygon(15% 0,55% 0,100% 50%,55% 100%,15% 100%,60% 50%)}
+.ks-b.px[aria-pressed="true"]{background:color-mix(in srgb,#e5a00d 22%,transparent);color:#f6c453;box-shadow:inset 0 0 0 1px #e5a00d}
+body.px #main{box-shadow:inset 0 3px 0 #e5a00d}
+.kp.px i{background:#e5a00d;clip-path:polygon(15% 0,55% 0,100% 50%,55% 100%,15% 100%,60% 50%)}
+.pxmode{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 12px}
+.pxmode label{cursor:pointer}.pxmode input{position:absolute;opacity:0;pointer-events:none}
+.pxmode label>span{display:flex;gap:10px;align-items:flex-start;height:100%;padding:12px 14px;border-radius:16px;border:1.5px solid var(--line);background:var(--raised)}
+.pxmode label>span>span{display:block;padding:0;border:0;background:none}.pxmode b{display:block}.pxmode small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}.pxmode em{font-style:normal;font-size:22px}
+.ksw.ksw3 .ks-b{padding-left:2px;padding-right:2px;gap:4px;font-size:12.5px;min-width:0;letter-spacing:-.01em}.ksw.ksw3 .ks-i{width:12px;height:12px}
+.pxmode input:checked+span{border-color:#e5a00d;background:color-mix(in srgb,#e5a00d 14%,var(--raised));box-shadow:0 8px 22px -14px #e5a00d}
+.pxnote{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,#e5a00d 10%,transparent);border:1px solid color-mix(in srgb,#e5a00d 35%,transparent);font-size:13.5px}
+.flag.pxw{color:#f6c453;border-color:color-mix(in srgb,#e5a00d 45%,transparent);background:color-mix(in srgb,#e5a00d 12%,transparent)}
+@media (max-width:560px){.pxmode{grid-template-columns:1fr}}
 .ksw.ksw-m{display:none}@media (max-width:860px){.ksw.ksw-m{display:flex;margin:0 0 14px}}
 .kpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.kpick input{position:absolute;opacity:0;pointer-events:none}
 .kp{display:flex;flex-direction:column;align-items:center;gap:3px;padding:14px 8px;border-radius:14px;border:1px solid var(--line);background:var(--raised);cursor:pointer;transition:border-color .15s,box-shadow .15s}
@@ -2212,6 +2272,27 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
   .gfeat{gap:6px}.gfeat li{padding:6px 10px!important}
 }
 @media (min-height:860px) and (max-width:599px){#gate .gwrap{justify-content:center}}
+/* Barra de arriba del móvil (v196): cristal, color de la plataforma y reloj en cápsula */
+body{--pc:var(--brand,#3fa9f5)} body.jf{--pc:#a46bff} body.px{--pc:#e5a00d}
+@media (max-width:860px){
+  button.brand.topbar{min-height:60px;padding:9px 14px;gap:11px;border-bottom:0;border-radius:0 0 22px 22px;
+    background:linear-gradient(120deg,color-mix(in srgb,var(--pc) 16%,var(--surface)),color-mix(in srgb,#a46bff 10%,var(--surface)) 70%);
+    backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);
+    box-shadow:0 10px 30px -18px color-mix(in srgb,var(--pc) 70%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--pc) 35%,transparent)}
+  .topbar .logo{width:38px;height:38px;border-radius:50%;box-shadow:0 0 0 2px color-mix(in srgb,var(--pc) 70%,transparent),0 6px 16px -6px var(--pc)}
+  .topname{display:flex;flex-direction:column;min-width:0;line-height:1.1}
+  .topname b{color:var(--text);font-size:18px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+  .topname .sub{font-size:11.5px;font-weight:700;color:color-mix(in srgb,var(--pc) 75%,var(--text));letter-spacing:.02em}
+  .topbar .topclock{padding:5px 11px;border-radius:14px;background:color-mix(in srgb,var(--surface) 55%,transparent);border:1px solid color-mix(in srgb,var(--pc) 30%,var(--line));text-align:center;min-width:78px}
+  .topbar .topclock b{font-size:17px;font-weight:800;letter-spacing:.02em}
+  .topbar .topclock span{display:block;font-size:10.5px;font-weight:600;text-transform:capitalize}
+  .qsm,.newsm{top:11px;width:40px;height:40px;border-radius:50%;border:1px solid color-mix(in srgb,var(--pc) 35%,var(--line));
+    background:color-mix(in srgb,var(--surface) 60%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 6px 16px -10px var(--pc)}
+  .qsm{right:108px}.newsm{right:156px}
+  .qsm .ic{width:19px;height:19px}
+  .newsm .newsdot{top:4px;right:4px}
+}
+@media (max-width:380px){ button.brand.topbar .topname .sub{display:none} .topbar .topclock{min-width:66px;padding:5px 8px} .qsm{right:94px}.newsm{right:140px} }
 </style>
 </head>
 <body>
@@ -2272,7 +2353,7 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
       <button type="button" class="ib plain" data-act="logout" aria-label="Cerrar sesión" title="Cerrar sesión"></button>
     </div>
   </aside>
-  <button type="button" class="brand topbar" data-act="home" title="Ir a la lista de clientes" aria-label="Ir a la lista de clientes"><span class="logo"></span><b class="brand-name">Concha</b><span class="topclock"><b data-clock="hm">--:--</b><span data-clock="short"></span></span></button>
+  <button type="button" class="brand topbar" data-act="home" title="Ir a la lista de clientes" aria-label="Ir a la lista de clientes"><span class="logo"></span><span class="topname"><b class="brand-name">Concha</b><span class="sub">Cuentas Emby</span></span><span class="topclock"><b data-clock="hm">--:--</b><span data-clock="short"></span></span></button>
   <button type="button" class="newsm" data-act="news" aria-label="Novedades del panel" title="Novedades del panel">✨<i class="newsdot" hidden></i></button>
   <button type="button" class="qsm" data-act="qs" aria-label="Buscar opciones, clientes o vendedores"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg></button>
   <main id="main"></main>
@@ -2329,7 +2410,7 @@ async function api(method, url, body, opt) {
 let toastTimer;
 function toast(msg, bad) {
   const t = $('#toast');
-  t.textContent = kindTab() === 'jellyfin' ? String(msg).replace(/\bEmby\b/g, 'Jellyfin') : msg; t.className = bad ? 'bad' : ''; t.hidden = false;
+  t.textContent = kindTab() !== 'emby' ? String(msg).replace(/\bEmby\b/g, KIND_NAME[kindTab()]) : msg; t.className = bad ? 'bad' : ''; t.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, bad ? 6000 : 3200);
 }
 
@@ -2432,12 +2513,12 @@ function navGroups() {
   // 🖥️ Servidores
   const srv = [];
   if (canDo('viewServers')) srv.push({ v: 'servidores', t: 'Servidores', i: 'server' }, { v: 'estado', t: 'Estado del servidor', i: 'chart' });
-  if (staff() && canDo('servers') && kindTab() !== 'jellyfin') srv.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' }); // ajuste que solo tiene Emby
+  if (staff() && canDo('servers') && kindTab() === 'emby') srv.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' }); // ajuste que solo tiene Emby
   // 💬 Mensajes
   const msg = [
     { v: 'mensajecli', t: 'A los clientes', i: 'send' },
     { v: 'avisos', t: 'Avisos al caducar', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length },
-    { v: 'avisotv', t: 'Aviso en la tele', i: 'tv' },
+    ...(isPlexTab() ? [] : [{ v: 'avisotv', t: 'Aviso en la tele', i: 'tv' }]),
     { v: 'plantillas', t: sys ? 'Plantillas' : 'Mis mensajes', i: 'msg' }];
   let g = [
     { k: 'ini', items: [{ v: 'resumen', t: 'Resumen', i: 'grid' }] },
@@ -2526,7 +2607,8 @@ const planText = (c) => `${c.screens ? plural(c.screens, 'pantalla', 'pantallas'
 const live = () => S.d.clients.filter((c) => c.status !== 'trash');
 const trash = () => S.d.clients.filter((c) => c.status === 'trash');
 const byExpiry = (a, b) => (a.expiresAt || a.expires).localeCompare(b.expiresAt || b.expires) || a.panelName.localeCompare(b.panelName);
-const priceOf = (m, s) => (S.d.settings.prices[m] || {})[s];
+const priceTab = (k) => { const kk = k || kindTab(), t = kk !== 'emby' && S.d.settings.pricesBy && S.d.settings.pricesBy[kk]; return t || S.d.settings.prices; };
+const priceOf = (m, s, k) => (priceTab(k)[m] || {})[s];
 function canManage(u) {
   const m = me();
   if (u.id === m.id) return false;
@@ -2696,21 +2778,31 @@ async function uiCheckNow() {
    Si lo hay, cada pestaña ve solo sus servidores, sus clientes y sus movimientos. */
 /* El servidor ya solo manda lo que cada usuario puede vender. Si hay de los dos tipos, salen las pestañas;
    si solo hay de uno (por ejemplo, un vendedor solo de Jellyfin), se ve ese, sin pestañas. */
-const kindsHere = () => new Set(((S.dAll || {}).servers || []).map((x) => (x.kind === 'jellyfin' ? 'jellyfin' : 'emby')));
+const KIND_OF = (x) => (x && x.kind === 'jellyfin' ? 'jellyfin' : x && x.kind === 'plex' ? 'plex' : 'emby');
+const KIND_NAME = { emby: 'Emby', jellyfin: 'Jellyfin', plex: 'Plex' };
+const KIND_CLS = { emby: 'em', jellyfin: 'jf', plex: 'px' };
+/** Logo pequeño de la plataforma (el mismo en todo el panel) */
+const kIco = (k) => `<i class="kico ${KIND_CLS[k] || 'em'}" title="${KIND_NAME[k] || 'Emby'}" aria-hidden="true"></i>`;
+const kindOfSrv = (id) => KIND_OF(((S.dAll || S.d || {}).servers || []).find((x) => x.id === id));
+const multiKind = () => kindsHere().size > 1;
+const kindsHere = () => new Set(((S.dAll || {}).servers || []).map(KIND_OF));
 const hasJf = () => kindsHere().size > 1;
 /** Lo que incluye la licencia de este panel (Emby, Jellyfin o los dos) */
 const licKinds = () => { const k = (S.dAll || S.d || {}).kinds; return Array.isArray(k) && k.length ? k : ['emby', 'jellyfin']; };
 const jfOnly = () => licKinds().length === 1 && licKinds()[0] === 'jellyfin';
 function kindTab() {
-  if (!hasJf()) return kindsHere().has('jellyfin') || jfOnly() ? 'jellyfin' : 'emby';
+  const ks = kindsHere();
+  if (!hasJf()) return ks.has('plex') ? 'plex' : ks.has('jellyfin') || jfOnly() ? 'jellyfin' : 'emby';
   if (!S.tab) { try { S.tab = localStorage.getItem('concha_tab') || 'emby'; } catch (e) { S.tab = 'emby'; } }
-  return S.tab === 'jellyfin' ? 'jellyfin' : 'emby';
+  return ks.has(S.tab) ? S.tab : ks.has('emby') ? 'emby' : [...ks][0];
 }
+const isPlexTab = () => kindTab() === 'plex';
 function kindView(d) {
   S.dAll = d;
-  if (!d.servers.some((x) => x.kind === 'jellyfin')) { document.body.classList.toggle('jf', jfOnly()); return d; }
-  if (!hasJf()) { document.body.classList.add('jf'); return d; } // solo Jellyfin: todo es suyo
-  const k = kindTab(), mine = (x) => (x.kind || 'emby') === k;
+  if (!d.servers.some((x) => x.kind === 'jellyfin' || x.kind === 'plex')) { document.body.classList.toggle('jf', jfOnly()); document.body.classList.remove('px'); return d; }
+  if (!hasJf()) { const k0 = kindTab(); document.body.classList.toggle('jf', k0 === 'jellyfin'); document.body.classList.toggle('px', k0 === 'plex'); return d; } // de un solo tipo: todo es suyo
+  const k = kindTab(), mine = (x) => KIND_OF(x) === k;
+  document.body.classList.toggle('px', k === 'plex');
   const ids = new Set(d.servers.filter(mine).map((x) => x.id));
   const other = new Set(d.clients.filter((c) => !ids.has(c.serverId)).map((c) => c.id));
   document.body.classList.toggle('jf', k === 'jellyfin');
@@ -2718,10 +2810,11 @@ function kindView(d) {
 }
 /** En la pestaña Jellyfin, los textos que dicen «Emby» pasan a decir «Jellyfin» (en Emby no se toca nada) */
 function jfWords(root) {
-  if (!root || kindTab() !== 'jellyfin') return;
+  const word = KIND_NAME[kindTab()];
+  if (!root || word === 'Emby') return;
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.parentElement && (n.parentElement.closest('.ksw') || n.parentElement.closest('textarea') || n.parentElement.closest('.nojf')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
-  for (let n = w.nextNode(); n; n = w.nextNode()) if (/Emby/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/\bEmby\b/g, 'Jellyfin');
-  root.querySelectorAll('[placeholder*="Emby"],[title*="Emby"],[aria-label*="Emby"]').forEach((e) => ['placeholder', 'title', 'aria-label'].forEach((a) => { const v = e.getAttribute(a); if (v) e.setAttribute(a, v.replace(/\bEmby\b/g, 'Jellyfin')); }));
+  for (let n = w.nextNode(); n; n = w.nextNode()) if (/Emby/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/\bEmby\b/g, word);
+  root.querySelectorAll('[placeholder*="Emby"],[title*="Emby"],[aria-label*="Emby"]').forEach((e) => ['placeholder', 'title', 'aria-label'].forEach((a) => { const v = e.getAttribute(a); if (v) e.setAttribute(a, v.replace(/\bEmby\b/g, word)); }));
 }
 
 /* ---------- Formularios con color: pasos numerados, iconos, botones en vez de listas cortas ---------- */
@@ -2819,22 +2912,23 @@ let jfObs = null, jfRaf = 0;
 function jfWatch() {
   if (jfObs || typeof MutationObserver === 'undefined') return;
   jfObs = new MutationObserver(() => {
-    if (jfRaf || kindTab() !== 'jellyfin') return;
+    if (jfRaf || kindTab() === 'emby') return;
     jfRaf = requestAnimationFrame(() => { jfRaf = 0; jfWords($('#main')); jfWords($('#nav')); if (dlg.open) jfWords(dlgForm); const tp = document.getElementById('tpop'); if (tp) jfWords(tp); });
   });
   jfObs.observe(document.body, { childList: true, subtree: true });
 }
 function kindSwitchHtml() {
   if (!hasJf()) return '';
-  const k = kindTab(), b = (v, t, cls) => `<button type="button" class="ks-b ${cls}" data-act="kind" data-k="${v}" aria-pressed="${k === v}"><span class="ks-i"></span>${t}</button>`;
-  return `<div class="ksw" role="group" aria-label="Emby o Jellyfin">${b('emby', 'Emby', 'em')}${b('jellyfin', 'Jellyfin', 'jf')}</div>`;
+  const k = kindTab(), ks = kindsHere(), all = (S.dAll || S.d), cnt = (v) => all.clients.filter((c) => c.status !== 'trash' && kindOfSrv(c.serverId) === v).length;
+  const b = (v, t, cls) => (ks.has(v) ? `<button type="button" class="ks-b ${cls}" data-act="kind" data-k="${v}" aria-pressed="${k === v}" title="${cnt(v)} cuentas en ${t}"><span class="ks-i"></span>${t}<span class="ks-n">${cnt(v)}</span></button>` : '');
+  return `<div class="ksw ksw-top${ks.size > 2 ? ' ksw3' : ''}" role="group" aria-label="Plataforma">${b('emby', 'Emby', 'em')}${b('jellyfin', 'Jellyfin', 'jf')}${b('plex', 'Plex', 'px')}</div>`;
 }
 function setKind(k) {
-  S.tab = k === 'jellyfin' ? 'jellyfin' : 'emby';
+  S.tab = k === 'jellyfin' || k === 'plex' ? k : 'emby';
   try { localStorage.setItem('concha_tab', S.tab); } catch (e) { /* nada */ }
   S.d = kindView(S.dAll); S.mon.data = null; S.live = null; S.liveAt = 0; S.fServer = 0; S.mon.srv = 0; S.page = 1; S.sel = new Set();
   render(); window.scrollTo(0, 0);
-  toast(S.tab === 'jellyfin' ? 'Estás en Jellyfin' : 'Estás en Emby');
+  toast('Estás en ' + KIND_NAME[S.tab]);
 }
 /** Sesiones solo de los servidores de la pestaña abierta */
 function kindSessions(list, byName) {
@@ -2856,7 +2950,7 @@ function render() {
     const cur = x.v === S.view && (!x.f || x.f === listF);
     return `<button type="button" data-view="${x.v}"${x.f ? ` data-filter="${x.f}"` : ''}${cur ? ' aria-current="page"' : ''}>${ic(x.i)}<span class="t">${x.t}</span>${x.n ? `<span class="n${x.hot ? ' hot' : ''}">${x.n}</span>` : ''}</button>`;
   };
-  $('#nav').innerHTML = kindSwitchHtml() + navGroups().map((g) => {
+  $('#nav').innerHTML = navGroups().map((g) => { // el selector de plataforma va solo arriba (antes salía dos veces)
     if (!g.t) return g.items.map(item).join('');
     const here = g.items.some((x) => x.v === S.view && (!x.f || x.f === listF));
     const open = NAV_OPEN.has(g.k);
@@ -2873,14 +2967,14 @@ function render() {
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
-  try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml().replace('class="ksw"', 'class="ksw ksw-m"') : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() === 'jellyfin') jfWatch(); bzAll($('#main')); }
+  try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml() : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() !== 'emby') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
     $('#main').innerHTML = `<div class="panel pad" style="max-width:720px"><h2>Esta pantalla no se ha podido mostrar</h2><p class="err" style="max-width:none;margin:10px 0">${esc(ex && ex.message)}</p>
       <p class="muted small">Haz una captura de este mensaje y mándasela a quien te mantiene el panel. El resto del panel sigue funcionando.</p>
       <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" data-view="cuentas" data-filter="all">Ir a Clientes</button>${S.view !== 'resumen' ? '<button class="btn" data-view="resumen">Ir al Resumen</button>' : ''}</div></div>`;
   }
-  document.querySelectorAll('.brand .sub').forEach((x) => { if (/\b(Emby|Jellyfin)\b/.test(x.textContent)) x.textContent = x.textContent.replace(/\b(Emby|Jellyfin)\b/g, kindTab() === 'jellyfin' ? 'Jellyfin' : 'Emby'); });
+  document.querySelectorAll('.brand .sub').forEach((x) => { if (/\b(Emby|Jellyfin|Plex)\b/.test(x.textContent)) x.textContent = x.textContent.replace(/\b(Emby|Jellyfin|Plex)\b/g, KIND_NAME[kindTab()]); });
   if ((S.view === 'pagos' || S.view === 'creditos') && !S.pay && !S.payBusy) loadPay();
   if (S.view === 'seguridad' && !S.sec && !S.secBusy) loadSec();
   if (S.view === 'copias' && !S.bk && !S.bkBusy) loadBk();
@@ -3209,7 +3303,7 @@ function clientCard(c) {
   const mine = c.ownerId === me().id, ren = (S.d.renewals || {})[c.id] || 0;
   const shared = (S.d.sharedIds || []).includes(c.id);
   // Avisos que solo salen cuando toca
-  const flags = [shared ? `<button type="button" class="flag warn" data-act="m-conn" data-id="${c.id}">${ic('users')}Parece compartida</button>` : '', c.paid === false ? `<span class="flag bad">${ic('wallet')}Cobro pendiente</span>` : ''].filter(Boolean).join('');
+  const flags = [shared ? `<button type="button" class="flag warn" data-act="m-conn" data-id="${c.id}">${ic('users')}Parece compartida</button>` : '', c.paid === false ? `<span class="flag bad">${ic('wallet')}Cobro pendiente</span>` : '', c.plexPending ? `<span class="flag pxw" title="Le ha llegado un email de Plex: tiene que aceptar la invitación">📩 Invitación de Plex sin aceptar</span>` : ''].filter(Boolean).join('');
   const note = c.note ? `<div class="cnote">${ic('note')}<span>${esc(c.note.split('\n')[0].slice(0, 90))}</span></div>` : '';
   // Ficha abierta: solo lo que no se ve ya en la tarjeta
   const chip = (href, icon, label, cls = '') => href ? `<a class="cchip ${cls}" href="${href}" target="_blank" rel="noopener">${ic(icon)}${label}</a>` : `<span class="cchip ${cls}">${ic(icon)}${label}</span>`;
@@ -3229,7 +3323,16 @@ function clientCard(c) {
   const picked = S.sel.has(c.id);
   const ib = (act, icon, label, cls = '') => `<button type="button" class="ib ${cls}" data-act="${act}" data-id="${c.id}" title="${label}" aria-label="${label}: ${esc(c.panelName)}">${ic(icon)}</button>`;
   const renewLabel = c.demo ? 'Convertir en cuenta' : 'Extender';
-  return `<article class="ccard ${st}${picked ? ' picked' : ''}${mine || S.d.users.length < 2 ? '' : ' notmine'}">
+  // Bloque «cuándo vence» con barra y datos en recuadros (mismo estilo que la Papelera)
+  const dl = c.demo ? null : diff(c.expires, S.d.today), span = Math.max(30, (c.lastMonths || 1) * 30);
+  const wTxt = c.off ? '⏸️ Desactivada' : c.demo ? (st === 'demo' ? '🎁 Demo en curso' : '⏱️ Demo terminada') : dl < 0 ? `⛔ Caducó hace ${plural(-dl, 'día', 'días')}` : dl === 0 ? '🔥 Vence hoy' : dl === 1 ? '⏰ Vence mañana' : `${st === 'soon' ? '⏰' : '✅'} Vence en ${dl} días`;
+  const wDate = c.demo ? (c.expiresAt ? 'termina ' + fmtTs(c.expiresAt) : '') : fmt(c.expires);
+  const wPct = c.demo ? 50 : dl <= 0 ? 0 : Math.max(4, Math.min(100, Math.round((dl / span) * 100)));
+  const wBox = `<div class="cw"><div class="tr-wt"><b>${wTxt}</b><small>${wDate}</small></div>${c.demo ? '' : `<div class="cw-bar"><i style="width:${wPct}%"></i></div><small class="muted">${dl >= 0 ? `Le quedan ${leftText(c)}${c.lastMonths ? ' · plan de ' + plural(c.lastMonths, 'mes', 'meses') : ''}` : 'Renuévala para que vuelva a funcionar'}</small>`}</div>`;
+  const cfx = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
+  const wa2 = c.whatsapp ? waNum(c.whatsapp) : '';
+  const quick = `<div class="cq">${c.payLink ? `<button type="button" class="btn sm" data-act="m-paylink" data-id="${c.id}">💳 Enlace de pago</button>` : ''}${wa2 ? `<a class="btn sm" href="https://wa.me/${wa2}" target="_blank" rel="noopener">🟢 WhatsApp</a>` : ''}<button type="button" class="btn sm ghost" data-act="ficha" data-id="${c.id}">📇 Ficha</button></div>`;
+  return `<article class="ccard v2 ${st}${picked ? ' picked' : ''}${mine || S.d.users.length < 2 ? '' : ' notmine'}">
     <header>
       ${staff() ? `<input type="checkbox" class="pick" data-sel="${c.id}"${picked ? ' checked' : ''} aria-label="Seleccionar a ${esc(c.panelName)}">` : ''}
       <button type="button" class="cav st-${st} ccopy" data-act="c-copy" data-id="${c.id}" title="Copiar los datos de la cuenta" aria-label="Copiar los datos de ${esc(c.panelName)}">${esc((c.panelName || c.embyName || '?').trim().charAt(0).toUpperCase())}</button>
@@ -3237,12 +3340,10 @@ function clientCard(c) {
       <div class="hd">${ib('edit', 'edit', 'Editar')}${ib('renew', 'clock', renewLabel, 'pri')}${ib('more', 'more', 'Más opciones')}<button type="button" class="ib plain" data-act="toggle" data-id="${c.id}" aria-expanded="${open}" aria-label="${open ? 'Ocultar detalles' : 'Ver detalles'}" title="${open ? 'Ocultar detalles' : 'Ver detalles'}">${ic('chev')}</button></div>
     </header>
     <div class="kv">${ic('mail')}<em>Email:</em><span>${c.email ? esc(c.email) : '—'}</span></div>
-    <div class="kv">${ic('lock')}<em>Pass:</em><span>${c.password ? (shown ? esc(c.password) : '••••••••') : 'Contraseña no guardada'}</span>${c.password ? `<button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}" title="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}">${ic('eye')}</button>` : ''}</div>
-    <div class="foot">
-      <div class="tags">${tpTag(c, 'srv', `${ic('server')}${esc(serverName(c.serverId))}`, 'tag')}${tpTag(c, 'q', `${ic('box')}${c.quality ? Q[c.quality] : 'Bibliotecas propias'}`, 'tag q')}${tpTag(c, 'scr', `${ic('screen')}${c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite'}`, 'tag')}</div>
-      <span class="tag left ${st}" title="Tiempo restante">${ic('clock')}${leftText(c)}</span>
-    </div>
-    ${leftBar(c)}
+    <div class="kv">${ic('lock')}<em>Pass:</em><span>${c.password ? (shown ? esc(c.password) : '••••••••') : (S.d.servers.find((x) => x.id === c.serverId) || {}).kind === 'plex' ? 'La de su cuenta de Plex' : 'Contraseña no guardada'}</span>${c.password ? `<button type="button" class="linkbtn" data-act="pw" data-id="${c.id}" aria-label="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}" title="${shown ? 'Ocultar contraseña' : 'Ver contraseña'}">${ic('eye')}</button>` : ''}</div>
+    ${wBox}
+    <div class="cfx">${cfx('Pantallas', tpTag(c, 'scr', `${c.screens ? plural(c.screens, 'pantalla', 'pantallas') : 'Sin límite'}`, 'cfv'))}${cfx('Servidor', (multiKind() ? kIco(kindOfSrv(c.serverId)) : '') + tpTag(c, 'srv', esc(serverName(c.serverId)), 'cfv'))}${cfx('Contenido', tpTag(c, 'q', c.quality ? Q[c.quality] : 'Bibliotecas propias', 'cfv q'))}</div>
+    ${quick}
     ${canSame(c) ? (() => { const L = lastPlan(c); return `<button type="button" class="rsame" data-act="renew-same" data-id="${c.id}">⚡ <b>Renovar igual</b><span>${plural(L.m, 'mes', 'meses')} · ${plural(L.sc, 'pantalla', 'pantallas')} · ${priceOf(L.m, L.sc)} cr.</span></button>`; })() : ''}
     ${open && !liveOf(c) ? '' : `<div class="cline"><span data-live="${c.id}">${liveOf(c) || `${ic('signal')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span>`}</span></div>`}
     ${flags ? `<div class="flags">${flags}</div>` : ''}
@@ -3714,7 +3815,7 @@ function vCuentas() {
       </div>
     </div>` : '';
   const filters = vendorBox + sel('fServer', S.fServer, 'Todos los servidores', S.d.servers.map((x) => [x.id, x.name]));
-  const addBtns = `${staff() ? `<button class="cl-ib" data-act="import" title="Importar de Emby" aria-label="Importar de Emby">${ic('download')}</button>` : ''}<button class="cl-ib" data-act="demo" title="Nueva demo" aria-label="Nueva demo">${ic('timer')}</button><button class="cl-add" data-act="new" title="Nueva cuenta" aria-label="Nueva cuenta">${ic('plus')}<span>Nueva</span></button>`;
+  const addBtns = `${isPlexTab() ? `<button class="cl-ib" data-act="px-check" title="Comprobar invitaciones de Plex" aria-label="Comprobar invitaciones de Plex">📩</button>` : ''}${staff() ? `<button class="cl-ib" data-act="import" title="Importar de Emby" aria-label="Importar de Emby">${ic('download')}</button>` : ''}<button class="cl-ib" data-act="demo" title="Nueva demo" aria-label="Nueva demo">${ic('timer')}</button><button class="cl-add" data-act="new" title="Nueva cuenta" aria-label="Nueva cuenta">${ic('plus')}<span>Nueva</span></button>`;
   const sIcon = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg>';
   return `<div class="clv">` + (S.filter === 'all' ? listWelcome() : '') + head('Clientes Emby', 'Gestiona tus clientes y suscripciones Emby', addBtns) + ntiles() + `
   <div class="cl-tools">
@@ -3746,15 +3847,21 @@ function vNuevo(demo) {
     ? `<label class="f">Duración de la demo *<select name="hours" data-chip="dur">${options(hours, hours[0][0])}</select></label>`
     : `<label class="f">Duración *<select name="months">${options(MONTH_OPTS, 1)}</select></label>
       <label class="f">Pantallas *<select name="screens">${options(SCREEN_OPTS, 1)}</select></label>`;
-  return head(title, demo ? 'Crea una cuenta de prueba gratuita. Al cumplirse sus horas se desactiva sola.' : 'Crea la cuenta en el servidor Emby y la deja activa al momento.') + `
+  const kpick = multiKind() ? `<div class="nwk nojf" role="group" aria-label="Plataforma">${['emby', 'jellyfin', 'plex'].filter((k) => kindsHere().has(k)).map((k) => `<button type="button" class="${KIND_CLS[k]}" data-act="nw-kind" data-k="${k}" aria-pressed="${kindTab() === k}">${kIco(k)}<span>${KIND_NAME[k]}<small>${k === 'plex' ? 'con su cuenta de Plex' : 'usuario y contraseña'}</small></span></button>`).join('')}</div>` : '';
+  return head(title, demo ? 'Crea una cuenta de prueba gratuita. Al cumplirse sus horas se desactiva sola.' : 'Crea la cuenta en el servidor Emby y la deja activa al momento.') + kpick + `
   <form id="newClient" class="formpage"${demo ? ' data-demo="1"' : ''}>
     <div class="bzhero"><h2>👀 Así quedará ${demo ? 'la demo' : 'la cuenta'}</h2><p>Se rellena sola mientras escribes.</p><div class="bztk" id="nwTk" aria-live="polite"></div></div>
     <h2>La cuenta</h2>
+    ${isPlexTab() ? `<div class="pxmode" role="radiogroup" aria-label="Cuenta de Plex">
+      <label><input type="radio" name="plexNew" value="0" checked data-act="px-mode"><span><em>📩</em><span><b>Ya tiene cuenta de Plex</b><small>Le llega una invitación a su email y la acepta.</small></span></span></label>
+      <label><input type="radio" name="plexNew" value="1" data-act="px-mode"><span><em>✨</em><span><b>Crear su cuenta de Plex</b><small>El panel le crea la cuenta (email y contraseña) y la deja lista, sin invitación.</small></span></span></label></div>` : ''}
     <div class="row4">
       <label class="f">Nombre en el panel *<span class="inrow"><input name="panelName" required maxlength="80" autocomplete="off" placeholder="nombre_usuario">${gen('panelName', 'Generar un nombre')}</span></label>
-      <label class="f">Nombre en Emby *<span class="inrow"><input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" placeholder="user.12abc">${gen('embyName', 'Generar un usuario')}</span></label>
+      ${isPlexTab() ? `<label class="f">Email de Plex *<input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" inputmode="email" placeholder="email@ejemplo.com"><small class="muted" id="pxHint">Con este email se le invita a tu servidor.</small></label>
+      <label class="f" id="pxPw"><span id="pxPwT">Contraseña de su Plex <span class="muted">(opcional)</span></span><span class="inrow"><input name="password" autocomplete="off" placeholder="Si la pones, el panel acepta la invitación por él">${gen('password', 'Generar una contraseña')}</span><small class="muted" id="pxPwH">Sin contraseña, le llega la invitación a su email y la acepta él.</small></label>`
+    : `<label class="f">Nombre en Emby *<span class="inrow"><input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" placeholder="user.12abc">${gen('embyName', 'Generar un usuario')}</span></label>
       <label class="f">Contraseña *<span class="inrow"><input name="password" required minlength="4" autocomplete="off" placeholder="Contraseña">${gen('password', 'Generar una contraseña')}</span></label>
-      <label class="f">Email <span class="muted">(opcional)</span><span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span></label>
+      <label class="f">Email <span class="muted">(opcional)</span><span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span></label>`}
     </div>
     <h2>${demo ? 'La demo' : 'El plan'}</h2>
     <label class="f">Servidor *<select name="serverId"${srvs.length <= 8 ? ' data-chip="srv"' : ''}>${srvs.map((x) => `<option value="${x.id}"${x.full ? ' disabled' : ''}>${esc(x.name)}${x.full ? ' (lleno)' : ''}</option>`).join('')}</select></label>
@@ -4082,32 +4189,53 @@ function vCalendario() {
 
 function vPapelera(onlyDemos) {
   const g = S.d.settings;
-  const rows = trash().filter((c) => !onlyDemos || c.demo).sort((a, b) => (a.trashedAt || '').localeCompare(b.trashedAt || ''));
-  const sub = (g.purgeDays > 0
-    ? `Cuentas desactivadas en Emby. Conservan su historial y a los ${plural(g.purgeDays, 'día', 'días')} se borran de Emby para siempre.`
-    : 'Cuentas desactivadas en Emby. Conservan su historial y no se borran solas.') + ' Las demos terminadas se borran al día siguiente.';
+  const rows = trash().filter((c) => !onlyDemos || c.demo);
   const title = onlyDemos ? 'Demos vencidas' : 'Papelera';
-  if (onlyDemos) return head(title, 'Demos que ya cumplieron sus horas. Se borran de Emby al día siguiente, salvo que las conviertas en cuenta.') + (rows.length ? papeleraTable(rows) : '<div class="panel"><div class="empty">No hay demos vencidas.</div></div>');
-  if (!rows.length) return head(title, sub) + '<div class="panel"><div class="empty">La papelera está vacía.</div></div>';
+  const sub = onlyDemos ? 'Demos que ya cumplieron sus horas. Se borran al día siguiente, salvo que las conviertas en cuenta.'
+    : `Clientes que no renovaron. Siguen guardados con todo su historial${g.purgeDays > 0 ? ` y se borran del servidor a los ${plural(g.purgeDays, 'día', 'días')}` : ''}. ¡Aún estás a tiempo de recuperarlos!`;
+  if (!rows.length) return head(title, sub) + `<div class="tr-empty"><span>🧹</span><b>${onlyDemos ? 'No hay demos vencidas' : '¡La papelera está vacía!'}</b><small>${onlyDemos ? 'Cuando una demo termine, aparecerá aquí.' : 'Todos tus clientes están al día. 🎉'}</small></div>`;
   return head(title, sub) + papeleraTable(rows);
 }
+/* Papelera en tarjetas: quién es, cuánto lleva, cuándo se borra y botones para recuperarlo */
 function papeleraTable(rows) {
-  const g = S.d.settings;
-  return `<div class="panel"><table class="cards"><thead><tr><th>Cuenta</th><th>Motivo</th><th>En la papelera desde</th><th>Se borra</th><th class="r">Acciones</th></tr></thead><tbody>${rows.map((c) => {
-    const valid = !c.demo && diff(c.expires, S.d.today) >= 0;
-    const del = c.demo ? fmt(addDays(c.trashedAt, 1)) : (g.purgeDays > 0 && c.trashedAt ? fmt(addDays(c.trashedAt, g.purgeDays)) : 'Nunca');
-    const sub2 = [esc(c.embyName)];
-    if (S.d.users.length > 1 && c.ownerId !== me().id) sub2.push('de ' + esc(userName(c.ownerId)));
-    return `<tr>
-      <td><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">${sub2.join(', ')}</div></td>
-      <td>${esc(c.trashReason || '')}${c.demo ? '' : `<div class="small muted">${valid ? 'pagado hasta el ' + fmt(c.expires) : 'venció el ' + fmt(c.expires)}</div>`}${c.lastError ? `<div class="err">${esc(c.lastError)}</div>` : ''}</td>
-      <td>${fmt(c.trashedAt)}</td><td>${del}</td>
-      <td class="r"><div class="acts">
-        ${valid ? `<button class="btn sm primary" data-act="restore" data-id="${c.id}">Restaurar</button>` : `<button class="btn sm primary" data-act="renew" data-id="${c.id}">${c.demo ? 'Convertir en cuenta' : 'Extender'}</button>`}
-        ${c.demo ? '' : `<button class="btn sm" data-act="del-refund" data-id="${c.id}">Eliminar y devolver</button>`}
-        ${staff() ? `<button class="btn sm ghost" data-act="delete" data-id="${c.id}">Eliminar ya</button>` : ''}
-      </div></td></tr>`;
-  }).join('')}</tbody></table></div>`;
+  const g = S.d.settings, today = S.d.today;
+  const info = (c) => {
+    const tAt = c.trashedAt ? String(c.trashedAt).slice(0, 10) : '';
+    const delAt = c.demo ? (tAt ? addDays(tAt, 1) : null) : (g.purgeDays > 0 && tAt ? addDays(tAt, g.purgeDays) : null);
+    const left = delAt ? diff(delAt, today) : null, inTrash = tAt ? Math.max(0, -diff(tAt, today)) : 0;
+    const total = c.demo ? 1 : g.purgeDays || 0, pct = total ? Math.min(100, Math.round((inTrash / total) * 100)) : 0;
+    return { delAt, left, inTrash, pct, valid: !c.demo && diff(c.expires, today) >= 0, ago: c.demo ? 0 : Math.max(0, -diff(c.expires, today)) };
+  };
+  const list = rows.map((c) => ({ c, x: info(c) })).sort((p, q) => (p.x.left === null ? 1e9 : p.x.left) - (q.x.left === null ? 1e9 : q.x.left));
+  const soon = list.filter((r) => r.x.left !== null && r.x.left <= 5).length, bot = list.filter((r) => r.c.tgLinked).length, demos = list.filter((r) => r.c.demo).length;
+  const tile = (n, t, col, e) => `<div class="tr-k" style="--k:${col}"><span>${e}</span><b>${n}</b><small>${t}</small></div>`;
+  const tiles = `<div class="tr-ks">${tile(list.length, list.length === 1 ? 'cliente en la papelera' : 'clientes en la papelera', '#6366f1', '🗂️')}${tile(soon, 'se borran en 5 días o menos', '#f97316', '⏳')}${tile(bot, 'con el bot: puedes escribirles', '#0ea5e9', '📲')}${demos ? tile(demos, demos === 1 ? 'demo terminada' : 'demos terminadas', '#a855f7', '🎁') : ''}</div>`;
+  const cards = list.map(({ c, x }) => {
+    const col = c.demo ? '#a855f7' : x.left !== null && x.left <= 5 ? '#f97316' : '#6366f1';
+    const owner = S.d.users.length > 1 && c.ownerId !== me().id ? userName(c.ownerId) : '';
+    const chip = c.demo ? '🎁 Demo terminada' : x.valid ? `✅ Pagado hasta el ${fmt(c.expires)}` : `⛔ Caducó hace ${plural(x.ago, 'día', 'días')}`;
+    const when = x.left === null ? '♾️ No se borra sola' : x.left <= 0 ? '🔥 Se borra hoy' : x.left === 1 ? '⏰ Se borra mañana' : `🗓️ Se borra en ${x.left} días`;
+    const fact = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
+    const wa = c.whatsapp ? waNum(c.whatsapp) : '';
+    return `<article class="tr-c" style="--k:${col}">
+      <header><button type="button" class="tr-av" data-act="ficha" data-id="${c.id}" title="Abrir su ficha">${esc((c.panelName || c.embyName || '?').trim().charAt(0).toUpperCase())}</button>
+        <div class="tr-who"><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button>
+          <div class="small muted">@${esc(c.embyName)}${owner ? ` · de <b>${esc(owner)}</b>` : ''}${c.tgLinked ? ' · <span title="Tiene el bot de Telegram">📲 bot</span>' : ''}</div></div>
+        <span class="tr-chip">${chip}</span></header>
+      <div class="tr-when"><div class="tr-wt"><b>${when}</b><small>${x.delAt ? fmt(x.delAt) : ''}</small></div>${x.delAt ? `<div class="tr-bar"><i style="width:${Math.max(4, x.pct)}%"></i></div><small class="muted">Lleva ${plural(x.inTrash, 'día', 'días')} en la papelera</small>` : ''}</div>
+      <div class="tr-f">${fact(c.demo ? 'Terminó' : 'Venció', fmt(String(c.demo && c.expiresAt ? c.expiresAt : c.expires).slice(0, 10)))}${fact('En papelera', c.trashedAt ? fmt(String(c.trashedAt).slice(0, 10)) : '—')}${fact('Pantallas', c.screens || 1)}${fact('Servidor', (multiKind() ? kIco(kindOfSrv(c.serverId)) : '') + esc(serverName(c.serverId)))}${c.createdAt ? fact('Cliente desde', fmt(String(c.createdAt).slice(0, 10))) : ''}${c.lastMonths ? fact('Último plan', plural(c.lastMonths, 'mes', 'meses')) : ''}</div>
+      ${c.trashReason ? `<p class="tr-why">📝 ${esc(c.trashReason)}</p>` : ''}${c.note ? `<p class="tr-why">💬 ${esc(c.note)}</p>` : ''}${contactHtml(c)}${c.lastError ? `<div class="err">${esc(c.lastError)}</div>` : ''}
+      <div class="tr-acts">
+        ${x.valid ? `<button class="btn primary" data-act="restore" data-id="${c.id}">♻️ Restaurar</button>` : `<button class="btn primary" data-act="renew" data-id="${c.id}">${c.demo ? '🚀 Convertir en cuenta' : '🔄 Renovar y recuperar'}</button>`}
+        ${c.payLink ? `<button class="btn" data-act="m-paylink" data-id="${c.id}">💳 Enlace de pago</button>` : ''}
+        ${wa ? `<a class="btn" href="https://wa.me/${wa}" target="_blank" rel="noopener">🟢 WhatsApp</a>` : ''}
+        <button class="btn ghost" data-act="ficha" data-id="${c.id}">📇 Ficha</button>
+        <span class="tr-sp"></span>
+        ${c.demo ? '' : `<button class="btn ghost sm" data-act="del-refund" data-id="${c.id}">Eliminar y devolver</button>`}
+        ${staff() ? `<button class="btn sm danger" data-act="delete" data-id="${c.id}">Eliminar ya</button>` : ''}
+      </div></article>`;
+  }).join('');
+  return tiles + `<div class="tr-grid">${cards}</div>`;
 }
 
 function vDirecto() { return head('En directo', 'Lo que están reproduciendo tus cuentas ahora. Se actualiza cada 15 segundos.') + `<div id="live">${liveHtml()}</div>`; }
@@ -4278,7 +4406,7 @@ function monCard(x) {
   const who = x.client && x.client !== x.user ? `<b>${esc(x.client)}</b><small>${esc(x.user)}${x.demo ? ' · demo' : ''}</small>` : `<b>${esc(x.user)}</b>${x.demo ? '<small>demo</small>' : x.client ? '' : '<small>no está en el panel</small>'}`;
   return `<article class="mc${x.paused ? ' paused' : ''}" style="--c:${c}">
     <div class="pst"><span class="ini">${esc((x.title || '?').trim().charAt(0).toUpperCase())}</span>${x.poster && !MON_MISS.has(x.serverId + ':' + x.poster) ? `<img loading="lazy" alt="" data-k="${x.serverId}:${esc(x.poster)}" src="/api/poster/${x.serverId}/${encodeURIComponent(x.poster)}" onerror="MON_MISS.add(this.dataset.k);this.remove()">` : ''}
-      <span class="sv">${esc(x.server)}</span>${kind ? `<span class="kd">${kind}</span>` : ''}${x.year ? `<span class="yr">${esc(x.year)}</span>` : ''}</div>
+      <span class="sv">${multiKind() && x.serverId ? kIco(kindOfSrv(x.serverId)) : ''}${esc(x.server)}</span>${kind ? `<span class="kd">${kind}</span>` : ''}${x.year ? `<span class="yr">${esc(x.year)}</span>` : ''}</div>
     <div class="pbar"><i style="width:${pct}%"></i></div>
     <div class="bd">
       <div class="tm"><span>${hms(x.position)} (${pct}%)</span><span>${x.duration ? hms(x.duration) : ''}</span></div>
@@ -4802,8 +4930,9 @@ function qsResults(q) {
   const opts = idx.map((x) => [x, score(x)]).filter(([, sc]) => sc).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([x]) => x);
   const order = []; opts.forEach((x) => { if (!order.includes(x.kind)) order.push(x.kind); }); opts.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind)); // sin títulos repetidos
   // Clientes y vendedores por nombre, usuario, correo o teléfono
-  const cl = noCli() ? [] : S.d.clients.filter((c) => words.every((w) => norm(`${c.panelName} ${c.embyName} ${c.email || ''} ${c.whatsapp || ''} ${c.telegram || ''}`).includes(w))).slice(0, 6)
-    .map((c) => ({ kind: 'Cliente', icon: c.demo ? 'timer' : 'user', label: c.panelName, sub: `${c.embyName} · ${STAGE[stage(c)]}${S.d.servers.length > 1 ? ' · ' + serverName(c.serverId) : ''}`, client: c.id }));
+  const pool = multiKind() ? (S.dAll || S.d).clients : S.d.clients; // con varias plataformas, busca en todas
+  const cl = noCli() ? [] : pool.filter((c) => words.every((w) => norm(`${c.panelName} ${c.embyName} ${c.email || ''} ${c.whatsapp || ''} ${c.telegram || ''}`).includes(w))).slice(0, 8)
+    .map((c) => ({ kind: 'Cliente', icon: c.demo ? 'timer' : 'user', label: c.panelName, sub: `${multiKind() ? KIND_NAME[kindOfSrv(c.serverId)] + ' · ' : ''}${c.embyName} · ${STAGE[stage(c)]}${(S.dAll || S.d).servers.length > 1 ? ' · ' + ((((S.dAll || S.d).servers.find((x) => x.id === c.serverId)) || {}).name || '') : ''}`, client: c.id }));
   const us = S.d.users.filter((u) => u.id !== me().id && words.every((w) => norm(`${u.name} ${u.username} ${u.email || ''}`).includes(w))).slice(0, 4)
     .map((u) => ({ kind: 'Vendedor', icon: 'users', label: u.name, sub: `@${u.username} · ${ROLE[u.role]}`, user: u.id }));
   return [...opts, ...cl, ...us];
@@ -4842,7 +4971,9 @@ function qsGo(i) {
   if (x.view) { const g = navGroups().find((gr) => gr.items.some((it) => it.v === x.view)); if (g && g.k) NAV_OPEN.add(g.k); fakeClick({ view: x.view, filter: x.filter }); if (x.find) setTimeout(() => qsFind(x.find), 350); else if (x.kind === 'Ajuste') window.scrollTo(0, 0); return; }
   if (x.act === 'qs-bcast') { fakeClick({ view: 'monitor' }); setTimeout(dBroadcast, 50); return; }
   if (x.act) { fakeClick({ act: x.act }); return; }
-  if (x.client) { const c = S.d.clients.find((k) => k.id === x.client); if (c) { if (c.status === 'trash') { fakeClick({ view: 'papelera' }); return; } dEdit(c); } return; }
+  if (x.client) {
+    if (!S.d.clients.some((k) => k.id === x.client)) { const c0 = (S.dAll || S.d).clients.find((k) => k.id === x.client); if (c0) setKind(kindOfSrv(c0.serverId)); } // está en otra plataforma: se cambia sola
+    const c = S.d.clients.find((k) => k.id === x.client); if (c) { if (c.status === 'trash') { fakeClick({ view: 'papelera' }); return; } dEdit(c); } return; }
   if (x.user) { const u = S.d.users.find((k) => k.id === x.user); if (u) dUserMore(u); }
 }
 
@@ -5233,8 +5364,8 @@ function vVendedor() {
     ${chk('allowNegative', u && u.allowNegative, 'Permitir créditos negativos (puede seguir vendiendo sin saldo y te lo debe)')}
     ${chk('allowDemos', u ? u.allowDemos : true, 'Permitir crear demos gratuitas')}
     ${isSuper() && licKinds().length > 1 ? `<h2 class="sep">Qué puede vender</h2>
-    <div class="kpick kpick-v"><label><input type="checkbox" name="plat" value="emby"${!u || (u.platforms || ['emby']).includes('emby') ? ' checked' : ''}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="checkbox" name="plat" value="jellyfin"${u && (u.platforms || []).includes('jellyfin') ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Su propia pestaña</small></span></label></div>
-    <p class="muted small" style="margin:-6px 0 12px">Marca uno o los dos. Solo verá los servidores y clientes de lo que marques. Un subreseller usa lo mismo que su reseller.</p>` : ''}
+    <div class="kpick kpick-v"><label><input type="checkbox" name="plat" value="emby"${!u || (u.platforms || ['emby']).includes('emby') ? ' checked' : ''}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="checkbox" name="plat" value="jellyfin"${u && (u.platforms || []).includes('jellyfin') ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Su propia pestaña</small></span></label>${licKinds().includes('plex') ? `<label><input type="checkbox" name="plat" value="plex"${u && (u.platforms || []).includes('plex') ? ' checked' : ''}><span class="kp px"><i></i><b>Plex</b><small>Su propia pestaña</small></span></label>` : ''}</div>
+    <p class="muted small" style="margin:-6px 0 12px">Marca los que quieras. Solo verá los servidores y clientes de lo que marques. Un subreseller usa lo mismo que su reseller.</p>` : ''}
     <h2 class="sep">Servidores disponibles</h2>
     ${(S.dAll || S.d).servers.length ? (S.dAll || S.d).servers.map((x) => chk('srv', u && u.serverIds.includes(x.id), esc(x.name)).replace('name="srv"', `name="srv" value="${x.id}"`)).join('') + '<p class="muted small" style="margin-top:6px">Si no marcas ninguno, puede crear cuentas en todos.</p>'
       : '<p class="muted small">Todavía no hay servidores conectados.</p>'}
@@ -5519,7 +5650,7 @@ function vServidores() {
     const st = !h ? '<span class="sv-on wait"><i></i>Comprobando</span>' : down ? `<span class="sv-on bad"><i></i>Sin conexión</span>` : `<span class="sv-on"><i></i>ON${h.version ? ' · v' + esc(h.version) : ''}</span>`;
     const pk = ['basico', 'k4'].filter((k) => s.ready[k]).length;
     return `<div class="sv-card${s.off ? ' paused' : ''}${down ? ' down' : ''}">
-      <div class="sv-id"><button type="button" class="sf-link sv-name" data-act="srv-open" data-id="${s.id}">${esc(s.name)}</button>${st}${s.off ? '<span class="pillst mid">Pausado</span>' : ''}
+      <div class="sv-id"><button type="button" class="sf-link sv-name" data-act="srv-open" data-id="${s.id}">${kIco(KIND_OF(s))}${esc(s.name)}</button>${st}${s.off ? '<span class="pillst mid">Pausado</span>' : ''}
         <div class="sv-url" title="${esc(s.url || '')}">${esc(s.url || '')}</div>${s.keyLost ? '<div class="err" style="max-width:none;margin-top:4px">Falta su API key: pulsa Editar y vuelve a pegarla.</div>' : ''}
         ${pk < 2 ? `<div class="err" style="max-width:none;margin-top:4px">Falta elegir bibliotecas de ${[!s.ready.basico && 'Básico', !s.ready.k4 && '4K'].filter(Boolean).join(' y ')}</div>` : ''}</div>
       <div class="sv-chips">${chip('users', 'Cuentas', n.cli, 'blue')}${chip('screen', 'Pantallas', n.scr, 'violet')}${chip('box', 'Paquetes', pk, 'indigo')}${chip('userplus', 'Nuevas', n.nuevos, 'teal')}${chip('timer', 'Demos', n.demos, 'amber')}${svMaxChip(s, can)}</div>
@@ -5831,11 +5962,15 @@ function vPrecios2() {
   const step = (name, val, label) => `<div class="pp-row"><span class="pp-l">${label}</span><div class="stp"><button type="button" class="stp-b" data-act="stp" data-d="-1" aria-label="Menos">−</button><input type="number" name="${name}" min="0" max="999" required value="${val}" inputmode="numeric" aria-label="${label}"><button type="button" class="stp-b" data-act="stp" data-d="1" aria-label="Más">+</button></div><span class="pp-u">créd.</span></div>`;
   const hero = `<div class="pz-hero"><div><h2>💶 Tus precios</h2><p>Lo que cuesta cada cuenta, cuánto vale un crédito y los paquetes que ofreces.</p></div>
     <div class="pz-kpis"><span><b>${plural(priceOf(1, 1), 'crédito', 'créditos')}</b><small>alta de 1 mes</small></span><span><b>${base ? eur(base) : '—'}</b><small>por crédito</small></span><span><b>${packs.length}</b><small>${packs.length === 1 ? 'paquete' : 'paquetes'}</small></span></div></div>`;
-  const prices = `<section class="bzs c1"><h2><span class="bzn">1</span>Lo que cuesta cada cuenta</h2>
-    <form id="rules" class="pz-form">
-      <p class="pz-hint">Créditos que se descuentan al crear o renovar. Toca <b>−</b> y <b>+</b> o escribe el número.</p>
+  const pk = S.pzKind && kindsHere().has(S.pzKind) ? S.pzKind : 'emby', own = pk !== 'emby' && !!(g.pricesBy && g.pricesBy[pk]);
+  const pkPick = multiKind() ? `<div class="pzk nojf" role="group" aria-label="Precios de">${['emby', 'jellyfin', 'plex'].filter((k) => kindsHere().has(k)).map((k) => `<button type="button" data-act="pz-kind" data-k="${k}" aria-pressed="${pk === k}">${kIco(k)}${KIND_NAME[k]}${k !== 'emby' && g.pricesBy && g.pricesBy[k] ? ' <small class="muted">· propios</small>' : ''}</button>`).join('')}</div>
+      ${pk !== 'emby' ? `<label class="check nojf" style="margin:0 0 12px"><input type="checkbox" name="pzSame"${own ? '' : ' checked'} data-act="pz-same"> Usar los mismos precios que Emby</label>` : ''}` : '';
+  const prices = `<section class="bzs c1"><h2><span class="bzn">1</span>Lo que cuesta cada cuenta${multiKind() ? ` <span class="muted small" style="font-weight:500">· ${KIND_NAME[pk]}</span>` : ''}</h2>
+    <form id="rules" class="pz-form" data-kind="${pk}">
+      ${pkPick}
+      <p class="pz-hint">Créditos que se descuentan al crear o renovar${pk !== 'emby' ? ` una cuenta de ${KIND_NAME[pk]}` : multiKind() ? ' una cuenta de Emby (y de las demás plataformas que usen los mismos precios)' : ''}. Toca <b>−</b> y <b>+</b> o escribe el número.</p>
       <div class="pz-grid">${MONTH_OPTS.map(([m, txt]) => `<div class="pz-card ${MCOL[m]}"><div class="pz-ch"><span class="pz-e">${MEMO[m]}</span><b>${txt}</b></div>
-        ${SCREEN_OPTS.map(([sc, st]) => step(`p_${m}_${sc}`, priceOf(m, sc), `📺 ${st}`)).join('')}</div>`).join('')}</div>
+        ${SCREEN_OPTS.map(([sc, st]) => step(`p_${m}_${sc}`, priceOf(m, sc, pk), `📺 ${st}`)).join('')}</div>`).join('')}</div>
       <input type="hidden" name="demoMax" value="${g.demoMax}"><input type="hidden" name="warnDays" value="${g.warnDays}"><input type="hidden" name="graceDays" value="${g.graceDays}"><input type="hidden" name="purgeDays" value="${g.purgeDays}">
       <div class="pz-acts"><button class="btn primary" type="submit">💾 Guardar precios</button><button class="btn ghost sm" type="button" data-act="run">Revisar caducidades ahora</button></div>
     </form></section>`;
@@ -6772,6 +6907,13 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 196, d: '2026-10-29', items: ['📱 Barra de arriba del móvil nueva: efecto cristal, el color de la plataforma en la que estás, tu marca con su subtítulo y el reloj en una cápsula'], team: ['📱 Barra de arriba del móvil más bonita y moderna'] },
+  { v: 195, d: '2026-10-29', items: ['🧩 Las tres plataformas, mejor juntas: eliges Emby, Jellyfin o Plex al crear el cliente (si tienes más de una), el buscador encuentra clientes de cualquier plataforma, cada plataforma puede tener sus propios precios en créditos, un solo selector arriba con cuántas cuentas hay en cada una y el logo de cada plataforma en tarjetas, papelera, monitor, servidores y recibos'], team: ['🧩 Si trabajas con varias plataformas: eliges Emby, Jellyfin o Plex al crear el cliente, el buscador encuentra clientes de todas y cada una lleva su logo'] },
+  { v: 194, d: '2026-10-29', items: ['🔑 Licencias: enciendes o apagas Emby, Jellyfin y Plex por separado en cada panel alquilado (también con un toque en su tarjeta), y ves mucho más de su panel: resellers y subresellers (los últimos que ha creado), cuentas por plataforma, cuándo entró su dueño por última vez, último movimiento y versión'] },
+  { v: 193, d: '2026-10-29', items: ['📩 Plex: al invitar a quien ya tiene cuenta, puedes poner su contraseña (opcional) y el panel acepta la invitación por él'] },
+  { v: 192, d: '2026-10-29', items: ['🟠 Plex en el panel: conecta tu servidor Plex con tu token y tendrás su propia pestaña. Altas (invitación o creando su cuenta de Plex), renovar, caducar, papelera, monitor, límite de pantallas, cobros, recibos, bot y recordatorios, igual que con Emby'], team: ['🟠 Plex: si tu proveedor te lo activa, tendrás la pestaña Plex con todo lo de siempre (altas, renovar, cobros, bot…)'] },
+  { v: 191, d: '2026-10-29', items: ['🎨 Tarjetas de clientes y demos con el estilo nuevo: cuándo vence en grande con barra de colores, pantallas, servidor y contenido en recuadros, y botones de Enlace de pago, WhatsApp y Ficha'], team: ['🎨 Tarjetas de clientes y demos más claras: cuándo vence con barra de colores y botones rápidos (enlace de pago, WhatsApp y ficha)'] },
+  { v: 190, d: '2026-10-29', items: ['🗂️ Papelera nueva: tarjetas de colores con cuándo caducó, cuántos días quedan para que se borre (con barra), pantallas, servidor, su contacto y botones para recuperarlo (renovar, enlace de pago, WhatsApp, ficha)'], team: ['🗂️ Papelera nueva, más clara: cuándo caducó cada cliente, cuándo se borra y botones para recuperarlo'] },
   { v: 189, d: '2026-10-29', items: ['🧭 Menú nuevo, ordenado por temas: Clientes, Demos, En directo, Mensajes, Dinero, Equipo, Servidores, Mi cuenta y Sistema. Las mismas pantallas de siempre, cada una en su sitio'], team: ['🧭 Menú nuevo, más ordenado: Clientes, Demos, En directo, Mensajes, Dinero y Mi cuenta. Las mismas pantallas de siempre, cada una en su sitio'] },
   { v: 188, d: '2026-10-29', items: ['🟣 Bot para clientes de Jellyfin: la guía de instalación, «¿Dónde puedo ver…?» y la ayuda ya hablan de Jellyfin y sus apps (no de Emby)'], team: ['🟣 Los clientes de Jellyfin reciben en el bot su propia guía de instalación y ayuda'] },
   { v: 187, d: '2026-10-28', items: ['🅿️ PayPal automático: conecta tu PayPal Business y tus clientes pagan con PayPal y se renuevan solos, como con Stripe', '🔔 Recordatorios automáticos (los enciendes o apagas): al cliente si no pulsa «Ya he pagado» y a ti si un pago sigue sin confirmar'], team: ['🅿️ PayPal automático: conecta tu PayPal Business en Cobro a clientes y tus clientes se renuevan solos al pagar', '🔔 Recordatorios automáticos de pagos (al cliente y a ti), que puedes encender o apagar'] },
@@ -7329,7 +7471,7 @@ function vLicencias() {
   const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
   const soon = L.filter((l) => l.state === 'soon' || l.state === 'grace').length, off = L.filter((l) => l.state === 'locked' || l.state === 'blocked').length;
   const month = d.today.slice(0, 7), cobrado = L.reduce((n, l) => n + (l.payments || []).filter((p) => p.at.slice(0, 7) === month).reduce((m, p) => m + (p.amount || 0), 0), 0);
-  const tiles = `<div class="vptiles lict">${tile(act.length, 'Paneles funcionando', act.length ? eur(act.reduce((n, l) => n + (l.price || 0), 0)) + ' al mes' : '', 'ok')}${tile(soon, 'Vencen pronto', 'en 7 días o en margen', soon ? 'warn' : '')}${tile(off, 'En pausa', 'sin renovar', off ? 'bad' : '')}${tile(eur(cobrado), 'Cobrado este mes', '')}</div>`;
+  const tiles = `<div class="vptiles lict">${tile(act.length, 'Paneles funcionando', act.length ? eur(act.reduce((n, l) => n + (l.price || 0), 0)) + ' al mes' : '', 'ok')}${tile(soon, 'Vencen pronto', 'en 7 días o en margen', soon ? 'warn' : '')}${tile(off, 'En pausa', 'sin renovar', off ? 'bad' : '')}${tile(eur(cobrado), 'Cobrado este mes', '')}${tile(L.reduce((n, l) => n + ((l.stats && l.stats.active) || 0), 0), 'Cuentas activas', 'en todos tus paneles')}</div>`;
   // Calendario del mes
   if (!S.lic.cal) S.lic.cal = d.today.slice(0, 7);
   const [y, m] = S.lic.cal.split('-').map(Number), days = new Date(Date.UTC(y, m, 0)).getUTCDate(), offset = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
@@ -7372,11 +7514,15 @@ function vLicencias() {
 const licOf = (id) => S.lic.data.list.find((x) => x.id === id);
 /** Qué incluye cada panel alquilado: Emby, Jellyfin o los dos */
 const LIC_PLAT = [['emby', 'Solo Emby', 'em'], ['jellyfin', 'Solo Jellyfin', 'jf'], ['both', 'Emby y Jellyfin', 'bo']];
-const licPlatKey = (l) => { const p = (l && l.platforms) || ['emby']; return p.length > 1 ? 'both' : p[0]; };
+const licPlatKey = (l) => { const p = (l && l.platforms) || ['emby']; return p.length > 1 ? 'both' : p[0]; }; // (de antes: se deja por compatibilidad)
 const licPlatArr = (k) => (k === 'both' ? ['emby', 'jellyfin'] : [k]);
-const licPlatPick = (sel) => `<span class="flabel">Qué incluye su panel</span><div class="lplat" role="radiogroup">${LIC_PLAT.map(([k, t, c]) => `<label><input type="radio" name="plat" value="${k}"${k === sel ? ' checked' : ''}><span class="${c}"><i></i>${t}</span></label>`).join('')}</div>
-  <p class="small muted" style="margin:-4px 0 12px">Solo podrá conectar servidores de lo que marques. Puedes cambiarlo cuando quieras: su panel se entera en menos de una hora.</p>`;
-const licPlatChip = (l) => { const k = licPlatKey(l), x = LIC_PLAT.find((p) => p[0] === k); return `<span class="lplc ${x[2]}"><i></i>${x[1]}</span>`; };
+/* Plataformas de cada panel alquilado: Emby, Jellyfin y Plex se encienden o apagan por separado */
+const LIC_KINDS = [['emby', 'Emby', 'em'], ['jellyfin', 'Jellyfin', 'jf'], ['plex', 'Plex', 'px']];
+const licPlats = (l) => ((l && l.platforms && l.platforms.length ? l.platforms : ['emby']));
+const licPlatPick = (sel) => { const on = Array.isArray(sel) ? sel : licPlatArr(sel || 'emby');
+  return `<span class="flabel">Qué incluye su panel</span><div class="lplat">${LIC_KINDS.map(([k, t, c]) => `<label><input type="checkbox" name="plat" value="${k}"${on.includes(k) ? ' checked' : ''}><span class="${c}"><i></i>${t}<small>${on.includes(k) ? 'encendido' : 'apagado'}</small></span></label>`).join('')}</div>
+  <p class="small muted" style="margin:-4px 0 12px">Enciende las que quiera usar. Puedes cambiarlo cuando quieras: su panel se entera en menos de una hora. Para Plex, su panel tiene que tener la última versión.</p>`; };
+const licPlatChip = (l) => `<span class="lplcs">${LIC_KINDS.map(([k, t, c]) => `<button type="button" class="lplc ${c}${licPlats(l).includes(k) ? '' : ' off'}" data-act="lic-plat" data-id="${l.id}" data-k="${k}" title="${licPlats(l).includes(k) ? 'Apagar' : 'Encender'} ${t} en su panel"><i></i>${t}</button>`).join('')}</span>`;
 const licMonths = (name, sel = 1) => `<div class="pmeth lmon">${[1, 3, 6, 12].map((n) => `<label><input type="radio" name="${name}" value="${n}"${n === sel ? ' checked' : ''}><span>${plural(n, 'mes', 'meses')}</span></label>`).join('')}</div>`;
 const licMethods = () => `<div class="pmeth">${PAY_METHODS.filter((x) => x !== 'Sin cobro').map((x, i) => `<label><input type="radio" name="method" value="${x}"${i === 0 ? ' checked' : ''}><span>${x}</span></label>`).join('')}</div>`;
 function licShowToken(name, token) {
@@ -7390,7 +7536,7 @@ function licNew() {
     body: `<label class="f">Nombre de quien alquila<input name="name" required maxlength="60" placeholder="Juanito"></label>
       <div class="row2"><label class="f">Dirección de su panel (opcional)<input name="url" maxlength="200" placeholder="https://juanito.duckdns.org"></label><label class="f">Su contacto (opcional)<input name="contact" maxlength="80" placeholder="Telegram @juanito"></label></div>
       <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="0"></label><label class="f">Empieza el<input type="date" name="start" value="${S.d.today}"></label></div>
-      ${licPlatPick('emby')}
+      ${licPlatPick(['emby'])}
       <span class="flabel">Meses pagados</span>${licMonths('months')}
       <p class="small muted" id="licUntil" style="margin:8px 0"></p>
       <label class="check"><input type="checkbox" name="paid" checked> Ya me ha pagado (se apunta el cobro)</label>
@@ -7398,7 +7544,7 @@ function licNew() {
       <label class="f">Notas (opcional)<input name="notes" maxlength="300"></label>`,
     onOpen: () => { const f = dlgForm, upd = () => { const mo = +f.elements.months.value || 1, st = f.elements.start.value || S.d.today; $('#licUntil').innerHTML = `Pagado hasta el <b>${fmt(addMonths(st, mo))}</b>${+f.elements.price.value ? ` · ${eur(+f.elements.price.value * mo)}` : ''}`; $('#licPay').hidden = !f.elements.paid.checked; }; f.oninput = upd; f.onchange = upd; upd(); },
     onSubmit: async (fd) => {
-      const r = await api('POST', '/api/licenses', { name: fd.get('name'), url: fd.get('url'), contact: fd.get('contact'), price: +fd.get('price') || 0, start: fd.get('start'), months: +fd.get('months'), paid: !!fd.get('paid'), method: fd.get('method') || '', notes: fd.get('notes'), platforms: licPlatArr(fd.get('plat') || 'emby') });
+      const r = await api('POST', '/api/licenses', { name: fd.get('name'), url: fd.get('url'), contact: fd.get('contact'), price: +fd.get('price') || 0, start: fd.get('start'), months: +fd.get('months'), paid: !!fd.get('paid'), method: fd.get('method') || '', notes: fd.get('notes'), platforms: fd.getAll('plat').length ? fd.getAll('plat') : ['emby'] });
       S.lic.tok = { name: r.lic.name, token: r.token }; S.lic.data = null; loadLic(); return 'Licencia creada';
     }, after: () => { if (S.lic.tok) { licShowToken(S.lic.tok.name, S.lic.tok.token); S.lic.tok = null; } } });
 }
@@ -7420,9 +7566,9 @@ function licEdit(id) {
     body: `<label class="f">Nombre<input name="name" required maxlength="60" value="${esc(l.name)}"></label>
       <div class="row2"><label class="f">Dirección de su panel<input name="url" maxlength="200" value="${esc(l.url)}"></label><label class="f">Su contacto<input name="contact" maxlength="80" value="${esc(l.contact)}"></label></div>
       <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="${l.price || 0}"></label><label class="f">Pagado hasta (cambiar a mano)<input type="date" name="until" value="${l.until}" required></label></div>
-      ${licPlatPick(licPlatKey(l))}
+      ${licPlatPick(licPlats(l))}
       <label class="f">Notas<input name="notes" maxlength="300" value="${esc(l.notes)}"></label>`,
-    onSubmit: async (fd) => { await api('PUT', `/api/licenses/${id}`, Object.fromEntries(['name', 'url', 'contact', 'notes', 'until'].map((k) => [k, fd.get(k)]).concat([['price', +fd.get('price') || 0], ['platforms', licPlatArr(fd.get('plat') || 'emby')]]))); S.lic.data = null; loadLic(); return 'Cambios guardados'; } });
+    onSubmit: async (fd) => { await api('PUT', `/api/licenses/${id}`, Object.fromEntries(['name', 'url', 'contact', 'notes', 'until'].map((k) => [k, fd.get(k)]).concat([['price', +fd.get('price') || 0], ['platforms', fd.getAll('plat')]]))); S.lic.data = null; loadLic(); return 'Cambios guardados'; } });
 }
 function licMore(id) {
   const l = licOf(id); if (!l) return;
@@ -7436,11 +7582,17 @@ function licMore(id) {
 function licStatsHtml(l) {
   const x = l.stats;
   if (!x) return `<div class="lst empty">${ic('chart')}<span>Sin datos de su panel todavía. Aparecen cuando su panel tenga la última versión (Redeploy en Coolify).</span></div>`;
-  const em = x.servers.filter((s) => s.kind !== 'jellyfin').length, jf = x.servers.length - em;
+  const cnt = (kd) => x.servers.filter((s) => (s.kind || 'emby') === kd).length;
   const k = (icon, n, t, cls = '') => `<div class="lk ${cls}"><span>${icon}</span><b>${n}</b><small>${t}</small></div>`;
+  const ago = (iso) => (iso ? whenShort(iso) : '—');
+  const bk = x.byKind || null;
+  const vend = x.resellers !== undefined ? k('🧑‍💼', x.resellers, x.resellers === 1 ? 'reseller' : 'resellers') + k('👤', x.subs, x.subs === 1 ? 'subreseller' : 'subresellers') : k('🧑‍💼', x.vendors, x.vendors === 1 ? 'vendedor' : 'vendedores');
   return `<details class="lst"><summary><span class="lst-h">${ic('chart')}Su panel por dentro</span><small>actualizado ${whenShort(x.at)}</small></summary>
-    <div class="lks">${k('🖥️', x.servers.length, x.servers.length === 1 ? 'servidor' : 'servidores')}${k('👥', x.active, x.active === 1 ? 'cuenta activa' : 'cuentas activas', 'ok')}${k('⏳', x.expired, x.expired === 1 ? 'caducada' : 'caducadas')}${k('🎁', x.demos, x.demos === 1 ? 'demo' : 'demos')}${k('🧑‍💼', x.vendors, x.vendors === 1 ? 'vendedor' : 'vendedores')}${k('✨', x.newMonth, 'altas este mes')}</div>
-    ${x.servers.length ? `<div class="lsv">${x.servers.map((s) => `<span class="${s.kind === 'jellyfin' ? 'jf' : 'em'}${s.off ? ' off' : ''}" title="${s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby'}${s.off ? ' · pausado' : ''}">${esc(s.name)}</span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${em ? plural(em, 'servidor Emby', 'servidores Emby') : ''}${em && jf ? ' · ' : ''}${jf ? plural(jf, 'servidor Jellyfin', 'servidores Jellyfin') : ''}${x.admins ? ' · ' + plural(x.admins, 'administrador', 'administradores') : ''}</p>` : '<p class="small muted" style="margin:6px 0 0">Todavía no ha conectado ningún servidor.</p>'}
+    <div class="lks">${k('🖥️', x.servers.length, x.servers.length === 1 ? 'servidor' : 'servidores')}${k('👥', x.active, x.active === 1 ? 'cuenta activa' : 'cuentas activas', 'ok')}${k('⏳', x.expired, x.expired === 1 ? 'caducada' : 'caducadas')}${k('🎁', x.demos, x.demos === 1 ? 'demo' : 'demos')}${vend}${k('✨', x.newMonth, 'altas este mes')}${x.renewMonth !== undefined ? k('🔄', x.renewMonth, 'renovaciones este mes') : ''}${x.trash !== undefined ? k('🗂️', x.trash, 'en la papelera') : ''}${k('🛡️', x.admins, x.admins === 1 ? 'administrador' : 'administradores')}</div>
+    ${bk ? `<p class="small" style="margin:8px 0 0">Cuentas activas: <b>${bk.emby}</b> Emby · <b>${bk.jellyfin}</b> Jellyfin · <b>${bk.plex}</b> Plex</p>` : ''}
+    <div class="lwhen"><div><small>Su dueño entró por última vez</small><b>${ago(x.superLogin)}</b></div><div><small>Última entrada de alguien</small><b>${ago(x.lastLogin)}</b></div><div><small>Último movimiento</small><b>${ago(x.lastAction)}</b></div>${x.ver ? `<div><small>Versión de su panel</small><b>${esc(String(x.ver).slice(0, 12))}</b></div>` : ''}</div>
+    ${x.servers.length ? `<div class="lsv">${x.servers.map((s) => `<span class="${s.kind === 'jellyfin' ? 'jf' : s.kind === 'plex' ? 'px' : 'em'}${s.off ? ' off' : ''}" title="${KIND_NAME[s.kind] || 'Emby'}${s.off ? ' · pausado' : ''}">${esc(s.name)}</span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${[['emby', 'Emby'], ['jellyfin', 'Jellyfin'], ['plex', 'Plex']].filter(([kd]) => cnt(kd)).map(([kd, t]) => `${cnt(kd)} ${t}`).join(' · ')}</p>` : ''}
+    ${(x.newVendors || []).length ? `<h4 style="margin:12px 0 0;font-size:13px">Últimos vendedores que ha creado</h4><div class="lpeople">${x.newVendors.map((v) => `<div><span>${v.role === 'sub' ? '👤' : '🧑‍💼'} <b>${esc(v.name)}</b> <small>${v.role === 'sub' ? 'subreseller' + (v.parent ? ' de ' + esc(v.parent) : '') : 'reseller'}</small></span><small>${plural(v.clients, 'cliente', 'clientes')} · ${v.at ? whenShort(v.at) : ''}</small></div>`).join('')}</div>` : ''}
   </details>`;
 }
 /** Mensaje con la dirección, el usuario y la contraseña de su panel, listo para copiar y mandar al cliente.
@@ -7451,7 +7603,7 @@ function licMsg(id) {
   const brand = (S.d.settings.brand || {}).name || 'Concha';
   const build = (f) => {
     const u = f.elements.user.value.trim() || '(tu usuario)', pw = f.elements.pw.value || '(tu contraseña)', link = f.elements.url.value.trim() || '(dirección)';
-    return `👋 ¡Hola, ${l.name}!\n\nTu panel ${brand} ya está listo. 🎉\n\n🌐 DIRECCIÓN DEL PANEL:\n${link}\n\n🔐 TUS DATOS DE ACCESO:\n• Usuario: ${u}\n• Contraseña: ${pw}\n\n📌 PRIMEROS PASOS:\n1. Entra en la dirección y pon tu usuario y contraseña.\n2. Cambia la contraseña por una tuya en Ajustes › Seguridad.\n3. Ve a Servidores › Conectar servidor y añade tu ${{ emby: 'Emby', jellyfin: 'Jellyfin' }[licPlatKey(l)] || 'Emby o Jellyfin'} con su API key.\n4. Elige qué bibliotecas son Básico y 4K, ¡y ya puedes crear cuentas!\n\n📅 Tu suscripción está pagada hasta el ${fmt(l.until)}.${d0().contact ? `\n\n💬 Para renovar o cualquier duda: ${d0().contact}` : ''}\n\n¡Gracias por confiar en nosotros! 🙌`;
+    return `👋 ¡Hola, ${l.name}!\n\nTu panel ${brand} ya está listo. 🎉\n\n🌐 DIRECCIÓN DEL PANEL:\n${link}\n\n🔐 TUS DATOS DE ACCESO:\n• Usuario: ${u}\n• Contraseña: ${pw}\n\n📌 PRIMEROS PASOS:\n1. Entra en la dirección y pon tu usuario y contraseña.\n2. Cambia la contraseña por una tuya en Ajustes › Seguridad.\n3. Ve a Servidores › Conectar servidor y añade tu ${licPlats(l).map((k) => KIND_NAME[k]).join(' o ')} con su ${licPlats(l).length === 1 && licPlats(l)[0] === 'plex' ? 'token de Plex' : 'API key'}.\n4. Elige qué bibliotecas son Básico y 4K, ¡y ya puedes crear cuentas!\n\n📅 Tu suscripción está pagada hasta el ${fmt(l.until)}.${d0().contact ? `\n\n💬 Para renovar o cualquier duda: ${d0().contact}` : ''}\n\n¡Gracias por confiar en nosotros! 🙌`;
   };
   const d0 = () => S.lic.data || {};
   openDlg({ title: `Datos de acceso · ${l.name}`, submit: 'Copiar mensaje',
@@ -8703,15 +8855,16 @@ function poWire() {
 function dServer(s) {
   openDlg({
     title: s ? `Editar ${s.name}` : 'Conectar servidor', submit: s ? 'Guardar y probar' : 'Conectar',
-    body: `${s ? '' : licKinds().length < 2 ? `<input type="hidden" name="kind" value="${licKinds()[0]}">` : `<div class="kpick" role="radiogroup" aria-label="Tipo de servidor"><label><input type="radio" name="kind" value="emby"${kindTab() === 'jellyfin' ? '' : ' checked'}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="radio" name="kind" value="jellyfin"${kindTab() === 'jellyfin' ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Va en su propia pestaña</small></span></label></div>`}
-      <label class="f">Nombre<input name="name" required maxlength="60" value="${esc(s ? s.name : kindTab() === 'jellyfin' ? 'Jellyfin' : 'Emby')}"></label>
-      <label class="f">Dirección para el panel<input name="url" required placeholder="http://192.168.0.29:8096" value="${esc(s ? s.url : '')}"></label>
+    body: `${s ? '' : licKinds().length < 2 ? `<input type="hidden" name="kind" value="${licKinds()[0]}">` : `<div class="kpick nojf" role="radiogroup" aria-label="Tipo de servidor"><label><input type="radio" name="kind" value="emby"${kindTab() === 'emby' ? ' checked' : ''}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="radio" name="kind" value="jellyfin"${kindTab() === 'jellyfin' ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Va en su propia pestaña</small></span></label>${licKinds().includes('plex') ? `<label><input type="radio" name="kind" value="plex"${kindTab() === 'plex' ? ' checked' : ''}><span class="kp px"><i></i><b>Plex</b><small>Con tu token de Plex</small></span></label>` : ''}</div>`}
+      ${(s && s.kind === 'plex') || (!s && licKinds().includes('plex')) ? `<p class="pxnote nojf">🟠 <b>Si es Plex:</b> la dirección suele ser <b>http://IP:32400</b> y en «API key» pega tu <b>token de Plex</b> (X-Plex-Token). Para verlo: en app.plex.tv abre cualquier película › ⋯ › «Obtener información» › «Ver XML»: en la dirección sale <b>X-Plex-Token=…</b></p>` : ''}
+      <label class="f">Nombre<input name="name" required maxlength="60" value="${esc(s ? s.name : KIND_NAME[kindTab()])}"></label>
+      <label class="f">Dirección para el panel<input name="url" required placeholder="${(s ? s.kind === 'plex' : isPlexTab()) ? 'http://192.168.0.29:32400' : 'http://192.168.0.29:8096'}" value="${esc(s ? s.url : '')}"></label>
       <label class="f">Dirección que das a los clientes (opcional)<input name="publicUrl" maxlength="200" placeholder="https://${kindTab() === 'jellyfin' ? 'jellyfin' : 'emby'}.tudominio.com" value="${esc(s ? s.publicUrl || '' : '')}"></label>
       <label class="f">API key${s ? ' (vacío = mantener la actual)' : ''}<input name="apiKey" type="password" ${s ? '' : 'required'} autocomplete="off"></label>
       <label class="f">Máximo de clientes (0 = sin límite)<input name="maxClients" type="number" min="0" max="100000" step="1" value="${s ? s.maxClients || 0 : 0}" inputmode="numeric"></label>
-      <p class="muted small">La API key se crea en ${s && s.kind === 'jellyfin' ? 'Jellyfin: Panel de control, Claves de API' : s ? 'Emby: Ajustes, Avanzado, Claves de API' : 'Emby (Ajustes, Avanzado, Claves de API) o en Jellyfin (Panel de control, Claves de API)'}. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,
+      <p class="muted small nojf">La API key se crea en ${s && s.kind === 'plex' ? 'Plex: es tu token de Plex (X-Plex-Token)' : s && s.kind === 'jellyfin' ? 'Jellyfin: Panel de control, Claves de API' : s ? 'Emby: Ajustes, Avanzado, Claves de API' : 'Emby (Ajustes, Avanzado, Claves de API) o en Jellyfin (Panel de control, Claves de API)'}. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,
     onSubmit: async (fd) => {
-      const body = { name: fd.get('name'), url: fd.get('url'), publicUrl: fd.get('publicUrl'), apiKey: fd.get('apiKey'), maxClients: +fd.get('maxClients') || 0, ...(!s && fd.get('kind') === 'jellyfin' ? { kind: 'jellyfin' } : {}) };
+      const body = { name: fd.get('name'), url: fd.get('url'), publicUrl: fd.get('publicUrl'), apiKey: fd.get('apiKey'), maxClients: +fd.get('maxClients') || 0, ...(!s && (fd.get('kind') === 'jellyfin' || fd.get('kind') === 'plex') ? { kind: fd.get('kind') } : {}) };
       if (s) {
         try { await api('PUT', `/api/servers/${s.id}`, body); }
         catch (e) { if (e.status !== 409 || !window.confirm(e.message + '\n\n¿Seguro que quieres cambiarlo? Las cuentas del panel están creadas en el servidor anterior.')) throw e; await api('PUT', `/api/servers/${s.id}`, { ...body, confirmOther: true }); }
@@ -8992,7 +9145,7 @@ document.addEventListener('click', (e) => {
   if (a === 'c-copy') { const c = S.d.clients.find((x) => String(x.id) === el.dataset.id); if (!c) return;
     const srv = S.d.servers.find((x) => x.id === c.serverId) || {}, dmy = (d) => (d || '').split('-').reverse().join('/');
     const vence = c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires);
-    const t = [srv.publicUrl ? `Servidor: ${srv.publicUrl}` : '', `Usuario: ${c.embyName}`, `Contraseña: ${c.password || '(la que ya tienes)'}`, `Caduca: ${vence}`].filter(Boolean).join('\n');
+    const t = [srv.publicUrl ? `Servidor: ${srv.publicUrl}` : '', srv.kind === 'plex' ? `Cuenta de Plex: ${c.embyName}` : `Usuario: ${c.embyName}`, `Contraseña: ${c.password || (srv.kind === 'plex' ? '(la de tu cuenta de Plex)' : '(la que ya tienes)')}`, `Caduca: ${vence}`].filter(Boolean).join('\n');
     const done = () => { el.classList.add('copied'); setTimeout(() => el.classList.remove('copied'), 1200); toast(c.password ? `Datos de ${c.panelName} copiados: pégalos en el chat` : `Copiado. Ojo: el panel no tiene guardada la contraseña de ${c.panelName}`, !c.password); };
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done, () => { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); ok ? done() : toast('No se pudo copiar', true); });
     return; }
@@ -9161,6 +9314,19 @@ document.addEventListener('click', (e) => {
   const usr = id ? S.d.users.find((x) => x.id === id) : null;
   switch (a) {
     case 'close': dlg.close(); break;
+    case 'lic-plat': { const l = licOf(id); if (!l) break; const k = el.dataset.k, cur = licPlats(l), on = !cur.includes(k), next = on ? [...cur, k] : cur.filter((x) => x !== k);
+      if (!next.length) { toast('Deja encendida al menos una plataforma', true); break; }
+      dConfirm(`${on ? 'Encender' : 'Apagar'} ${KIND_NAME[k]} en el panel de ${esc(l.name)}`, on ? `Podrá conectar servidores de ${KIND_NAME[k]} y trabajar con ellos. Su panel se entera en menos de una hora.` : `Dejará de ver sus servidores y clientes de ${KIND_NAME[k]} (no se borra nada: si lo vuelves a encender, vuelve todo).`, on ? 'Encender' : 'Apagar',
+        () => api('PUT', `/api/licenses/${id}`, { platforms: next }).then(() => { S.lic.data = null; loadLic(); }), `${KIND_NAME[k]} ${on ? 'encendido' : 'apagado'} para ${l.name}`); } break;
+    case 'pz-kind': S.pzKind = el.dataset.k; render(); break;
+    case 'nw-kind': if (el.dataset.k !== kindTab()) { const v = S.view; setKind(el.dataset.k); if (S.view !== v) { S.view = v; render(); } } break;
+    case 'px-check': { el.disabled = true; api('POST', '/api/plex/check', {}).then(async (r) => { await reload(); toast(r.pending ? `📩 ${plural(r.pending, 'invitación sin aceptar', 'invitaciones sin aceptar')} de ${r.total}` : `✅ Todas las invitaciones de Plex están aceptadas (${r.total})`); }).catch((ex) => toast(ex.message, true)).finally(() => { el.disabled = false; }); } break;
+    case 'px-mode': { const f = el.form, nw = el.value === '1', pw = $('#pxPw'), h = $('#pxHint');
+      if (pw) { const i = pw.querySelector('input'), t = $('#pxPwT'), hh = $('#pxPwH'); if (i) { i.required = nw; i.minLength = nw ? 8 : 0; i.placeholder = nw ? 'Mínimo 8 caracteres' : 'Si la pones, el panel acepta la invitación por él'; }
+        if (t) t.innerHTML = nw ? 'Contraseña de su nueva cuenta Plex *' : 'Contraseña de su Plex <span class="muted">(opcional)</span>';
+        if (hh) hh.textContent = nw ? 'Con este email y esta contraseña entrará en Plex.' : 'Sin contraseña, le llega la invitación a su email y la acepta él.'; }
+      if (h) h.textContent = nw ? 'Será el email de su nueva cuenta de Plex.' : 'Con este email se le invita a tu servidor.';
+      if (f && typeof nwTicket === 'function') nwTicket(); } break;
     case 'gen': {
       const kind = el.dataset.kind || 'password', inp = el.closest('form').elements[kind];
       const f = el.closest('form'), pn = f.elements.panelName, n = f.elements.embyName;
@@ -9464,14 +9630,16 @@ document.addEventListener('submit', (e) => {
     const fd = new FormData(e.target);
     const prices = {};
     MONTH_OPTS.forEach(([m]) => { prices[m] = {}; SCREEN_OPTS.forEach(([s]) => { prices[m][s] = +fd.get(`p_${m}_${s}`); }); });
-    act(() => api('PUT', '/api/settings', { warnDays: +fd.get('warnDays'), graceDays: +fd.get('graceDays'), purgeDays: +fd.get('purgeDays'), demoMax: +fd.get('demoMax'), prices }), 'Precios y reglas guardados');
+    const pk = e.target.dataset.kind || 'emby', rules = { warnDays: +fd.get('warnDays'), graceDays: +fd.get('graceDays'), purgeDays: +fd.get('purgeDays'), demoMax: +fd.get('demoMax') };
+    if (pk === 'emby') act(() => api('PUT', '/api/settings', { ...rules, prices }), 'Precios y reglas guardados');
+    else act(() => api('PUT', '/api/settings', { ...rules, pricesBy: { [pk]: fd.get('pzSame') ? null : prices } }), fd.get('pzSame') ? `${KIND_NAME[pk]} usa los mismos precios que Emby` : `Precios de ${KIND_NAME[pk]} guardados`);
   }
   if (e.target.id === 'newClient') {
     e.preventDefault();
     const f = e.target, fd = new FormData(f), btn = $('button[type=submit]', f), demo = !!f.dataset.demo;
     btn.disabled = true;
     const common = {
-      serverId: +fd.get('serverId'), embyName: fd.get('embyName'), panelName: fd.get('panelName'), password: fd.get('password'),
+      serverId: +fd.get('serverId'), embyName: fd.get('embyName'), panelName: fd.get('panelName'), password: fd.get('password') || '', ...(fd.get('plexNew') === '1' ? { plexNew: true } : {}),
       email: fd.get('email'), telegram: fd.get('telegram'), whatsapp: fd.get('whatsapp'), signal: fd.get('signal'), note: fd.get('note'), quality: fd.get('quality'),
     };
     (demo ? api('POST', '/api/demos', { ...common, hours: +fd.get('hours') })
