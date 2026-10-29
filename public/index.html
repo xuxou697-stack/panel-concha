@@ -2030,6 +2030,9 @@ body.px #main{box-shadow:inset 0 3px 0 #e5a00d}
 .kp small{font-size:12px;color:var(--muted)}
 .kpick input:checked+.kp.em{border-color:#52b54b;box-shadow:0 0 0 2px color-mix(in srgb,#52b54b 40%,transparent)}.kpick input:checked+.kp.jf{border-color:#a46bff;box-shadow:0 0 0 2px color-mix(in srgb,#a46bff 40%,transparent)}
 .kpick input:focus-visible+.kp{outline:2px solid var(--text)}
+.kpick input:checked+.kp.px{border-color:#e5a00d;box-shadow:0 0 0 2px color-mix(in srgb,#e5a00d 40%,transparent);background:color-mix(in srgb,#e5a00d 10%,var(--raised))}
+.kpick input:checked+.kp.em{background:color-mix(in srgb,#52b54b 10%,var(--raised))}.kpick input:checked+.kp.jf{background:color-mix(in srgb,#a46bff 10%,var(--raised))}
+.kpick.k3{grid-template-columns:repeat(3,minmax(0,1fr))}@media (max-width:520px){.kpick.k3{grid-template-columns:1fr 1fr}}
 .tpt{font:inherit;cursor:pointer;transition:filter .15s,box-shadow .15s,transform .1s}.tpt:hover{filter:brightness(1.18)}.tpt:active{transform:scale(.97)}.tpt.on{box-shadow:0 0 0 2px var(--brand,#3fa9f5)}
 .tpt .tpc{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.65;margin-left:1px;transition:transform .15s}.tpt.on .tpc{transform:rotate(180deg)}
 .tpop{position:fixed;z-index:60;padding:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.45);animation:tpIn .14s ease-out;color:var(--text)}
@@ -6907,6 +6910,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 197, d: '2026-10-29', items: ['🟠 Conectar servidor: la opción Plex ya se ve marcada al elegirla, y el formulario se adapta solo (nombre, dirección con :32400 y «Token de Plex»)'] },
   { v: 196, d: '2026-10-29', items: ['📱 Barra de arriba del móvil nueva: efecto cristal, el color de la plataforma en la que estás, tu marca con su subtítulo y el reloj en una cápsula'], team: ['📱 Barra de arriba del móvil más bonita y moderna'] },
   { v: 195, d: '2026-10-29', items: ['🧩 Las tres plataformas, mejor juntas: eliges Emby, Jellyfin o Plex al crear el cliente (si tienes más de una), el buscador encuentra clientes de cualquier plataforma, cada plataforma puede tener sus propios precios en créditos, un solo selector arriba con cuántas cuentas hay en cada una y el logo de cada plataforma en tarjetas, papelera, monitor, servidores y recibos'], team: ['🧩 Si trabajas con varias plataformas: eliges Emby, Jellyfin o Plex al crear el cliente, el buscador encuentra clientes de todas y cada una lleva su logo'] },
   { v: 194, d: '2026-10-29', items: ['🔑 Licencias: enciendes o apagas Emby, Jellyfin y Plex por separado en cada panel alquilado (también con un toque en su tarjeta), y ves mucho más de su panel: resellers y subresellers (los últimos que ha creado), cuentas por plataforma, cuándo entró su dueño por última vez, último movimiento y versión'] },
@@ -8855,12 +8859,12 @@ function poWire() {
 function dServer(s) {
   openDlg({
     title: s ? `Editar ${s.name}` : 'Conectar servidor', submit: s ? 'Guardar y probar' : 'Conectar',
-    body: `${s ? '' : licKinds().length < 2 ? `<input type="hidden" name="kind" value="${licKinds()[0]}">` : `<div class="kpick nojf" role="radiogroup" aria-label="Tipo de servidor"><label><input type="radio" name="kind" value="emby"${kindTab() === 'emby' ? ' checked' : ''}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="radio" name="kind" value="jellyfin"${kindTab() === 'jellyfin' ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Va en su propia pestaña</small></span></label>${licKinds().includes('plex') ? `<label><input type="radio" name="kind" value="plex"${kindTab() === 'plex' ? ' checked' : ''}><span class="kp px"><i></i><b>Plex</b><small>Con tu token de Plex</small></span></label>` : ''}</div>`}
-      ${(s && s.kind === 'plex') || (!s && licKinds().includes('plex')) ? `<p class="pxnote nojf">🟠 <b>Si es Plex:</b> la dirección suele ser <b>http://IP:32400</b> y en «API key» pega tu <b>token de Plex</b> (X-Plex-Token). Para verlo: en app.plex.tv abre cualquier película › ⋯ › «Obtener información» › «Ver XML»: en la dirección sale <b>X-Plex-Token=…</b></p>` : ''}
+    body: `${s ? '' : licKinds().length < 2 ? `<input type="hidden" name="kind" value="${licKinds()[0]}">` : `<div class="kpick nojf${licKinds().includes('plex') ? ' k3' : ''}" role="radiogroup" aria-label="Tipo de servidor"><label><input type="radio" name="kind" value="emby"${kindTab() === 'emby' ? ' checked' : ''}><span class="kp em"><i></i><b>Emby</b><small>Lo de siempre</small></span></label><label><input type="radio" name="kind" value="jellyfin"${kindTab() === 'jellyfin' ? ' checked' : ''}><span class="kp jf"><i></i><b>Jellyfin</b><small>Va en su propia pestaña</small></span></label>${licKinds().includes('plex') ? `<label><input type="radio" name="kind" value="plex"${kindTab() === 'plex' ? ' checked' : ''}><span class="kp px"><i></i><b>Plex</b><small>Con tu token de Plex</small></span></label>` : ''}</div>`}
+      ${(s && s.kind === 'plex') || (!s && licKinds().includes('plex')) ? `<p class="pxnote nojf">🟠 <b>Si es Plex:</b> la dirección suele ser <b>http://IP:32400</b> y en «Token de Plex» pega tu <b>token</b> (X-Plex-Token). Para verlo: en app.plex.tv abre cualquier película › ⋯ › «Obtener información» › «Ver XML»: en la dirección sale <b>X-Plex-Token=…</b></p>` : ''}
       <label class="f">Nombre<input name="name" required maxlength="60" value="${esc(s ? s.name : KIND_NAME[kindTab()])}"></label>
       <label class="f">Dirección para el panel<input name="url" required placeholder="${(s ? s.kind === 'plex' : isPlexTab()) ? 'http://192.168.0.29:32400' : 'http://192.168.0.29:8096'}" value="${esc(s ? s.url : '')}"></label>
       <label class="f">Dirección que das a los clientes (opcional)<input name="publicUrl" maxlength="200" placeholder="https://${kindTab() === 'jellyfin' ? 'jellyfin' : 'emby'}.tudominio.com" value="${esc(s ? s.publicUrl || '' : '')}"></label>
-      <label class="f">API key${s ? ' (vacío = mantener la actual)' : ''}<input name="apiKey" type="password" ${s ? '' : 'required'} autocomplete="off"></label>
+      <label class="f"><span id="srvKeyL">${(s ? s.kind === 'plex' : isPlexTab()) ? 'Token de Plex' : 'API key'}</span>${s ? ' (vacío = mantener la actual)' : ''}<input name="apiKey" type="password" ${s ? '' : 'required'} autocomplete="off"></label>
       <label class="f">Máximo de clientes (0 = sin límite)<input name="maxClients" type="number" min="0" max="100000" step="1" value="${s ? s.maxClients || 0 : 0}" inputmode="numeric"></label>
       <p class="muted small nojf">La API key se crea en ${s && s.kind === 'plex' ? 'Plex: es tu token de Plex (X-Plex-Token)' : s && s.kind === 'jellyfin' ? 'Jellyfin: Panel de control, Claves de API' : s ? 'Emby: Ajustes, Avanzado, Claves de API' : 'Emby (Ajustes, Avanzado, Claves de API) o en Jellyfin (Panel de control, Claves de API)'}. Se guarda en este equipo y nunca se muestra en el navegador.${s ? '' : ' Después tendrás que elegir qué bibliotecas forman el contenido Básico y el 4K.'}</p>`,
     onSubmit: async (fd) => {
@@ -8876,6 +8880,13 @@ function dServer(s) {
   });
   const prevIn = dlgForm.oninput; dlgForm.oninput = (e) => { dServer.lastUrl = (dlgForm.elements.publicUrl || {}).value; if (prevIn) prevIn(e); };
   dServer.lastUrl = s ? s.publicUrl || '' : '';
+  if (!s) dlgForm.onchange = (e) => { // al elegir Emby, Jellyfin o Plex, el formulario se adapta
+    if (!e.target || e.target.name !== 'kind') return;
+    const k = e.target.value, f = dlgForm.elements, nm = f.name;
+    if (nm && (!nm.value || Object.values(KIND_NAME).includes(nm.value))) nm.value = KIND_NAME[k];
+    if (f.url) f.url.placeholder = k === 'plex' ? 'http://192.168.0.29:32400' : 'http://192.168.0.29:8096';
+    const kl = $('#srvKeyL'); if (kl) kl.textContent = k === 'plex' ? 'Token de Plex' : 'API key';
+  };
 }
 const DOMAIN_TXT = 'Hola {nombre} 👋\n\nHemos cambiado la dirección del servidor. A partir de ahora entra con esta:\n\n{direccion}\n\nTu usuario ({usuario}) y tu contraseña son los mismos. Si la app te da error, cierra sesión y vuelve a entrar con la dirección nueva.\n\n¡Gracias!';
 /** Avisar a los clientes de un servidor (los que tienen el bot de Telegram) de la dirección nueva */
