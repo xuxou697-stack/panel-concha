@@ -2350,6 +2350,22 @@ body{--pc:var(--brand,#3fa9f5)} body.jf{--pc:#a46bff} body.px{--pc:#e5a00d}
 .fu-mini{display:inline-flex;align-items:center;gap:5px;border:0;background:none;padding:2px 0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}.fu-mini:hover{color:var(--text)}.fu-mini.bad{color:color-mix(in srgb,var(--danger,#ef4444) 80%,var(--muted))}.fu-mini .ic{width:15px;height:15px}
 .fu-bottom{display:flex;justify-content:center;margin:16px 0 0}
 @media (max-width:560px){.fulist2{grid-template-columns:1fr}.fu-go{flex:1}}
+.ska{text-align:center;padding:6px 4px 2px}.ska h2{margin:6px 0 4px;font-size:24px}
+.ska-ok{width:84px;height:84px;margin:4px auto 6px;animation:skaPop .5s cubic-bezier(.2,1.6,.4,1) both}.ska-ok svg{width:100%;height:100%;fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.ska-ok circle{stroke:#22c55e;stroke-dasharray:151;stroke-dashoffset:151;animation:skaDraw .6s .1s ease forwards}.ska-ok path{stroke:#22c55e;stroke-dasharray:40;stroke-dashoffset:40;animation:skaDraw .35s .55s ease forwards}
+.ska-q{font-size:18px;margin:6px 0 2px}.ska-d{color:var(--muted);font-size:13px;margin:0 0 6px}
+.ska-who{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0 10px}
+.ska-b{display:grid;justify-items:center;gap:8px;padding:18px 10px;border-radius:20px;border:2px solid var(--line);background:var(--surface);color:var(--text);font:inherit;cursor:pointer;animation:skaUp .45s cubic-bezier(.2,1.4,.4,1) both;transition:transform .15s,border-color .15s,box-shadow .15s}
+.ska-b:hover{transform:translateY(-3px);border-color:var(--brand)}.ska-b.on{border-color:#22c55e;box-shadow:0 0 0 4px color-mix(in srgb,#22c55e 30%,transparent);transform:scale(1.04)}
+.ska-b i{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#8b5cf6);color:#fff;font-style:normal;font-weight:800;font-size:28px;text-transform:uppercase}.ska-b b{font-size:18px}
+.ska-later{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:6px}
+@keyframes skaPop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}@keyframes skaDraw{to{stroke-dashoffset:0}}@keyframes skaUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.so-e{position:relative}.so-hit{position:absolute;inset:0;border:0;background:none;cursor:pointer}.so-e>*:not(.so-hit){position:relative;pointer-events:none}.so-e .so-tools,.so-e .so-askb{pointer-events:auto}
+.so-tools{display:flex;gap:4px;flex:none}.so-tb{display:inline-flex;align-items:center;gap:4px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:12px;cursor:pointer}.so-tb em{font-style:normal}.so-tb:hover{border-color:var(--brand)}
+.so-ask{background:color-mix(in srgb,#f59e0b 8%,transparent)}.so-askb{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.sx-mini{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}.sx-mini i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-style:normal;font-size:11px}
+.so-unb{margin-bottom:14px}
+@media (max-width:560px){.so-tb em{display:none}}
 </style>
 </head>
 <body>
@@ -3242,17 +3258,50 @@ function contactHtml(c) {
   if (c.email) out.push(`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`);
   return out.length ? `<div class="contact muted">${out.join(', ')}</div>` : '';
 }
+/** Después de crear, renovar o cobrar: «¿Quién ha sido?» con una animación. El que toca su nombre es el que lo ha cobrado */
+function socAsk(r, what) {
+  const ask = r && r.socAsk, made = r && r.socMade;
+  if (!ask && !made) return Promise.resolve();
+  const ms = (ask || made).members;
+  const title = { cuenta: 'Cuenta creada', demo: 'Demo creada', renov: '¡Renovada!', cobro: 'Cobro apuntado', recarga: 'Recarga hecha' }[what] || 'Hecho';
+  const q = what === 'demo' ? '¿Quién la ha hecho?' : ask ? `¿Quién ha cobrado <b>${eur(ask.amount)}</b>?` : '¿Quién ha sido?';
+  return new Promise((done) => {
+    dlgForm.onchange = null; dlgForm.oninput = null; dlgForm.onsubmit = (e) => e.preventDefault();
+    dlgForm.innerHTML = `<div class="ska"><div class="ska-ok"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M14 27l8 8 16-17"/></svg></div>
+      <h2>${title}</h2><p class="ska-q">${q}</p>${ask && ask.desc ? `<p class="ska-d">${esc(ask.desc)}</p>` : ''}
+      <div class="ska-who">${ms.map((m, i) => `<button type="button" class="ska-b" data-who="${m.id}" style="animation-delay:${0.25 + i * 0.08}s"><i>${esc(m.name.slice(0, 1))}</i><b>${esc(m.name)}</b></button>`).join('')}</div>
+      <button type="button" class="ska-later" data-who="">Ahora no${ask ? ' (te lo pregunto por Telegram)' : ''}</button></div>`;
+    if (!dlg.open) { dlg.showModal(); navDlgOpened(); }
+    setTimeout(() => { if (document.activeElement && dlgForm.contains(document.activeElement)) document.activeElement.blur(); }, 0);
+    const onClick = async (e) => {
+      const b = e.target.closest('[data-who]'); if (!b) return;
+      dlgForm.removeEventListener('click', onClick);
+      const who = b.dataset.who;
+      if (who) {
+        b.classList.add('on');
+        try {
+          if (ask) await api('PUT', `/api/socios/entries/${ask.id}/who`, { who });
+          if (made && r.id) await api('POST', '/api/socios/madeby', { clientId: r.id, who });
+          const nm = (ms.find((m) => m.id === who) || {}).name;
+          toast(ask ? `📒 ${eur(ask.amount)} para ${nm}` : `👍 Hecho por ${nm}`);
+        } catch (er) { toast(er.message, true); }
+      }
+      if (dlg.open) dlg.close();
+      done();
+    };
+    dlgForm.addEventListener('click', onClick);
+  });
+}
 /* 📒 Socios: al crear o renovar a mano una cuenta tuya, se apunta sola lo cobrado (puedes cambiar el importe o quién lo cobró) */
 const socOwn = (c) => { const o = S.d.users.find((u) => u.id === c.ownerId); return !o || o.role === 'super' || o.role === 'admin'; };
 const socPrice = (m, sc) => { const v = Number(((S.d.settings.clientPay || {}).prices || {})[`${m}-${sc}`]); return v > 0 ? (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',')) : ''; };
 function socFields(m, sc) {
   const so = S.d.socios; if (!so) return '';
-  return `<div class="socf" data-socf><div class="socf-h">📒 <b>Apuntar en Socios</b><small>se apunta solo al guardar · vacío = no apuntar</small></div>
-    <div class="socf-r"><label class="socf-a"><input name="socAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${socPrice(m, sc)}"><b>€</b></label>
-    <div class="sx-pills">${so.members.map((x) => `<label class="sx-pill"><input type="radio" name="socWho" value="${x.id}"${x.id === so.mine ? ' checked' : ''}><span><i>${esc(x.name.slice(0, 1))}</i>${esc(x.name)}</span></label>`).join('')}</div></div>
+  return `<div class="socf" data-socf><div class="socf-h">📒 <b>Apuntar en Socios</b><small>al guardar te pregunto quién lo ha cobrado · vacío = no apuntar</small></div>
+    <div class="socf-r"><label class="socf-a"><input name="socAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${socPrice(m, sc)}"><b>€</b></label></div>
     <small class="socf-p" hidden>Está pendiente de cobro: se apuntará cuando lo marques como cobrado.</small></div>`;
 }
-const socBody = (fd, form = dlgForm) => (S.d.socios && fd.get('socWho') && !(form.querySelector('[data-socf]') || {}).hidden ? { socAmount: String(fd.get('socAmount') || '').trim() || '0', socWho: fd.get('socWho') } : {});
+const socBody = (fd, form = dlgForm) => (S.d.socios && fd.get('socAmount') !== null && !(form.querySelector('[data-socf]') || {}).hidden ? { socAmount: String(fd.get('socAmount') || '').trim() || '0' } : {});
 const socToast = (r) => (r && r.soc ? ` · 📒 ${eur(r.soc.amount)} para ${r.soc.who}` : r && r.socPend ? ' · 📒 se apuntará al cobrarlo' : '');
 document.addEventListener('input', (e) => { if (e.target.name === 'socAmount') e.target.dataset.touched = '1'; });
 document.addEventListener('change', (e) => {
@@ -6988,6 +7037,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 206, d: '2026-10-30', items: ['🙋 Después de crear una cuenta, una demo, renovar o cobrar, el panel te pregunta con una animación «¿Quién ha sido? Angus o Xux». El que toca su nombre es el que lo ha cobrado y se apunta solo en Socios. También llega la pregunta por Telegram con dos botones. Los pagos automáticos se apuntan a Xux', '✏️ Socios: cada movimiento tiene sus botones «Modificar» y «Eliminar»'] },
   { v: 205, d: '2026-10-30', items: ['🎯 Seguimiento de demos renovado: botón «✨ Pasar a cliente» en cada demo terminada (la conviertes en cuenta sin crearla otra vez, y se apunta en Socios), tarjetas más claras y un resumen de cuántas compraron'], team: ['🎯 Seguimiento de demos renovado: botón «✨ Pasar a cliente» en cada demo terminada (la conviertes en cuenta sin crearla otra vez) y tarjetas más claras'] },
   { v: 204, d: '2026-10-30', items: ['📒 Socios se rellena solo también cuando creas o renuevas una cuenta tuya a mano: sale el importe ya puesto (el de tu lista de precios para clientes) y quién lo ha cobrado; si lo dejas «pendiente de cobro», se apunta cuando lo marques como cobrado. Las recargas de créditos a vendedores también se apuntan solas'] },
   { v: 203, d: '2026-10-30', items: ['🤝 Socios: ventana nueva para apuntar, al estilo Tricount pero más cómoda: Gasto, Ingreso o Transferencia arriba, importe grande, icono, foto del ticket, «Hoy/Ayer», a quién le toca con lo que paga cada uno al momento y una frase que te explica cómo quedan las cuentas. Todo se puede cambiar después (y se cambia también en Splitwise)'] },
@@ -7428,11 +7478,13 @@ function vSocios() {
   const sw = cfg.sw.on;
   const row = (x) => { const [ico0, src] = x.kind === 'pago' ? ['🔁', 'Entre socios'] : SO_SRC[x.src] || SO_SRC.manual, ico = x.cat || ico0;
     const only = Array.isArray(x.split) && x.split.length && x.kind !== 'pago' ? ` · solo ${x.split.map(soName).map(esc).join(' y ')}` : '';
-    return `<button type="button" class="so-e ${x.kind}" data-act="so-more" data-id="${x.id}"><span class="so-ico">${ico}</span><span class="so-d"><b>${esc(x.desc || src)}${x.photo ? ' <span title="Tiene foto">📎</span>' : ''}</b><small>${x.kind === 'pago' ? `${esc(soName(x.who))} → ${esc(soName(x.to))}` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`} · ${new Date(x.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · ${src}${only}${sw ? (x.sw ? ' · ✓ Splitwise' : x.swErr ? ' · ⚠️ Splitwise' : ' · ⏳ Splitwise') : ''}</small></span><span class="so-a">${x.kind === 'gasto' ? '− ' : ''}${eur(x.amount)}</span></button>`; };
+    if (x.ask) return `<div class="so-e so-ask"><span class="so-ico">❓</span><span class="so-d"><b>${esc(x.desc || src)}</b><small>¿Quién lo ha cobrado? Toca su nombre</small><span class="so-askb">${d.cfg.members.map((m) => `<button type="button" class="sx-mini" data-act="so-who" data-id="${x.id}" data-k="${m.id}"><i>${esc(m.name.slice(0, 1))}</i>${esc(m.name)}</button>`).join('')}</span></span><span class="so-a">${eur(x.amount)}</span><span class="so-tools"><button type="button" class="so-tb" data-act="so-more" data-id="${x.id}" title="Modificar">✏️</button><button type="button" class="so-tb" data-act="so-del" data-id="${x.id}" title="Eliminar">🗑️</button></span></div>`;
+    return `<div class="so-e ${x.kind}"><button type="button" class="so-hit" data-act="so-more" data-id="${x.id}" aria-label="Modificar"></button><span class="so-ico">${ico}</span><span class="so-d"><b>${esc(x.desc || src)}${x.photo ? ' <span title="Tiene foto">📎</span>' : ''}</b><small>${x.kind === 'pago' ? `${esc(soName(x.who))} → ${esc(soName(x.to))}` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`} · ${new Date(x.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · ${src}${only}${sw ? (x.sw ? ' · ✓ Splitwise' : x.swErr ? ' · ⚠️ Splitwise' : ' · ⏳ Splitwise') : ''}</small></span><span class="so-a">${x.kind === 'gasto' ? '− ' : ''}${eur(x.amount)}</span><span class="so-tools"><button type="button" class="so-tb" data-act="so-more" data-id="${x.id}" title="Modificar">✏️<em>Modificar</em></button><button type="button" class="so-tb" data-act="so-del" data-id="${x.id}" title="Eliminar">🗑️</button></span></div>`; };
   const list = d.entries.length ? Object.keys(byDay).map((day) => `<div class="so-day">${esc(new Date(day + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }))}</div>${byDay[day].map(row).join('')}`).join('')
     : `<div class="empty okmsg">${ic('wallet')}<b>Nada apuntado ${d.month ? 'este mes' : 'todavía'}</b><span>Los pagos que entren se apuntan solos. También puedes pulsar «+ Añadir».</span></div>`;
   const swLine = sw ? `<p class="small muted" style="margin:0 0 12px">🔗 Copiando en Splitwise${cfg.sw.groupName ? ` (grupo «${esc(cfg.sw.groupName)}»)` : ''}.${d.entries.some((x) => !x.sw) ? ` <button class="linkbtn" data-act="so-swretry">Reenviar los que faltan</button>` : ''}</p>` : '';
-  return head('🤝 Socios', sub, acts) + chips + `<div class="panel pad so-peace">${peace}</div>` + tiles + people + swLine + `<div class="panel so-list">${list}</div>`;
+  const un = b.unassigned && b.unassigned.n ? `<div class="licban grace so-unb">❓<div><b>${plural(b.unassigned.n, 'cobro sin dueño', 'cobros sin dueño')} (${eur(b.unassigned.amount)})</b><span>No cuentan hasta que digáis quién los cobró. Tócalos abajo o responde en Telegram.</span></div></div>` : '';
+  return head('🤝 Socios', sub, acts) + chips + un + `<div class="panel pad so-peace">${peace}</div>` + tiles + people + swLine + `<div class="panel so-list">${list}</div>`;
 }
 function soCfgDlg() {
   const d = S.so.data; if (!d || d.error) return;
@@ -7965,7 +8017,7 @@ function vpSettle(id) {
     body: `<p class="preview">Se marcan como pagadas sus <b>${plural(x.pending, 'recarga pendiente', 'recargas pendientes')}</b>${x.negCredits ? '. Su saldo en negativo se arregla cargándole créditos' : ''}.</p>
       <div class="pmeth">${PAY_METHODS.filter((m) => m !== 'Sin cobro').map((m, i) => `<label><input type="radio" name="pmethod" value="${m}"${i === 0 ? ' checked' : ''}><span>${m}</span></label>`).join('')}</div>
       <label class="f" style="margin-top:12px">Referencia (opcional)<input name="pref" maxlength="60"></label>`,
-    onSubmit: async (fd) => { const r = await api('POST', '/api/vpay/settle', { userId: id, method: fd.get('pmethod'), ref: fd.get('pref') || '' }); S.vp.data = null; loadVpay(); return `Pago de ${eur(r.total)} registrado`; } });
+    onSubmit: async (fd) => { const r = await api('POST', '/api/vpay/settle', { userId: id, method: fd.get('pmethod'), ref: fd.get('pref') || '' }); await socAsk(r, 'cobro'); S.vp.data = null; loadVpay(); return `Pago de ${eur(r.total)} registrado`; } });
 }
 function vpRemind(id) {
   const x = S.vp.data.debtors.find((v) => v.id === id); if (!x) return;
@@ -8276,10 +8328,11 @@ function dNew() {
       <label class="f">Nota (opcional)<input name="note" maxlength="300" placeholder="Teléfono, forma de pago…"></label>`,
     onOpen: () => wireCost(S.d.servers[0].id),
     onSubmit: async (fd) => {
-      await api('POST', '/api/clients', {
+      const rn = await api('POST', '/api/clients', {
         serverId: +fd.get('serverId'), embyName: fd.get('embyName'), panelName: fd.get('panelName'), password: fd.get('password'), note: fd.get('note'),
         months: +fd.get('months'), screens: +fd.get('screens'), quality: fd.get('quality'), ...(fd.get('ownerId') ? { ownerId: +fd.get('ownerId') } : {}),
       });
+      await socAsk(rn, 'cuenta');
       return 'Cuenta creada en Emby';
     },
   });
@@ -8303,7 +8356,8 @@ function dDemo() {
       <label class="f">Nota (opcional)<input name="note" maxlength="300"></label>`,
     onOpen: () => wireCost(S.d.servers[0].id),
     onSubmit: async (fd) => {
-      await api('POST', '/api/demos', { serverId: +fd.get('serverId'), embyName: fd.get('embyName'), panelName: fd.get('panelName'), password: fd.get('password'), note: fd.get('note'), hours: +fd.get('hours'), quality: fd.get('quality') });
+      const rd = await api('POST', '/api/demos', { serverId: +fd.get('serverId'), embyName: fd.get('embyName'), panelName: fd.get('panelName'), password: fd.get('password'), note: fd.get('note'), hours: +fd.get('hours'), quality: fd.get('quality') });
+      await socAsk(rd, 'demo');
       return 'Demo creada en Emby';
     },
   });
@@ -8345,6 +8399,7 @@ function dRenewSame(c) {
     onOpen: () => { dlgForm.querySelectorAll('select').forEach(bzChips); wireCost(c.serverId, null); },
     onSubmit: async (fd) => {
       const r = await api('POST', `/api/clients/${c.id}/renew`, { months: m, screens: sc, quality: q, paid: fd.get('paid') === '1', ...socBody(fd) });
+      await socAsk(r, 'renov');
       return `Renovada hasta el ${fmt(r.expires)}${socToast(r)}`;
     },
     after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) celebrateThen('renew', now, () => dMessage(now, '', 'renewed'), prevExp); },
@@ -8383,6 +8438,7 @@ function dRenew(c) {
     },
     onSubmit: async (fd) => {
       const r = await api('POST', `/api/clients/${c.id}/renew`, { months: +fd.get('months'), screens: +fd.get('screens'), quality: fd.get('quality'), paid: fd.get('paid') === '1', ...socBody(fd) });
+      await socAsk(r, c.demo ? 'cuenta' : 'renov');
       return `${c.demo ? 'Convertida en cuenta' : 'Renovada'} hasta el ${fmt(r.expires)}${socToast(r)}`;
     },
     // Al terminar, el mensaje listo para enviar al cliente
@@ -9329,6 +9385,7 @@ function dCredits(u) {
       const pk = fd.get('pack') !== null && fd.get('pack') !== '' ? packs[+fd.get('pack')].credits : 0, tot = pk + (+fd.get('amount') || 0);
       const payment = tot > 0 ? { method: fd.get('pmethod'), amount: +fd.get('pamount') || 0, ref: fd.get('pref') || '', status: fd.get('pstatus') } : null;
       const r = await api('POST', `/api/users/${u.id}/credits`, { pack: fd.get('pack') || '', amount: fd.get('amount') === '' ? 0 : +fd.get('amount'), reason: fd.get('reason') || '', note: fd.get('note'), payment });
+      await socAsk(r, 'recarga');
       return `${u.name} tiene ahora ${plural(r.credits, 'crédito', 'créditos')}`;
     },
   });
@@ -9532,6 +9589,7 @@ document.addEventListener('click', (e) => {
   if (a === 'so-add') { soAddDlg(el.dataset.k); return; }
   if (a === 'so-settle') { soAddDlg('pago', { from: el.dataset.from, to: el.dataset.to, amount: el.dataset.a }); return; }
   if (a === 'so-more') { soMore(el.dataset.id); return; }
+  if (a === 'so-who') { api('PUT', `/api/socios/entries/${el.dataset.id}/who`, { who: el.dataset.k }).then(() => { toast('📒 Apuntado'); loadSo(); }, (x) => toast(x.message, true)); return; }
   if (a === 'so-del') { if (dlg.open) dlg.close(); dConfirm('Borrar movimiento', 'Se quita de Socios y las cuentas se recalculan. (En Splitwise, si estaba copiado, bórralo allí.)', 'Borrar', async () => { await api('DELETE', '/api/socios/entries/' + el.dataset.id); await loadSo(); }, 'Movimiento borrado'); return; }
   if (a === 'gx-new') { gxForm(); return; }
   if (a === 'gx-edit') { const e = gxOf(id); if (e) gxForm(e); return; }
@@ -9646,7 +9704,7 @@ document.addEventListener('click', (e) => {
     case 'tb-new': showDlg('¿Qué quieres crear?', `<div class="tbpick"><button type="button" class="tbp" data-act="tb-pick" data-k="new">${ic('userplus')}<b>Nueva cuenta</b><small>Un cliente de pago</small></button><button type="button" class="tbp demo" data-act="tb-pick" data-k="demo">${ic('timer')}<b>Nueva demo</b><small>Prueba gratis de unas horas</small></button></div>`); break;
     case 'tb-pick': { const k = el.dataset.k; if (dlg.open) dlg.close(); setTimeout(() => needServer(() => { S.view = k === 'demo' ? 'demonueva' : 'nuevo'; render(); window.scrollTo(0, 0); }), 30); break; }
     case 'new': needServer(() => { S.view = 'nuevo'; render(); window.scrollTo(0, 0); }); break;
-    case 'paid': if (c) act(() => api('POST', `/api/clients/${c.id}/paid`, {}), 'Cobro registrado'); break;
+    case 'paid': if (c) act(async () => { const r = await api('POST', `/api/clients/${c.id}/paid`, {}); await socAsk(r, 'cobro'); }, 'Cobro registrado'); break;
     case 'audit': loadAudit(); break;
     case 'demo': needServer(() => { S.view = 'demonueva'; render(); window.scrollTo(0, 0); }); break;
     case 'import': needServer(dImport); break;
@@ -9945,6 +10003,7 @@ document.addEventListener('submit', (e) => {
     (demo ? api('POST', '/api/demos', { ...common, hours: +fd.get('hours') })
       : api('POST', '/api/clients', { ...common, months: +fd.get('months'), screens: +fd.get('screens'), paid: fd.get('paid') === '1', ref: fd.get('ref') || '', ...(fd.get('ownerId') ? { ownerId: +fd.get('ownerId') } : {}), ...socBody(fd, f) }))
       .then(async (r) => {
+        await socAsk(r, demo ? 'demo' : 'cuenta');
         S.view = 'cuentas'; S.filter = demo ? 'demo' : 'all'; S.q = ''; S.fOwner = 0; S.fServer = 0;
         await reload(); window.scrollTo(0, 0); toast(demo ? 'Demo creada en Emby' : 'Cliente creado en Emby' + socToast(r));
         const created = S.d.clients.find((x) => x.id === r.id);
