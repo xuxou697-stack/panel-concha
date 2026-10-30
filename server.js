@@ -2217,6 +2217,9 @@ function readUsername(v) {
   if (!/^[a-z0-9._-]{3,30}$/.test(u)) throw new HttpError(400, 'El usuario debe tener de 3 a 30 caracteres: letras, números, punto, guion o guion bajo.');
   return u;
 }
+/** Contraseñas de clientes de Emby/Jellyfin: 8 o más (así valen también para Plex el día que se migre). Se puede volver a 4 */
+const cliPassMin = () => ((db.settings.migrate || {}).pass8 === false ? 4 : 8);
+function readCliPassword(v) { const min = cliPassMin(), p = typeof v === 'string' ? v : ''; if (p.length < min) throw new HttpError(400, min === 8 ? 'La contraseña tiene que tener al menos 8 caracteres (así vale también para Plex). Pulsa «Generar» si quieres una.' : `La contraseña debe tener al menos ${min} caracteres.`); return p; }
 function readNewPassword(v, min = 8) {
   const p = typeof v === 'string' ? v : '';
   if (p.length < min) throw new HttpError(400, `La contraseña debe tener al menos ${min} caracteres.`);
@@ -2873,6 +2876,18 @@ async function telegramPoll() {
           if (botTooFast(chat)) continue;
           reqWait.delete(chat);
           jobs.push(() => botReply(chat, BOT_CMD[cmd], mine));
+          continue;
+        }
+        // Nos contesta con su email (se lo pedimos con «Pedir email por Telegram»)
+        const em = /^\s*([^@\s]+@[^@\s]+\.[a-z]{2,})\s*$/i.exec(text);
+        const fix = (c) => c.askEmail || !migEmail(c) || (c.emailTgAt && Date.now() - Date.parse(c.emailTgAt) < 3600000);
+        if (mine.length && em && mine.some(fix)) {
+          const mail = em[1].toLowerCase(), got = mine.filter(fix);
+          for (const c of got) { c.email = mail; c.emailTgAt = new Date().toISOString(); delete c.askEmail; addLog('edicion', c, `El cliente ha dado su email por Telegram: ${mail}`, null); }
+          saveDb();
+          jobs.push(() => tg('sendMessage', { chat_id: chat, text: `✅ ¡Gracias! Hemos guardado tu email: ${mail}
+
+Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {}));
           continue;
         }
         // Texto normal (u orden que no existe) de un cliente enlazado: le enseñamos el menú
@@ -3738,7 +3753,7 @@ route('POST', '/api/clients', '*', ({ me, body }) => lock(async () => {
   const s = serverById(body.serverId);
   assertServerAllowed(me, s);
   const embyName = str(body.embyName, 60);
-  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readNewPassword(body.password, 4);
+  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readCliPassword(body.password);
   if (!embyName) throw new HttpError(400, s.kind === 'plex' ? 'Escribe el email (o el usuario) de Plex del cliente.' : 'Escribe el nombre de usuario de Emby.');
   if (s.kind === 'plex' && body.plexNew && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(embyName)) throw new HttpError(400, 'Para crear la cuenta de Plex escribe un email válido.');
   assertEmbyNameFree(s, embyName);
@@ -3786,7 +3801,7 @@ route('POST', '/api/demos', '*', ({ me, body }) => lock(async () => {
   assertServerAllowed(me, s);
   if (!isStaff(me) && me.allowDemos === false) throw new HttpError(403, 'Tu usuario no tiene permiso para crear demos.');
   const embyName = str(body.embyName, 60);
-  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readNewPassword(body.password, 4);
+  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readCliPassword(body.password);
   const hours = Number(body.hours);
   if (!embyName) throw new HttpError(400, s.kind === 'plex' ? 'Escribe el email (o el usuario) de Plex del cliente.' : 'Escribe el nombre de usuario de Emby.');
   if (!db.settings.demoHours.includes(hours)) throw new HttpError(400, 'Elige una duración de demo válida.');
@@ -3818,7 +3833,7 @@ route('PUT', '/api/clients/:id', '*', ({ me, params, body }) => lock(async () =>
   if (c.status === 'trash') throw new HttpError(400, 'Está en la papelera: renuévala o restáurala antes de editarla.');
   const s = serverOf(c);
   const changes = [];
-  const newPassword = typeof body.password === 'string' && body.password ? readNewPassword(body.password, 4) : '';
+  const newPassword = typeof body.password === 'string' && body.password ? readCliPassword(body.password) : '';
   if (newPassword && s.kind === 'plex') throw new HttpError(400, 'En Plex la contraseña es la de la cuenta de plex.tv del cliente: la cambia él en plex.tv.');
   readContact(body, c); // valida antes de tocar nada
   if (!isStaff(me) && body.expires !== undefined && body.expires !== c.expires) throw new HttpError(403, 'La fecha de caducidad no se puede cambiar a mano. Usa «Renovar».');
@@ -4123,7 +4138,7 @@ async function moveClient(me, c, to, passwordIn) {
   if ((from.kind === 'plex') !== (to.kind === 'plex')) throw new HttpError(400, 'Una cuenta de Plex solo se puede pasar a otro servidor Plex (y una de Emby o Jellyfin, a uno que no sea Plex).');
   if (!c.quality) throw new HttpError(400, 'Usa bibliotecas propias del servidor actual. Asígnale contenido Básico o 4K antes de transferirla.');
   if (!packageReady(to, c.quality)) throw new HttpError(400, `El contenido ${QUALITIES[c.quality]} aún no está configurado en "${to.name}".`);
-  const password = passwordIn ? readNewPassword(passwordIn, 4) : c.password;
+  const password = passwordIn ? readCliPassword(passwordIn) : c.password;
   if (!password && to.kind !== 'plex') throw new HttpError(400, 'El panel no tiene guardada su contraseña. Cámbiala primero o transfiérela sola escribiendo una nueva.');
   if (db.clients.some((x) => x.id !== c.id && x.serverId === to.id && x.embyName.toLowerCase() === c.embyName.toLowerCase())) throw new HttpError(409, 'En ese servidor ya hay una cuenta con el mismo usuario de Emby.');
   const old = { serverId: c.serverId, embyId: c.embyId };
@@ -7102,6 +7117,198 @@ function dailySummary() {
   lock(async () => saveDb()).catch(() => {});
 }
 route('POST', '/api/daily/test', SUPER, ({ me }) => { if (!me.tgChat) throw new HttpError(400, 'Enlaza primero tu Telegram en Ajustes › Seguridad.'); notifyUser(me, dailySummaryText()); return { ok: true }; });
+
+/* ======================================================================
+   Migrar a Plex: pasa cuentas de Emby o Jellyfin a un servidor Plex, una o muchas a la vez.
+   Se usa el email del cliente: se le crea su cuenta de Plex con ese email (con su misma contraseña
+   si vale para Plex) o, si ya tiene Plex, se le invita. La cuenta antigua se apaga (se puede deshacer)
+   o se borra. Nada se toca si algo falla: la cuenta se queda como estaba.
+   ====================================================================== */
+const MIG_WAIT = Number(process.env.MIG_WAIT_MS) || 700; // pausa entre cuentas para no saturar plex.tv
+const migSleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
+const MIG_FAKE = /@cliente\.local$/i; // los emails inventados con «Generar» no sirven para Plex
+const migEmail = (c) => { const e = String(c.email || '').trim(); if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) && !MIG_FAKE.test(e)) return e.toLowerCase(); const n = String(c.embyName || '').trim(); return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(n) && !MIG_FAKE.test(n) ? n.toLowerCase() : ''; };
+const migPass = () => 'Plex' + crypto.randomBytes(3).toString('hex') + Math.floor(10 + Math.random() * 89);
+/** Las cuentas que entran en la migración y por qué se quedan fuera las demás */
+function migPlan(me, body) {
+  const to = serverById(body.to), toPx = to.kind === 'plex';
+  const fromId = Number(body.from) || 0, ids = Array.isArray(body.ids) && body.ids.length ? new Set(body.ids.map(Number)) : null;
+  const list = db.clients.filter((c) => {
+    if (ids) return ids.has(c.id);
+    const s = db.servers.find((x) => x.id === c.serverId);
+    if (!s || s.id === to.id || (fromId ? s.id !== fromId : kindOf(s) === kindOf(to))) return false;
+    if (c.demo || c.status === 'trash') return false;
+    if (body.who === 'valid' && diffDays(c.expires, today()) < 0) return false;
+    return true;
+  });
+  const ready = [], noEmail = [], other = [];
+  const qOk = (q) => q && packageReady(to, q);
+  for (const c of list) {
+    const s = serverOf(c), row = { id: c.id, name: c.panelName, user: c.embyName, email: migEmail(c), server: s ? s.name : '?' };
+    if (s && s.id === to.id) other.push({ ...row, why: 'Ya está en ese servidor' });
+    else if (toPx && !row.email) noEmail.push(row);
+    else if (!qOk(c.quality)) other.push({ ...row, why: c.quality ? `El contenido ${QUALITIES[c.quality]} no está configurado en ${to.name}` : 'Usa bibliotecas propias: ponle Básico o 4K antes' });
+    else if (toPx && db.clients.some((x) => x.id !== c.id && x.serverId === to.id && String(x.embyName).toLowerCase() === row.email)) other.push({ ...row, why: 'Ese email ya tiene una cuenta en ese Plex' });
+    else ready.push({ ...row, newUser: toPx ? row.email : migUserName(c, to) });
+  }
+  const room = to.maxClients ? Math.max(0, to.maxClients - db.clients.filter((x) => x.serverId === to.id && x.status !== 'trash').length) : null;
+  return { to, ready, noEmail, other, room };
+}
+/** Pasa una cuenta a Plex. Se llama dentro de lock() */
+async function migrateOne(me, c, to, opts) {
+  const from = serverOf(c);
+  if (!from || from.kind === 'plex') throw new HttpError(400, 'Ya está en Plex.');
+  const email = migEmail(c); if (!email) throw new HttpError(400, 'No tiene email.');
+  if (!c.quality || !packageReady(to, c.quality)) throw new HttpError(400, 'El contenido no está configurado en el Plex.');
+  assertRoom(to);
+  const old = { serverId: c.serverId, embyId: c.embyId, embyName: c.embyName, password: c.password || '' };
+  let created = null, pass = '', mode = opts.mode === 'invite' ? 'invite' : 'new';
+  if (mode === 'new') {
+    pass = old.password && old.password.length >= 8 ? old.password : migPass();
+    try { created = await emby(to, 'POST', '/Users/New', { Name: email, Email: email, PlexNew: true, Password: pass }); }
+    catch (e) { if (e.status === 409 || /ya tiene una cuenta de Plex/.test(e.message)) mode = 'invite'; else throw e; }
+  }
+  if (!created) { pass = ''; created = await emby(to, 'POST', '/Users/New', { Name: email, Email: email }); }
+  Object.assign(c, { serverId: to.id, embyId: created.Id, embyName: email });
+  if (mode === 'new') c.plexNew = true; else delete c.plexNew;
+  try { await applyState(c); }
+  catch (e) { await emby(to, 'DELETE', `/Users/${created.Id}`).catch(() => {}); Object.assign(c, { serverId: old.serverId, embyId: old.embyId, embyName: old.embyName }); delete c.plexNew; throw e; }
+  c.password = pass;
+  c.migratedFrom = { ...old, at: new Date().toISOString(), kept: opts.old !== 'delete', mode };
+  delete c.lastError;
+  // la cuenta antigua: apagada (se puede deshacer) o borrada. Si el servidor viejo no contesta, no pasa nada
+  let note = '';
+  try { if (opts.old === 'delete') await emby(from, 'DELETE', `/Users/${old.embyId}`); else await removeAccess({ ...c, serverId: old.serverId, embyId: old.embyId, quality: c.quality }, true); }
+  catch (e) { if (e.embyStatus !== 404) note = ` (no se pudo ${opts.old === 'delete' ? 'borrar' : 'apagar'} la de ${srvKind(from)}: ${e.message.slice(0, 80)})`; }
+  addLog('transferida', c, `Migrada de ${srvKind(from)} "${from.name}" a Plex "${to.name}" con el email ${email} (${mode === 'new' ? 'cuenta de Plex nueva' : 'invitación'})${note}`, me);
+  if (opts.notify && c.tgChat) migTell(c, to, mode, pass).catch(() => {});
+  return { mode, note: note.trim() };
+}
+/** Usuario para Emby/Jellyfin: el de antes si viene de Emby/Jellyfin; si viene de Plex, el de antes de pasarlo a Plex o lo de delante de la @ */
+function migUserName(c, to) {
+  const from = serverOf(c);
+  let n = from && from.kind !== 'plex' ? c.embyName : (c.migratedFrom && c.migratedFrom.embyName && !/@/.test(c.migratedFrom.embyName) ? c.migratedFrom.embyName : String(c.embyName || '').split('@')[0].replace(/[^A-Za-z0-9._-]/g, '')) || 'cliente' + c.id;
+  const taken = (x) => db.clients.some((y) => y.id !== c.id && y.serverId === to.id && String(y.embyName).toLowerCase() === x.toLowerCase());
+  let out = n, i = 2; while (taken(out)) out = n + (i++);
+  return out;
+}
+/** Pasa una cuenta a otra plataforma (Emby, Jellyfin o Plex). Se llama dentro de lock() */
+async function migrateAny(me, c, to, opts) {
+  if (to.kind === 'plex') return migrateOne(me, c, to, opts);
+  const from = serverOf(c);
+  if (!from || from.id === to.id) throw new HttpError(400, 'Ya está en ese servidor.');
+  if (!c.quality || !packageReady(to, c.quality)) throw new HttpError(400, 'El contenido no está configurado en ese servidor.');
+  assertRoom(to);
+  const old = { serverId: c.serverId, embyId: c.embyId, embyName: c.embyName, password: c.password || '' };
+  const prevPass = old.password || (c.migratedFrom && c.migratedFrom.password) || ''; // si viene de Plex por invitación, la de antes de pasarlo a Plex
+  const name = migUserName(c, to), pass = prevPass.length >= 4 ? prevPass : migPass();
+  const created = await emby(to, 'POST', '/Users/New', { Name: name });
+  Object.assign(c, { serverId: to.id, embyId: created.Id, embyName: created.Name || name }); delete c.plexNew;
+  try { await setEmbyPassword(to, c.embyId, pass, true); await applyState(c); }
+  catch (e) { await emby(to, 'DELETE', `/Users/${created.Id}`).catch(() => {}); Object.assign(c, { serverId: old.serverId, embyId: old.embyId, embyName: old.embyName }); throw e; }
+  c.password = pass;
+  c.migratedFrom = { ...old, at: new Date().toISOString(), kept: opts.old !== 'delete', mode: 'user' };
+  delete c.lastError;
+  let note = '';
+  try { if (opts.old === 'delete') await emby(from, 'DELETE', `/Users/${old.embyId}`); else await removeAccess({ ...c, serverId: old.serverId, embyId: old.embyId }, true); }
+  catch (e) { if (e.embyStatus !== 404) note = ` (no se pudo ${opts.old === 'delete' ? 'borrar' : 'apagar'} la de ${srvKind(from)}: ${e.message.slice(0, 80)})`; }
+  addLog('transferida', c, `Migrada de ${srvKind(from)} "${from.name}" a ${srvKind(to)} "${to.name}" (usuario ${c.embyName})${note}`, me);
+  if (opts.notify && c.tgChat) migTell(c, to, 'user', pass).catch(() => {});
+  return { mode: 'user', note: note.trim() };
+}
+function migTell(c, to, mode, pass) {
+  if (mode === 'user') {
+    const brand = db.settings.brand.name || 'tu servicio', k = srvKind(to);
+    return tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', disable_web_page_preview: true, text: `📢 <b>Cambio importante en tu cuenta de ${hEsc(brand)}</b>\n\nHemos pasado tu cuenta a <b>${hEsc(k)}</b> 🎬\n\n1️⃣ Descarga la app <b>${hEsc(k)}</b>.\n2️⃣ Entra con:${to.publicUrl ? `\n🌐 Servidor: <code>${hEsc(to.publicUrl)}</code>` : ''}\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: <tg-spoiler>${hEsc(pass)}</tg-spoiler>${c.migratedFrom && pass === c.migratedFrom.password ? ' <i>(la misma de siempre)</i>' : ''}\n\nTu tiempo y tus pantallas siguen igual. Vence el ${hEsc(rcFmtD(c.expires))}.` });
+  }
+  const brand = db.settings.brand.name || 'tu servicio';
+  const text = mode === 'new'
+    ? `📢 <b>Cambio importante en tu cuenta de ${hEsc(brand)}</b>\n\nHemos pasado tu cuenta a <b>Plex</b> 🎬\n\n1️⃣ Descarga la app <b>Plex</b> (en la tele, móvil o Fire Stick).\n2️⃣ Entra con:\n✉️ Email: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: <tg-spoiler>${hEsc(pass)}</tg-spoiler>${c.migratedFrom && pass === c.migratedFrom.password ? ' <i>(la misma de siempre)</i>' : ''}\n\nTu tiempo y tus pantallas siguen igual. Vence el ${hEsc(rcFmtD(c.expires))}.`
+    : `📢 <b>Cambio importante en tu cuenta de ${hEsc(brand)}</b>\n\nHemos pasado tu cuenta a <b>Plex</b> 🎬\n\nTe hemos enviado una <b>invitación de Plex</b> a <code>${hEsc(c.embyName)}</code>.\n1️⃣ Abre ese email y acepta la invitación (si no tienes cuenta de Plex, créala con ese mismo email).\n2️⃣ Descarga la app <b>Plex</b> y entra con tu cuenta.\n\nTu tiempo y tus pantallas siguen igual. Vence el ${hEsc(rcFmtD(c.expires))}.`;
+  return tg('sendMessage', { chat_id: c.tgChat, text, parse_mode: 'HTML', disable_web_page_preview: true });
+}
+/** Deshacer: vuelve a su servidor de antes (si la cuenta antigua se borró, se crea otra vez con su usuario y contraseña) */
+async function migUndo(me, c) {
+  const m = c.migratedFrom; if (!m) throw new HttpError(400, 'Esta cuenta no se ha migrado con el panel.');
+  const px = serverOf(c), back = db.servers.find((x) => x.id === m.serverId); // px: donde está ahora (Plex, Emby o Jellyfin)
+  if (!back) throw new HttpError(400, 'El servidor de antes ya no existe en el panel.');
+  const plexId = c.embyId;
+  Object.assign(c, { serverId: back.id, embyId: m.embyId, embyName: m.embyName, password: m.password }); delete c.plexNew;
+  try { await applyState(c); }
+  catch (e) {
+    if (e.embyStatus !== 404 || (!m.password && back.kind !== 'plex')) { Object.assign(c, { serverId: px.id, embyId: plexId }); throw e; }
+    const nu = await emby(back, 'POST', '/Users/New', back.kind === 'plex' ? { Name: m.embyName, Email: m.embyName } : { Name: m.embyName }); c.embyId = nu.Id;
+    if (back.kind !== 'plex') await setEmbyPassword(back, c.embyId, m.password, true); await applyState(c);
+  }
+  if (px && px.id !== back.id) await emby(px, 'DELETE', `/Users/${plexId}`).catch(() => {});
+  delete c.migratedFrom;
+  addLog('transferida', c, `Migración deshecha: vuelve a ${srvKind(back)} "${back.name}"`, me);
+}
+let migJob = null;
+const migOut = () => (migJob ? { ...migJob, list: undefined, results: migJob.results.slice(-400) } : null);
+route('GET', '/api/migrate/plex', SUPER, () => ({ ready: migReady(), askJob: askEmailJob, job: migOut(), migrated: db.clients.filter((c) => c.migratedFrom).map((c) => { const a = db.servers.find((x) => x.id === c.migratedFrom.serverId), b = serverOf(c); return { id: c.id, name: c.panelName, email: c.embyName, at: c.migratedFrom.at, kept: c.migratedFrom.kept, mode: c.migratedFrom.mode, from: a ? srvKind(a) : '?', to: b ? srvKind(b) : '?' }; }) }));
+/** Cómo de preparados están los clientes para pasar a Plex */
+function migReady() {
+  const live = db.clients.filter((c) => !c.demo && c.status !== 'trash' && (serverOf(c) || {}).kind !== 'plex');
+  const noEm = live.filter((c) => !migEmail(c));
+  return { total: live.length, noEmail: noEm.length, noEmailTg: noEm.filter((c) => c.tgChat).length, asked: noEm.filter((c) => c.askEmail).length,
+    shortPass: live.filter((c) => c.password && c.password.length < 8).length, pass8: cliPassMin() === 8 };
+}
+route('PUT', '/api/migrate/settings', SUPER, ({ me, body }) => lock(async () => {
+  db.settings.migrate = { ...(db.settings.migrate || {}), pass8: body.pass8 !== false };
+  addLog('ajustes', null, `Contraseñas de clientes: mínimo ${cliPassMin()} caracteres`, me); saveDb(); return { ok: true, ready: migReady() };
+}));
+/** Pedir el email por Telegram a los clientes que no lo tienen: lo escriben al bot y se guarda solo */
+const ASK_EMAIL_TXT = (c) => `📧 Hola ${c.panelName} 👋\n\nPara tener tu cuenta siempre en orden (y poder avisarte si algún día cambiamos de app), ¿nos dejas tu email?\n\n✍️ Escríbelo aquí mismo, en un mensaje. Solo el email, por ejemplo: nombre@gmail.com`;
+let askEmailJob = null;
+route('POST', '/api/clients/ask-email', SUPER, ({ me, body }) => {
+  if (askEmailJob && !askEmailJob.finished) throw new HttpError(409, 'Ya se están enviando. Espera un momento.');
+  const ids = Array.isArray(body.ids) && body.ids.length ? new Set(body.ids.map(Number)) : null;
+  const list = db.clients.filter((c) => (ids ? ids.has(c.id) : !c.demo && c.status !== 'trash') && c.tgChat && !migEmail(c) && (body.again || !c.askEmail));
+  if (!list.length) throw new HttpError(400, 'No hay clientes sin email con Telegram enlazado a los que preguntar (o ya se les preguntó).');
+  const job = (askEmailJob = { total: list.length, sent: 0, failed: 0, finished: false });
+  (async () => {
+    for (const c of list) {
+      try { await tg('sendMessage', { chat_id: c.tgChat, text: ASK_EMAIL_TXT(c) }); c.askEmail = new Date().toISOString(); job.sent++; } catch { job.failed++; }
+      await migSleep(150);
+    }
+    job.finished = true; addLog('mensaje', null, `Email pedido por Telegram a ${job.sent} ${job.sent === 1 ? 'cliente' : 'clientes'}`, me);
+    lock(async () => saveDb()).catch(() => {});
+  })();
+  return { ok: true, total: list.length };
+});
+route('POST', '/api/migrate/plex/preview', SUPER, ({ me, body }) => { const p = migPlan(me, body); return { ready: p.ready, noEmail: p.noEmail, other: p.other, room: p.room, to: p.to.name, toKind: kindOf(p.to) }; });
+route('POST', '/api/migrate/plex/start', SUPER, ({ me, body }) => {
+  if (migJob && !migJob.finished) throw new HttpError(409, 'Ya hay una migración en marcha. Espera a que termine.');
+  const p = migPlan(me, body);
+  if (!p.ready.length) throw new HttpError(400, 'No hay ninguna cuenta lista para pasar.');
+  const opts = { mode: body.mode === 'invite' ? 'invite' : 'new', old: body.old === 'delete' ? 'delete' : 'off', notify: body.notify !== false };
+  migJob = { id: crypto.randomBytes(4).toString('hex'), to: p.to.name, toKind: kindOf(p.to), total: p.ready.length, done: 0, ok: 0, failed: 0, invited: 0, results: [], startedAt: new Date().toISOString(), by: me.name, opts, finished: false };
+  const job = migJob, ids = p.ready.map((r) => r.id), toId = p.to.id;
+  addLog('transferida', null, `Migración de plataforma empezada: ${ids.length} ${ids.length === 1 ? 'cuenta' : 'cuentas'} hacia "${p.to.name}"`, me);
+  (async () => {
+    for (const id of ids) {
+      if (job.stop) break;
+      const c = db.clients.find((x) => x.id === id), to = db.servers.find((x) => x.id === toId);
+      if (!c || !to) { job.done++; continue; }
+      try { const r = await lock(async () => { const x = await migrateAny(me, c, to, opts); saveDb(); return x; }); job.ok++; if (r.mode === 'invite') job.invited++; job.results.push({ id, name: c.panelName, email: c.embyName, ok: true, mode: r.mode, note: r.note }); }
+      catch (e) { job.failed++; job.results.push({ id, name: c.panelName, email: migEmail(c), ok: false, error: e.message.slice(0, 160) }); }
+      job.done++;
+      await migSleep(MIG_WAIT);
+    }
+    job.finished = true; job.endedAt = new Date().toISOString();
+    notifyStaff('payments', `🔁 Migración terminada: ${job.ok} de ${job.total} ${job.total === 1 ? 'cuenta pasada' : 'cuentas pasadas'} a "${job.to}"${job.invited ? ` (${job.invited} con invitación)` : ''}${job.failed ? `. ❌ ${job.failed} con error: míralas en el panel` : ''}.`);
+    lock(async () => saveDb()).catch(() => {});
+  })();
+  return { ok: true, job: migOut() };
+});
+route('POST', '/api/migrate/plex/stop', SUPER, () => { if (migJob && !migJob.finished) migJob.stop = true; return { ok: true }; });
+route('POST', '/api/migrate/plex/undo', SUPER, ({ me, body }) => lock(async () => {
+  const ids = new Set((Array.isArray(body.ids) ? body.ids : []).map(Number));
+  let ok = 0; const failed = [];
+  for (const c of db.clients.filter((x) => x.migratedFrom && ids.has(x.id))) { try { await migUndo(me, c); ok++; } catch (e) { failed.push({ name: c.panelName, error: e.message }); } saveDb(); }
+  return { ok: true, undone: ok, failed };
+}));
 
 /* ======================================================================
    Socios: un «Tricount» dentro del panel (solo superadministrador).

@@ -2366,6 +2366,19 @@ body{--pc:var(--brand,#3fa9f5)} body.jf{--pc:#a46bff} body.px{--pc:#e5a00d}
 .sx-mini{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}.sx-mini i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-style:normal;font-size:11px}
 .so-unb{margin-bottom:14px}
 @media (max-width:560px){.so-tb em{display:none}}
+.mg-how{padding:12px 14px;border-radius:14px;background:color-mix(in srgb,#e5a00d 10%,var(--surface));border:1px solid color-mix(in srgb,#e5a00d 35%,transparent);margin-bottom:14px;font-size:14px}
+.mg-form{display:grid;gap:4px;margin-bottom:14px}.mg-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:8px}
+.mg-opt{cursor:pointer}.mg-opt input{position:absolute;opacity:0;pointer-events:none}.mg-opt span{display:block;height:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);transition:.15s}
+.mg-opt b{display:block;margin-bottom:3px}.mg-opt small{color:var(--muted);font-size:12.5px}.mg-opt input:checked+span{border-color:#e5a00d;box-shadow:0 0 0 2px color-mix(in srgb,#e5a00d 35%,transparent);background:color-mix(in srgb,#e5a00d 8%,var(--surface))}
+.mg-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.mg-one{padding:10px 12px;border-radius:12px;background:var(--raised);margin-bottom:8px}
+.mg-go{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.mg-go span{display:block;color:var(--muted);font-size:13px}
+.mg-sec{margin-bottom:12px}.mg-sec summary{cursor:pointer;font-weight:700}.mg-sec summary small{font-weight:400;color:var(--muted);margin-left:6px}
+.mg-r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}.mg-r span b{margin-right:6px}.mg-r span small{color:var(--muted);font-size:12.5px}
+.mg-why{color:var(--muted)}.mg-why.bad,.mg-job .bad{color:var(--danger,#ef4444)}.mg-em{display:flex;gap:6px}.mg-em input{padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;min-width:200px}
+.mg-job{margin-bottom:14px}.mg-jh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}.mg-jh small{color:var(--muted)}.mg-fails{margin-top:10px}
+.mg-tiles{margin-bottom:12px}
+.mg-prep{margin-bottom:14px}.mg-prep summary{cursor:pointer;font-weight:700}.mg-prep summary small{font-weight:400;color:var(--muted);margin-left:6px}
+.mg-pr{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line);margin-top:10px}.mg-pr>div{flex:1;min-width:220px}.mg-pr b{display:block}.mg-pr small{color:var(--muted);font-size:12.5px}
 </style>
 </head>
 <body>
@@ -2509,7 +2522,7 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'm-paylink': 'wallet', 'renew-same': 'bolt', renew: 'clock', 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'm-plex': 'refresh', 'bulk-mig': 'refresh', 'm-paylink': 'wallet', 'renew-same': 'bolt', renew: 'clock', 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-pkg': 'box', 'bulk-scr': 'screen', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
@@ -2552,7 +2565,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN = new Set();
 
 /* ---------- Estado ---------- */
-const S = { cf: { id: 0, hist: null, conn: null, busy: false }, fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, so: { data: null, busy: false, at: 0, m: '' }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { cf: { id: 0, hist: null, conn: null, busy: false }, fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, so: { data: null, busy: false, at: 0, m: '' }, mg: { data: null, busy: false, at: 0, prev: null, ids: null, timer: null, f: { from: 0, to: 0, who: 'all', mode: 'new', old: 'off', notify: true } }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -2587,6 +2600,7 @@ function navGroups() {
   const srv = [];
   if (canDo('viewServers')) srv.push({ v: 'servidores', t: 'Servidores', i: 'server' }, { v: 'estado', t: 'Estado del servidor', i: 'chart' });
   if (staff() && canDo('servers') && kindTab() === 'emby') srv.push({ v: 'calidad', t: 'Calidad remota', i: 'sliders' }); // ajuste que solo tiene Emby
+  if (isSuper() && new Set(allSrv().map(KIND_OF)).size > 1) srv.push({ v: 'migplex', t: 'Migrar de plataforma', i: 'refresh' });
   // 💬 Mensajes
   const msg = [
     { v: 'mensajecli', t: 'A los clientes', i: 'send' },
@@ -3040,7 +3054,7 @@ function render() {
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml() : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() !== 'emby') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -3095,6 +3109,7 @@ function render() {
   if (S.view === 'plantillas') poWire();
   if (S.view === 'ajustes') tiersWire();
   if (S.view === 'gastos' && !S.gx.busy && (!S.gx.data || Date.now() - S.gx.at > 30000)) loadGx();
+  if (S.view === 'migplex' && !S.mg.busy && (!S.mg.data || Date.now() - S.mg.at > 30000)) loadMg();
   if (S.view === 'socios' && !S.so.busy && (!S.so.data || Date.now() - S.so.at > 30000)) loadSo();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
@@ -3917,6 +3932,7 @@ function vCuentas() {
   const selBar = !staff() ? '' : (S.sel.size ? `<div class="bulk"><b>${plural(S.sel.size, 'cuenta seleccionada', 'cuentas seleccionadas')}</b>
       ${S.d.users.length > 1 ? '<button class="btn sm primary" data-act="bulk-owner">Transferir revendedor</button>' : ''}
       ${S.d.servers.length > 1 ? '<button class="btn sm primary" data-act="bulk-move">Transferir servidor</button>' : ''}
+      ${isSuper() && new Set(allSrv().map(KIND_OF)).size > 1 ? '<button class="btn sm primary" data-act="bulk-mig">🔁 Migrar plataforma</button>' : ''}
       <button class="btn sm" data-act="list-more">Más acciones…</button>
       <button class="btn sm ghost" data-act="bulk-clear">Quitar selección</button></div>` : '') +
     (rows.length ? `<label class="selall"><input type="checkbox" id="selAll"${allSel ? ' checked' : ''}> Seleccionar ${rows.length === 1 ? 'la cuenta' : `las ${rows.length} cuentas`} de esta lista</label>` : '');
@@ -3987,8 +4003,8 @@ function vNuevo(demo) {
       ${isPlexTab() ? `<label class="f">Email de Plex *<input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" inputmode="email" placeholder="email@ejemplo.com"><small class="muted" id="pxHint">Con este email se le invita a tu servidor.</small></label>
       <label class="f" id="pxPw"><span id="pxPwT">Contraseña de su Plex <span class="muted">(opcional)</span></span><span class="inrow"><input name="password" autocomplete="off" placeholder="Si la pones, el panel acepta la invitación por él">${gen('password', 'Generar una contraseña')}</span><small class="muted" id="pxPwH">Sin contraseña, le llega la invitación a su email y la acepta él.</small></label>`
     : `<label class="f">Nombre en Emby *<span class="inrow"><input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" placeholder="user.12abc">${gen('embyName', 'Generar un usuario')}</span></label>
-      <label class="f">Contraseña *<span class="inrow"><input name="password" required minlength="4" autocomplete="off" placeholder="Contraseña">${gen('password', 'Generar una contraseña')}</span></label>
-      <label class="f">Email <span class="muted">(opcional)</span><span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span></label>`}
+      <label class="f">Contraseña *<span class="inrow"><input name="password" required minlength="${pwMin()}" autocomplete="off" placeholder="${pwMin() === 8 ? '8 o más letras y números' : 'Contraseña'}">${gen('password', 'Generar una contraseña')}</span>${pwMin() === 8 ? '<small class="muted">Con 8 o más, valdrá igual si algún día pasa a Plex.</small>' : ''}</label>
+      <label class="f">Email <span class="muted">(recomendado)</span><span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span><small class="muted">Su email de verdad: sin él no se podrá pasar a Plex.</small></label>`}
     </div>
     <h2>${demo ? 'La demo' : 'El plan'}</h2>
     <label class="f">Servidor *<select name="serverId"${srvs.length <= 8 ? ' data-chip="srv"' : ''}>${srvs.map((x) => `<option value="${x.id}"${x.full ? ' disabled' : ''}>${esc(x.name)}${x.full ? ' (lleno)' : ''}</option>`).join('')}</select></label>
@@ -4990,7 +5006,7 @@ const QS_KEYS = {
   directo: 'en directo viendo ahora reproduciendo', monitor: 'monitor sesiones reproducciones viendo transcode detener caratulas mensaje pantalla', inactivos: 'inactivos no ven sin conexion ultima conexion',
   uso: 'estadisticas lo mas visto horas punta peliculas series', altrans: 'transcode alertas conversion', alses: 'sesiones excedidas pantallas compartir cuenta limite', alhist: 'historial alertas',
   equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
-  admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', socios: 'socios socio tricount splitwise repartir cuentas deber debe quien cobro reparto mitad', gastos: 'gastos pagos facturas contabilidad calendario vps ovh contenido nube dominio recordatorio', ajustes: 'precios paquetes tarifas meses pantallas',
+  admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', migplex: 'migrar migracion plex pasar emby jellyfin masivo cambio email', socios: 'socios socio tricount splitwise repartir cuentas deber debe quien cobro reparto mitad', gastos: 'gastos pagos facturas contabilidad calendario vps ovh contenido nube dominio recordatorio', ajustes: 'precios paquetes tarifas meses pantallas',
   perfil: 'perfil nombre email moneda soporte mi contraseña cambiar clave', seguridad: 'seguridad 2fa verificacion dos pasos google authenticator telegram sesiones contraseña codigo rescate proteger',
   copias: 'copias seguridad backup restaurar descargar guardar datos google drive comprobar', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
   apariencia: 'apariencia colores logo marca tema nombre panel', notifs: 'notificaciones telegram bot avisos pantalla', importar: 'importar csv excel emby subir lista', logs: 'logs actividad registro accesos entradas',
@@ -7037,6 +7053,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 209, d: '2026-10-30', items: ['🛟 Preparados para Plex (en Migrar de plataforma): ves cuántos clientes no tienen email y el bot se lo puede pedir por Telegram (cuando contestan, se guarda solo en su ficha)', '🔑 Las contraseñas de clientes nuevas son de 8 o más (así valen también en Plex). Se puede volver a 4 en Migrar de plataforma'], team: ['🔑 Las contraseñas de clientes nuevas tienen que tener 8 o más letras y números (pulsa «Generar» si quieres una). Así valen también si algún día pasan a Plex', '✉️ Pon el email de verdad del cliente al crear la cuenta'] },
+  { v: 208, d: '2026-10-30', items: ['🔁 Migrar de plataforma: ahora en cualquier dirección (Emby, Jellyfin o Plex). Botón «🔁 Migrar» en la ficha del cliente, «Migrar plataforma» en Más, y para muchas a la vez: márcalas en la lista y pulsa «🔁 Migrar plataforma». A Emby/Jellyfin pasan con su mismo usuario y contraseña; a Plex con su email y su misma contraseña'] },
+  { v: 207, d: '2026-10-30', items: ['🔁 Migrar a Plex (Servidores › Migrar a Plex): pasa tus clientes de Emby o Jellyfin a Plex usando su email, uno a uno (Más › Pasar a Plex) o todos a la vez. Se le crea su cuenta de Plex con su misma contraseña (o se le invita si ya tiene Plex), conserva su fecha, pantallas y contenido, le llegan los pasos por Telegram y se puede deshacer'] },
   { v: 206, d: '2026-10-30', items: ['🙋 Después de crear una cuenta, una demo, renovar o cobrar, el panel te pregunta con una animación «¿Quién ha sido? Angus o Xux». El que toca su nombre es el que lo ha cobrado y se apunta solo en Socios. También llega la pregunta por Telegram con dos botones. Los pagos automáticos se apuntan a Xux', '✏️ Socios: cada movimiento tiene sus botones «Modificar» y «Eliminar»'] },
   { v: 205, d: '2026-10-30', items: ['🎯 Seguimiento de demos renovado: botón «✨ Pasar a cliente» en cada demo terminada (la conviertes en cuenta sin crearla otra vez, y se apunta en Socios), tarjetas más claras y un resumen de cuántas compraron'], team: ['🎯 Seguimiento de demos renovado: botón «✨ Pasar a cliente» en cada demo terminada (la conviertes en cuenta sin crearla otra vez) y tarjetas más claras'] },
   { v: 204, d: '2026-10-30', items: ['📒 Socios se rellena solo también cuando creas o renuevas una cuenta tuya a mano: sale el importe ya puesto (el de tu lista de precios para clientes) y quién lo ha cobrado; si lo dejas «pendiente de cobro», se apunta cuando lo marques como cobrado. Las recargas de créditos a vendedores también se apuntan solas'] },
@@ -7173,7 +7192,7 @@ function vCFicha() {
     <div class="cf-id"><span class="cf-av">${esc((c.panelName || '?').charAt(0).toUpperCase())}</span><div class="cf-nm"><h1>${esc(c.panelName)}</h1><p>@${esc(c.embyName)} · ${esc(serverName(c.serverId))}${many ? ` · de ${esc(userName(c.ownerId) || '—')}` : ''}</p><span class="cf-st">${esc(STAGE[st])}</span>${c.paid === false ? '<span class="cf-st due">💶 Cobro pendiente</span>' : ''}</div></div>
     <div class="cf-left"><b>${big}</b><span>${bigTxt}</span></div>
     ${c.demo ? '' : leftBar(c)}
-    <div class="cf-acts">${c.demo ? act('renew', '✨', 'Convertir', 'pri') : act('renew-same', '⚡', `<div>Renovar igual<small>${plural(L.m, 'mes', 'meses')} · ${plural(L.sc, 'pantalla', 'pantallas')}</small></div>`, 'pri') + act('renew', '🗓️', 'Otro plan')}${act('msg', '💬', 'Mensaje')}${act('m-pass', '🔑', 'Contraseña')}${act('edit', '✏️', 'Editar')}</div>
+    <div class="cf-acts">${c.demo ? act('renew', '✨', 'Convertir', 'pri') : act('renew-same', '⚡', `<div>Renovar igual<small>${plural(L.m, 'mes', 'meses')} · ${plural(L.sc, 'pantalla', 'pantallas')}</small></div>`, 'pri') + act('renew', '🗓️', 'Otro plan')}${act('msg', '💬', 'Mensaje')}${act('m-pass', '🔑', 'Contraseña')}${act('edit', '✏️', 'Editar')}${isSuper() && !c.demo && allSrv().some((x) => KIND_OF(x) !== kindOfSrv(c.serverId)) ? act('m-plex', '🔁', 'Migrar') : ''}</div>
   </section>`;
   const kpis = `<div class="cf-ks">${kpi('📅', sinceTxt, `cliente desde el ${fmt(c.createdAt)}`, 'b')}${kpi('🔄', String(ren), ren === 1 ? 'renovación' : 'renovaciones', 'v')}${kpi('🪙', String(spent), spent === 1 ? 'crédito gastado' : 'créditos gastados', 'a')}${kpi('⏳', c.demo ? '—' : n < 0 ? '0' : String(n), 'días que le quedan', n != null && n <= S.d.settings.warnDays ? 'r' : 'g')}</div>`;
   const row = (e, k, v) => `<div class="cf-r"><span>${e}</span><em>${k}</em><b>${v}</b></div>`;
@@ -7440,6 +7459,73 @@ const GX_ST = { paid: 'Pagado', late: 'Atrasado', today: 'Hoy', soon: 'Pronto', 
 const gxEvery = (n) => (GX_EVERY.find((x) => x[0] === n) || [0, ''])[1];
 const gxOf = (id) => S.gx.data && S.gx.data.list.find((x) => x.id === id);
 /* ── 🤝 Socios: un «Tricount» dentro del panel (solo superadministrador) ── */
+/* ── 🔁 Migrar a Plex (solo superadministrador) ── */
+const allSrv = () => ((S.dAll || S.d).servers || []);
+async function loadMg() {
+  S.mg.busy = true;
+  try { S.mg.data = await api('GET', '/api/migrate/plex'); S.mg.at = Date.now(); } catch (e) { S.mg.data = { error: e.message }; }
+  S.mg.busy = false;
+  const j = S.mg.data && S.mg.data.job; clearTimeout(S.mg.timer);
+  if (j && !j.finished && S.view === 'migplex') S.mg.timer = setTimeout(loadMg, 1500);
+  if (S.view === 'migplex') render();
+}
+function mgBody() { const f = S.mg.f; return { from: f.from, to: f.to, who: f.who, mode: f.mode, old: f.old, notify: f.notify, ...(S.mg.ids ? { ids: S.mg.ids } : {}) }; }
+async function mgPreview() { try { S.mg.prev = await api('POST', '/api/migrate/plex/preview', mgBody()); } catch (e) { S.mg.prev = { error: e.message }; } render(); }
+function vMigPlex() {
+  const sub = 'Cambia clientes de plataforma (Emby, Jellyfin o Plex) sin perder su fecha, pantallas ni contenido. Una cuenta o todas a la vez.';
+  const all = allSrv(), KN = (s) => KIND_NAME[KIND_OF(s)] || 'Emby';
+  if (new Set(all.map(KIND_OF)).size < 2) return head('🔁 Migrar de plataforma', sub) + `<div class="panel pad"><div class="empty">${ic('server')}<b>Primero conecta un servidor de otra plataforma</b><span>Por ejemplo un Plex o un Jellyfin en Servidores › Añadir servidor. Luego vuelve aquí.</span></div></div>`;
+  const f = S.mg.f, d = S.mg.data, j = d && d.job, p = S.mg.prev;
+  if (!f.to || !all.some((s) => s.id === f.to)) f.to = (all.find((s) => s.kind === 'plex') || all.find((s) => KIND_OF(s) !== 'emby') || all[0]).id;
+  const toS = all.find((s) => s.id === f.to), toPx = toS.kind === 'plex', px = all, src = all.filter((s) => s.id !== f.to);
+  if (f.from && !src.some((s) => s.id === f.from)) f.from = 0;
+  const opt = (v, t, cur) => `<option value="${v}"${String(v) === String(cur) ? ' selected' : ''}>${esc(t)}</option>`;
+  const card = (name, val, cur, icon, t, small) => `<label class="mg-opt"><input type="radio" name="${name}" value="${val}"${val === cur ? ' checked' : ''} data-mg="${name}"><span><b>${icon} ${t}</b><small>${small}</small></span></label>`;
+  const one = S.mg.ids && S.mg.ids.length === 1 ? ((S.dAll || S.d).clients.find((c) => c.id === S.mg.ids[0]) || null) : null;
+  const form = `<div class="panel pad mg-form">
+    ${S.mg.ids && S.mg.ids.length > 1 ? `<div class="mg-one">☑️ Solo las <b>${S.mg.ids.length} cuentas</b> que marcaste <button type="button" class="linkbtn" data-act="mg-all">Ver todas</button></div>` : ''}
+    ${one || (S.mg.ids && S.mg.ids.length > 1) ? `${one ? `<div class="mg-one">👤 Solo esta cuenta: <b>${esc(one.panelName)}</b> <small class="muted">(ahora en ${KIND_NAME[kindOfSrv(one.serverId)] || 'Emby'})</small> <button type="button" class="linkbtn" data-act="mg-all">Ver todas</button></div>` : ''}` : `<div class="row2"><label class="f">1 · Desde<select data-mg="from">${opt(0, `Todo lo que no es ${KN(toS)}`, f.from)}${src.map((s) => opt(s.id, `${s.name} (${KN(s)})`, f.from)).join('')}</select></label>
+      <label class="f">2 · A este servidor<select data-mg="to">${px.map((s) => opt(s.id, `${s.name} (${KN(s)})`, f.to)).join('')}</select></label></div>
+      <span class="flabel">3 · Qué cuentas</span><div class="mg-opts">${card('who', 'all', f.who, '👥', 'Todas', 'activas y caducadas (no las demos ni la papelera)')}${card('who', 'valid', f.who, '✅', 'Solo las que están en vigor', 'las que no han caducado')}</div>`}
+    ${one || (S.mg.ids && S.mg.ids.length > 1) ? `<label class="f">A este servidor<select data-mg="to">${px.filter((s) => !one || s.id !== one.serverId).map((s) => opt(s.id, `${s.name} (${KN(s)})`, f.to)).join('')}</select></label>` : ''}
+    ${toPx ? `<span class="flabel">Cómo entra en Plex</span><div class="mg-opts">${card('mode', 'new', f.mode, '✨', 'Crearle su cuenta de Plex (recomendado)', 'con su email y su misma contraseña si vale para Plex (8 letras o más; si no, una nueva). Si ese email ya tiene Plex, se le invita')}${card('mode', 'invite', f.mode, '✉️', 'Solo invitar a su email', 'Plex le manda una invitación y él la acepta')}</div>`
+      : `<div class="mg-one">🔑 En ${KN(toS)} entra con <b>su mismo usuario y su misma contraseña</b>${all.some((s) => s.kind === 'plex') ? ' (si viene de Plex, el usuario es lo de delante de su @)' : ''}.</div>`}
+    <span class="flabel">Su cuenta de antes</span><div class="mg-opts">${card('old', 'off', f.old, '⏸️', 'Apagarla', 'se queda guardada: si algo va mal, «Deshacer» la devuelve')}${card('old', 'delete', f.old, '🗑️', 'Borrarla', 'no se puede deshacer tan fácil')}</div>
+    <label class="tv-sw" style="margin:12px 0 4px"><input type="checkbox" data-mg="notify"${f.notify ? ' checked' : ''}><span class="sw"></span><b>Mandar a cada cliente por Telegram los pasos para entrar en Plex</b></label>
+    <div class="mg-acts"><button class="btn primary" data-act="mg-prev">${ic('eye')}Ver quiénes pasan</button></div></div>`;
+  let prev = '';
+  if (p && p.error) prev = `<div class="panel pad"><p class="err">${esc(p.error)}</p></div>`;
+  else if (p) {
+    const row = (r, extra = '') => `<div class="mg-r"><span><b>${esc(r.name)}</b><small>${esc(r.user)} · ${esc(r.server)}</small></span>${extra}</div>`, noEm = p.toKind === 'plex';
+    prev = `<div class="vptiles lict mg-tiles"><div class="vpt ok"><b>${p.ready.length}</b><span>listas para pasar</span><small>a «${esc(p.to)}»</small></div>${noEm ? `<div class="vpt ${p.noEmail.length ? 'warn' : ''}"><b>${p.noEmail.length}</b><span>sin email</span><small>ponles el email abajo</small></div>` : ''}<div class="vpt"><b>${p.other.length}</b><span>no se pueden</span><small>mira el motivo abajo</small></div></div>
+      ${p.room !== null && p.room < p.ready.length ? `<div class="licban grace">${ic('alert')}<div><b>El Plex solo tiene sitio para ${p.room}</b><span>Sube su límite en Servidores › Editar o las que no quepan darán error.</span></div></div>` : ''}
+      ${p.ready.length ? `<div class="panel pad mg-go"><div><b>¿Todo bien?</b><span>Primero prueba con una cuenta y mira que entra en Plex. Luego pasa el resto.</span></div><div class="mg-acts">${p.ready.length > 1 ? `<button class="btn" data-act="mg-start" data-k="1">🧪 Probar con 1 (${esc(p.ready[0].name)})</button>` : ''}<button class="btn primary" data-act="mg-start" data-k="all">🔁 Pasar ${plural(p.ready.length, 'cuenta', 'cuentas')} a ${KIND_NAME[p.toKind] || 'Emby'}</button></div></div>` : ''}
+      ${p.noEmail.length ? `<details class="panel pad mg-sec" open><summary>✉️ Sin email (${p.noEmail.length}) <small>escríbelo y pulsa Guardar</small></summary>${p.noEmail.map((r) => row(r, `<span class="mg-em"><input type="email" placeholder="email@cliente.com" data-mgem="${r.id}"><button class="btn sm" data-act="mg-email" data-id="${r.id}">Guardar</button></span>`)).join('')}</details>` : ''}
+      ${p.other.length ? `<details class="panel pad mg-sec"><summary>⛔ No se pueden pasar (${p.other.length})</summary>${p.other.map((r) => row(r, `<small class="mg-why">${esc(r.why)}</small>`)).join('')}</details>` : ''}
+      ${p.ready.length ? `<details class="panel pad mg-sec"><summary>✅ Listas (${p.ready.length})</summary>${p.ready.map((r) => row(r, `<small class="mg-why">→ ${esc(r.newUser || r.email)}</small>`)).join('')}</details>` : ''}`;
+  }
+  const job = j ? `<div class="panel pad mg-job"><div class="mg-jh"><b>${j.finished ? (j.stop ? '⏹️ Migración parada' : '✅ Migración terminada') : `🔁 Pasando cuentas a ${KIND_NAME[j.toKind] || 'Plex'}…`}</b><small>${j.done} de ${j.total} · ${j.ok} bien${j.invited ? ` (${j.invited} con invitación)` : ''}${j.failed ? ` · <span class="bad">${j.failed} con error</span>` : ''}</small></div>
+    <div class="bar"><i style="width:${Math.round((j.done / Math.max(1, j.total)) * 100)}%"></i></div>${j.finished ? '' : `<button class="btn sm ghost" data-act="mg-stop" style="margin-top:8px">Parar</button>`}
+    ${j.results.filter((r) => !r.ok).length ? `<div class="mg-fails">${j.results.filter((r) => !r.ok).map((r) => `<div class="mg-r"><span><b>${esc(r.name)}</b><small>${esc(r.email || '')}</small></span><small class="mg-why bad">${esc(r.error)}</small></div>`).join('')}</div>` : ''}</div>` : '';
+  const mig = d && d.migrated && d.migrated.length ? `<details class="panel pad mg-sec"><summary>↩️ Cuentas migradas (${d.migrated.length}) <small>por si hay que deshacer</small></summary>
+    <div class="mg-acts" style="margin:8px 0"><button class="btn sm" data-act="mg-undo" data-k="sel">Deshacer las marcadas</button></div>
+    ${d.migrated.map((m) => `<label class="mg-r"><span><input type="checkbox" data-mgu="${m.id}"> <b>${esc(m.name)}</b><small>${esc(m.from || '')} → ${esc(m.to || '')} · ${esc(m.email)} · ${fmtTs(m.at, true)}${m.mode === 'invite' ? ' · invitación' : ''}${m.kept ? '' : ' · la antigua se borró'}</small></span></label>`).join('')}</details>` : '';
+  const rd = d && d.ready, aj = d && d.askJob;
+  const prep = rd ? `<details class="panel pad mg-prep"${rd.noEmail || !rd.pass8 ? ' open' : ''}><summary>🛟 Preparados para Plex <small>${rd.total - rd.noEmail} de ${rd.total} cuentas tienen email</small></summary>
+    <div class="mg-pr"><div><b>✉️ ${plural(rd.noEmail, 'cuenta sin email', 'cuentas sin email')}</b><small>${rd.noEmailTg ? `${rd.noEmailTg} tienen Telegram: el bot les pregunta y, cuando contestan, se guarda solo en su ficha.` : 'Ninguna tiene Telegram enlazado: pídeselo tú y ponlo en su ficha.'}${rd.asked ? ` · ${rd.asked} esperando respuesta` : ''}</small></div>
+      ${rd.noEmailTg ? `<button class="btn sm primary" data-act="mg-askmail">📩 Pedir email por Telegram</button>` : ''}</div>
+    ${aj && !aj.finished ? `<div class="small muted">Enviando… ${aj.sent} de ${aj.total}</div>` : aj ? `<div class="small muted">Último envío: ${aj.sent} de ${aj.total} enviados${aj.failed ? ` · ${aj.failed} fallaron` : ''}</div>` : ''}
+    <div class="mg-pr"><div><b>🔑 Contraseñas de 8 o más</b><small>Plex pide 8 o más. Así, al pasar a Plex entran con la misma.${rd.shortPass ? ` Ahora hay ${plural(rd.shortPass, 'cuenta', 'cuentas')} con contraseña más corta: si pasan a Plex se les pondrá una nueva (les llega por Telegram).` : ''}</small></div>
+      <label class="tv-sw"><input type="checkbox" data-act="mg-pass8"${rd.pass8 ? ' checked' : ''}><span class="sw"></span><span>${rd.pass8 ? 'Activado' : 'Apagado'}</span></label></div></details>` : '';
+  return head('🔁 Migrar de plataforma', sub) + prep + `<div class="mg-how">${toPx ? '💡 A <b>Plex</b> se entra con el <b>email</b>: se le crea su cuenta de Plex con su email y su misma contraseña (o se le invita si ya tiene Plex).' : `💡 A <b>${KN(toS)}</b> se pasa con su mismo usuario y contraseña.`} Su tiempo, pantallas y contenido siguen igual, y se puede deshacer.</div>` + job + form + prev + mig;
+}
+document.addEventListener('change', (e) => {
+  const k = e.target.dataset && e.target.dataset.mg; if (!k || S.view !== 'migplex') return;
+  const f = S.mg.f;
+  if (k === 'notify') f.notify = e.target.checked; else if (k === 'from' || k === 'to') f[k] = +e.target.value; else f[k] = e.target.value;
+  if (k === 'from' || k === 'to' || k === 'who') S.mg.prev = null;
+  render();
+});
 async function loadSo() {
   S.so.busy = true;
   try { S.so.data = await api('GET', '/api/socios?m=' + encodeURIComponent(S.so.m || '')); S.so.at = Date.now(); } catch (e) { S.so.data = { error: e.message }; }
@@ -8308,11 +8394,12 @@ function wireCost(serverId, extra, form) {
 }
 // Convierte un nombre en algo valido para usuario/email: "José Luis" -> "jose.luis"
 const nameSlug = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '.').replace(/^[.]+|[.]+$/g, '').slice(0, 24).replace(/[.]+$/, '');
+const pwMin = () => ((S.d && S.d.settings.migrate || {}).pass8 === false ? 4 : 8);
 function genPassword() {
   const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
   return Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => abc[b % abc.length]).join('');
 }
-const passField = (label, req) => `<label class="f">${label}<span class="inrow"><input name="password" ${req ? 'required' : ''} minlength="4" autocomplete="off"><button type="button" class="btn" data-act="gen">Generar</button></span></label>`;
+const passField = (label, req) => `<label class="f">${label}<span class="inrow"><input name="password" ${req ? 'required' : ''} minlength="${pwMin()}" autocomplete="off"${pwMin() === 8 ? ' placeholder="8 o más letras y números"' : ''}><button type="button" class="btn" data-act="gen">Generar</button></span></label>`;
 
 function dNew() {
   openDlg({
@@ -8505,7 +8592,7 @@ function dMore(c) {
     <button type="button" class="cf-open" data-act="ficha" data-id="${c.id}">📇 <b>Ver ficha completa</b><small>Plan, historial, aparatos y contacto en una pantalla</small></button>
     ${grp('Renovar', [c.demo ? '' : it('renew-same', 'Renovar igual', `${plural(lastPlan(c).m, 'mes', 'meses')} · ${plural(lastPlan(c).sc, 'pantalla', 'pantallas')}`), it('renew', c.demo ? 'Convertir en cuenta' : 'Elegir plan')])}
     ${grp('Enviar al cliente', [c.payLink ? it('m-paylink', 'Enlace de pago') : '', it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
-    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : ''])}
+    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : '', isSuper() && !c.demo && allSrv().some((x) => KIND_OF(x) !== kindOfSrv(c.serverId)) ? it('m-plex', 'Migrar plataforma') : ''])}
     ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
     ${grp('Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
       it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'A la papelera'),
@@ -8793,6 +8880,7 @@ function dListMore() {
     ${it('bulk-repair', 'Reparar cuentas', 'Vuelve a aplicar en Emby lo que dice el panel')}
     ${staff() && S.d.users.length > 1 ? it('bulk-owner', 'Traspaso entre vendedores', 'Pasa las cuentas a otro vendedor') : ''}
     ${staff() && S.d.servers.length > 1 ? it('bulk-move', 'Traspaso de servidores', 'Migra las cuentas a otro servidor Emby') : ''}
+    ${isSuper() && new Set(allSrv().map(KIND_OF)).size > 1 ? it('bulk-mig', 'Migrar de plataforma', 'Pasa las cuentas a Plex, Jellyfin o Emby') : ''}
     ${staff() ? it('bulk-pkg', 'Traspaso entre servicios', 'Pasa las cuentas a Básico o a 4K') : ''}
     ${staff() ? it('bulk-scr', 'Cambiar pantallas', 'Pone 1, 2 o 4 pantallas a la vez') : ''}
     ${staff() ? it('bulk-dates', 'Ajustar fechas de renovación', 'Suma o resta días al vencimiento') : ''}
@@ -9581,6 +9669,19 @@ document.addEventListener('click', (e) => {
   if (a === 'lic-new') { licNew(); return; }
   if (a === 'po-sample') { const t = $('#poForm textarea[name=prices]'); if (t) { t.value = PO_SAMPLE; t.dispatchEvent(new Event('input', { bubbles: true })); t.focus(); } return; }
   if (a === 'po-test') { const f = $('#poForm').elements; const inh = f.inherit && f.inherit.checked; api('POST', '/api/my-payoffer/test', inh ? {} : { preview: true, prices: f.prices.value, url: f.url.value, button: f.button.value }).then(() => toast('Prueba enviada a tu Telegram'), (x) => toast(x.message, true)); return; }
+  if (a === 'mg-askmail') { const rd = S.mg.data && S.mg.data.ready; dConfirm('Pedir el email por Telegram', `El bot le escribe a ${plural(rd ? rd.noEmailTg : 0, 'cliente', 'clientes')} sin email preguntándoselo. Cuando contesten, se guarda solo en su ficha. (A quien ya se le preguntó no se le vuelve a escribir.)`, 'Enviar', async () => { await api('POST', '/api/clients/ask-email', {}); setTimeout(loadMg, 1500); }, 'Enviando…'); return; }
+  if (a === 'mg-pass8') { api('PUT', '/api/migrate/settings', { pass8: el.checked }).then(() => { toast(el.checked ? 'Contraseñas de 8 o más' : 'Contraseñas de 4 o más'); reload(); loadMg(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'mg-prev') { S.mg.prev = { ready: [], noEmail: [], other: [], room: null, to: '…' }; mgPreview(); return; }
+  if (a === 'mg-all') { S.mg.ids = null; S.mg.prev = null; render(); return; }
+  if (a === 'mg-stop') { api('POST', '/api/migrate/plex/stop', {}).then(loadMg); return; }
+  if (a === 'mg-email') { const inp = document.querySelector(`[data-mgem="${id}"]`), v = inp && inp.value.trim(); if (!v) { toast('Escribe el email', true); return; } api('PUT', `/api/clients/${id}`, { email: v }).then(() => { toast('Email guardado'); reload(); mgPreview(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'mg-start') { const p = S.mg.prev; if (!p || !p.ready.length) return; const test = el.dataset.k === '1', body = { ...mgBody(), ...(test ? { ids: [p.ready[0].id] } : {}) };
+    const go = async () => { await api('POST', '/api/migrate/plex/start', body); S.mg.prev = null; await loadMg(); };
+    if (test) go().then(() => toast('Probando con 1 cuenta…'), (x) => toast(x.message, true));
+    else dConfirm(`Pasar ${plural(p.ready.length, 'cuenta', 'cuentas')} a ${KIND_NAME[p.toKind] || 'Emby'}`, `Se pasan a «${esc(p.to)}»${p.toKind === 'plex' ? ' con su email' : ' con su mismo usuario y contraseña'}. ${S.mg.f.old === 'delete' ? 'Su cuenta antigua se <b>borra</b>.' : 'Su cuenta antigua se apaga (se puede deshacer).'} ${S.mg.f.notify ? 'A cada cliente con Telegram le llegan los pasos.' : ''} Puedes seguir usando el panel mientras tanto.`, 'Empezar', go, 'Migración en marcha');
+    return; }
+  if (a === 'mg-undo') { const ids = [...document.querySelectorAll('[data-mgu]:checked')].map((i) => +i.dataset.mgu); if (!ids.length) { toast('Marca las cuentas que quieres devolver', true); return; }
+    dConfirm('Deshacer migración', `${plural(ids.length, 'cuenta vuelve', 'cuentas vuelven')} a su servidor de antes y se ${ids.length === 1 ? 'quita' : 'quitan'} del nuevo.`, 'Deshacer', async () => { const r = await api('POST', '/api/migrate/plex/undo', { ids }); await loadMg(); if (r.failed.length) toast(`${r.failed.length} no se pudieron: ${r.failed[0].error}`, true); }, 'Hecho'); return; }
   if (a === 'so-cfg') { soCfgDlg(); return; }
   if (a === 'so-sw') { if (dlg.open) dlg.close(); soSwDlg(); return; }
   if (a === 'so-swoff') { if (dlg.open) dlg.close(); dConfirm('Quitar Splitwise', 'Se borra la clave y se deja de copiar en Splitwise. Lo apuntado en Socios no se toca.', 'Quitar', async () => { await api('PUT', '/api/socios/splitwise', { remove: true }); await loadSo(); }, 'Splitwise quitado'); return; }
@@ -9790,6 +9891,8 @@ document.addEventListener('click', (e) => {
     case 'm-screens': if (c) dScreens(c); break;
     case 'm-owner': if (c) dOwner(c); break;
     case 'm-move': if (c) dMove(c); break;
+    case 'm-plex': if (c) { if (dlg.open) dlg.close(); S.mg.ids = [c.id]; S.mg.prev = null; const ot = allSrv().find((x) => KIND_OF(x) !== kindOfSrv(c.serverId) && x.kind === 'plex') || allSrv().find((x) => KIND_OF(x) !== kindOfSrv(c.serverId)); if (ot) S.mg.f.to = ot.id; S.view = 'migplex'; render(); mgPreview(); } break;
+    case 'bulk-mig': { if (dlg.open) dlg.close(); const ids = S.sel.size ? [...S.sel] : (S.rowIds || []); if (!ids.length) { toast('Marca primero las cuentas', true); break; } S.mg.ids = ids; S.mg.prev = null; S.view = 'migplex'; render(); mgPreview(); } break;
     case 'm-tg': if (c) dTelegram(c); break;
     case 'm-tgmsg': if (c) dTgMsg(c); break;
     case 'tg-copy': { const box = $('#tgLinkBox'); copyText(box.value).then(() => { el.textContent = '✓ Enlace copiado'; }).catch((x) => toast(x.message, true)); break; }
