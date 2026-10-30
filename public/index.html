@@ -2296,6 +2296,60 @@ body{--pc:var(--brand,#3fa9f5)} body.jf{--pc:#a46bff} body.px{--pc:#e5a00d}
   .newsm .newsdot{top:4px;right:4px}
 }
 @media (max-width:380px){ button.brand.topbar .topname .sub{display:none} .topbar .topclock{min-width:66px;padding:5px 8px} .qsm{right:94px}.newsm{right:140px} }
+.so-ul{margin:0 0 12px;padding-left:4px;list-style:none;display:grid;gap:8px}.so-intro h3{font-size:18px}
+.so-months{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.so-peace{display:grid;gap:10px;margin-bottom:16px}.so-move{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:16px}.so-move>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.so-amt{color:var(--warn,#f59e0b);font-size:20px}.so-move.ok{color:var(--ok,#22c55e)}
+.so-av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:color-mix(in srgb,var(--brand) 25%,transparent);color:var(--text);font-weight:800;font-size:13px;text-transform:uppercase}.so-av.big{width:36px;height:36px;font-size:16px}
+.so-people{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}.so-p{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px}.so-ph{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:16px}
+.so-r{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;padding:3px 0;color:var(--muted)}.so-r b{color:var(--text)}.so-r.tot{border-top:1px solid var(--line);margin-top:4px;padding-top:7px}
+.so-bal{margin-top:8px;padding:6px 10px;border-radius:10px;background:var(--raised);font-weight:700;font-size:13px;text-align:center}.so-bal.ok{color:var(--ok,#22c55e)}.so-bal.bad{color:var(--warn,#f59e0b)}
+.so-list{padding:6px 0}.so-day{padding:12px 16px 4px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.so-e{display:flex;align-items:center;gap:12px;width:100%;padding:10px 16px;background:none;border:0;border-top:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer}.so-e:hover{background:var(--raised)}
+.so-ico{font-size:20px;flex:none}.so-d{flex:1;min-width:0}.so-d>b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.so-d small{color:var(--muted);font-size:12px}.so-a{font-weight:800;white-space:nowrap}.so-e.cobro .so-a{color:var(--ok,#22c55e)}.so-e.pago .so-a{color:var(--muted)}
+.so-mf{border:1px solid var(--line);border-radius:12px;padding:8px 12px 4px;margin:0 0 12px}.so-mf legend{font-size:12px;font-weight:700;color:var(--muted);padding:0 4px}
+.so-chk{display:flex;gap:6px 14px;flex-wrap:wrap;margin:4px 0 10px;font-size:13.5px}.so-chk label{display:flex;align-items:center;gap:6px}
+.so-swbox{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:10px 12px;border-radius:12px;background:var(--raised)}.so-swbox button{margin-left:auto}
+.so-steps{margin:0 0 12px;padding-left:20px;font-size:13.5px;display:grid;gap:4px}
+@media (max-width:560px){.so-people{grid-template-columns:1fr}.so-move{font-size:15px}.so-e{padding:10px 12px}}
+.sx{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;min-width:0}.sx>*{min-width:0}
+.sx-seg{display:grid;grid-template-columns:repeat(3,1fr);padding:4px;border-radius:14px;background:var(--raised);gap:4px;margin-bottom:10px}
+.sx-seg label{position:relative;cursor:pointer}.sx-seg input{position:absolute;opacity:0;pointer-events:none}
+.sx-seg span{display:block;text-align:center;padding:9px 4px;border-radius:10px;font-weight:700;font-size:13.5px;color:var(--muted);transition:.2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:420px){.sx-seg span{font-size:12.5px;padding:9px 2px}.sx-amt input{font-size:38px}}
+.sx-seg input:checked+span{background:linear-gradient(120deg,var(--brand),#8b5cf6);color:#fff;box-shadow:0 6px 18px -8px var(--brand)}.sx-seg input:disabled+span{opacity:.35;cursor:default}
+.sx-amt{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:8px 0 4px;border-bottom:2px solid var(--line);margin-bottom:12px;transition:border-color .2s}.sx-amt:focus-within{border-color:var(--brand)}
+.sx-amt input{all:unset;width:100%;max-width:260px;text-align:right;font-size:44px;font-weight:800;letter-spacing:-.02em;color:var(--text)}.sx-amt input::placeholder{color:var(--muted);opacity:.5}.sx-amt b{font-size:30px;color:var(--muted)}
+.sx-title{display:flex;gap:8px;align-items:stretch;margin-bottom:6px}.sx-title input{flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit}
+.sx-catbtn,.sx-cam{flex:none;display:grid;place-items:center;width:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:22px;cursor:pointer}
+.sx-cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin:4px 0 8px}.sx-cats button{display:grid;justify-items:center;gap:2px;padding:8px 4px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer}.sx-cats button span{font-size:22px}.sx-cats button small{font-size:11px;color:var(--muted)}.sx-cats button.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 15%,transparent)}
+.sx-photo{position:relative;margin:4px 0 8px}.sx-photo img{display:block;max-width:100%;max-height:220px;border-radius:12px;border:1px solid var(--line)}.sx-photo button{position:absolute;top:8px;left:8px;padding:5px 10px;border-radius:99px;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:12px;cursor:pointer}
+.sx-lbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px}.sx-row{display:flex;justify-content:space-between;align-items:center}.sx-row button{border:0;background:none;color:var(--brand);font:inherit;font-size:12px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}
+.sx-pills{display:flex;gap:8px;flex-wrap:wrap}.sx-pill{cursor:pointer}.sx-pill input{position:absolute;opacity:0;pointer-events:none}
+.sx-pill span{display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-weight:600;transition:.15s}
+.sx-pill i,.sx-p i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--raised);font-style:normal;font-weight:800;font-size:13px;text-transform:uppercase}
+.sx-pill input:checked+span{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 16%,transparent)}.sx-pill input:checked+span i{background:var(--brand);color:#fff}
+.sx-when{display:flex;gap:8px;align-items:center}.sx-when input{flex:1 1 120px;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit}.sx-when button{padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+.sx-list{border:1px solid var(--line);border-radius:14px;overflow:hidden}.sx-p{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;transition:opacity .15s}.sx-p+.sx-p{border-top:1px solid var(--line)}
+.sx-p input{width:20px;height:20px;accent-color:var(--brand)}.sx-p b{flex:1}.sx-p em{font-style:normal;font-weight:800}.sx-p.off{opacity:.45}
+.sx-sum{min-height:20px;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--raised);font-size:13.5px}.sx-sum:empty{display:none}
+.socf{margin:12px 0 4px;padding:12px;border-radius:14px;border:1px dashed color-mix(in srgb,var(--brand) 45%,transparent);background:color-mix(in srgb,var(--brand) 7%,transparent)}
+.socf-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}.socf-h small{color:var(--muted);font-size:12px}
+.socf-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.socf-a{display:flex;align-items:baseline;gap:4px;padding:6px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.socf-a input{all:unset;width:90px;text-align:right;font-size:20px;font-weight:800;color:var(--text)}.socf-a b{color:var(--muted)}.socf-p{display:block;margin-top:8px;color:var(--warn,#f59e0b)}
+.fu-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 14px}.fu-stats div{padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);text-align:center}.fu-stats b{display:block;font-size:22px}.fu-stats span{font-size:12px;color:var(--muted)}
+.fulist2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:12px}
+.fuc2{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 6%,var(--surface)),var(--surface))}
+.fuc2.won{border-color:color-mix(in srgb,var(--ok,#22c55e) 45%,transparent)}
+.fu-top2{display:flex;align-items:center;gap:12px}.fu-av{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#8b5cf6);color:#fff;font-weight:800;font-size:18px;text-transform:uppercase}
+.fu-id{flex:1;min-width:0}.fu-id b{display:block;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fu-id small{color:var(--muted);font-size:12.5px}
+.fu-when{flex:none;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--raised);color:var(--muted)}.fuc2.won .fu-when{color:var(--ok,#22c55e)}
+.fu-chs{display:flex;flex-wrap:wrap;gap:6px}.fu-ch{font-size:12.5px;padding:4px 10px;border-radius:99px;background:var(--raised)}.fu-ch.ok{color:var(--ok,#22c55e)}
+.fu-main{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.fu-go{background:linear-gradient(120deg,#22c55e,#0ea5e9);color:#fff;border:0;font-weight:800;padding:10px 16px;border-radius:12px;box-shadow:0 8px 20px -10px #22c55e}
+.fu-st{font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--raised)}.fu-st.bought{color:var(--ok,#22c55e)}
+.fu-minis{display:flex;flex-wrap:wrap;gap:4px 14px;padding-top:10px;border-top:1px solid var(--line)}
+.fu-mini{display:inline-flex;align-items:center;gap:5px;border:0;background:none;padding:2px 0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}.fu-mini:hover{color:var(--text)}.fu-mini.bad{color:color-mix(in srgb,var(--danger,#ef4444) 80%,var(--muted))}.fu-mini .ic{width:15px;height:15px}
+.fu-bottom{display:flex;justify-content:center;margin:16px 0 0}
+@media (max-width:560px){.fulist2{grid-template-columns:1fr}.fu-go{flex:1}}
 </style>
 </head>
 <body>
@@ -2482,7 +2536,7 @@ tick(); setInterval(tick, 1000);
 let NAV_OPEN = new Set();
 
 /* ---------- Estado ---------- */
-const S = { cf: { id: 0, hist: null, conn: null, busy: false }, fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
+const S = { cf: { id: 0, hist: null, conn: null, busy: false }, fWho: 'all', sf: { id: 0, tab: 'cfg', data: null, busy: false, at: 0, users: null, job: null, timer: null }, ag: { data: null, busy: false, at: 0, wait: null }, lic: { data: null, busy: false, at: 0, cal: null, tok: null }, gx: { data: null, busy: false, at: 0, cal: null, tab: 'cal' }, so: { data: null, busy: false, at: 0, m: '' }, vp: { data: null, busy: false, at: 0, month: '' }, tm: { data: null, busy: false, at: 0 }, vb: { who: 'vendors', prev: null, job: null, history: [], text: '' }, sh: { data: null, busy: false, at: 0 }, fu: { data: null, busy: false, at: 0, tab: 'pending' }, bc: { who: 'active', serverId: 0, ownerId: 0, prev: null, job: null, history: [], text: '' }, acc: { data: null, busy: false, user: '', kind: 'all', period: 'all', q: '' }, qg: { data: null, busy: false, open: new Set(), f: {}, timer: null }, mon: { data: null, q: '', srv: 0, st: 'all', tr: 'all', res: 'all', kind: 'all', every: 30, left: 30, auto: true, busy: false }, lg: { q: '', when: 'all', kind: 'all', actor: '', n: 200 }, imp: { tab: 'uni', rows: null, results: null }, d: null, view: 'resumen', filter: 'all', q: '', cal: null, logF: 'all', live: null, liveTimer: null, fOwner: 0, fServer: 0, seen: null, seenAt: 0, page: 1, sort: 'expiry', dir: 1, open: new Set(), pw: new Set(), sel: new Set(), rowIds: [], uq: '', vendorId: 0, expCols: null, al: { data: null, tab: 'hist', q: '', server: 0, owner: 0, period: 'all', type: 'all', read: 'all', sort: 'new', page: 1 } };
 const me = () => S.d.me;
 const staff = () => me().role === 'super' || me().role === 'admin';
 const isSuper = () => me().role === 'super';
@@ -2541,6 +2595,7 @@ function navGroups() {
   const din = [
     ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Ingresos', i: 'chart' }] : []),
     ...(isSuper() ? [{ v: 'gastos', t: 'Gastos', i: 'calendar', n: S.d.expDue || 0, hot: true }] : []),
+    ...(isSuper() ? [{ v: 'socios', t: 'Socios', i: 'users' }] : []),
     ...(isSuper() || (['reseller', 'sub'].includes(me().role) && S.d.settings.clientPay && S.d.settings.clientPay.vendors) ? [{ v: 'cobrocli', t: 'Cobro a clientes', i: 'wallet' }] : []),
     ...(!noCli() ? [{ v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid }] : []),
     ...(isSuper() || (me().role === 'admin' && canDo('credits')) || me().role === 'reseller' ? [{ v: 'cobrosven', t: 'Deudas del equipo', i: 'users', n: S.d.users.filter((x) => x.debt > 0).length, hot: true }] : []),
@@ -2969,7 +3024,7 @@ function render() {
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   try { $('#main').innerHTML = (hasJf() ? kindSwitchHtml() : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() !== 'emby') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
@@ -3024,6 +3079,7 @@ function render() {
   if (S.view === 'plantillas') poWire();
   if (S.view === 'ajustes') tiersWire();
   if (S.view === 'gastos' && !S.gx.busy && (!S.gx.data || Date.now() - S.gx.at > 30000)) loadGx();
+  if (S.view === 'socios' && !S.so.busy && (!S.so.data || Date.now() - S.so.at > 30000)) loadSo();
   if (AL[S.view]) { if (!S.al.data) loadAlerts(); S.liveTimer = setInterval(loadAlerts, 30000); }
   navSync();
 }
@@ -3186,6 +3242,25 @@ function contactHtml(c) {
   if (c.email) out.push(`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`);
   return out.length ? `<div class="contact muted">${out.join(', ')}</div>` : '';
 }
+/* 📒 Socios: al crear o renovar a mano una cuenta tuya, se apunta sola lo cobrado (puedes cambiar el importe o quién lo cobró) */
+const socOwn = (c) => { const o = S.d.users.find((u) => u.id === c.ownerId); return !o || o.role === 'super' || o.role === 'admin'; };
+const socPrice = (m, sc) => { const v = Number(((S.d.settings.clientPay || {}).prices || {})[`${m}-${sc}`]); return v > 0 ? (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',')) : ''; };
+function socFields(m, sc) {
+  const so = S.d.socios; if (!so) return '';
+  return `<div class="socf" data-socf><div class="socf-h">📒 <b>Apuntar en Socios</b><small>se apunta solo al guardar · vacío = no apuntar</small></div>
+    <div class="socf-r"><label class="socf-a"><input name="socAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${socPrice(m, sc)}"><b>€</b></label>
+    <div class="sx-pills">${so.members.map((x) => `<label class="sx-pill"><input type="radio" name="socWho" value="${x.id}"${x.id === so.mine ? ' checked' : ''}><span><i>${esc(x.name.slice(0, 1))}</i>${esc(x.name)}</span></label>`).join('')}</div></div>
+    <small class="socf-p" hidden>Está pendiente de cobro: se apuntará cuando lo marques como cobrado.</small></div>`;
+}
+const socBody = (fd, form = dlgForm) => (S.d.socios && fd.get('socWho') && !(form.querySelector('[data-socf]') || {}).hidden ? { socAmount: String(fd.get('socAmount') || '').trim() || '0', socWho: fd.get('socWho') } : {});
+const socToast = (r) => (r && r.soc ? ` · 📒 ${eur(r.soc.amount)} para ${r.soc.who}` : r && r.socPend ? ' · 📒 se apuntará al cobrarlo' : '');
+document.addEventListener('input', (e) => { if (e.target.name === 'socAmount') e.target.dataset.touched = '1'; });
+document.addEventListener('change', (e) => {
+  const f = e.target.form; if (!f || !f.querySelector('[data-socf]')) return;
+  if (e.target.name === 'months' || e.target.name === 'screens') { const a = f.elements.socAmount; if (a && !a.dataset.touched && f.elements.months && f.elements.screens) a.value = socPrice(+f.elements.months.value, +f.elements.screens.value); }
+  if (e.target.name === 'ownerId') { const o = S.d.users.find((u) => u.id === +e.target.value), box = f.querySelector('[data-socf]'); box.hidden = !!(o && o.role !== 'super' && o.role !== 'admin'); }
+  if (e.target.name === 'paid' || e.target.name === 'months') { const p = f.querySelector('.socf-p'); if (p && f.elements.paid) p.hidden = f.elements.paid.value !== '0'; }
+});
 const paidSelect = (paid) => `<label class="f">Cobro al cliente<select name="paid">${options([[1, 'Ya cobrado'], [0, 'Pendiente de cobro']], paid ? 1 : 0)}</select></label>`;
 function clientRow(c, compact) {
   const st = stage(c);
@@ -3871,7 +3946,7 @@ function vNuevo(demo) {
     <label class="f">Contenido *<select name="quality" data-chip="big">${qualityOpts('basico', false)}</select></label>
     <div class="row2">${plan}</div>
     <p class="preview" id="cost"></p>
-    ${demo ? '' : `<h2>El cobro</h2><div class="row2">${paidSelect(true)}${ownerSelect(me().id)}</div>`}
+    ${demo ? '' : `<h2>El cobro</h2><div class="row2">${paidSelect(true)}${ownerSelect(me().id)}</div>${socFields(1, 1)}`}
     <h2>Contacto <span class="muted small" style="font-weight:500">(opcional)</span></h2>
     <div class="row3">
       <label class="f">Telegram<input name="telegram" maxlength="120" autocomplete="off" placeholder="@usuario"></label>
@@ -4866,7 +4941,7 @@ const QS_KEYS = {
   directo: 'en directo viendo ahora reproduciendo', monitor: 'monitor sesiones reproducciones viendo transcode detener caratulas mensaje pantalla', inactivos: 'inactivos no ven sin conexion ultima conexion',
   uso: 'estadisticas lo mas visto horas punta peliculas series', altrans: 'transcode alertas conversion', alses: 'sesiones excedidas pantallas compartir cuenta limite', alhist: 'historial alertas',
   equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
-  admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', gastos: 'gastos pagos facturas contabilidad calendario vps ovh contenido nube dominio recordatorio', ajustes: 'precios paquetes tarifas meses pantallas',
+  admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', socios: 'socios socio tricount splitwise repartir cuentas deber debe quien cobro reparto mitad', gastos: 'gastos pagos facturas contabilidad calendario vps ovh contenido nube dominio recordatorio', ajustes: 'precios paquetes tarifas meses pantallas',
   perfil: 'perfil nombre email moneda soporte mi contraseña cambiar clave', seguridad: 'seguridad 2fa verificacion dos pasos google authenticator telegram sesiones contraseña codigo rescate proteger',
   copias: 'copias seguridad backup restaurar descargar guardar datos google drive comprobar', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
   apariencia: 'apariencia colores logo marca tema nombre panel', notifs: 'notificaciones telegram bot avisos pantalla', importar: 'importar csv excel emby subir lista', logs: 'logs actividad registro accesos entradas',
@@ -6913,6 +6988,10 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 205, d: '2026-10-30', items: ['🎯 Seguimiento de demos renovado: botón «✨ Pasar a cliente» en cada demo terminada (la conviertes en cuenta sin crearla otra vez, y se apunta en Socios), tarjetas más claras y un resumen de cuántas compraron'], team: ['🎯 Seguimiento de demos renovado: botón «✨ Pasar a cliente» en cada demo terminada (la conviertes en cuenta sin crearla otra vez) y tarjetas más claras'] },
+  { v: 204, d: '2026-10-30', items: ['📒 Socios se rellena solo también cuando creas o renuevas una cuenta tuya a mano: sale el importe ya puesto (el de tu lista de precios para clientes) y quién lo ha cobrado; si lo dejas «pendiente de cobro», se apunta cuando lo marques como cobrado. Las recargas de créditos a vendedores también se apuntan solas'] },
+  { v: 203, d: '2026-10-30', items: ['🤝 Socios: ventana nueva para apuntar, al estilo Tricount pero más cómoda: Gasto, Ingreso o Transferencia arriba, importe grande, icono, foto del ticket, «Hoy/Ayer», a quién le toca con lo que paga cada uno al momento y una frase que te explica cómo quedan las cuentas. Todo se puede cambiar después (y se cambia también en Splitwise)'] },
+  { v: 202, d: '2026-10-30', items: ['🤝 Socios (en Dinero): como Tricount pero dentro del panel. Cada pago que entra se apunta solo con quién lo ha recibido, también los gastos, y te dice quién le debe a quién. En el aviso de Telegram verás «Apuntado en Socios». Opcional: copiar cada movimiento en vuestro grupo de Splitwise'] },
   { v: 201, d: '2026-10-29', items: ['📲 Instalar el panel: ahora Chrome lo ve como app nueva (se puede volver a instalar aunque la borraras) y tienes un enlace fijo, /instalar, para instalarlo cuando quieras'] },
   { v: 200, d: '2026-10-29', items: ['📤 Aviso por Telegram cuando un vendedor o administrador descarga la lista de clientes: quién, cuántas cuentas, en qué formato y si lleva contraseñas. Solo es un aviso (no se bloquea). Se apaga en Mi cuenta › Seguridad'] },
   { v: 199, d: '2026-10-29', items: ['🛠️ Repaso completo: en las demos vuelve a salir el tiempo que les queda y en Licencias el aviso de «todavía no ha conectado ningún servidor»'] },
@@ -7133,15 +7212,29 @@ function vSeguimiento() {
   const rows = f.tab === 'pending' ? pend : done;
   const ST = { done: 'Escrito', skip: 'Descartado', bought: 'Compró ✓' };
   const card = (x) => {
-    const ago = Math.floor((Date.now() - Date.parse(x.endedAt)) / 86400000);
-    const contact = [x.whatsapp ? `${ic('msg')}${esc(x.whatsapp)}` : '', x.telegram ? `${ic('send')}${esc(x.telegram)}` : '', x.tgLinked ? `${ic('bell')}bot enlazado` : ''].filter(Boolean).map((t) => `<span>${t}</span>`).join('');
-    return `<article class="fuc"><div class="fu-l"><b>${esc(x.name)}</b><small>@${esc(x.emby)} · terminó ${ago <= 0 ? 'hoy' : ago === 1 ? 'ayer' : `hace ${ago} días`}${S.d.users.length > 1 && userName(x.ownerId) ? ' · ' + esc(userName(x.ownerId)) : ''}</small>${contact ? `<div class="devs">${contact}</div>` : ''}</div>
-      <div class="acts">${x.status === 'pending' ? `<button class="btn sm primary" data-act="fu-msg" data-k="${x.id}">${ic('send')}Escribirle</button><button class="btn sm" data-act="fu-set" data-k="${x.id}" data-st="done" title="Ya le he escrito">${ic('check')}Hecho</button><button class="btn sm ghost" data-act="fu-set" data-k="${x.id}" data-st="skip" title="No hace falta">Descartar</button>`
-        : `<span class="qst ${x.status === 'bought' ? 'correcto' : ''}">${ST[x.status] || x.status}</span>${x.status !== 'bought' ? `<button class="btn sm ghost" data-act="fu-set" data-k="${x.id}" data-st="pending">Volver a pendientes</button>` : ''}`}<button class="btn sm ghost fu-del" data-act="fu-del" data-k="${x.id}" title="Borrar esta demo ahora (de Emby y del panel)">${ic('trash')}Borrar</button></div></article>`;
+    const ago = Math.floor((Date.now() - Date.parse(x.endedAt)) / 86400000), when = ago <= 0 ? 'hoy' : ago === 1 ? 'ayer' : `hace ${ago} días`;
+    const c = ((S.dAll || S.d).clients || []).find((v) => v.id === x.clientId), conv = c && c.demo; // la demo sigue en el panel (de cualquier plataforma): se puede pasar a cliente
+    const now = c && !c.demo && c.status === 'active';
+    const contact = [x.whatsapp ? `<span class="fu-ch">💬 ${esc(x.whatsapp)}</span>` : '', x.telegram ? `<span class="fu-ch">✈️ ${esc(x.telegram)}</span>` : '', x.email ? `<span class="fu-ch">✉️ ${esc(x.email)}</span>` : '', x.tgLinked ? '<span class="fu-ch ok">🔔 bot enlazado</span>' : ''].join('');
+    const st = x.status === 'pending' ? '' : `<span class="fu-st ${x.status}">${ST[x.status] || x.status}</span>`;
+    const main = now ? `<button class="btn sm" data-act="fu-open" data-id="${c.id}">${ic('users')}Ver cliente</button>`
+      : conv ? `<button class="btn fu-go" data-act="fu-conv" data-id="${c.id}">✨ Pasar a cliente</button>` : '';
+    const msg = x.status === 'pending' ? `<button class="btn sm primary" data-act="fu-msg" data-k="${x.id}">${ic('send')}Escribirle</button>` : '';
+    const small = (x.status === 'pending' ? `<button class="fu-mini" data-act="fu-set" data-k="${x.id}" data-st="done" title="Ya le he escrito">${ic('check')}Ya le escribí</button><button class="fu-mini" data-act="fu-set" data-k="${x.id}" data-st="skip" title="No hace falta escribirle">Descartar</button>`
+      : x.status !== 'bought' ? `<button class="fu-mini" data-act="fu-set" data-k="${x.id}" data-st="pending">↩︎ Volver a pendientes</button>` : '')
+      + `<button class="fu-mini bad" data-act="fu-del" data-k="${x.id}" title="Borrar esta demo ahora (de Emby y del panel)">${ic('trash')}Borrar</button>`;
+    return `<article class="fuc2${x.status === 'bought' ? ' won' : ''}"><div class="fu-top2"><span class="fu-av">${esc((x.name || x.emby || '?').slice(0, 1))}</span>
+      <div class="fu-id"><b>${esc(x.name)}</b><small>@${esc(x.emby)}${S.d.users.length > 1 && userName(x.ownerId) ? ' · ' + esc(userName(x.ownerId)) : ''}</small></div>
+      <span class="fu-when">${x.status === 'bought' ? '🎉 compró' : '⏳ terminó ' + when}</span></div>
+      ${contact ? `<div class="fu-chs">${contact}</div>` : ''}
+      ${main || msg || st ? `<div class="fu-main">${main}${msg}${st}</div>` : ''}
+      <div class="fu-minis">${small}</div></article>`;
   };
   const empty = f.tab === 'pending' ? `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Nada pendiente</b><span>Cuando una demo termine sin comprar, aparecerá aquí.</span></div></div>` : '<div class="panel"><div class="empty">Todavía no hay ninguno.</div></div>';
-  const delAll = rows.length ? `<div class="fu-top"><button class="btn sm danger" data-act="fu-delall" data-k="${f.tab}">${ic('trash')}Borrar ${rows.length === 1 ? 'esta demo' : `las ${rows.length} demos de esta lista`}</button></div>` : '';
-  return head('Seguimiento de demos', sub) + tabs + delAll + (rows.length ? `<div class="fulist">${rows.map(card).join('')}</div>` : empty)
+  const delAll = rows.length ? `<div class="fu-bottom"><button class="fu-mini bad" data-act="fu-delall" data-k="${f.tab}">${ic('trash')}Borrar ${rows.length === 1 ? 'esta demo' : `las ${rows.length} demos de esta lista`}</button></div>` : '';
+  const won = d.list.filter((x) => x.status === 'bought').length, rate = d.list.length ? Math.round((won / d.list.length) * 100) : 0;
+  const stats = d.list.length ? `<div class="fu-stats"><div><b>${pend.length}</b><span>por escribir</span></div><div><b>${won}</b><span>compraron</span></div><div><b>${rate}%</b><span>se convierten</span></div></div>` : '';
+  return head('Seguimiento de demos', sub) + stats + tabs + (rows.length ? `<div class="fulist2">${rows.map(card).join('')}</div>` : empty) + delAll
     + '<p class="small muted" style="margin-top:12px">El texto del mensaje se cambia en Emby › Plantillas de mensajes › «Seguimiento de una demo». Se guardan los últimos 30 días.</p>';
 }
 
@@ -7296,6 +7389,179 @@ const GX_EVERY = [[1, 'Cada mes'], [3, 'Cada 3 meses'], [6, 'Cada 6 meses'], [12
 const GX_ST = { paid: 'Pagado', late: 'Atrasado', today: 'Hoy', soon: 'Pronto', plan: 'Previsto' };
 const gxEvery = (n) => (GX_EVERY.find((x) => x[0] === n) || [0, ''])[1];
 const gxOf = (id) => S.gx.data && S.gx.data.list.find((x) => x.id === id);
+/* ── 🤝 Socios: un «Tricount» dentro del panel (solo superadministrador) ── */
+async function loadSo() {
+  S.so.busy = true;
+  try { S.so.data = await api('GET', '/api/socios?m=' + encodeURIComponent(S.so.m || '')); S.so.at = Date.now(); } catch (e) { S.so.data = { error: e.message }; }
+  S.so.busy = false;
+  if (S.view === 'socios') render();
+}
+const soName = (id) => ((S.so.data && S.so.data.cfg.members.find((m) => m.id === id)) || {}).name || '?';
+const SO_SRC = { cuenta: ['👤', 'Alta o renovación a mano'], cliente: ['💳', 'Pago de cliente'], creditos: ['🪙', 'Créditos online'], recarga: ['🔋', 'Recarga de vendedor'], gasto: ['🧾', 'Gasto'], manual: ['✍️', 'Apuntado a mano'] };
+const soMonthTxt = (m) => { if (!m) return 'Todo'; const t = new Date(m + '-15').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(' de ', ' '); return t.charAt(0).toUpperCase() + t.slice(1); };
+function vSocios() {
+  const d = S.so.data, sub = 'Lo que entra y sale, quién lo tiene y cuánto le toca a cada uno. Solo lo ves tú.';
+  if (!d) return head('🤝 Socios', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (d.error) return head('🤝 Socios', sub) + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
+  const cfg = d.cfg, b = d.balance;
+  const cfgBtn = `<button class="btn" data-act="so-cfg">${ic('wrench')}Ajustes</button>`;
+  if (!cfg.on) return head('🤝 Socios', sub, cfgBtn) + `<div class="panel pad so-intro">
+    <h3 style="margin-top:0">Como Tricount, pero dentro del panel</h3>
+    <ul class="so-ul"><li>💳 Cada pago que entra (clientes, créditos, recargas) se <b>apunta solo</b>, con quién lo ha recibido.</li>
+    <li>🧾 Los gastos que marques como pagados también se apuntan.</li>
+    <li>⚖️ El panel calcula <b>quién le debe a quién</b> para quedar a partes iguales.</li>
+    <li>📲 En el aviso de Telegram de cada pago verás «Apuntado en Socios».</li>
+    <li>🔗 Si preferís Splitwise, cada movimiento se puede copiar también allí.</li></ul>
+    <p class="small muted">No toca nada de las cuentas ni de los pagos: solo apunta. Puedes apagarlo cuando quieras.</p>
+    <button class="btn primary" data-act="so-cfg">${ic('users')}Empezar: poner nombres</button></div>`;
+  const acts = `<button class="btn primary" data-act="so-add" data-k="gasto">${ic('plus')}Añadir</button>${cfgBtn}`;
+  const chips = `<div class="tools so-months">${d.months.map((m) => `<button type="button" class="chip${d.month === m ? ' on' : ''}" data-act="so-m" data-k="${m}">${esc(soMonthTxt(m))}</button>`).join('')}<button type="button" class="chip${!d.month ? ' on' : ''}" data-act="so-m" data-k="all">Todo</button></div>`;
+  const peace = b.moves.length ? b.moves.map((m) => `<div class="so-move"><div><span class="so-av">${esc(m.fromName.slice(0, 1))}</span><b>${esc(m.fromName)}</b> le debe <b class="so-amt">${eur(m.amount)}</b> a <b>${esc(m.toName)}</b><span class="so-av">${esc(m.toName.slice(0, 1))}</span></div><button class="btn sm primary" data-act="so-settle" data-from="${m.from}" data-to="${m.to}" data-a="${m.amount}">${ic('check')}Saldar</button></div>`).join('')
+    : `<div class="so-move ok"><div>✅ <b>Estáis en paz</b>${b.count ? ' en ' + esc(soMonthTxt(d.month).toLowerCase()) : ''}</div></div>`;
+  const people = `<div class="so-people">${b.people.map((p) => `<div class="so-p"><div class="so-ph"><span class="so-av big">${esc(p.name.slice(0, 1))}</span><b>${esc(p.name)}</b></div>
+    <div class="so-r"><span>Ha recibido</span><b>${eur(p.cobros)}</b></div>${p.gastos ? `<div class="so-r"><span>Ha pagado gastos</span><b>− ${eur(p.gastos)}</b></div>` : ''}${p.enviado ? `<div class="so-r"><span>Ha pasado a otro socio</span><b>− ${eur(p.enviado)}</b></div>` : ''}${p.recibido ? `<div class="so-r"><span>Le han pasado</span><b>+ ${eur(p.recibido)}</b></div>` : ''}
+    <div class="so-r tot"><span>Tiene ahora</span><b>${eur(p.tiene)}</b></div><div class="so-r"><span>Le toca</span><b>${eur(p.toca)}</b></div><div class="so-bal ${p.saldo > 0.009 ? 'bad' : p.saldo < -0.009 ? 'ok' : ''}">${p.saldo > 0.009 ? `Tiene de más: ${eur(p.saldo)}` : p.saldo < -0.009 ? `Le falta: ${eur(-p.saldo)}` : 'Justo lo suyo'}</div></div>`).join('')}</div>`;
+  const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
+  const tiles = `<div class="vptiles lict">${tile(eur(b.cobros), 'Cobrado', soMonthTxt(d.month), 'ok')}${tile(eur(b.gastos), 'Gastos', '')}${tile(eur(b.beneficio), 'Beneficio', 'cobrado − gastos', b.beneficio >= 0 ? 'ok' : 'bad')}${tile(eur(b.share), 'Le toca a cada uno', `a partes iguales (${b.people.length})`)}</div>`;
+  const byDay = {};
+  for (const x of d.entries) (byDay[x.at.slice(0, 10)] = byDay[x.at.slice(0, 10)] || []).push(x);
+  const sw = cfg.sw.on;
+  const row = (x) => { const [ico0, src] = x.kind === 'pago' ? ['🔁', 'Entre socios'] : SO_SRC[x.src] || SO_SRC.manual, ico = x.cat || ico0;
+    const only = Array.isArray(x.split) && x.split.length && x.kind !== 'pago' ? ` · solo ${x.split.map(soName).map(esc).join(' y ')}` : '';
+    return `<button type="button" class="so-e ${x.kind}" data-act="so-more" data-id="${x.id}"><span class="so-ico">${ico}</span><span class="so-d"><b>${esc(x.desc || src)}${x.photo ? ' <span title="Tiene foto">📎</span>' : ''}</b><small>${x.kind === 'pago' ? `${esc(soName(x.who))} → ${esc(soName(x.to))}` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`} · ${new Date(x.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · ${src}${only}${sw ? (x.sw ? ' · ✓ Splitwise' : x.swErr ? ' · ⚠️ Splitwise' : ' · ⏳ Splitwise') : ''}</small></span><span class="so-a">${x.kind === 'gasto' ? '− ' : ''}${eur(x.amount)}</span></button>`; };
+  const list = d.entries.length ? Object.keys(byDay).map((day) => `<div class="so-day">${esc(new Date(day + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }))}</div>${byDay[day].map(row).join('')}`).join('')
+    : `<div class="empty okmsg">${ic('wallet')}<b>Nada apuntado ${d.month ? 'este mes' : 'todavía'}</b><span>Los pagos que entren se apuntan solos. También puedes pulsar «+ Añadir».</span></div>`;
+  const swLine = sw ? `<p class="small muted" style="margin:0 0 12px">🔗 Copiando en Splitwise${cfg.sw.groupName ? ` (grupo «${esc(cfg.sw.groupName)}»)` : ''}.${d.entries.some((x) => !x.sw) ? ` <button class="linkbtn" data-act="so-swretry">Reenviar los que faltan</button>` : ''}</p>` : '';
+  return head('🤝 Socios', sub, acts) + chips + `<div class="panel pad so-peace">${peace}</div>` + tiles + people + swLine + `<div class="panel so-list">${list}</div>`;
+}
+function soCfgDlg() {
+  const d = S.so.data; if (!d || d.error) return;
+  const c = d.cfg, ms = c.members.length ? c.members : [];
+  const memberBox = (m, i) => `<fieldset class="so-mf" data-i="${i}"><legend>Socio ${i + 1}</legend>
+    <input type="hidden" name="mid${i}" value="${esc(m.id || '')}"><label class="f">Nombre<input name="mname${i}" maxlength="30" value="${esc(m.name || '')}" placeholder="${i === 0 ? 'Angus' : i === 1 ? 'Xux' : 'Nombre'}"></label>
+    ${d.staff.length > 1 ? `<span class="flabel">Su usuario del panel</span><div class="so-chk">${d.staff.map((u) => `<label><input type="checkbox" name="mu${i}" value="${u.id}"${(m.users || []).includes(u.id) ? ' checked' : ''}>${esc(u.name)}</label>`).join('')}</div>` : ''}
+    ${d.chats.length ? `<span class="flabel">Su Telegram (el que pulsa «Confirmar» en los pagos a mano)</span><div class="so-chk">${d.chats.map((ch) => `<label><input type="checkbox" name="mc${i}" value="${esc(ch.id)}"${(m.chats || []).map(String).includes(ch.id) ? ' checked' : ''}>${esc(ch.label)}</label>`).join('')}</div>` : ''}</fieldset>`;
+  const list = [...ms, ...(ms.length < 4 ? [{ id: '', name: '' }] : [])];
+  const tog = (k, on, t) => `<label class="tv-sw" style="margin:6px 0"><input type="checkbox" name="a_${k}"${on ? ' checked' : ''}><span class="sw"></span><span>${t}</span></label>`;
+  openDlg({ title: '🤝 Ajustes de Socios', submit: 'Guardar',
+    body: `<label class="tv-sw" style="margin-bottom:12px"><input type="checkbox" name="on"${c.on ? ' checked' : ''}><span class="sw"></span><b>Apuntar los pagos en Socios</b></label>
+      ${list.map(memberBox).join('')}<p class="small muted" style="margin:-4px 0 12px">Deja vacío el último si sois dos.</p>
+      <label class="f">¿A quién le llegan los pagos con tarjeta, PayPal automático y créditos online?<select name="online">${ms.map((m) => `<option value="${m.id}"${c.online === m.id ? ' selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
+      <span class="flabel">Qué se apunta solo</span>${tog('clients', c.auto.clients, 'Pagos de tus clientes (online y Bizum/PayPal/Revolut)')}${tog('accounts', c.auto.accounts !== false, 'Altas y renovaciones que haces tú a mano')}${tog('credits', c.auto.credits, 'Créditos que compran los vendedores online')}${tog('recharges', c.auto.recharges, 'Recargas cobradas a vendedores')}${tog('expenses', c.auto.expenses, 'Gastos que marcas como pagados')}
+      <div class="so-swbox"><b>🔗 Splitwise</b> <small class="muted">${c.sw.on ? `conectado${c.sw.groupName ? ' · ' + esc(c.sw.groupName) : ''}` : c.sw.hasKey ? 'clave puesta, sin activar' : 'sin conectar'}</small><button type="button" class="btn sm" data-act="so-sw">${c.sw.on ? 'Cambiar' : 'Conectar'}</button></div>`,
+    onSubmit: async (fd) => {
+      const members = [];
+      for (let i = 0; i < list.length; i++) { const name = String(fd.get('mname' + i) || '').trim(); if (!name) continue; members.push({ id: fd.get('mid' + i) || undefined, name, users: fd.getAll('mu' + i).map(Number), chats: fd.getAll('mc' + i) }); }
+      const auto = {}; for (const k of ['clients', 'credits', 'recharges', 'expenses', 'accounts']) auto[k] = fd.get('a_' + k) !== null;
+      await api('PUT', '/api/socios/cfg', { on: fd.get('on') !== null, members, online: fd.get('online'), auto });
+      await loadSo(); return 'Socios guardado';
+    } });
+}
+async function soSwDlg(groups) {
+  const c = S.so.data.cfg;
+  if (!groups && c.sw.hasKey) { try { groups = (await api('PUT', '/api/socios/splitwise', {})).groups; } catch (e) { toast(e.message, true); } }
+  const g = (groups || []).find((x) => x.id === c.sw.group) || (groups || [])[0];
+  const opts = (sel) => `<option value="">— Elige —</option>${(g ? g.members : []).map((u) => `<option value="${u.id}"${String(sel) === String(u.id) ? ' selected' : ''}>${esc(u.name)}</option>`).join('')}`;
+  openDlg({ title: '🔗 Conectar con Splitwise', submit: groups ? 'Guardar' : 'Conectar',
+    body: `<ol class="so-steps"><li>Entra en <b>secure.splitwise.com/apps</b> con tu cuenta.</li><li>Pulsa «Register your application» (pon cualquier nombre y web).</li><li>Copia la <b>API key</b> y pégala aquí.</li></ol>
+      <label class="f">API key de Splitwise${c.sw.hasKey ? ' <small class="muted">(ya hay una guardada; deja vacío para no cambiarla)</small>' : ''}<input name="key" type="password" autocomplete="off" maxlength="200" placeholder="${c.sw.hasKey ? '••••••••' : 'Pega aquí la clave'}"></label>
+      ${groups ? `<label class="f">Grupo donde apuntar<select name="group">${groups.map((x) => `<option value="${x.id}"${g && g.id === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+      ${c.members.map((m) => `<label class="f">¿Quién es ${esc(m.name)} en Splitwise?<select name="u_${m.id}">${opts(c.sw.users[m.id])}</select></label>`).join('')}
+      <label class="tv-sw" style="margin:6px 0 4px"><input type="checkbox" name="on"${c.sw.on ? ' checked' : ''}><span class="sw"></span><b>Copiar cada movimiento en Splitwise</b></label>
+      <p class="small muted">Si cambias de grupo, pulsa Guardar y vuelve a abrir para ver sus personas.</p>${c.sw.hasKey ? '<button type="button" class="linkbtn" data-act="so-swoff" style="color:var(--bad)">Quitar la clave de Splitwise</button>' : ''}` : '<p class="small muted">La clave se guarda en tu panel y no se enseña nunca.</p>'}`,
+    onSubmit: async (fd) => {
+      const body = { key: fd.get('key') || '' };
+      if (groups) { body.group = +fd.get('group'); const users = {}; for (const m of c.members) users[m.id] = +fd.get('u_' + m.id) || 0; if (!g || body.group === g.id) body.users = users; body.on = fd.get('on') !== null && (!g || body.group === g.id); }
+      const r = await api('PUT', '/api/socios/splitwise', body);
+      await loadSo();
+      if (!groups) { setTimeout(() => soSwDlg(r.groups), 50); return 'Splitwise conectado: elige el grupo'; }
+      return body.on ? 'Splitwise activado' : 'Guardado';
+    } });
+}
+/* Ventana moderna para apuntar o cambiar un movimiento (como Tricount, un poco mejor) */
+const SO_CATS = [['🖥️', 'Servidor'], ['🎬', 'Contenido'], ['🌐', 'Dominio'], ['📱', 'Apps'], ['📣', 'Publicidad'], ['💳', 'Cliente'], ['🔋', 'Recarga'], ['🧑‍💻', 'Trabajo'], ['🍻', 'Comida'], ['🧾', 'Factura'], ['💰', 'Dinero'], ['📦', 'Otros']];
+const SO_KIND = { gasto: ['💸', 'Gasto', 'Pagado por'], cobro: ['💰', 'Ingreso', 'Recibido por'], pago: ['🔁', 'Transferencia', 'De'] };
+const soEur = (c) => (c / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+/** Reduce la foto en el móvil antes de mandarla (rápida y ligera) */
+function soShrink(file) {
+  return new Promise((ok, ko) => {
+    const img = new Image(), rd = new FileReader();
+    img.onload = () => { const k = Math.min(1, 1280 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      let q = 0.78, out = cv.toDataURL('image/jpeg', q); while (out.length > 1150000 && q > 0.3) { q -= 0.12; out = cv.toDataURL('image/jpeg', q); } ok(out); };
+    img.onerror = () => ko(new Error('No se pudo leer la foto'));
+    rd.onload = () => { img.src = rd.result; }; rd.onerror = () => ko(new Error('No se pudo leer la foto'));
+    rd.readAsDataURL(file);
+  });
+}
+function soAddDlg(kind, pre, x) {
+  const c = S.so.data.cfg, ms = c.members, edit = !!x, k0 = x ? x.kind : kind || 'gasto';
+  const today0 = new Date().toLocaleDateString('sv'), yest = new Date(Date.now() - 864e5).toLocaleDateString('sv');
+  const who0 = x ? x.who : pre && pre.from ? pre.from : (ms.find((m) => m.id === S.so.data.mine) || ms[0]).id;
+  const to0 = x ? x.to : pre && pre.to ? pre.to : (ms.find((m) => m.id !== who0) || ms[0]).id;
+  const split0 = x && Array.isArray(x.split) && x.split.length ? x.split : ms.map((m) => m.id);
+  const pill = (name, m, on) => `<label class="sx-pill"><input type="radio" name="${name}" value="${m.id}"${on ? ' checked' : ''}><span><i>${esc(m.name.slice(0, 1))}</i>${esc(m.name)}</span></label>`;
+  const body = `<div class="sx">
+    <div class="sx-seg" role="radiogroup">${Object.entries(SO_KIND).map(([kk, [e, t]]) => `<label><input type="radio" name="kind" value="${kk}"${kk === k0 ? ' checked' : ''}${edit && kk !== k0 ? ' disabled' : ''}><span>${e} ${t}</span></label>`).join('')}</div>
+    <label class="sx-amt"><input name="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" required value="${x ? String(x.amount).replace('.', ',') : pre && pre.amount ? String(pre.amount).replace('.', ',') : ''}"><b>€</b></label>
+    <div class="sx-title"><button type="button" class="sx-catbtn" data-sx="cat" title="Elegir icono">${x && x.cat ? x.cat : '🏷️'}</button><input name="desc" maxlength="120" placeholder="Título (ej.: VPS)" value="${esc(x ? x.desc || '' : '')}">
+      <label class="sx-cam" title="Foto del ticket"><input type="file" name="ph" accept="image/*" capture="environment" hidden>📷</label></div>
+    <input type="hidden" name="cat" value="${esc(x && x.cat ? x.cat : '')}">
+    <div class="sx-cats" hidden>${SO_CATS.map(([e, t]) => `<button type="button" data-sx="pick" data-e="${e}" class="${x && x.cat === e ? 'on' : ''}"><span>${e}</span><small>${t}</small></button>`).join('')}</div>
+    <div class="sx-photo"${x && x.photo ? '' : ' hidden'}>${x && x.photo ? `<img src="/api/socios/photo/${x.id}?t=${Date.now()}" alt="Ticket">` : '<img alt="Ticket">'}<button type="button" data-sx="nophoto">Quitar foto</button></div>
+    <div class="sx-lbl" data-l="who">${SO_KIND[k0][2]}</div><div class="sx-pills">${ms.map((m) => pill('who', m, m.id === who0)).join('')}</div>
+    <div class="sx-to"${k0 === 'pago' ? '' : ' hidden'}><div class="sx-lbl">Para</div><div class="sx-pills">${ms.map((m) => pill('to', m, m.id === to0)).join('')}</div></div>
+    <div class="sx-lbl">Cuándo</div><div class="sx-when"><input type="date" name="date" value="${x ? x.at.slice(0, 10) : today0}" max="${today0}"><button type="button" data-sx="day" data-d="${today0}">Hoy</button><button type="button" data-sx="day" data-d="${yest}">Ayer</button></div>
+    <div class="sx-split"${k0 === 'pago' ? ' hidden' : ''}><div class="sx-lbl sx-row"><span>Dividir a partes iguales entre</span><button type="button" data-sx="all">Todos</button></div>
+      <div class="sx-list">${ms.map((m) => `<label class="sx-p"><input type="checkbox" name="split" value="${m.id}"${split0.includes(m.id) ? ' checked' : ''}><i>${esc(m.name.slice(0, 1))}</i><b>${esc(m.name)}</b><em data-part="${m.id}">0,00 €</em></label>`).join('')}</div></div>
+    <div class="sx-sum" aria-live="polite"></div>
+    ${edit ? `<p class="small muted" style="margin:8px 0 0">${(SO_SRC[x.src] || SO_SRC.manual)[1]}${x.by ? ' · ' + esc(x.by) : ''}${x.edited ? ' · cambiado por ' + esc(x.edited) : ''}${x.swErr ? `<br>⚠️ Splitwise: ${esc(x.swErr)}` : ''}</p><button type="button" class="linkbtn" data-act="so-del" data-id="${x.id}" style="color:var(--bad);margin-top:8px">${ic('trash')} Borrar este movimiento</button>` : ''}
+  </div>`;
+  let photo; // undefined: sin cambios · null: quitar · string: nueva
+  openDlg({ title: edit ? 'Cambiar movimiento' : 'Apuntar', submit: edit ? 'Guardar' : 'Añadir', body,
+    onOpen: () => {
+      const f = dlgForm, $$ = (q) => f.querySelector(q);
+      const cents = () => { const v = Number(String(f.amount.value).replace(/\s/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.')); return v > 0 ? Math.round(v * 100) : 0; };
+      const nm = (id) => (ms.find((m) => m.id === id) || {}).name || '';
+      const paint = () => {
+        const kd = f.kind.value, sp = [...f.querySelectorAll('[name=split]:checked')].map((i) => i.value), tot = cents(), who = (f.querySelector('[name=who]:checked') || {}).value;
+        $$('[data-l=who]').textContent = SO_KIND[kd][2]; $$('.sx-to').hidden = kd !== 'pago'; $$('.sx-split').hidden = kd === 'pago';
+        f.querySelectorAll('.sx-seg span').forEach((s2) => s2.parentNode.classList.toggle('on', s2.previousElementSibling.checked));
+        const base = sp.length ? Math.floor(tot / sp.length) : 0; let extra = tot - base * sp.length;
+        ms.forEach((m) => { const e = f.querySelector(`[data-part="${m.id}"]`); const on = sp.includes(m.id); const v = on ? base + (extra-- > 0 ? 1 : 0) : 0; e.textContent = soEur(v); e.closest('.sx-p').classList.toggle('off', !on); });
+        // Frase que explica lo que va a pasar
+        let t = '';
+        if (tot) {
+          if (kd === 'pago') { const to = (f.querySelector('[name=to]:checked') || {}).value; t = to && to !== who ? `🔁 <b>${esc(nm(who))}</b> le pasa <b>${soEur(tot)}</b> a <b>${esc(nm(to))}</b>` : '⚠️ Elige dos personas distintas'; }
+          else if (!sp.length) t = '⚠️ Marca al menos a una persona';
+          else { const mine = sp.includes(who) ? Math.floor(tot / sp.length) : 0, rest = tot - mine;
+            t = kd === 'gasto' ? (rest ? `💡 Los demás le deberán <b>${soEur(rest)}</b> a <b>${esc(nm(who))}</b> por este gasto` : `💡 Es solo de ${esc(nm(who))}: no cambia las cuentas`)
+              : (rest ? `💡 De estos ${soEur(tot)}, <b>${soEur(rest)}</b> son ${(() => { const o = sp.filter((id) => id !== who); return o.length === 1 ? 'de <b>' + esc(nm(o[0])) + '</b>' : 'de los demás'; })()}${mine ? ` y ${esc(nm(who))} se queda ${soEur(mine)}` : ''}` : `💡 Es todo para ${esc(nm(who))}: no cambia las cuentas`); }
+        }
+        $$('.sx-sum').innerHTML = t;
+      };
+      f.oninput = paint; f.onchange = async (e) => {
+        if (e.target.name === 'ph' && e.target.files[0]) { try { photo = await soShrink(e.target.files[0]); const box = $$('.sx-photo'); box.querySelector('img').src = photo; box.hidden = false; } catch (er) { toast(er.message, true); } }
+        paint();
+      };
+      f.onclick = (e) => { const b = e.target.closest('[data-sx]'); if (!b) return; const a = b.dataset.sx;
+        if (a === 'cat') $$('.sx-cats').hidden = !$$('.sx-cats').hidden;
+        if (a === 'pick') { const on = f.cat.value === b.dataset.e; f.cat.value = on ? '' : b.dataset.e; $$('.sx-catbtn').textContent = f.cat.value || '🏷️'; f.querySelectorAll('.sx-cats button').forEach((z) => z.classList.toggle('on', z.dataset.e === f.cat.value)); $$('.sx-cats').hidden = true; if (!f.desc.value && !on) f.desc.value = (SO_CATS.find((z) => z[0] === b.dataset.e) || [])[1] || ''; }
+        if (a === 'day') { f.date.value = b.dataset.d; }
+        if (a === 'all') { const all = [...f.querySelectorAll('[name=split]')], every = all.every((i) => i.checked); all.forEach((i) => (i.checked = !every)); }
+        if (a === 'nophoto') { photo = null; $$('.sx-photo').hidden = true; f.ph.value = ''; }
+        paint(); };
+      paint(); if (!edit) setTimeout(() => f.amount.focus(), 60);
+    },
+    onSubmit: async (fd) => {
+      const amount = String(fd.get('amount')).replace(/\s/g, '').replace(/\.(?=\d{3}\b)/g, '');
+      const b2 = { kind: fd.get('kind') || k0, who: fd.get('who'), to: fd.get('to'), amount, date: fd.get('date'), desc: fd.get('desc'), cat: fd.get('cat'), split: fd.getAll('split') };
+      if (photo !== undefined) b2.photo = photo;
+      if (edit) await api('PUT', '/api/socios/entries/' + x.id, b2); else await api('POST', '/api/socios/entries', b2);
+      await loadSo(); return edit ? 'Cambiado' : `${SO_KIND[b2.kind][1]} apuntado`;
+    } });
+}
+function soMore(id) { const d = S.so.data, x = d && d.entries.find((e) => e.id === id); if (x) soAddDlg(x.kind, null, x); }
 async function loadGx() {
   S.gx.busy = true;
   try { S.gx.data = await api('GET', '/api/expenses'); S.gx.at = Date.now(); } catch (e) { S.gx.data = { list: [], error: e.message }; }
@@ -7439,8 +7705,9 @@ function gxPay(id) {
     body: `<div class="lnew"><span>Pago del ${fmt(e.due)}</span><b>${eur(e.amount)}</b></div>
       <div class="row2"><label class="f">Importe pagado (€)<input name="amount" type="number" min="0" step="0.01" value="${e.amount}" inputmode="decimal"></label><label class="f">Día en que lo pagaste<input type="date" name="at" value="${S.gx.data.today}"></label></div>
       <label class="f">Cómo lo pagaste (opcional)<input name="method" maxlength="30" value="${esc(e.method || '')}"></label>
+      ${S.gx.data.socios && S.gx.data.socios.auto ? `<label class="f">¿Quién lo ha pagado? <small class="muted">(se apunta en Socios)</small><select name="payer">${S.gx.data.socios.members.map((m) => `<option value="${m.id}"${m.id === S.gx.data.socios.mine ? ' selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>` : ''}
       <p class="small muted" style="margin-top:8px">${e.every ? `El próximo pago quedará para el <b>${fmt(gxNext(e, e.due))}</b>.` : 'Es un pago de una sola vez: quedará como pagado.'}</p>`,
-    onSubmit: async (fd) => { await api('POST', `/api/expenses/${id}/pay`, { amount: fd.get('amount'), at: fd.get('at'), method: fd.get('method') }); await loadGx(); return `${e.name}: pagado`; } });
+    onSubmit: async (fd) => { await api('POST', `/api/expenses/${id}/pay`, { amount: fd.get('amount'), at: fd.get('at'), method: fd.get('method'), payer: fd.get('payer') || undefined }); await loadGx(); return `${e.name}: pagado`; } });
 }
 function gxMore(id) {
   const e = gxOf(id); if (!e) return;
@@ -8072,12 +8339,13 @@ function dRenewSame(c) {
     body: `<div class="bzhero rnhero"><div class="bztk">${rnTicket(c, m, sc, q, base, from, 'IGUAL')}</div></div>
       <input type="hidden" name="months" value="${m}"><input type="hidden" name="screens" value="${sc}"><input type="hidden" name="quality" value="${q}">
       <div class="rnf"><span class="rnl">💶 Cobro</span>${paidSelect(true).replace(/<label class="f">Cobro al cliente/, '<label class="f rnhide">Cobro al cliente')}</div>
+      ${socOwn(c) ? socFields(m, sc) : ''}
       <p class="preview rnprev" id="cost"></p>
       <p class="muted small" style="margin:6px 0 0">¿Quieres cambiar algo? <button type="button" class="linkbtn" data-act="renew" data-id="${c.id}">Elegir otro plan</button></p>`,
     onOpen: () => { dlgForm.querySelectorAll('select').forEach(bzChips); wireCost(c.serverId, null); },
     onSubmit: async (fd) => {
-      const r = await api('POST', `/api/clients/${c.id}/renew`, { months: m, screens: sc, quality: q, paid: fd.get('paid') === '1' });
-      return `Renovada hasta el ${fmt(r.expires)}`;
+      const r = await api('POST', `/api/clients/${c.id}/renew`, { months: m, screens: sc, quality: q, paid: fd.get('paid') === '1', ...socBody(fd) });
+      return `Renovada hasta el ${fmt(r.expires)}${socToast(r)}`;
     },
     after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) celebrateThen('renew', now, () => dMessage(now, '', 'renewed'), prevExp); },
   });
@@ -8096,6 +8364,7 @@ function dRenew(c) {
       <div class="rnf"><span class="rnl">📺 Pantallas</span><select name="screens">${options(SCREEN_OPTS, c.screens || 1)}</select></div>
       <div class="rnf"><span class="rnl">🎬 Contenido</span><select name="quality" data-chip="big">${qualityOpts(c.quality || 'custom', c.quality === null)}</select></div>
       <div class="rnf"><span class="rnl">💶 Cobro</span>${paidSelect(true).replace(/<label class="f">Cobro al cliente/, '<label class="f rnhide">Cobro al cliente')}</div>
+      ${socOwn(c) ? socFields(1, c.screens || 1) : ''}
       <p class="preview rnprev" id="cost"></p>`,
     onOpen: () => {
       const f = dlgForm;
@@ -8113,8 +8382,8 @@ function dRenew(c) {
       tk();
     },
     onSubmit: async (fd) => {
-      const r = await api('POST', `/api/clients/${c.id}/renew`, { months: +fd.get('months'), screens: +fd.get('screens'), quality: fd.get('quality'), paid: fd.get('paid') === '1' });
-      return `${c.demo ? 'Convertida en cuenta' : 'Renovada'} hasta el ${fmt(r.expires)}`;
+      const r = await api('POST', `/api/clients/${c.id}/renew`, { months: +fd.get('months'), screens: +fd.get('screens'), quality: fd.get('quality'), paid: fd.get('paid') === '1', ...socBody(fd) });
+      return `${c.demo ? 'Convertida en cuenta' : 'Renovada'} hasta el ${fmt(r.expires)}${socToast(r)}`;
     },
     // Al terminar, el mensaje listo para enviar al cliente
     after: () => { const now = S.d.clients.find((x) => x.id === c.id); if (now) celebrateThen('renew', now, () => dMessage(now, '', 'renewed'), prevExp); },
@@ -9255,6 +9524,15 @@ document.addEventListener('click', (e) => {
   if (a === 'lic-new') { licNew(); return; }
   if (a === 'po-sample') { const t = $('#poForm textarea[name=prices]'); if (t) { t.value = PO_SAMPLE; t.dispatchEvent(new Event('input', { bubbles: true })); t.focus(); } return; }
   if (a === 'po-test') { const f = $('#poForm').elements; const inh = f.inherit && f.inherit.checked; api('POST', '/api/my-payoffer/test', inh ? {} : { preview: true, prices: f.prices.value, url: f.url.value, button: f.button.value }).then(() => toast('Prueba enviada a tu Telegram'), (x) => toast(x.message, true)); return; }
+  if (a === 'so-cfg') { soCfgDlg(); return; }
+  if (a === 'so-sw') { if (dlg.open) dlg.close(); soSwDlg(); return; }
+  if (a === 'so-swoff') { if (dlg.open) dlg.close(); dConfirm('Quitar Splitwise', 'Se borra la clave y se deja de copiar en Splitwise. Lo apuntado en Socios no se toca.', 'Quitar', async () => { await api('PUT', '/api/socios/splitwise', { remove: true }); await loadSo(); }, 'Splitwise quitado'); return; }
+  if (a === 'so-swretry') { api('POST', '/api/socios/splitwise/retry', {}).then((r) => { toast(`Enviados a Splitwise: ${r.sent}${r.failed ? ` · fallan ${r.failed}` : ''}`, !!r.failed); loadSo(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'so-m') { S.so.m = el.dataset.k; S.so.data = null; render(); loadSo(); return; }
+  if (a === 'so-add') { soAddDlg(el.dataset.k); return; }
+  if (a === 'so-settle') { soAddDlg('pago', { from: el.dataset.from, to: el.dataset.to, amount: el.dataset.a }); return; }
+  if (a === 'so-more') { soMore(el.dataset.id); return; }
+  if (a === 'so-del') { if (dlg.open) dlg.close(); dConfirm('Borrar movimiento', 'Se quita de Socios y las cuentas se recalculan. (En Splitwise, si estaba copiado, bórralo allí.)', 'Borrar', async () => { await api('DELETE', '/api/socios/entries/' + el.dataset.id); await loadSo(); }, 'Movimiento borrado'); return; }
   if (a === 'gx-new') { gxForm(); return; }
   if (a === 'gx-edit') { const e = gxOf(id); if (e) gxForm(e); return; }
   if (a === 'gx-pay') { gxPay(id); return; }
@@ -9304,6 +9582,8 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (a === 'fu-tab') { S.fu.tab = el.dataset.k; render(); return; }
+  if (a === 'fu-conv') { let c = S.d.clients.find((v) => v.id === id); if (!c && S.dAll) { const o = S.dAll.clients.find((v) => v.id === id); if (o) { setKind(kindOfSrv(o.serverId)); c = S.d.clients.find((v) => v.id === id); } } if (c) { S.fu.at = 0; dRenew(c); } else toast('Esa demo ya no está en el panel', true); return; }
+  if (a === 'fu-open') { if (!S.d.clients.some((v) => v.id === id) && S.dAll) { const o = S.dAll.clients.find((v) => v.id === id); if (o) setKind(kindOfSrv(o.serverId)); } openCf(id); return; }
   if (a === 'fu-msg') { const x = (S.fu.data.list || []).find((v) => v.id === el.dataset.k); if (x) dQuickMsg({ panelName: x.name, whatsapp: x.whatsapp, tgLinked: x.tgLinked }, 'Escribir a ' + x.name, x.text, x.tgLinked && S.d.settings.notices.telegram.bot ? `/api/followups/${x.id}/telegram` : ''); return; }
   if (a === 'fu-del') { const x = ((S.fu.data || {}).list || []).find((y) => y.id === el.dataset.k); dConfirm(`Borrar la demo de ${x ? x.name : ''}`, 'Se borra ahora de Emby y del panel, y desaparece de esta lista. Si ya compró y es una cuenta, la cuenta no se toca.', 'Borrar', () => api('POST', `/api/followups/${el.dataset.k}/delete`, {}).then((r) => { S.fu.data = null; return r; }), 'Demo borrada'); return; }
   if (a === 'fu-delall') { const n = ((S.fu.data || {}).list || []).filter((y) => (el.dataset.k === 'done' ? y.status !== 'pending' : y.status === 'pending')).length; dConfirm(`Borrar ${n === 1 ? '1 demo' : n + ' demos'}`, `Se borran ahora de Emby y del panel todas las demos de la lista «${el.dataset.k === 'done' ? 'Hechos' : 'Por escribir'}». Las que compraron y ya son cuentas no se tocan. No se puede deshacer.`, 'Borrar todas', () => api('POST', '/api/followups-delete', { tab: el.dataset.k }).then((r) => { S.fu.data = null; return r; }), 'Demos borradas'); return; }
@@ -9663,10 +9943,10 @@ document.addEventListener('submit', (e) => {
       email: fd.get('email'), telegram: fd.get('telegram'), whatsapp: fd.get('whatsapp'), signal: fd.get('signal'), note: fd.get('note'), quality: fd.get('quality'),
     };
     (demo ? api('POST', '/api/demos', { ...common, hours: +fd.get('hours') })
-      : api('POST', '/api/clients', { ...common, months: +fd.get('months'), screens: +fd.get('screens'), paid: fd.get('paid') === '1', ref: fd.get('ref') || '', ...(fd.get('ownerId') ? { ownerId: +fd.get('ownerId') } : {}) }))
+      : api('POST', '/api/clients', { ...common, months: +fd.get('months'), screens: +fd.get('screens'), paid: fd.get('paid') === '1', ref: fd.get('ref') || '', ...(fd.get('ownerId') ? { ownerId: +fd.get('ownerId') } : {}), ...socBody(fd, f) }))
       .then(async (r) => {
         S.view = 'cuentas'; S.filter = demo ? 'demo' : 'all'; S.q = ''; S.fOwner = 0; S.fServer = 0;
-        await reload(); window.scrollTo(0, 0); toast(demo ? 'Demo creada en Emby' : 'Cliente creado en Emby');
+        await reload(); window.scrollTo(0, 0); toast(demo ? 'Demo creada en Emby' : 'Cliente creado en Emby' + socToast(r));
         const created = S.d.clients.find((x) => x.id === r.id);
         if (created) afterNav(() => celebrateThen(demo ? 'demo' : 'created', created, () => dMessage(created, common.password, demo ? 'demo' : 'created')));
       })

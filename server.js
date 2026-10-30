@@ -2422,6 +2422,7 @@ function publicData(me) {
     licDue: me.role === 'super' && !LIC_CLIENT ? (db.licenses || []).filter((l) => !l.blocked && diffDays(l.until, today()) <= 7).length : 0,
     license: me.role === 'super' ? licStatus() : null,
     expDue: me.role === 'super' ? expDueCount() : 0,
+    socios: me.role === 'super' && socOn() && socCfg().auto.accounts ? { members: socCfg().members.map((m) => ({ id: m.id, name: m.name })), mine: socWho(me) } : null,
     settings: { ...db.settings, notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } },
       // La app de clientes: mientras el superadministrador no la publique, el resto del equipo no la ve
       app: me.role === 'super' || (db.settings.app || {}).public ? db.settings.app : { ...db.settings.app, file: false, tag: false, inMsg: false },
@@ -3199,7 +3200,7 @@ async function botCallback(cq) {
     const u = o && mpConfirmers(o).find((x) => userChats(x).includes(chat));
     if (!u) return;
     let msg;
-    try { msg = await lock(() => mpDecide(o, act === 'ok', u)); } catch (e) { msg = '⚠️ ' + e.message; }
+    try { msg = await lock(() => mpDecide(o, act === 'ok', u, chat)); } catch (e) { msg = '⚠️ ' + e.message; }
     mpCloseButtons(o, o.status === 'paid' ? `✅ Confirmado por ${o.confirmedBy || u.name}` : o.status === 'rejected' ? `❌ No recibido (${o.rejectedBy || u.name})` : '…');
     return tg('sendMessage', { chat_id: chat, text: msg }).catch(() => {});
   }
@@ -3764,9 +3765,10 @@ route('POST', '/api/clients', '*', ({ me, body }) => lock(async () => {
       } else addLog('edicion', r, `${c.panelName} se ha unido con su código (no se suman días: su cuenta no está activa)`, me);
     }
   }
+  const soc = socAccount(me, c, plan.months, plan.screens, body, 'alta');
   libCheckLater(c);
   saveDb();
-  return { ok: true, id: c.id };
+  return { ok: true, id: c.id, ...(soc ? { soc: { amount: soc.amount, who: (socMember(soc.who) || {}).name } } : c.socPend ? { socPend: true } : {}) };
 }));
 
 /* Demos: gratis, por horas */
@@ -3852,7 +3854,7 @@ route('PUT', '/api/clients/:id', '*', ({ me, params, body }) => lock(async () =>
   if (panelName && panelName !== c.panelName) { c.panelName = panelName; changes.push('nombre'); }
   const contact = readContact(body, c);
   if (Object.keys(contact).some((k) => contact[k] !== (c[k] || ''))) { Object.assign(c, contact); changes.push('contacto'); }
-  if (body.paid !== undefined && !!body.paid !== (c.paid !== false)) { c.paid = !!body.paid; changes.push(c.paid ? 'cobrado' : 'cobro pendiente'); }
+  if (body.paid !== undefined && !!body.paid !== (c.paid !== false)) { c.paid = !!body.paid; changes.push(c.paid ? 'cobrado' : 'cobro pendiente'); if (c.paid && c.socPend && socOn()) { const p = c.socPend; socAdd({ kind: 'cobro', amount: p.amount, who: socWho(me), desc: p.desc, cat: '💳', src: 'cuenta', ref: `acc-${c.id}-${Date.now()}`, by: me.name }); delete c.socPend; } }
   if (body.note !== undefined) c.note = str(body.note, 300);
   if (changes.length) addLog('edicion', c, 'Editada: ' + changes.join(', '), me);
   saveDb();
@@ -3878,13 +3880,14 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   delete c.trashedAt; delete c.trashReason; delete c.lastError;
   const what = `${plan.months} ${plan.months === 1 ? 'mes' : 'meses'}, ${plan.screens} ${plan.screens === 1 ? 'pantalla' : 'pantallas'}${plan.quality ? ', ' + QUALITIES[plan.quality] : ''}`;
   spend(me, cost, `${before.demo ? 'Alta desde demo' : 'Renovación'} de ${c.embyName} (${what})`);
-  if (before.demo) for (const f of db.followups) if (f.clientId === c.id && f.status === 'pending') { f.status = 'bought'; f.doneAt = new Date().toISOString(); }
+  if (before.demo) for (const f of db.followups) if (f.clientId === c.id && f.status !== 'bought') { f.status = 'bought'; f.doneAt = new Date().toISOString(); }
   if (cost > 0) { c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: me.id, credits: cost, from: base, to: c.expires, kind: before.demo ? 'alta' : 'renovacion' }].slice(-24); }
   if (!before.demo) addChurn(c.ownerId, 'ren');
   addLog('renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
+  const soc = socAccount(me, c, plan.months, plan.screens, body, before.demo ? 'alta' : 'renovación');
   libCheckLater(c);
   saveDb();
-  return { ok: true, expires: c.expires };
+  return { ok: true, expires: c.expires, ...(soc ? { soc: { amount: soc.amount, who: (socMember(soc.who) || {}).name } } : c.socPend ? { socPend: true } : {}) };
 }));
 
 /* Cambiar pantallas. Quien paga créditos paga la diferencia de precio para el tiempo que le queda; bajar no devuelve nada */
@@ -4273,7 +4276,7 @@ route('POST', '/api/bulk/screens', STAFF, ({ me, body }) => lock(async () => {
 /* Cobros: marca que el cliente final ya ha pagado */
 route('POST', '/api/clients/:id/paid', '*', ({ me, params }) => lock(async () => {
   const c = clientFor(me, params.id);
-  if (c.paid === false) { c.paid = true; addLog('cobro', c, 'Cobro recibido', me); saveDb(); }
+  if (c.paid === false) { c.paid = true; addLog('cobro', c, 'Cobro recibido', me); if (c.socPend && socOn()) { const p = c.socPend; socAdd({ kind: 'cobro', amount: p.amount, who: me.role === 'super' || me.role === 'admin' ? socWho(me) : p.who, desc: p.desc, cat: '💳', src: 'cuenta', ref: `acc-${c.id}-${Date.now()}`, by: me.name }); } delete c.socPend; saveDb(); }
   return { ok: true };
 }));
 
@@ -5354,7 +5357,8 @@ function markPaid(o, via) {
   addLedger(u, o.credits, `Compra online con ${how}${o.pack ? ' (' + o.pack + ')' : ''}: ${o.amount.toFixed(2)} ${o.currency}`, null, 'credito', { amount: o.amount, currency: o.currency, method: o.method, order: o.id });
   addLog('cobro', null, `${u.name} compró ${o.credits} créditos con ${how} por ${o.amount.toFixed(2)} ${o.currency} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   db.vpay.unshift({ id: crypto.randomBytes(5).toString('hex'), at: o.paidAt, userId: u.id, user: u.name, credits: o.credits, amount: o.amount, method: o.method === 'stripe' ? 'Tarjeta (online)' : 'Cripto (online)', ref: o.id, status: 'paid', paidAt: o.paidAt, by: 'Compra online', byId: null, online: true });
-  notifyStaff('payments', `💰 ${u.name} ha comprado ${o.credits} créditos con ${how}.\nImporte: ${o.amount.toFixed(2)} ${o.currency}\nSaldo nuevo: ${u.credits}\n${whenTxt()}`);
+  const soc = socOn() && socCfg().auto.credits ? socAdd({ kind: 'cobro', amount: o.amount, who: socCfg().online, desc: `${u.name} · ${o.credits} créditos (${how})`, src: 'creditos', ref: o.id, at: o.paidAt }) : null;
+  notifyStaff('payments', `💰 ${u.name} ha comprado ${o.credits} créditos con ${how}.\nImporte: ${o.amount.toFixed(2)} ${o.currency}\nSaldo nuevo: ${u.credits}\n${whenTxt()}${socLine(soc)}`);
   notifyUser(u, `✅ Pago recibido: se han sumado ${o.credits} créditos a tu cuenta. Saldo: ${u.credits}.`);
   return true;
 }
@@ -5612,12 +5616,12 @@ async function mpAsk(o, early) {
   o.mpMsgs = [...(o.mpMsgs || []), ...msgs].slice(-12);
 }
 /** Confirma (ok) o rechaza un pago a mano. Se llama dentro de lock() */
-async function mpDecide(o, ok, u) {
+async function mpDecide(o, ok, u, chat) {
   if (!o || o.kind !== 'client' || !o.manual) throw new HttpError(404, 'Ese pago no existe.');
   if (o.status !== 'pending') return o.status === 'paid' ? 'Este pago ya estaba confirmado ✅' : 'Este pago ya estaba marcado como no recibido.';
   const c = db.clients.find((x) => x.id === o.clientId);
   if (ok) {
-    o.confirmedBy = u.name;
+    o.confirmedBy = u.name; o.confirmedById = u.id; if (chat) o.confirmedChat = String(chat);
     await cpPaid(o, `confirmado por ${u.name}`);
     saveDb();
     return c ? `✅ Confirmado. La cuenta de ${c.panelName} ya está renovada hasta el ${rcFmtD(c.expires)} y le ha llegado su recibo.` : '✅ Confirmado.';
@@ -5676,7 +5680,9 @@ async function cpPaid(o, via) {
   addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
-  if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}`);
+  let soc = null;
+  if (!vend && socOn() && socCfg().auto.clients) soc = socAdd({ kind: 'cobro', amount: o.amount, who: o.manual ? socWho(db.users.find((x) => x.id === o.confirmedById), o.confirmedChat) : socCfg().online, desc: `${c.panelName} · ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'}${o.cycle ? ' (renovación automática)' : ''}`, src: 'cliente', ref: o.id, at: o.paidAt });
+  if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`);
   o.screensAfter = c.screens || 1; o.expiresFrom = base;
   if (c.tgChat) receiptTg(c, o);
   return true;
@@ -7072,6 +7078,7 @@ function dailySummaryText() {
   if (fails) todo.push(`• ${fails} ${fails === 1 ? 'intento fallido' : 'intentos fallidos'} de entrar al panel`);
   if (inc) todo.push(`• 🚨 ${inc} ${inc === 1 ? 'aviso de acciones raras' : 'avisos de acciones raras'} sin revisar`);
   lines.push(...(todo.length ? ['', 'Para revisar:', ...todo] : ['', '✅ Nada pendiente de revisar.']));
+  const socTxt = socSummaryLine(); if (socTxt) lines.push('', socTxt);
   return lines.join('\n');
 }
 let dailyLast = null;
@@ -7085,6 +7092,246 @@ function dailySummary() {
   lock(async () => saveDb()).catch(() => {});
 }
 route('POST', '/api/daily/test', SUPER, ({ me }) => { if (!me.tgChat) throw new HttpError(400, 'Enlaza primero tu Telegram en Ajustes › Seguridad.'); notifyUser(me, dailySummaryText()); return { ok: true }; });
+
+/* ======================================================================
+   Socios: un «Tricount» dentro del panel (solo superadministrador).
+   Cada cobro del panel se apunta solo (a quién le ha entrado el dinero), los gastos también,
+   y se calcula quién le debe a quién para repartir a partes iguales. Opcional: copia en Splitwise.
+   ====================================================================== */
+function socCfg() {
+  const d = (db.socios = db.socios && typeof db.socios === 'object' ? db.socios : {});
+  if (!Array.isArray(d.members) || !d.members.length) d.members = [{ id: 'a', name: 'Yo', users: [], chats: [] }, { id: 'b', name: 'Socio', users: [], chats: [] }];
+  if (!Array.isArray(d.entries)) d.entries = [];
+  if (!d.auto || typeof d.auto !== 'object') d.auto = {};
+  for (const k of ['clients', 'credits', 'recharges', 'expenses', 'accounts']) if (typeof d.auto[k] !== 'boolean') d.auto[k] = true;
+  if (!d.sw || typeof d.sw !== 'object') d.sw = {};
+  if (!d.sw.users || typeof d.sw.users !== 'object') d.sw.users = {};
+  if (!d.online || !d.members.some((m) => m.id === d.online)) d.online = d.members[0].id;
+  return d;
+}
+const socOn = () => !!(db.socios && db.socios.on);
+const socMember = (id) => socCfg().members.find((m) => m.id === id) || null;
+/** Socio que corresponde a un usuario del panel o a un chat de Telegram (si no se sabe, el primero) */
+function socWho(u, chat) {
+  const d = socCfg();
+  if (chat) { const m = d.members.find((x) => (x.chats || []).map(String).includes(String(chat))); if (m) return m.id; }
+  if (u) { const m = d.members.find((x) => (x.users || []).includes(u.id)); if (m) return m.id; }
+  return d.members[0].id;
+}
+const socR2 = (n) => Math.round(Number(n) * 100) / 100;
+/** Apunta un movimiento. kind: cobro (le entra a «who»), gasto (lo paga «who»), pago (de «who» a «to») */
+function socAdd(e) {
+  if (!socOn()) return null;
+  const d = socCfg(), amount = socR2(e.amount);
+  if (!(amount > 0)) return null;
+  if (e.ref && d.entries.some((x) => x.ref === e.ref && x.kind === e.kind)) return null; // nunca dos veces el mismo pago
+  const at = e.at || new Date().toISOString();
+  const x = { id: crypto.randomBytes(5).toString('hex'), at, month: localDate(new Date(at)).slice(0, 7), kind: e.kind, amount, who: e.who || d.members[0].id, ...(e.to ? { to: e.to } : {}), ...(e.cat ? { cat: e.cat } : {}), desc: str(String(e.desc || ''), 120), src: e.src || 'manual', ...(e.ref ? { ref: e.ref } : {}), ...(e.by ? { by: e.by } : {}) };
+  d.entries.unshift(x);
+  if (d.entries.length > 20000) d.entries.length = 20000;
+  if (!e.noSw && e.src !== 'manual' && d.sw.on && d.sw.key && d.sw.group) swPush(x).catch((er) => { x.swErr = er.message.slice(0, 140); });
+  return x;
+}
+const socLine = (x) => (x ? `\n📒 Apuntado en Socios: ${x.kind === 'gasto' ? 'pagado por' : 'recibido por'} ${(socMember(x.who) || {}).name || '?'}` : '');
+/** Saldos de un mes (o de todo, month = '') */
+/** Entre quiénes se reparte un movimiento (si no se dice, entre todos) */
+function socSplitIds(x) { const d = socCfg(), ids = d.members.map((m) => m.id), sp = Array.isArray(x.split) ? ids.filter((id) => x.split.includes(id)) : []; return sp.length ? sp : ids; }
+/** Parte de cada uno en céntimos (el céntimo que sobra va rotando para que no le toque siempre al mismo) */
+function socParts(x) {
+  const ids = socSplitIds(x), cents = Math.round(x.amount * 100), k = ids.length, base = Math.floor(cents / k), out = {};
+  let extra = cents - base * k; const off = parseInt(String(x.id || '0').slice(0, 4), 16) % k || 0;
+  ids.forEach((id) => (out[id] = base));
+  for (let i = 0; extra > 0; i++, extra--) out[ids[(off + i) % k]]++;
+  return out;
+}
+/** Saldos de un mes (o de todo, month = ''). saldo > 0: tiene de más (debe); saldo < 0: le falta */
+/** Precio en euros de un plan para tus clientes (el de «Cobro a clientes»), si lo tienes puesto */
+const socPlanPrice = (m, sc) => { const v = Number(((cpCfg().prices || {})[`${m}-${sc}`])); return v > 0 ? v : 0; };
+/** Alta o renovación hecha a mano en una cuenta tuya: se apunta sola en Socios (si está pendiente de cobro, se apunta al cobrarla) */
+function socAccount(me, c, months, screens, body, what) {
+  if (!socOn() || !socCfg().auto.accounts || !c || !me || me.role === 'reseller' || me.role === 'sub') return null;
+  const o = db.users.find((u) => u.id === c.ownerId);
+  if (o && o.role !== 'super' && o.role !== 'admin') return null; // las cuentas de los vendedores se pagan con créditos
+  const given = body && body.socAmount !== undefined && body.socAmount !== null && body.socAmount !== '';
+  const amount = given ? Number(String(body.socAmount).replace(',', '.')) : socPlanPrice(months, screens);
+  if (!(amount > 0 && amount < 1e6)) { delete c.socPend; return null; }
+  const who = me.role === 'super' && body && socMember(body.socWho) ? body.socWho : socWho(me);
+  const desc = `${c.panelName || c.embyName} · ${what} ${months} ${months === 1 ? 'mes' : 'meses'}${screens > 1 ? `, ${screens} pantallas` : ''}`;
+  if (c.paid === false) { c.socPend = { amount: socR2(amount), who, desc }; return null; }
+  delete c.socPend;
+  return socAdd({ kind: 'cobro', amount, who, desc, cat: '💳', src: 'cuenta', ref: `acc-${c.id}-${Date.now()}`, by: me.name });
+}
+function socBalance(month) {
+  const d = socCfg(), list = d.entries.filter((x) => !month || x.month === month), n = d.members.length;
+  const by = Object.fromEntries(d.members.map((m) => [m.id, { id: m.id, name: m.name, cobros: 0, gastos: 0, enviado: 0, recibido: 0, toca: 0, tiene: 0 }]));
+  let cobros = 0, gastos = 0;
+  for (const x of list) {
+    const m = by[x.who]; if (!m) continue;
+    const c = Math.round(x.amount * 100);
+    if (x.kind === 'cobro') { m.cobros += c; m.tiene += c; cobros += c; for (const [id, v] of Object.entries(socParts(x))) if (by[id]) by[id].toca += v; }
+    else if (x.kind === 'gasto') { m.gastos += c; m.tiene -= c; gastos += c; for (const [id, v] of Object.entries(socParts(x))) if (by[id]) by[id].toca -= v; }
+    else if (x.kind === 'pago' && by[x.to]) { m.enviado += c; m.tiene -= c; by[x.to].recibido += c; by[x.to].tiene += c; }
+  }
+  const people = Object.values(by).map((m) => ({ id: m.id, name: m.name, cobros: m.cobros / 100, gastos: m.gastos / 100, enviado: m.enviado / 100, recibido: m.recibido / 100, tiene: m.tiene / 100, toca: m.toca / 100, saldo: (m.tiene - m.toca) / 100 }));
+  // Quién paga a quién (lo mínimo): los que tienen de más pagan a los que tienen de menos
+  const debt = people.filter((p) => p.saldo > 0.009).map((p) => ({ ...p, left: Math.round(p.saldo * 100) })), cred = people.filter((p) => p.saldo < -0.009).map((p) => ({ ...p, left: Math.round(-p.saldo * 100) })), moves = [];
+  for (const a of debt) for (const b of cred) { const v = Math.min(a.left, b.left); if (v > 0) { moves.push({ from: a.id, fromName: a.name, to: b.id, toName: b.name, amount: v / 100 }); a.left -= v; b.left -= v; } }
+  return { month, cobros: cobros / 100, gastos: gastos / 100, beneficio: (cobros - gastos) / 100, share: socR2((cobros - gastos) / 100 / n), people, moves, count: list.length };
+}
+function socSummaryLine() {
+  if (!socOn()) return '';
+  const b = socBalance(today().slice(0, 7));
+  if (!b.count) return '';
+  const mv = b.moves.length ? b.moves.map((m) => `${m.fromName} le debe ${money2(m.amount)} a ${m.toName}`).join(' · ') : 'estáis en paz ✅';
+  return `📒 Socios (este mes): cobrado ${money2(b.cobros)}${b.gastos ? ` · gastos ${money2(b.gastos)}` : ''}\n${b.people.map((p) => `• ${p.name}: ${money2(p.cobros)}`).join('\n')}\n➡️ ${mv}`;
+}
+
+/* ---- Splitwise (opcional): cada movimiento se copia en vuestro grupo ---- */
+const SW_API = process.env.SPLITWISE_API || 'https://secure.splitwise.com/api/v3.0';
+async function swCall(key, method, path, form) {
+  let r;
+  try { r = await fetch(SW_API + path, { method, headers: { Authorization: 'Bearer ' + key, ...(form ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) }, body: form ? new URLSearchParams(form).toString() : undefined, signal: AbortSignal.timeout(20000) }); }
+  catch { throw new HttpError(502, 'No se pudo conectar con Splitwise.'); }
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) throw new HttpError(400, 'Splitwise no acepta esa clave. Copia otra vez tu «API key» de Splitwise.');
+  if (!r.ok) throw new HttpError(502, 'Splitwise: ' + (j.error || (j.errors && JSON.stringify(j.errors)) || r.status));
+  const errs = j.errors && (Array.isArray(j.errors) ? j.errors : Object.values(j.errors).flat());
+  if (errs && errs.length) throw new HttpError(400, 'Splitwise: ' + errs.join(' · ').slice(0, 200));
+  return j;
+}
+/** Reparte céntimos sin que se pierda ninguno */
+function swSplit(cents, n) { const base = Math.floor(cents / n), out = Array(n).fill(base); for (let i = 0; i < cents - base * n; i++) out[i]++; return out; }
+function swForm(x) {
+  const d = socCfg(), sw = d.sw, ids = d.members.map((m) => Number(sw.users[m.id]) || 0);
+  if (ids.some((v) => !v)) throw new Error('Falta decir quién es cada socio en Splitwise.');
+  const cents = Math.round(x.amount * 100), parts = socParts(x);
+  let cost, rows; // rows[i] = [pagado, debe] en céntimos
+  if (x.kind === 'gasto') { cost = cents; rows = d.members.map((m) => [m.id === x.who ? cents : 0, parts[m.id] || 0]); }
+  else if (x.kind === 'pago') { cost = cents; rows = d.members.map((m) => [m.id === x.who ? cents : 0, m.id === x.to ? cents : 0]); }
+  else { // ingreso: el que lo recibe le debe su parte a cada uno de los demás
+    cost = cents - (parts[x.who] || 0);
+    rows = d.members.map((m) => (m.id === x.who ? [0, cost] : [parts[m.id] || 0, 0]));
+  }
+  const form = { cost: (cost / 100).toFixed(2), description: (x.cat ? x.cat + ' ' : x.kind === 'cobro' ? '💰 ' : x.kind === 'gasto' ? '🧾 ' : '🔁 ') + (x.desc || x.kind) + (x.kind === 'cobro' ? ` (ingreso ${x.amount.toFixed(2)} €)` : ''), currency_code: 'EUR', group_id: String(sw.group), date: x.at, ...(x.kind === 'pago' ? { payment: 'true' } : {}) };
+  rows.forEach(([paid, owed], i) => { form[`users__${i}__user_id`] = String(ids[i]); form[`users__${i}__paid_share`] = (paid / 100).toFixed(2); form[`users__${i}__owed_share`] = (owed / 100).toFixed(2); });
+  return { form, empty: cost <= 0 };
+}
+async function swPush(x) {
+  const { form, empty } = swForm(x), sw = socCfg().sw;
+  if (empty) { x.sw = x.sw || 'nada'; delete x.swErr; return; } // p. ej. un ingreso que es todo para quien lo recibe
+  const j = await swCall(sw.key, 'POST', x.sw && x.sw !== 'nada' ? `/update_expense/${x.sw}` : '/create_expense', form);
+  const e = (j.expenses || [])[0];
+  if (e && e.id) { x.sw = e.id; delete x.swErr; lock(async () => saveDb()).catch(() => {}); }
+}
+async function swDelete(x) { const sw = socCfg().sw; if (sw.on && sw.key && x.sw && x.sw !== 'nada') await swCall(sw.key, 'POST', `/delete_expense/${x.sw}`).catch(() => {}); }
+
+/* ---- Fotos de tickets (opcional): se guardan aparte, en data/socios ---- */
+const SOC_DIR = path.join(DATA_DIR, 'socios');
+const socPhotoFile = (id) => path.join(SOC_DIR, String(id).replace(/[^a-f0-9]/g, '') + '.jpg');
+function socSavePhoto(x, dataUrl) {
+  const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m) throw new HttpError(400, 'La foto no es válida.');
+  const buf = Buffer.from(m[1], 'base64');
+  if (buf.length > 900000 || buf[0] !== 0xff || buf[1] !== 0xd8) throw new HttpError(400, 'La foto no es válida o es demasiado grande.');
+  fs.mkdirSync(SOC_DIR, { recursive: true }); fs.writeFileSync(socPhotoFile(x.id), buf); x.photo = true;
+}
+const socDropPhoto = (x) => { try { fs.unlinkSync(socPhotoFile(x.id)); } catch {} delete x.photo; };
+const SOC_CATS = ['🖥️', '🎬', '🌐', '📱', '📣', '💳', '🔋', '🧑‍💻', '🍻', '🧾', '💰', '📦'];
+const socCat = (v) => (SOC_CATS.includes(String(v || '')) ? String(v) : '');
+
+/* ---- Rutas (solo superadministrador) ---- */
+const socOut = () => { const d = socCfg(); return { on: !!d.on, members: d.members, online: d.online, auto: d.auto, sw: { on: !!d.sw.on, hasKey: !!d.sw.key, group: d.sw.group || 0, users: d.sw.users || {}, groupName: d.sw.groupName || '' } }; };
+route('GET', '/api/socios', SUPER, ({ me, req }) => {
+  const d = socCfg(), q = new URL(req.url, 'http://x').searchParams, month = /^\d{4}-\d{2}$/.test(q.get('m') || '') ? q.get('m') : q.get('m') === 'all' ? '' : today().slice(0, 7);
+  const months = [...new Set(d.entries.map((x) => x.month).concat(today().slice(0, 7)))].sort().reverse().slice(0, 36);
+  const chats = [me.tgChat ? { id: String(me.tgChat), label: 'Tu Telegram' } : null, ...((me.tgExtra || []).map((c, i) => ({ id: String(c), label: `Telegram extra ${i + 1}` })))].filter(Boolean);
+  return { cfg: socOut(), mine: socWho(me), month, months, balance: socBalance(month), entries: d.entries.filter((x) => !month || x.month === month).slice(0, 600), staff: db.users.filter((u) => u.role === 'super' || u.role === 'admin').map((u) => ({ id: u.id, name: u.name })), chats };
+});
+route('PUT', '/api/socios/cfg', SUPER, ({ me, body }) => lock(async () => {
+  const d = socCfg();
+  if (Array.isArray(body.members)) {
+    const ms = body.members.slice(0, 6).map((m, i) => ({ id: /^[a-z0-9]{1,8}$/.test(String(m.id || '')) ? String(m.id) : 'm' + crypto.randomBytes(3).toString('hex'), name: str(String(m.name || ''), 30) || `Socio ${i + 1}`,
+      users: (Array.isArray(m.users) ? m.users : []).map(Number).filter((id) => db.users.some((u) => u.id === id)), chats: (Array.isArray(m.chats) ? m.chats : []).map(String).filter((c) => /^-?\d{3,20}$/.test(c)) }));
+    if (ms.length < 2) throw new HttpError(400, 'Hacen falta al menos 2 socios.');
+    if (new Set(ms.map((m) => m.id)).size !== ms.length) throw new HttpError(400, 'Hay dos socios repetidos.');
+    const gone = d.members.filter((m) => !ms.some((x) => x.id === m.id) && d.entries.some((e) => e.who === m.id || e.to === m.id));
+    if (gone.length) throw new HttpError(400, `${gone[0].name} ya tiene movimientos apuntados: no se puede quitar (cámbiale el nombre si quieres).`);
+    d.members = ms;
+  }
+  if (body.online !== undefined && d.members.some((m) => m.id === body.online)) d.online = body.online;
+  if (body.auto && typeof body.auto === 'object') for (const k of ['clients', 'credits', 'recharges', 'expenses', 'accounts']) if (typeof body.auto[k] === 'boolean') d.auto[k] = body.auto[k];
+  if (body.on !== undefined) d.on = !!body.on;
+  addLog('ajustes', null, `Socios: ${d.on ? 'activado' : 'apagado'} (${d.members.map((m) => m.name).join(', ')})`, me);
+  saveDb(); return { ok: true, cfg: socOut() };
+}));
+function socReadEntry(body, x) {
+  const kind = x ? x.kind : ['cobro', 'gasto', 'pago'].includes(body.kind) ? body.kind : null; if (!kind) throw new HttpError(400, 'Elige gasto, ingreso o transferencia.');
+  const who = body.who !== undefined ? body.who : x && x.who, to = body.to !== undefined ? body.to : x && x.to;
+  if (!socMember(who) || (kind === 'pago' && (!socMember(to) || to === who))) throw new HttpError(400, 'Elige quién.');
+  const amount = body.amount !== undefined ? Number(String(body.amount).replace(',', '.')) : x.amount; if (!(amount > 0 && amount < 1e7)) throw new HttpError(400, 'Escribe un importe válido.');
+  const ids = socCfg().members.map((m) => m.id), split = Array.isArray(body.split) ? ids.filter((id) => body.split.includes(id)) : x ? x.split : undefined;
+  if (Array.isArray(body.split) && !split.length) throw new HttpError(400, 'Marca al menos a una persona en «Dividir».');
+  return { kind, who, to: kind === 'pago' ? to : undefined, amount: socR2(amount), split: split && split.length && split.length < ids.length ? split : undefined, cat: body.cat !== undefined ? socCat(body.cat) : x && x.cat };
+}
+route('POST', '/api/socios/entries', SUPER, ({ me, body }) => lock(async () => {
+  const d = socCfg();
+  if (!d.on) throw new HttpError(400, 'Activa primero Socios.');
+  const r = socReadEntry(body);
+  const at = /^\d{4}-\d{2}-\d{2}$/.test(String(body.date || '')) ? (String(body.date) === today() ? new Date().toISOString() : new Date(body.date + 'T12:00:00').toISOString()) : new Date().toISOString();
+  const x = socAdd({ ...r, desc: str(body.desc, 120) || (r.kind === 'pago' ? 'Transferencia' : r.kind === 'gasto' ? 'Gasto' : 'Ingreso'), src: 'manual', by: me.name, at, noSw: !!body.photo });
+  if (x && r.split) x.split = r.split;
+  if (x && r.cat) x.cat = r.cat;
+  if (x && body.photo) socSavePhoto(x, body.photo);
+  if (x && d.sw.on && d.sw.key && d.sw.group) swPush(x).catch((er) => { x.swErr = er.message.slice(0, 140); });
+  saveDb(); return { ok: true, entry: x };
+}));
+route('PUT', '/api/socios/entries/:id', SUPER, ({ me, params, body }) => lock(async () => {
+  const d = socCfg(), x = d.entries.find((e) => e.id === params.id); if (!x) throw new HttpError(404, 'Ese movimiento ya no existe.');
+  const r = socReadEntry(body, x);
+  Object.assign(x, { who: r.who, amount: r.amount }); if (r.to) x.to = r.to;
+  if (r.split) x.split = r.split; else delete x.split;
+  if (r.cat) x.cat = r.cat; else delete x.cat;
+  if (body.desc !== undefined) x.desc = str(body.desc, 120);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(body.date || '')) && body.date !== x.at.slice(0, 10)) { x.at = new Date(body.date + 'T12:00:00').toISOString(); x.month = body.date.slice(0, 7); }
+  if (body.photo === null) socDropPhoto(x); else if (body.photo) socSavePhoto(x, body.photo);
+  x.edited = me.name;
+  if (d.sw.on && d.sw.key && d.sw.group) swPush(x).catch((er) => { x.swErr = er.message.slice(0, 140); });
+  saveDb(); return { ok: true };
+}));
+route('DELETE', '/api/socios/entries/:id', SUPER, ({ me, params }) => lock(async () => {
+  const d = socCfg(), x = d.entries.find((e) => e.id === params.id); if (!x) throw new HttpError(404, 'Ese movimiento ya no existe.');
+  d.entries = d.entries.filter((e) => e !== x);
+  socDropPhoto(x); swDelete(x);
+  addLog('ajustes', null, `Socios: borrado ${x.kind} de ${money2(x.amount)} (${x.desc})`, me);
+  saveDb(); return { ok: true };
+}));
+route('GET', '/api/socios/photo/:id', SUPER, ({ params }) => {
+  const f = socPhotoFile(params.id); if (!fs.existsSync(f)) throw new HttpError(404, 'No hay foto.');
+  return { __raw: fs.readFileSync(f), headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' } };
+});
+route('PUT', '/api/socios/splitwise', SUPER, async ({ me, body }) => {
+  const d = socCfg(), sw = d.sw;
+  const key = str(body.key, 200).trim();
+  if (body.remove) { await lock(async () => { d.sw = { on: false, key: '', group: 0, users: {} }; addLog('ajustes', null, 'Splitwise: clave quitada', me); saveDb(); }); return { ok: true }; }
+  const k = key || sw.key; if (!k) throw new HttpError(400, 'Pega tu API key de Splitwise.');
+  if (key) await swCall(key, 'GET', '/get_current_user');
+  const g = await swCall(k, 'GET', '/get_groups');
+  const groups = (g.groups || []).filter((x) => x.id).map((x) => ({ id: x.id, name: x.name, members: (x.members || []).map((u) => ({ id: u.id, name: [u.first_name, u.last_name].filter(Boolean).join(' ') })) }));
+  return lock(async () => {
+    if (key) sw.key = key;
+    if (body.group !== undefined) { const gg = groups.find((x) => x.id === Number(body.group)); sw.group = gg ? gg.id : 0; sw.groupName = gg ? gg.name : ''; }
+    if (body.users && typeof body.users === 'object') sw.users = Object.fromEntries(Object.entries(body.users).filter(([m]) => socMember(m)).map(([m, v]) => [m, Number(v) || 0]));
+    if (body.on !== undefined) { if (body.on && !(sw.key && sw.group && d.members.every((m) => Number(sw.users[m.id])))) throw new HttpError(400, 'Elige el grupo y quién es cada socio en Splitwise.'); sw.on = !!body.on; }
+    addLog('ajustes', null, `Splitwise: ${sw.on ? 'conectado' : 'sin activar'}${sw.groupName ? ' (grupo ' + sw.groupName + ')' : ''}`, me);
+    saveDb(); return { ok: true, groups, cfg: socOut() };
+  });
+});
+route('POST', '/api/socios/splitwise/retry', SUPER, async () => {
+  const d = socCfg(); if (!d.sw.on) throw new HttpError(400, 'Splitwise no está activado.');
+  let ok = 0, fail = 0;
+  for (const x of d.entries.filter((e) => !e.sw).slice(0, 50)) { try { await swPush(x); ok++; } catch (e) { x.swErr = e.message.slice(0, 140); fail++; } }
+  await lock(async () => saveDb()); return { ok: true, sent: ok, failed: fail };
+});
 
 /* ======================================================================
    Gastos (solo superadministrador): calendario de pagos, contabilidad
@@ -7150,7 +7397,7 @@ function expView() {
 }
 const expDueCount = () => { const t = today(), d = expCfg().remind || 0; return expList().filter((e) => !e.done && diffDays(e.due, t) <= Math.max(d, 0)).length; };
 
-route('GET', '/api/expenses', SUPER, () => expView());
+route('GET', '/api/expenses', SUPER, ({ me }) => ({ ...expView(), socios: socOn() ? { members: socCfg().members.map((m) => ({ id: m.id, name: m.name })), mine: socWho(me), auto: socCfg().auto.expenses } : null }));
 route('POST', '/api/expenses', SUPER, ({ me, body }) => lock(async () => {
   const e = { id: newId(), ...expRead(body), payments: [], done: false, sent: {}, createdAt: today() };
   expList().push(e);
@@ -7180,6 +7427,7 @@ route('POST', '/api/expenses/:id/pay', SUPER, ({ me, params, body }) => lock(asy
   const amount = body.amount == null || body.amount === '' ? e.amount : expAmount(body.amount);
   e.payments = e.payments || [];
   e.payments.push({ due: e.due, at, amount, method: str(body.method, 30) || e.method || '', ts: new Date().toISOString() });
+  if (socOn() && socCfg().auto.expenses) { const sx = socAdd({ kind: 'gasto', amount, who: socMember(body.payer) ? body.payer : socWho(me), desc: e.name, src: 'gasto', ref: `ex-${e.id}-${e.payments.length}-${Date.now()}`, by: me.name, at: new Date(at + 'T12:00:00').toISOString() }); if (sx) e.payments[e.payments.length - 1].soc = sx.id; }
   if (e.payments.length > 240) e.payments = e.payments.slice(-240);
   if (e.every) e.due = expNext(e, e.due); else e.done = true;
   e.sent = {};
@@ -7191,6 +7439,7 @@ route('POST', '/api/expenses/:id/unpay', SUPER, ({ me, params }) => lock(async (
   const e = expFind(params.id), p = (e.payments || []).pop();
   if (!p) throw new HttpError(400, 'Este gasto no tiene pagos que deshacer.');
   e.due = p.due; e.done = false; e.sent = {};
+  if (p.soc && db.socios && Array.isArray(db.socios.entries)) db.socios.entries = db.socios.entries.filter((x) => x.id !== p.soc);
   addLog('ajustes', null, `Pago deshecho: ${e.name}`, me);
   saveDb();
   return { ok: true, expense: e };
@@ -7254,6 +7503,7 @@ function afterRecharge(me, u, credits, pay) {
     if (rec.ref) { const dup = db.vpay.find((x) => x.ref && x.ref.toLowerCase() === rec.ref.toLowerCase() && x.method === rec.method); if (dup) rec.dupOf = dup.id; }
     db.vpay.unshift(rec);
     if (db.vpay.length > 20000) db.vpay.length = 20000;
+    if (rec.status === 'paid' && !rec.gift && me.role !== 'reseller' && socOn() && socCfg().auto.recharges) socAdd({ kind: 'cobro', cat: '🔋', amount: rec.amount || Math.round(credits * buyerPrice(u) * 100) / 100, who: socWho(me), desc: `Recarga de ${u.name} · ${plural(credits, 'crédito', 'créditos')} (${rec.method})`, src: 'recarga', ref: 'vp-' + rec.id, by: me.name });
     const cfg = db.settings.vpay;
     if (cfg.receipts !== false && u.tgChat) notifyUser(u, `✅ Recarga de ${plural(credits, 'crédito', 'créditos')}${pay.gift ? '' : ` · ${money2(pay.amount)} por ${pay.method}${pay.status === 'pending' ? ' (pendiente de pago)' : ''}`}\nSaldo: ${plural(u.credits, 'crédito', 'créditos')}${pay.status === 'pending' ? `\nTienes pendiente: ${money2(debtOf(u).amount)}` : ''}`);
     if (rec.dupOf) notifyStaff('credits', `⚠️ Referencia repetida: la recarga de ${u.name} usa «${rec.ref}» (${rec.method}), que ya se había apuntado antes. Revisa que no sea el mismo pago dos veces.`);
@@ -7312,6 +7562,7 @@ route('POST', '/api/vpay/settle', ['super', 'admin', 'reseller'], ({ me, body })
   if (!pend.length) throw new HttpError(400, 'No hay recargas pendientes que marcar.');
   const at = new Date().toISOString();
   for (const x of pend) { x.status = 'paid'; x.paidAt = at; x.settledBy = me.name; if (method) x.method = method; if (ref) x.ref = ref; }
+  if (me.role !== 'reseller' && socOn() && socCfg().auto.recharges) for (const x of pend) if (!x.gift) socAdd({ kind: 'cobro', amount: x.amount, who: socWho(me), desc: `Pago de ${u.name} · recarga de ${plural(x.credits, 'crédito', 'créditos')}${x.method ? ' (' + x.method + ')' : ''}`, src: 'recarga', ref: 'vp-' + x.id, by: me.name });
   const total = pend.reduce((n, x) => n + x.amount, 0);
   addLog('cobro', null, `Pago registrado de ${u.name}: ${money2(total)}${method ? ' por ' + method : ''} (${plural(pend.length, 'recarga', 'recargas')})`, me);
   if (db.settings.vpay.receipts !== false && u.tgChat) notifyUser(u, `✅ Pago recibido: ${money2(total)}${method ? ' por ' + method : ''}. ¡Gracias!${debtOf(u).amount ? `\nTe queda pendiente: ${money2(debtOf(u).amount)}` : '\nYa no tienes nada pendiente.'}`);
