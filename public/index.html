@@ -2380,6 +2380,20 @@ body{--pc:var(--brand,#3fa9f5)} body.jf{--pc:#a46bff} body.px{--pc:#e5a00d}
 .mg-prep{margin-bottom:14px}.mg-prep summary{cursor:pointer;font-weight:700}.mg-prep summary small{font-weight:400;color:var(--muted);margin-left:6px}
 .mg-pr{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line);margin-top:10px}.mg-pr>div{flex:1;min-width:220px}.mg-pr b{display:block}.mg-pr small{color:var(--muted);font-size:12.5px}
 .so-start{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.so-on{font-size:16px;padding:12px 20px}
+dialog form h2:empty{display:none}.mlist3{gap:16px}
+.mlist3 .mh{display:flex;align-items:center;gap:12px}.mh-av{flex:none;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#8b5cf6 60%,#ec4899);color:#fff;font-weight:800;font-size:22px;text-transform:uppercase;box-shadow:0 8px 20px -10px #8b5cf6}
+.mh-id{min-width:0}.mh-id b{display:block;font-size:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mh-id small{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+.mh-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}.mh-ch,.mh-st{font-size:12.5px;padding:5px 10px;border-radius:99px;background:var(--raised);border:1px solid var(--line)}.mh-ch.warn{color:#f59e0b}
+.mh-st{font-weight:700}.mh-st.ok{color:#22c55e;background:color-mix(in srgb,#22c55e 12%,transparent);border-color:color-mix(in srgb,#22c55e 35%,transparent)}.mh-st.warn{color:#f59e0b;background:color-mix(in srgb,#f59e0b 12%,transparent);border-color:color-mix(in srgb,#f59e0b 35%,transparent)}.mh-st.bad{color:#ef4444;background:color-mix(in srgb,#ef4444 12%,transparent);border-color:color-mix(in srgb,#ef4444 35%,transparent)}.mh-st.info{color:#38bdf8;background:color-mix(in srgb,#38bdf8 12%,transparent);border-color:color-mix(in srgb,#38bdf8 35%,transparent)}
+.mlist3 .cf-open{border-radius:16px}
+.mlist3 .mgrp{--g:var(--brand)}.mlist3 .g-ren{--g:#22c55e}.mlist3 .g-send{--g:#38bdf8}.mlist3 .g-acc{--g:#a78bfa}.mlist3 .g-rev{--g:#f59e0b}.mlist3 .mgrp.danger{--g:#ef4444}
+.mlist3 .mgrp h4{font-size:12px;color:var(--g);letter-spacing:.05em;margin-bottom:8px}
+.mlist3 .mgrid2 .mitem{position:relative;border-radius:16px;border:1px solid color-mix(in srgb,var(--g) 22%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--g) 9%,var(--surface)),var(--surface));transition:transform .12s,border-color .12s,box-shadow .12s}
+.mlist3 .mgrid2 .mitem:hover{transform:translateY(-2px);border-color:var(--g);box-shadow:0 10px 22px -14px var(--g)}
+.mlist3 .mgrid2 .mitem .ic{box-sizing:content-box;padding:9px;border-radius:12px;background:color-mix(in srgb,var(--g) 18%,transparent);color:var(--g)!important;width:20px;height:20px}
+.mlist3 .mgrid2 .mitem.hero{background:linear-gradient(135deg,#22c55e,#0ea5e9);border:0;color:#fff;box-shadow:0 10px 24px -12px #22c55e}.mlist3 .mgrid2 .mitem.hero .ic{background:rgba(255,255,255,.22);color:#fff!important}.mlist3 .mgrid2 .mitem.hero small{color:rgba(255,255,255,.85)}
+.mlist3 .mgrp.danger{padding-top:14px}.mlist3 .mgrp.danger .mitem{background:color-mix(in srgb,#ef4444 5%,var(--surface))}.mlist3 .mgrp.danger .mitem .ic{padding:7px;width:16px;height:16px}
+.mlist3 .mitem.bad{color:#ef4444}
 </style>
 </head>
 <body>
@@ -7054,6 +7068,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 211, d: '2026-10-31', items: ['🎨 La ventana de cada cliente (Más) con colores: arriba su nombre, plataforma y cómo está su cuenta (activa, caduca en X días…), y cada grupo de botones con su color'], team: ['🎨 La ventana de cada cliente (Más) con colores: arriba su nombre, plataforma y cómo está su cuenta, y cada grupo de botones con su color'] },
   { v: 210, d: '2026-10-30', items: ['🤝 Socios: botón grande «✅ Encender Socios» que lo deja listo en un toque (Xux y Angus, cada uno con su Telegram)'] },
   { v: 209, d: '2026-10-30', items: ['🛟 Preparados para Plex (en Migrar de plataforma): ves cuántos clientes no tienen email y el bot se lo puede pedir por Telegram (cuando contestan, se guarda solo en su ficha)', '🔑 Las contraseñas de clientes nuevas son de 8 o más (así valen también en Plex). Se puede volver a 4 en Migrar de plataforma'], team: ['🔑 Las contraseñas de clientes nuevas tienen que tener 8 o más letras y números (pulsa «Generar» si quieres una). Así valen también si algún día pasan a Plex', '✉️ Pon el email de verdad del cliente al crear la cuenta'] },
   { v: 208, d: '2026-10-30', items: ['🔁 Migrar de plataforma: ahora en cualquier dirección (Emby, Jellyfin o Plex). Botón «🔁 Migrar» en la ficha del cliente, «Migrar plataforma» en Más, y para muchas a la vez: márcalas en la lista y pulsa «🔁 Migrar plataforma». A Emby/Jellyfin pasan con su mismo usuario y contraseña; a Plex con su email y su misma contraseña'] },
@@ -8591,17 +8606,26 @@ function dMore(c) {
   const owner = S.d.users.find((u) => u.id === c.ownerId);
   const noCredits = !owner || owner.role === 'super' || (owner.role === 'admin' && !owner.useCredits);
   const grp = (title, items, cls = '') => { const html = items.filter(Boolean).join(''); return html ? `<div class="mgrp ${cls}"><h4>${title}</h4><div class="mgrid2">${html}</div></div>` : ''; };
-  showDlg(c.panelName, `<div class="mlist2">
+  // Cabecera: quién es, en qué plataforma y cómo está su cuenta
+  const k = kindOfSrv(c.serverId), srv = allSrv().find((x) => x.id === c.serverId), left = c.demo ? null : diff(c.expires, S.d.today);
+  const [stT, stC] = c.status === 'trash' ? ['🗂️ En la papelera', 'bad'] : c.off ? ['⏸️ Desactivada', 'warn'] : c.demo ? ['🎁 Demo', 'info'] : left < 0 ? ['⛔ Caducada', 'bad'] : left <= 7 ? [`⏳ Caduca ${left === 0 ? 'hoy' : left === 1 ? 'mañana' : `en ${left} días`}`, 'warn'] : ['✅ Activa', 'ok'];
+  const hdr = `<div class="mh"><span class="mh-av">${esc((c.panelName || c.embyName || '?').slice(0, 1))}</span><div class="mh-id"><b>${esc(c.panelName)}</b><small>${kIco(k)} @${esc(c.embyName)}${srv ? ' · ' + esc(srv.name) : ''}</small></div></div>
+    <div class="mh-chips"><span class="mh-st ${stC}">${stT}</span>${c.demo ? '' : `<span class="mh-ch">📅 ${c.status === 'trash' ? 'Venció' : 'Vence'} el ${fmt(c.expires)}</span>`}${c.screens ? `<span class="mh-ch">📺 ${plural(c.screens, 'pantalla', 'pantallas')}</span>` : ''}${c.tgLinked ? '<span class="mh-ch">🔔 Telegram</span>' : ''}${c.paid === false ? '<span class="mh-ch warn">💶 Pendiente de cobro</span>' : ''}</div>`;
+  showDlg('', `<div class="mlist2 mlist3">${hdr}
     <button type="button" class="cf-open" data-act="ficha" data-id="${c.id}">📇 <b>Ver ficha completa</b><small>Plan, historial, aparatos y contacto en una pantalla</small></button>
-    ${grp('Renovar', [c.demo ? '' : it('renew-same', 'Renovar igual', `${plural(lastPlan(c).m, 'mes', 'meses')} · ${plural(lastPlan(c).sc, 'pantalla', 'pantallas')}`), it('renew', c.demo ? 'Convertir en cuenta' : 'Elegir plan')])}
-    ${grp('Enviar al cliente', [c.payLink ? it('m-paylink', 'Enlace de pago') : '', it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
-    ${grp('Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : '', isSuper() && !c.demo && allSrv().some((x) => KIND_OF(x) !== kindOfSrv(c.serverId)) ? it('m-plex', 'Migrar plataforma') : ''])}
-    ${grp('Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
-    ${grp('Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
+    ${grp('⚡ Renovar', [c.demo ? '' : it('renew-same', 'Renovar igual', `${plural(lastPlan(c).m, 'mes', 'meses')} · ${plural(lastPlan(c).sc, 'pantalla', 'pantallas')}`), it('renew', c.demo ? 'Convertir en cuenta' : 'Elegir plan')])}
+    ${grp('💬 Enviar al cliente', [c.payLink ? it('m-paylink', 'Enlace de pago') : '', it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), it('m-tgmsg', 'Mensaje Telegram'), it('m-tg', c.tgLinked ? 'Telegram ✓' : 'Telegram')])}
+    ${grp('⚙️ Cuenta', [it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : '', isSuper() && !c.demo && allSrv().some((x) => KIND_OF(x) !== kindOfSrv(c.serverId)) ? it('m-plex', 'Migrar plataforma') : ''])}
+    ${grp('🔎 Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
+    ${grp('⚠️ Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
       it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'A la papelera'),
       c.demo || noCredits ? '' : it('del-refund', 'Eliminar y devolver', 'Devuelve los créditos', 'bad'),
       staff() ? it('delete', 'Eliminar', 'Para siempre', 'bad') : ''], 'danger')}
   </div>`);
+  // colores por grupo (se pone aquí para no tocar otras ventanas que usan las mismas piezas)
+  const gs = dlgForm.querySelectorAll('.mlist3 .mgrp'), cls = ['g-ren', 'g-send', 'g-acc', 'g-rev'];
+  gs.forEach((g, i) => { if (!g.classList.contains('danger')) g.classList.add(cls[Math.min(i, 3)]); });
+  const first = dlgForm.querySelector('.mlist3 .g-ren .mitem'); if (first) first.classList.add('hero');
 }
 const putClient = (c, body) => api('PUT', `/api/clients/${c.id}`, body);
 function dNotes(c) {
