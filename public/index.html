@@ -2394,6 +2394,9 @@ dialog form h2:empty{display:none}.mlist3{gap:16px}
 .mlist3 .mgrid2 .mitem.hero{background:linear-gradient(135deg,#22c55e,#0ea5e9);border:0;color:#fff;box-shadow:0 10px 24px -12px #22c55e}.mlist3 .mgrid2 .mitem.hero .ic{background:rgba(255,255,255,.22);color:#fff!important}.mlist3 .mgrid2 .mitem.hero small{color:rgba(255,255,255,.85)}
 .mlist3 .mgrp.danger{padding-top:14px}.mlist3 .mgrp.danger .mitem{background:color-mix(in srgb,#ef4444 5%,var(--surface))}.mlist3 .mgrp.danger .mitem .ic{padding:7px;width:16px;height:16px}
 .mlist3 .mitem.bad{color:#ef4444}
+.srch{position:relative;display:flex;align-items:center;gap:10px;margin:4px 0 14px;padding:4px 14px;border-radius:16px;border:1px solid var(--line);background:var(--surface);transition:border-color .15s,box-shadow .15s}
+.srch:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 25%,transparent)}.srch span{font-size:18px;opacity:.8}
+.srch input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;font-size:16px;padding:10px 0;outline:none}.srch small{flex:none;color:var(--muted);font-size:12.5px}
 </style>
 </head>
 <body>
@@ -4345,6 +4348,9 @@ function vCalendario() {
     `<h2>${MES_L[m - 1]} ${y}</h2><div class="panel"><div class="cal">${cells}</div></div>`;
 }
 
+/** Buscador de las listas (papelera, demos vencidas y seguimiento): nombre, usuario, email, teléfono, Telegram, vendedor, notas… */
+const srchHit = (q, ...vals) => { const t = norm(q).trim(); if (!t) return true; const hay = norm(vals.filter(Boolean).join(' ')); return t.split(/\s+/).every((w) => hay.includes(w)); };
+const srchBox = (id, val, ph, n, tot) => `<div class="srch"><span>🔍</span><input type="search" id="${id}" value="${esc(val || '')}" placeholder="${ph}" autocomplete="off" enterkeyhint="search">${val ? `<small>${n} de ${tot}</small>` : ''}</div>`;
 function vPapelera(onlyDemos) {
   const g = S.d.settings;
   const rows = trash().filter((c) => !onlyDemos || c.demo);
@@ -4354,6 +4360,7 @@ function vPapelera(onlyDemos) {
   if (!rows.length) return head(title, sub) + `<div class="tr-empty"><span>🧹</span><b>${onlyDemos ? 'No hay demos vencidas' : '¡La papelera está vacía!'}</b><small>${onlyDemos ? 'Cuando una demo termine, aparecerá aquí.' : 'Todos tus clientes están al día. 🎉'}</small></div>`;
   return head(title, sub) + papeleraTable(rows);
 }
+const trHit = (c) => srchHit(S.trq, c.panelName, c.embyName, c.email, c.whatsapp, c.telegram, c.signal, c.note, c.trashReason, userName(c.ownerId), (allSrv().find((x) => x.id === c.serverId) || {}).name);
 /* Papelera en tarjetas: quién es, cuánto lleva, cuándo se borra y botones para recuperarlo */
 function papeleraTable(rows) {
   const g = S.d.settings, today = S.d.today;
@@ -4368,7 +4375,8 @@ function papeleraTable(rows) {
   const soon = list.filter((r) => r.x.left !== null && r.x.left <= 5).length, bot = list.filter((r) => r.c.tgLinked).length, demos = list.filter((r) => r.c.demo).length;
   const tile = (n, t, col, e) => `<div class="tr-k" style="--k:${col}"><span>${e}</span><b>${n}</b><small>${t}</small></div>`;
   const tiles = `<div class="tr-ks">${tile(list.length, list.length === 1 ? 'cliente en la papelera' : 'clientes en la papelera', '#6366f1', '🗂️')}${tile(soon, 'se borran en 5 días o menos', '#f97316', '⏳')}${tile(bot, 'con el bot: puedes escribirles', '#0ea5e9', '📲')}${demos ? tile(demos, demos === 1 ? 'demo terminada' : 'demos terminadas', '#a855f7', '🎁') : ''}</div>`;
-  const cards = list.map(({ c, x }) => {
+  const shown = list.filter(({ c }) => trHit(c));
+  const cards = shown.map(({ c, x }) => {
     const col = c.demo ? '#a855f7' : x.left !== null && x.left <= 5 ? '#f97316' : '#6366f1';
     const owner = S.d.users.length > 1 && c.ownerId !== me().id ? userName(c.ownerId) : '';
     const chip = c.demo ? '🎁 Demo terminada' : x.valid ? `✅ Pagado hasta el ${fmt(c.expires)}` : `⛔ Caducó hace ${plural(x.ago, 'día', 'días')}`;
@@ -4393,7 +4401,8 @@ function papeleraTable(rows) {
         ${staff() ? `<button class="btn sm danger" data-act="delete" data-id="${c.id}">Eliminar ya</button>` : ''}
       </div></article>`;
   }).join('');
-  return tiles + `<div class="tr-grid">${cards}</div>`;
+  return tiles + srchBox('trq', S.trq, 'Buscar por nombre, usuario, email, teléfono, vendedor…', shown.length, list.length)
+    + (shown.length ? `<div class="tr-grid">${cards}</div>` : `<div class="tr-empty"><span>🔍</span><b>Nadie coincide con «${esc(S.trq)}»</b><small>Prueba con otro nombre, usuario o teléfono.</small></div>`);
 }
 
 function vDirecto() { return head('En directo', 'Lo que están reproduciendo tus cuentas ahora. Se actualiza cada 15 segundos.') + `<div id="live">${liveHtml()}</div>`; }
@@ -7068,6 +7077,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 212, d: '2026-10-31', items: ['🔍 Buscador en la Papelera, en Demos vencidas y en Seguimiento de demos: por nombre, usuario, email, teléfono, Telegram o vendedor'], team: ['🔍 Buscador en la Papelera, en Demos vencidas y en Seguimiento de demos'] },
   { v: 211, d: '2026-10-31', items: ['🎨 La ventana de cada cliente (Más) con colores: arriba su nombre, plataforma y cómo está su cuenta (activa, caduca en X días…), y cada grupo de botones con su color'], team: ['🎨 La ventana de cada cliente (Más) con colores: arriba su nombre, plataforma y cómo está su cuenta, y cada grupo de botones con su color'] },
   { v: 210, d: '2026-10-30', items: ['🤝 Socios: botón grande «✅ Encender Socios» que lo deja listo en un toque (Xux y Angus, cada uno con su Telegram)'] },
   { v: 209, d: '2026-10-30', items: ['🛟 Preparados para Plex (en Migrar de plataforma): ves cuántos clientes no tienen email y el bot se lo puede pedir por Telegram (cuando contestan, se guarda solo en su ficha)', '🔑 Las contraseñas de clientes nuevas son de 8 o más (así valen también en Plex). Se puede volver a 4 en Migrar de plataforma'], team: ['🔑 Las contraseñas de clientes nuevas tienen que tener 8 o más letras y números (pulsa «Generar» si quieres una). Así valen también si algún día pasan a Plex', '✉️ Pon el email de verdad del cliente al crear la cuenta'] },
@@ -7295,7 +7305,7 @@ function vSeguimiento() {
   if (!d) return head('Seguimiento de demos', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
   const pend = d.list.filter((x) => x.status === 'pending'), done = d.list.filter((x) => x.status !== 'pending');
   const tabs = `<div class="tabs" role="tablist"><button role="tab" data-act="fu-tab" data-k="pending" aria-selected="${f.tab === 'pending'}">Por escribir (${pend.length})</button><button role="tab" data-act="fu-tab" data-k="done" aria-selected="${f.tab === 'done'}">Hechos (${done.length})</button></div>`;
-  const rows = f.tab === 'pending' ? pend : done;
+  const rows0 = f.tab === 'pending' ? pend : done, rows = rows0.filter((x) => srchHit(S.fuq, x.name, x.emby, x.whatsapp, x.telegram, x.email, userName(x.ownerId)));
   const ST = { done: 'Escrito', skip: 'Descartado', bought: 'Compró ✓' };
   const card = (x) => {
     const ago = Math.floor((Date.now() - Date.parse(x.endedAt)) / 86400000), when = ago <= 0 ? 'hoy' : ago === 1 ? 'ayer' : `hace ${ago} días`;
@@ -7316,11 +7326,11 @@ function vSeguimiento() {
       ${main || msg || st ? `<div class="fu-main">${main}${msg}${st}</div>` : ''}
       <div class="fu-minis">${small}</div></article>`;
   };
-  const empty = f.tab === 'pending' ? `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Nada pendiente</b><span>Cuando una demo termine sin comprar, aparecerá aquí.</span></div></div>` : '<div class="panel"><div class="empty">Todavía no hay ninguno.</div></div>';
+  const empty = S.fuq && rows0.length ? `<div class="tr-empty"><span>🔍</span><b>Nadie coincide con «${esc(S.fuq)}»</b><small>Prueba con otro nombre o teléfono.</small></div>` : f.tab === 'pending' ? `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Nada pendiente</b><span>Cuando una demo termine sin comprar, aparecerá aquí.</span></div></div>` : '<div class="panel"><div class="empty">Todavía no hay ninguno.</div></div>';
   const delAll = rows.length ? `<div class="fu-bottom"><button class="fu-mini bad" data-act="fu-delall" data-k="${f.tab}">${ic('trash')}Borrar ${rows.length === 1 ? 'esta demo' : `las ${rows.length} demos de esta lista`}</button></div>` : '';
   const won = d.list.filter((x) => x.status === 'bought').length, rate = d.list.length ? Math.round((won / d.list.length) * 100) : 0;
   const stats = d.list.length ? `<div class="fu-stats"><div><b>${pend.length}</b><span>por escribir</span></div><div><b>${won}</b><span>compraron</span></div><div><b>${rate}%</b><span>se convierten</span></div></div>` : '';
-  return head('Seguimiento de demos', sub) + stats + tabs + (rows.length ? `<div class="fulist2">${rows.map(card).join('')}</div>` : empty) + delAll
+  return head('Seguimiento de demos', sub) + stats + tabs + (rows0.length ? srchBox('fuq', S.fuq, 'Buscar por nombre, usuario, teléfono, Telegram…', rows.length, rows0.length) : '') + (rows.length ? `<div class="fulist2">${rows.map(card).join('')}</div>` : empty) + delAll
     + '<p class="small muted" style="margin-top:12px">El texto del mensaje se cambia en Emby › Plantillas de mensajes › «Seguimiento de una demo». Se guardan los últimos 30 días.</p>';
 }
 
@@ -10058,6 +10068,7 @@ document.addEventListener('input', (e) => {
   if (id === 'buyN' && S.pay) { const p = $('#buyP'); if (p) p.textContent = money(buyCalc(S.pay, +e.target.value || 0), S.pay.currency); return; }
   if (id === 'dq') { S.dq = e.target.value; const r = $('#dqr'); if (r) r.innerHTML = dqHtml(); if (S.d.servers.length && !S.seen && Date.now() - S.seenAt > 60000) loadSeen(); return; }
   if (id === 'monQ') { S.mon.q = e.target.value; monPaint(); return; }
+  if (id === 'trq' || id === 'fuq') { S[id] = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#' + id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) { /* nada */ } } return; }
   if (id === 'accq') { S.acc.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#accq'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } return; }
   if (id === 'admq') S.admQ = e.target.value;
   if (id === 'lgq') { S.lg.q = e.target.value; S.lg.n = 200; }
