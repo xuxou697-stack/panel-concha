@@ -2379,6 +2379,7 @@ body{--pc:var(--brand,#3fa9f5)} body.jf{--pc:#a46bff} body.px{--pc:#e5a00d}
 .mg-tiles{margin-bottom:12px}
 .mg-prep{margin-bottom:14px}.mg-prep summary{cursor:pointer;font-weight:700}.mg-prep summary small{font-weight:400;color:var(--muted);margin-left:6px}
 .mg-pr{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line);margin-top:10px}.mg-pr>div{flex:1;min-width:220px}.mg-pr b{display:block}.mg-pr small{color:var(--muted);font-size:12.5px}
+.so-start{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.so-on{font-size:16px;padding:12px 20px}
 </style>
 </head>
 <body>
@@ -7053,6 +7054,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 210, d: '2026-10-30', items: ['🤝 Socios: botón grande «✅ Encender Socios» que lo deja listo en un toque (Xux y Angus, cada uno con su Telegram)'] },
   { v: 209, d: '2026-10-30', items: ['🛟 Preparados para Plex (en Migrar de plataforma): ves cuántos clientes no tienen email y el bot se lo puede pedir por Telegram (cuando contestan, se guarda solo en su ficha)', '🔑 Las contraseñas de clientes nuevas son de 8 o más (así valen también en Plex). Se puede volver a 4 en Migrar de plataforma'], team: ['🔑 Las contraseñas de clientes nuevas tienen que tener 8 o más letras y números (pulsa «Generar» si quieres una). Así valen también si algún día pasan a Plex', '✉️ Pon el email de verdad del cliente al crear la cuenta'] },
   { v: 208, d: '2026-10-30', items: ['🔁 Migrar de plataforma: ahora en cualquier dirección (Emby, Jellyfin o Plex). Botón «🔁 Migrar» en la ficha del cliente, «Migrar plataforma» en Más, y para muchas a la vez: márcalas en la lista y pulsa «🔁 Migrar plataforma». A Emby/Jellyfin pasan con su mismo usuario y contraseña; a Plex con su email y su misma contraseña'] },
   { v: 207, d: '2026-10-30', items: ['🔁 Migrar a Plex (Servidores › Migrar a Plex): pasa tus clientes de Emby o Jellyfin a Plex usando su email, uno a uno (Más › Pasar a Plex) o todos a la vez. Se le crea su cuenta de Plex con su misma contraseña (o se le invita si ya tiene Plex), conserva su fecha, pantallas y contenido, le llegan los pasos por Telegram y se puede deshacer'] },
@@ -7540,7 +7542,7 @@ function vSocios() {
   if (!d) return head('🤝 Socios', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
   if (d.error) return head('🤝 Socios', sub) + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const cfg = d.cfg, b = d.balance;
-  const cfgBtn = `<button class="btn" data-act="so-cfg">${ic('wrench')}Ajustes</button>`;
+  const cfgBtn = cfg.on ? `<button class="btn" data-act="so-cfg">${ic('wrench')}Ajustes</button>` : '';
   if (!cfg.on) return head('🤝 Socios', sub, cfgBtn) + `<div class="panel pad so-intro">
     <h3 style="margin-top:0">Como Tricount, pero dentro del panel</h3>
     <ul class="so-ul"><li>💳 Cada pago que entra (clientes, créditos, recargas) se <b>apunta solo</b>, con quién lo ha recibido.</li>
@@ -7549,7 +7551,8 @@ function vSocios() {
     <li>📲 En el aviso de Telegram de cada pago verás «Apuntado en Socios».</li>
     <li>🔗 Si preferís Splitwise, cada movimiento se puede copiar también allí.</li></ul>
     <p class="small muted">No toca nada de las cuentas ni de los pagos: solo apunta. Puedes apagarlo cuando quieras.</p>
-    <button class="btn primary" data-act="so-cfg">${ic('users')}Empezar: poner nombres</button></div>`;
+    <div class="so-start"><button class="btn primary so-on" data-act="so-on">✅ Encender Socios</button><button class="btn" data-act="so-cfg">${ic('users')}Cambiar nombres y ajustes</button></div>
+    <p class="small muted" style="margin:10px 0 0">Al encenderlo quedan <b>${esc(cfg.members.some((m) => !/^(Yo|Socio)$/.test(m.name)) ? cfg.members.map((m) => m.name).join(' y ') : 'Xux (tú) y Angus')}</b>${d.chats.length > 1 && cfg.members.every((m) => /^(Yo|Socio)$/.test(m.name)) ? ', con tu Telegram para Xux y el otro para Angus' : ''}. Se puede cambiar en Ajustes.</p></div>`;
   const acts = `<button class="btn primary" data-act="so-add" data-k="gasto">${ic('plus')}Añadir</button>${cfgBtn}`;
   const chips = `<div class="tools so-months">${d.months.map((m) => `<button type="button" class="chip${d.month === m ? ' on' : ''}" data-act="so-m" data-k="${m}">${esc(soMonthTxt(m))}</button>`).join('')}<button type="button" class="chip${!d.month ? ' on' : ''}" data-act="so-m" data-k="all">Todo</button></div>`;
   const peace = b.moves.length ? b.moves.map((m) => `<div class="so-move"><div><span class="so-av">${esc(m.fromName.slice(0, 1))}</span><b>${esc(m.fromName)}</b> le debe <b class="so-amt">${eur(m.amount)}</b> a <b>${esc(m.toName)}</b><span class="so-av">${esc(m.toName.slice(0, 1))}</span></div><button class="btn sm primary" data-act="so-settle" data-from="${m.from}" data-to="${m.to}" data-a="${m.amount}">${ic('check')}Saldar</button></div>`).join('')
@@ -9682,6 +9685,9 @@ document.addEventListener('click', (e) => {
     return; }
   if (a === 'mg-undo') { const ids = [...document.querySelectorAll('[data-mgu]:checked')].map((i) => +i.dataset.mgu); if (!ids.length) { toast('Marca las cuentas que quieres devolver', true); return; }
     dConfirm('Deshacer migración', `${plural(ids.length, 'cuenta vuelve', 'cuentas vuelven')} a su servidor de antes y se ${ids.length === 1 ? 'quita' : 'quitan'} del nuevo.`, 'Deshacer', async () => { const r = await api('POST', '/api/migrate/plex/undo', { ids }); await loadMg(); if (r.failed.length) toast(`${r.failed.length} no se pudieron: ${r.failed[0].error}`, true); }, 'Hecho'); return; }
+  if (a === 'so-on') { const d = S.so.data, c = d.cfg, def = c.members.every((m) => /^(Yo|Socio)$/.test(m.name));
+    const body = def ? { on: true, members: [{ id: c.members[0].id, name: 'Xux', users: d.staff.length ? [d.staff[0].id] : [], chats: d.chats[0] ? [d.chats[0].id] : [] }, { id: c.members[1].id, name: 'Angus', users: [], chats: d.chats[1] ? [d.chats[1].id] : [] }], online: c.members[0].id } : { on: true };
+    api('PUT', '/api/socios/cfg', body).then(() => { toast('🤝 Socios encendido'); S.so.data = null; loadSo(); }, (x) => toast(x.message, true)); return; }
   if (a === 'so-cfg') { soCfgDlg(); return; }
   if (a === 'so-sw') { if (dlg.open) dlg.close(); soSwDlg(); return; }
   if (a === 'so-swoff') { if (dlg.open) dlg.close(); dConfirm('Quitar Splitwise', 'Se borra la clave y se deja de copiar en Splitwise. Lo apuntado en Socios no se toca.', 'Quitar', async () => { await api('PUT', '/api/socios/splitwise', { remove: true }); await loadSo(); }, 'Splitwise quitado'); return; }
