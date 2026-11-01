@@ -2398,6 +2398,34 @@ dialog form h2:empty{display:none}.mlist3{gap:16px}
 .srch:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 25%,transparent)}.srch span{font-size:18px;opacity:.8}
 .srch input{flex:1;min-width:0;border:0;background:none;color:var(--text);font:inherit;font-size:16px;padding:10px 0;outline:none}.srch small{flex:none;color:var(--muted);font-size:12.5px}
 .mc .ft{flex-wrap:wrap}.mc .ft .pill{flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mc .ft .pill+button{margin-left:auto}
+.tc-tabs{display:grid;grid-template-columns:repeat(3,1fr);border:1.5px solid var(--text);border-radius:16px;overflow:hidden;margin:2px 0 18px}
+.tc-tabs button{border:0;background:none;color:var(--text);font:inherit;font-size:15px;font-weight:600;padding:12px 4px;cursor:pointer}.tc-tabs button+button{border-left:1.5px solid var(--text)}
+.tc-tabs button[aria-selected=true]{background:var(--text);color:var(--bg,#0b1220)}
+.tc-sum{display:grid;grid-template-columns:1fr 1fr;text-align:center;margin:4px 0 6px}.tc-sum small{display:block;color:var(--muted);font-size:13.5px}.tc-sum b{font-size:28px;letter-spacing:-.01em}
+.tc-note{text-align:center;color:var(--muted);font-size:13px;margin:4px 0 10px}
+.tc-day{font-size:20px;margin:22px 0 10px}
+.tc-r{position:relative;display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:10px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
+.tc-hit{position:absolute;inset:0;border:0;background:none;cursor:pointer;border-radius:18px}.tc-r>*:not(.tc-hit){position:relative;pointer-events:none}.tc-r .tc-tools,.tc-r .so-askb,.tc-r .tc-a .btn{pointer-events:auto}
+.tc-ic{font-size:30px;flex:none;width:40px;text-align:center}.tc-t{flex:1;min-width:0}.tc-t b{display:block;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tc-t small{color:var(--muted);font-size:14px}.tc-t small b{display:inline;font-size:inherit;color:var(--text)}
+.tc-a{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px}.tc-a>b{font-size:18px}.tc-r.cobro .tc-a>b{color:#22c55e}.tc-r.gasto .tc-a>b{color:#f87171}
+.tc-tools{display:flex;gap:4px}.tc-tools button{border:1px solid var(--line);background:var(--raised);border-radius:9px;padding:3px 7px;font-size:13px;cursor:pointer;opacity:.75}.tc-tools button:hover{opacity:1}
+.tc-r.ask{background:color-mix(in srgb,#f59e0b 8%,var(--surface))}
+.tc-big{display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--line);margin-bottom:10px}.tc-bi{font-size:40px;flex:none}.tc-big>div{flex:1;min-width:0}.tc-big b{display:block;font-size:20px}.tc-big small{color:var(--muted);font-size:14px}
+.tc-big.owe{border-color:color-mix(in srgb,#f87171 40%,transparent)}.tc-big.get{border-color:color-mix(in srgb,#22c55e 40%,transparent)}.tc-big.ok{border-color:color-mix(in srgb,#22c55e 40%,transparent)}
+.tc-ps{display:grid;gap:10px}.tc-p{border-radius:18px;background:var(--surface);border:1px solid var(--line)}.tc-p summary{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;list-style:none}.tc-p summary::-webkit-details-marker{display:none}
+.tc-av{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:var(--raised);font-weight:800;font-size:20px;text-transform:uppercase;flex:none}.tc-pn{flex:1}.tc-pn b{display:block;font-size:18px}.tc-pn small{color:var(--muted)}
+.tc-pv{font-size:19px}.tc-pv.pos{color:#22c55e}.tc-pv.neg{color:#f87171}
+.tc-pd{padding:0 16px 14px;display:grid;gap:4px}.tc-pd div{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}.tc-pd b{color:var(--text)}
+.tc-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.tc-photos button{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);padding:0;cursor:pointer;color:var(--text);font:inherit;text-align:left}.tc-photos img{display:block;width:100%;aspect-ratio:1;object-fit:cover}.tc-photos span{display:block;padding:6px 8px;font-size:12.5px}
+:root[data-theme=light] .tc-tabs button[aria-selected=true]{color:#fff}
+@media (max-width:420px){.tc-sum b{font-size:24px}.tc-r{padding:12px}.tc-ic{font-size:26px;width:32px}.tc-t b{font-size:16px}}
+.tc-tabs.four{grid-template-columns:repeat(4,1fr)}.tc-tabs.four button{font-size:14px;padding:12px 2px}.tc-dot{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#f97316;color:#fff;font-style:normal;font-size:11px;font-weight:800;vertical-align:1px}
+.tc-due{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;margin-bottom:12px;background:linear-gradient(120deg,color-mix(in srgb,#f97316 18%,var(--surface)),var(--surface));border:1px solid color-mix(in srgb,#f97316 45%,transparent)}.tc-due>div{flex:1;min-width:0}.tc-due b{display:block}.tc-due small{color:var(--muted)}.tc-due.late{background:linear-gradient(120deg,color-mix(in srgb,#ef4444 18%,var(--surface)),var(--surface));border-color:color-mix(in srgb,#ef4444 45%,transparent)}
+.tc-day2{flex:none;display:grid;justify-items:center;width:48px;padding:6px 0;border-radius:12px;background:var(--raised);line-height:1.1}.tc-day2 b{font-size:20px}.tc-day2 small{font-size:11px;color:var(--muted);text-transform:uppercase}
+.tc-r.xr.now{border-color:color-mix(in srgb,#f97316 50%,transparent)}.tc-r.xr.late{border-color:color-mix(in srgb,#ef4444 50%,transparent)}.tc-r.xr.paid{opacity:.75}.tc-r.xr .tc-a>b{color:var(--text)}.tc-r.xr.paid .tc-a>b{color:#f87171}
+.tc-w{color:var(--muted);font-size:12.5px}.tc-r.xr.late .tc-w{color:#ef4444}.tc-cat{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:6px}
+.tc-xacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0 4px}
+@media (max-width:420px){.tc-tabs.four button{font-size:12.5px}}
 </style>
 </head>
 <body>
@@ -7079,6 +7107,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 214, d: '2026-11-01', items: ['🗓️ Socios unido a Gastos: nueva pestaña «Gastos» con lo que toca pagar, lo próximo y lo pagado. El día que toca pagar te llega a Telegram «Hoy toca pagar Servidores 380 €» con botones: quién lo paga y si va a medias, solo suyo o sin apuntar. Se puede cambiar después con ✏️', '🤝 Socios con formato Tricount: pestañas Movimientos, Saldos y Fotos. Arriba «Cobrado por ti» y «Total del mes»; en Saldos, en grande «Debes X € a Angus» (o «Angus te debe…») y el saldo de cada uno en verde o rojo. Siguen los botones ✏️ Modificar y 🗑️ Eliminar en cada movimiento'] },
   { v: 213, d: '2026-11-01', items: ['⏹️ Monitor: los botones de cada reproducción (aviso, mensaje y ✕ detener) siempre se ven, también en el móvil. Si el aparato no obedece a «Detener» (navegador, algunas apps), el panel corta la conversión en el servidor y, si hace falta, cierra su sesión en ese aparato'], team: ['⏹️ Monitor: el botón ✕ para detener siempre se ve en el móvil, y para también los aparatos que no obedecían (navegador, algunas apps)'] },
   { v: 212, d: '2026-10-31', items: ['🔍 Buscador en la Papelera, en Demos vencidas y en Seguimiento de demos: por nombre, usuario, email, teléfono, Telegram o vendedor'], team: ['🔍 Buscador en la Papelera, en Demos vencidas y en Seguimiento de demos'] },
   { v: 211, d: '2026-10-31', items: ['🎨 La ventana de cada cliente (Más) con colores: arriba su nombre, plataforma y cómo está su cuenta (activa, caduca en X días…), y cada grupo de botones con su color'], team: ['🎨 La ventana de cada cliente (Más) con colores: arriba su nombre, plataforma y cómo está su cuenta, y cada grupo de botones con su color'] },
@@ -7556,6 +7585,42 @@ document.addEventListener('change', (e) => {
   if (k === 'from' || k === 'to' || k === 'who') S.mg.prev = null;
   render();
 });
+/* 🗓️ Gastos dentro de Socios: lo que toca pagar, lo próximo y lo ya pagado este mes */
+function soCalTab() {
+  const g = S.gx.data;
+  if (!g) { if (!S.gx.busy) loadGx().then(() => { if (S.view === 'socios') render(); }); return '<div class="empty">Cargando gastos…</div>'; }
+  if (g.error) return `<p class="err">${esc(g.error)}</p>`;
+  const t = g.today, lim = addDays(t, 62), occ = [];
+  for (const e of g.list) { if (e.done) continue; let due = e.due, n = 0; while (due <= lim && n < 4) { occ.push({ e, due, cur: n === 0 }); if (!e.every) break; due = gxNext(e, due); n++; } }
+  occ.sort((a, b) => a.due.localeCompare(b.due));
+  const ym = t.slice(0, 7), paid = [];
+  for (const e of g.list) for (const p of e.payments || []) if (String(p.at).slice(0, 7) === ym) paid.push({ e, p });
+  const cat = (e) => (GX_CAT[e.cat] || GX_CAT.otro);
+  const when = (due) => { const l = diff(due, t); return l < 0 ? [`⛔ Hace ${plural(-l, 'día', 'días')}`, 'late'] : l === 0 ? ['🟠 Hoy', 'now'] : l === 1 ? ['Mañana', 'soon'] : l <= 7 ? [`En ${l} días`, 'soon'] : [fmt(due), '']; };
+  const row = ({ e, due, cur }) => { const [w, c] = when(due), [cn, , cc] = cat(e);
+    return `<div class="tc-r xr ${c}"><span class="tc-day2"><b>${+due.slice(8)}</b><small>${MES[+due.slice(5, 7) - 1]}</small></span><div class="tc-t"><b>${esc(e.name)}</b><small><i class="tc-cat" style="--c:${cc}"></i>${esc(cn)}${e.every ? ` · cada ${e.every === 1 ? 'mes' : e.every + ' meses'}` : ''}</small></div>
+      <div class="tc-a"><b>${eur(e.amount)}</b>${cur && diff(due, t) <= 7 ? `<button class="btn sm${diff(due, t) <= 0 ? ' primary' : ''}" data-act="so-xpay" data-id="${e.id}">${diff(due, t) <= 0 ? 'Apuntar' : 'Ya lo pagué'}</button>` : `<small class="tc-w">${w}</small>`}</div></div>`; };
+  const tot = occ.filter((o) => o.due.slice(0, 7) === ym).reduce((n, o) => n + o.e.amount, 0);
+  return `<div class="tc-sum"><div><small>Por pagar este mes</small><b>${eur(tot)}</b></div><div><small>Pagado este mes</small><b>${eur(paid.reduce((n, x) => n + (x.p.amount || 0), 0))}</b></div></div>
+    <div class="tc-xacts"><button class="btn sm" data-act="gx-new">${ic('plus')}Nuevo gasto fijo</button><button class="btn sm ghost" data-view="gastos">${ic('calendar')}Ver calendario completo</button></div>
+    <h3 class="tc-day">Próximos pagos</h3>${occ.length ? occ.map(row).join('') : '<div class="empty okmsg">✅ <b>Nada por pagar en los próximos 2 meses</b><span>Añade tus gastos fijos (VPS, contenido, dominio…) con «Nuevo gasto fijo».</span></div>'}
+    ${paid.length ? `<h3 class="tc-day">Pagado este mes</h3>${paid.map(({ e, p }) => `<div class="tc-r xr paid"><span class="tc-day2"><b>${+String(p.at).slice(8, 10)}</b><small>${MES[+String(p.at).slice(5, 7) - 1]}</small></span><div class="tc-t"><b>${esc(e.name)}</b><small>✅ Pagado${p.soc ? ' · en Socios' : ''}</small></div><div class="tc-a"><b>−${eur(p.amount)}</b></div></div>`).join('')}` : ''}`;
+}
+/** Apuntar un gasto: quién lo paga y cómo se reparte (a medias, solo suyo o sin apuntar en Socios) */
+async function soExpPay(id) {
+  if (!S.gx.data) await loadGx();
+  const e = gxOf(id); if (!e) return toast('Ese gasto ya no existe', true);
+  const so = S.so.data && S.so.data.cfg.on ? S.so.data.cfg.members : (S.gx.data.socios || {}).members || [], mine = (S.so.data && S.so.data.mine) || (S.gx.data.socios || {}).mine;
+  const pill = (m) => `<label class="sx-pill"><input type="radio" name="payer" value="${m.id}"${m.id === mine ? ' checked' : ''}><span><i>${esc(m.name.slice(0, 1))}</i>${esc(m.name)}</span></label>`;
+  const opt = (v, t, sm, on) => `<label class="mg-opt"><input type="radio" name="split" value="${v}"${on ? ' checked' : ''}><span><b>${t}</b><small>${sm}</small></span></label>`;
+  openDlg({ title: `🧾 ${e.name}`, submit: 'Apuntar pago',
+    body: `<label class="sx-amt"><input name="amount" type="text" inputmode="decimal" value="${String(e.amount).replace('.', ',')}"><b>€</b></label>
+      ${so.length ? `<div class="sx-lbl">¿Quién lo paga?</div><div class="sx-pills">${so.map(pill).join('')}</div>
+      <div class="sx-lbl">¿Cómo se apunta en Socios?</div><div class="mg-opts">${opt('half', '⚖️ A medias', 'cada uno pone la mitad', true)}${opt('solo', '👤 Solo de quien paga', 'es solo suyo, no se reparte')}${opt('none', '🚫 No apuntar', 'solo marcarlo como pagado')}</div>` : ''}
+      <div class="sx-lbl">Cuándo</div><div class="sx-when"><input type="date" name="at" value="${S.gx.data.today}"></div>
+      <p class="small muted" style="margin-top:8px">${e.every ? `El siguiente pago quedará para el <b>${fmt(gxNext(e, e.due))}</b>.` : 'Es de una sola vez.'} Luego se puede cambiar en Socios con ✏️.</p>`,
+    onSubmit: async (fd) => { await api('POST', `/api/expenses/${id}/pay`, { amount: String(fd.get('amount')).replace(',', '.'), at: fd.get('at'), payer: fd.get('payer') || undefined, split: fd.get('split') || 'half' }); await loadGx(); S.so.data = null; loadSo(); return `${e.name}: apuntado`; } });
+}
 async function loadSo() {
   S.so.busy = true;
   try { S.so.data = await api('GET', '/api/socios?m=' + encodeURIComponent(S.so.m || '')); S.so.at = Date.now(); } catch (e) { S.so.data = { error: e.message }; }
@@ -7583,25 +7648,51 @@ function vSocios() {
     <p class="small muted" style="margin:10px 0 0">Al encenderlo quedan <b>${esc(cfg.members.some((m) => !/^(Yo|Socio)$/.test(m.name)) ? cfg.members.map((m) => m.name).join(' y ') : 'Xux (tú) y Angus')}</b>${d.chats.length > 1 && cfg.members.every((m) => /^(Yo|Socio)$/.test(m.name)) ? ', con tu Telegram para Xux y el otro para Angus' : ''}. Se puede cambiar en Ajustes.</p></div>`;
   const acts = `<button class="btn primary" data-act="so-add" data-k="gasto">${ic('plus')}Añadir</button>${cfgBtn}`;
   const chips = `<div class="tools so-months">${d.months.map((m) => `<button type="button" class="chip${d.month === m ? ' on' : ''}" data-act="so-m" data-k="${m}">${esc(soMonthTxt(m))}</button>`).join('')}<button type="button" class="chip${!d.month ? ' on' : ''}" data-act="so-m" data-k="all">Todo</button></div>`;
-  const peace = b.moves.length ? b.moves.map((m) => `<div class="so-move"><div><span class="so-av">${esc(m.fromName.slice(0, 1))}</span><b>${esc(m.fromName)}</b> le debe <b class="so-amt">${eur(m.amount)}</b> a <b>${esc(m.toName)}</b><span class="so-av">${esc(m.toName.slice(0, 1))}</span></div><button class="btn sm primary" data-act="so-settle" data-from="${m.from}" data-to="${m.to}" data-a="${m.amount}">${ic('check')}Saldar</button></div>`).join('')
-    : `<div class="so-move ok"><div>✅ <b>Estáis en paz</b>${b.count ? ' en ' + esc(soMonthTxt(d.month).toLowerCase()) : ''}</div></div>`;
-  const people = `<div class="so-people">${b.people.map((p) => `<div class="so-p"><div class="so-ph"><span class="so-av big">${esc(p.name.slice(0, 1))}</span><b>${esc(p.name)}</b></div>
-    <div class="so-r"><span>Ha recibido</span><b>${eur(p.cobros)}</b></div>${p.gastos ? `<div class="so-r"><span>Ha pagado gastos</span><b>− ${eur(p.gastos)}</b></div>` : ''}${p.enviado ? `<div class="so-r"><span>Ha pasado a otro socio</span><b>− ${eur(p.enviado)}</b></div>` : ''}${p.recibido ? `<div class="so-r"><span>Le han pasado</span><b>+ ${eur(p.recibido)}</b></div>` : ''}
-    <div class="so-r tot"><span>Tiene ahora</span><b>${eur(p.tiene)}</b></div><div class="so-r"><span>Le toca</span><b>${eur(p.toca)}</b></div><div class="so-bal ${p.saldo > 0.009 ? 'bad' : p.saldo < -0.009 ? 'ok' : ''}">${p.saldo > 0.009 ? `Tiene de más: ${eur(p.saldo)}` : p.saldo < -0.009 ? `Le falta: ${eur(-p.saldo)}` : 'Justo lo suyo'}</div></div>`).join('')}</div>`;
-  const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
-  const tiles = `<div class="vptiles lict">${tile(eur(b.cobros), 'Cobrado', soMonthTxt(d.month), 'ok')}${tile(eur(b.gastos), 'Gastos', '')}${tile(eur(b.beneficio), 'Beneficio', 'cobrado − gastos', b.beneficio >= 0 ? 'ok' : 'bad')}${tile(eur(b.share), 'Le toca a cada uno', `a partes iguales (${b.people.length})`)}</div>`;
+  // ── Formato Tricount: pestañas Movimientos · Saldos · Fotos ──
+  const mine = d.mine && cfg.members.some((m) => m.id === d.mine) ? d.mine : cfg.members[0].id, meName = soName(mine);
+  const tab = S.so.tab || 'mov', sw = cfg.sw.on;
+  const tabs = `<div class="tc-tabs four" role="tablist">${[['mov', '📋 Movimientos'], ['sal', '⚖️ Saldos'], ['cal', `🗓️ Gastos${(d.due || []).length ? ` <i class="tc-dot">${d.due.length}</i>` : ''}`], ['fot', '📷 Fotos']].map(([k, t]) => `<button type="button" role="tab" data-act="so-tab" data-k="${k}" aria-selected="${tab === k}">${t}</button>`).join('')}</div>`;
+  const myIn = d.entries.filter((x) => x.kind === 'cobro' && x.who === mine && !x.ask).reduce((n, x) => n + x.amount, 0);
+  // Movimientos
+  const dayKey = (x) => new Date(x.at).toLocaleDateString('sv');
+  const t0 = new Date().toLocaleDateString('sv'), t1 = new Date(Date.now() - 864e5).toLocaleDateString('sv');
+  const dayTxt = (k) => (k === t0 ? 'Hoy' : k === t1 ? 'Ayer' : new Date(k + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }));
   const byDay = {};
-  for (const x of d.entries) (byDay[x.at.slice(0, 10)] = byDay[x.at.slice(0, 10)] || []).push(x);
-  const sw = cfg.sw.on;
-  const row = (x) => { const [ico0, src] = x.kind === 'pago' ? ['🔁', 'Entre socios'] : SO_SRC[x.src] || SO_SRC.manual, ico = x.cat || ico0;
+  for (const x of d.entries) (byDay[dayKey(x)] = byDay[dayKey(x)] || []).push(x);
+  const tools = (x) => `<span class="tc-tools"><button type="button" data-act="so-more" data-id="${x.id}" title="Modificar">✏️</button><button type="button" data-act="so-del" data-id="${x.id}" title="Eliminar">🗑️</button></span>`;
+  const row = (x) => {
+    const [ico0, src] = x.kind === 'pago' ? ['🔁', 'Entre socios'] : SO_SRC[x.src] || SO_SRC.manual, ico = x.cat || (x.kind === 'cobro' ? '💰' : ico0);
     const only = Array.isArray(x.split) && x.split.length && x.kind !== 'pago' ? ` · solo ${x.split.map(soName).map(esc).join(' y ')}` : '';
-    if (x.ask) return `<div class="so-e so-ask"><span class="so-ico">❓</span><span class="so-d"><b>${esc(x.desc || src)}</b><small>¿Quién lo ha cobrado? Toca su nombre</small><span class="so-askb">${d.cfg.members.map((m) => `<button type="button" class="sx-mini" data-act="so-who" data-id="${x.id}" data-k="${m.id}"><i>${esc(m.name.slice(0, 1))}</i>${esc(m.name)}</button>`).join('')}</span></span><span class="so-a">${eur(x.amount)}</span><span class="so-tools"><button type="button" class="so-tb" data-act="so-more" data-id="${x.id}" title="Modificar">✏️</button><button type="button" class="so-tb" data-act="so-del" data-id="${x.id}" title="Eliminar">🗑️</button></span></div>`;
-    return `<div class="so-e ${x.kind}"><button type="button" class="so-hit" data-act="so-more" data-id="${x.id}" aria-label="Modificar"></button><span class="so-ico">${ico}</span><span class="so-d"><b>${esc(x.desc || src)}${x.photo ? ' <span title="Tiene foto">📎</span>' : ''}</b><small>${x.kind === 'pago' ? `${esc(soName(x.who))} → ${esc(soName(x.to))}` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`} · ${new Date(x.at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · ${src}${only}${sw ? (x.sw ? ' · ✓ Splitwise' : x.swErr ? ' · ⚠️ Splitwise' : ' · ⏳ Splitwise') : ''}</small></span><span class="so-a">${x.kind === 'gasto' ? '− ' : ''}${eur(x.amount)}</span><span class="so-tools"><button type="button" class="so-tb" data-act="so-more" data-id="${x.id}" title="Modificar">✏️<em>Modificar</em></button><button type="button" class="so-tb" data-act="so-del" data-id="${x.id}" title="Eliminar">🗑️</button></span></div>`; };
-  const list = d.entries.length ? Object.keys(byDay).map((day) => `<div class="so-day">${esc(new Date(day + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }))}</div>${byDay[day].map(row).join('')}`).join('')
+    if (x.ask) return `<div class="tc-r ask"><span class="tc-ic">❓</span><div class="tc-t"><b>${esc(x.desc || src)}</b><small>¿Quién lo ha cobrado?</small><span class="so-askb">${cfg.members.map((m) => `<button type="button" class="sx-mini" data-act="so-who" data-id="${x.id}" data-k="${m.id}"><i>${esc(m.name.slice(0, 1))}</i>${esc(m.name)}</button>`).join('')}</span></div><div class="tc-a"><b>${eur(x.amount)}</b>${tools(x)}</div></div>`;
+    const who = x.kind === 'pago' ? `<b>${esc(soName(x.who))}</b> → <b>${esc(soName(x.to))}</b>` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`;
+    return `<div class="tc-r ${x.kind}"><button type="button" class="tc-hit" data-act="so-more" data-id="${x.id}" aria-label="Modificar"></button><span class="tc-ic">${ico}</span>
+      <div class="tc-t"><b>${esc(x.desc || src)}${x.photo ? ' 📎' : ''}</b><small>${who}${only}</small></div>
+      <div class="tc-a"><b>${x.kind === 'gasto' ? '−' : x.kind === 'pago' ? '' : '+'}${eur(x.amount)}</b>${tools(x)}</div></div>`;
+  };
+  const list = d.entries.length ? Object.keys(byDay).sort().reverse().map((k) => `<h3 class="tc-day">${esc(dayTxt(k))}</h3>${byDay[k].map(row).join('')}`).join('')
     : `<div class="empty okmsg">${ic('wallet')}<b>Nada apuntado ${d.month ? 'este mes' : 'todavía'}</b><span>Los pagos que entren se apuntan solos. También puedes pulsar «+ Añadir».</span></div>`;
-  const swLine = sw ? `<p class="small muted" style="margin:0 0 12px">🔗 Copiando en Splitwise${cfg.sw.groupName ? ` (grupo «${esc(cfg.sw.groupName)}»)` : ''}.${d.entries.some((x) => !x.sw) ? ` <button class="linkbtn" data-act="so-swretry">Reenviar los que faltan</button>` : ''}</p>` : '';
-  const un = b.unassigned && b.unassigned.n ? `<div class="licban grace so-unb">❓<div><b>${plural(b.unassigned.n, 'cobro sin dueño', 'cobros sin dueño')} (${eur(b.unassigned.amount)})</b><span>No cuentan hasta que digáis quién los cobró. Tócalos abajo o responde en Telegram.</span></div></div>` : '';
-  return head('🤝 Socios', sub, acts) + chips + un + `<div class="panel pad so-peace">${peace}</div>` + tiles + people + swLine + `<div class="panel so-list">${list}</div>`;
+  const un = b.unassigned && b.unassigned.n ? `<div class="licban grace so-unb">❓<div><b>${plural(b.unassigned.n, 'cobro sin dueño', 'cobros sin dueño')} (${eur(b.unassigned.amount)})</b><span>No cuentan hasta que digáis quién los cobró. Toca el nombre en la lista o responde en Telegram.</span></div></div>` : '';
+  const movTab = `<div class="tc-sum"><div><small>Cobrado por ti (${esc(meName)})</small><b>${eur(myIn)}</b></div><div><small>Total ${d.month ? 'del mes' : ''}</small><b>${eur(b.cobros)}</b></div></div>
+    ${b.gastos ? `<p class="tc-note">Gastos: <b>−${eur(b.gastos)}</b> · Beneficio: <b>${eur(b.beneficio)}</b></p>` : ''}${un}<div class="tc-list">${list}</div>`;
+  // Saldos (desde tu punto de vista)
+  const myMoves = b.moves.filter((m) => m.from === mine || m.to === mine), other = b.moves.filter((m) => m.from !== mine && m.to !== mine);
+  const big = (m) => m.from === mine
+    ? `<div class="tc-big owe"><span class="tc-bi">💸</span><div><b>Debes ${eur(m.amount)}</b><small>A: ${esc(m.toName)}</small></div><button class="btn sm primary" data-act="so-settle" data-from="${m.from}" data-to="${m.to}" data-a="${m.amount}">Saldar</button></div>`
+    : `<div class="tc-big get"><span class="tc-bi">🤑</span><div><b>${esc(m.fromName)} te debe ${eur(m.amount)}</b><small>Cuando te lo pase, pulsa «Saldar»</small></div><button class="btn sm" data-act="so-settle" data-from="${m.from}" data-to="${m.to}" data-a="${m.amount}">Saldar</button></div>`;
+  const peace = b.moves.length ? myMoves.map(big).join('') + other.map((m) => `<div class="tc-big"><span class="tc-bi">↔️</span><div><b>${esc(m.fromName)} debe ${eur(m.amount)}</b><small>A: ${esc(m.toName)}</small></div><button class="btn sm" data-act="so-settle" data-from="${m.from}" data-to="${m.to}" data-a="${m.amount}">Saldar</button></div>`).join('')
+    : `<div class="tc-big ok"><span class="tc-bi">✅</span><div><b>Estáis en paz</b><small>Nadie le debe nada a nadie${d.month ? ' este mes' : ''}</small></div></div>`;
+  const people = b.people.map((p) => { const v = -p.saldo; return `<details class="tc-p"><summary><span class="tc-av">${esc(p.name.slice(0, 1))}</span><span class="tc-pn"><b>${esc(p.name)}</b>${p.id === mine ? '<small>Yo</small>' : ''}</span><b class="tc-pv ${v > 0.009 ? 'pos' : v < -0.009 ? 'neg' : ''}">${v > 0.009 ? '+' : ''}${eur(v)}</b></summary>
+    <div class="tc-pd"><div><span>Ha cobrado</span><b>${eur(p.cobros)}</b></div>${p.gastos ? `<div><span>Ha pagado gastos</span><b>−${eur(p.gastos)}</b></div>` : ''}${p.enviado ? `<div><span>Ha pasado al otro</span><b>−${eur(p.enviado)}</b></div>` : ''}${p.recibido ? `<div><span>Le han pasado</span><b>+${eur(p.recibido)}</b></div>` : ''}<div><span>Tiene ahora</span><b>${eur(p.tiene)}</b></div><div><span>Le toca</span><b>${eur(p.toca)}</b></div></div></details>`; }).join('');
+  const salTab = `${peace}<h3 class="tc-day">Saldos</h3><div class="tc-ps">${people}</div>
+    <p class="tc-note">➕ en verde: le deben dinero · ➖ en rojo: tiene dinero que no es suyo. Toca un nombre para ver las cuentas.</p>
+    ${sw ? `<p class="small muted">🔗 Copiando en Splitwise${cfg.sw.groupName ? ` (grupo «${esc(cfg.sw.groupName)}»)` : ''}.${d.entries.some((x) => !x.sw) ? ` <button class="linkbtn" data-act="so-swretry">Reenviar los que faltan</button>` : ''}</p>` : ''}`;
+  // Fotos
+  const ph = d.entries.filter((x) => x.photo);
+  const fotTab = ph.length ? `<div class="tc-photos">${ph.map((x) => `<button type="button" data-act="so-more" data-id="${x.id}"><img src="/api/socios/photo/${x.id}" alt="" loading="lazy"><span>${esc(x.desc || '')} · ${eur(x.amount)}</span></button>`).join('')}</div>`
+    : `<div class="empty">${ic('eye')}<b>Sin fotos ${d.month ? 'este mes' : ''}</b><span>Al apuntar un gasto, toca 📷 para guardar la foto del ticket.</span></div>`;
+  // Gastos que toca pagar (unido al calendario de Gastos)
+  const dueCards = (d.due || []).map((e) => `<div class="tc-due${e.late ? ' late' : ''}"><span class="tc-bi">🧾</span><div><b>${e.late ? 'Sin pagar' : 'Hoy toca pagar'}: ${esc(e.name)}</b><small>${eur(e.amount)}${e.late ? ' · era el ' + fmt(e.due) : ''}</small></div><button class="btn sm primary" data-act="so-xpay" data-id="${e.id}">Apuntar</button></div>`).join('');
+  return head('🤝 Socios', sub, acts) + chips + tabs + `<div class="tc-body">${tab !== 'cal' && tab !== 'fot' ? dueCards : ''}${tab === 'sal' ? salTab : tab === 'fot' ? fotTab : tab === 'cal' ? soCalTab() : movTab}</div>`;
 }
 function soCfgDlg() {
   const d = S.so.data; if (!d || d.error) return;
@@ -9725,6 +9816,8 @@ document.addEventListener('click', (e) => {
   if (a === 'so-on') { const d = S.so.data, c = d.cfg, def = c.members.every((m) => /^(Yo|Socio)$/.test(m.name));
     const body = def ? { on: true, members: [{ id: c.members[0].id, name: 'Xux', users: d.staff.length ? [d.staff[0].id] : [], chats: d.chats[0] ? [d.chats[0].id] : [] }, { id: c.members[1].id, name: 'Angus', users: [], chats: d.chats[1] ? [d.chats[1].id] : [] }], online: c.members[0].id } : { on: true };
     api('PUT', '/api/socios/cfg', body).then(() => { toast('🤝 Socios encendido'); S.so.data = null; loadSo(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'so-tab') { S.so.tab = el.dataset.k; render(); return; }
+  if (a === 'so-xpay') { soExpPay(+el.dataset.id); return; }
   if (a === 'so-cfg') { soCfgDlg(); return; }
   if (a === 'so-sw') { if (dlg.open) dlg.close(); soSwDlg(); return; }
   if (a === 'so-swoff') { if (dlg.open) dlg.close(); dConfirm('Quitar Splitwise', 'Se borra la clave y se deja de copiar en Splitwise. Lo apuntado en Socios no se toca.', 'Quitar', async () => { await api('PUT', '/api/socios/splitwise', { remove: true }); await loadSo(); }, 'Splitwise quitado'); return; }
@@ -9737,7 +9830,7 @@ document.addEventListener('click', (e) => {
   if (a === 'so-del') { if (dlg.open) dlg.close(); dConfirm('Borrar movimiento', 'Se quita de Socios y las cuentas se recalculan. (En Splitwise, si estaba copiado, bórralo allí.)', 'Borrar', async () => { await api('DELETE', '/api/socios/entries/' + el.dataset.id); await loadSo(); }, 'Movimiento borrado'); return; }
   if (a === 'gx-new') { gxForm(); return; }
   if (a === 'gx-edit') { const e = gxOf(id); if (e) gxForm(e); return; }
-  if (a === 'gx-pay') { gxPay(id); return; }
+  if (a === 'gx-pay') { if (S.gx.data && S.gx.data.socios) soExpPay(id); else gxPay(id); return; }
   if (a === 'gx-more') { gxMore(id); return; }
   if (a === 'gx-tab') { S.gx.tab = el.dataset.k; render(); return; }
   if (a === 'gx-csv') { gxCsv(); return; }

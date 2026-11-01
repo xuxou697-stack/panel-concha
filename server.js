@@ -3209,6 +3209,17 @@ async function botCallback(cq) {
     }
     return tg('sendMessage', { chat_id: chat, text: '🙌 ¡Gracias! Lo estamos comprobando. En cuanto lo confirmemos te llega tu recibo por aquí.' }).catch(() => {});
   }
+  if (data.startsWith('gx:')) { // gasto de hoy: quién lo paga y cómo se apunta en Socios
+    const [, eid, mid, how] = data.split(':'); if (!how) return;
+    const sup = db.users.find((u) => u.role === 'super'); if (!sup || !userChats(sup).map(String).includes(String(chat))) return;
+    const e = expList().find((x) => x.id === Number(eid)); if (!e) return tg('sendMessage', { chat_id: chat, text: 'Ese gasto ya no existe.' }).catch(() => {});
+    if (e.done || (e.askMsgs || []).length === 0 && diffDays(e.due, today()) > 0) return tg('sendMessage', { chat_id: chat, text: 'Ese pago ya estaba apuntado ✅' }).catch(() => {});
+    let r;
+    try { r = await lock(async () => { const x = expPay(sup, e, { payer: mid, split: how === 's' ? 'solo' : how === 'n' ? 'none' : 'half' }); saveDb(); return x; }); }
+    catch (er) { return tg('sendMessage', { chat_id: chat, text: '⚠️ ' + er.message }).catch(() => {}); }
+    return tg('sendMessage', { chat_id: chat, text: r.soc ? `📒 Apuntado en Socios: ${e.name} · ${money2(r.soc.amount)} pagado por ${(socMember(r.soc.who) || {}).name} (${how === 's' ? 'solo suyo' : 'a medias'}).
+Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como pagado.` }).catch(() => {});
+  }
   if (data.startsWith('sk:')) { // «¿Quién lo ha cobrado?» de Socios
     const [, eid, mid] = data.split(':'); if (!mid) return;
     const sup = db.users.find((u) => u.role === 'super'); if (!sup || !userChats(sup).map(String).includes(String(chat)) || !socOn()) return;
@@ -7500,7 +7511,8 @@ route('GET', '/api/socios', SUPER, ({ me, req }) => {
   const d = socCfg(), q = new URL(req.url, 'http://x').searchParams, month = /^\d{4}-\d{2}$/.test(q.get('m') || '') ? q.get('m') : q.get('m') === 'all' ? '' : today().slice(0, 7);
   const months = [...new Set(d.entries.map((x) => x.month).concat(today().slice(0, 7)))].sort().reverse().slice(0, 36);
   const chats = [me.tgChat ? { id: String(me.tgChat), label: 'Tu Telegram' } : null, ...((me.tgExtra || []).map((c, i) => ({ id: String(c), label: `Telegram extra ${i + 1}` })))].filter(Boolean);
-  return { cfg: socOut(), mine: socWho(me), month, months, balance: socBalance(month), entries: d.entries.filter((x) => !month || x.month === month).slice(0, 600), staff: db.users.filter((u) => u.role === 'super' || u.role === 'admin').map((u) => ({ id: u.id, name: u.name })), chats };
+  const due = expList().filter((e) => !e.done && diffDays(e.due, today()) <= 0).map((e) => ({ id: e.id, name: e.name, amount: e.amount, due: e.due, late: diffDays(e.due, today()) < 0 }));
+  return { cfg: socOut(), mine: socWho(me), due, month, months, balance: socBalance(month), entries: d.entries.filter((x) => !month || x.month === month).slice(0, 600), staff: db.users.filter((u) => u.role === 'super' || u.role === 'admin').map((u) => ({ id: u.id, name: u.name })), chats };
 });
 route('PUT', '/api/socios/cfg', SUPER, ({ me, body }) => lock(async () => {
   const d = socCfg();
@@ -7685,21 +7697,42 @@ route('PUT', '/api/expenses/:id', SUPER, ({ me, params, body }) => lock(async ()
   saveDb();
   return { ok: true, expense: e };
 }));
-route('POST', '/api/expenses/:id/pay', SUPER, ({ me, params, body }) => lock(async () => {
-  const e = expFind(params.id);
+/** Marca un gasto como pagado y, si Socios está encendido, lo apunta: a medias (split=half), solo de quien paga (solo) o nada (none) */
+function expPay(me, e, body) {
   if (e.done) throw new HttpError(400, 'Este gasto ya está pagado.');
   const at = isDate(body.at) ? body.at : today();
   const amount = body.amount == null || body.amount === '' ? e.amount : expAmount(body.amount);
   e.payments = e.payments || [];
   e.payments.push({ due: e.due, at, amount, method: str(body.method, 30) || e.method || '', ts: new Date().toISOString() });
-  if (socOn() && socCfg().auto.expenses) { const sx = socAdd({ kind: 'gasto', amount, who: socMember(body.payer) ? body.payer : socWho(me), desc: e.name, src: 'gasto', ref: `ex-${e.id}-${e.payments.length}-${Date.now()}`, by: me.name, at: new Date(at + 'T12:00:00').toISOString() }); if (sx) e.payments[e.payments.length - 1].soc = sx.id; }
+  let sx = null;
+  if (socOn() && socCfg().auto.expenses && body.split !== 'none') {
+    const who = socMember(body.payer) ? body.payer : socWho(me);
+    sx = socAdd({ kind: 'gasto', amount, who, desc: e.name, cat: '🧾', src: 'gasto', ref: `ex-${e.id}-${e.payments.length}-${Date.now()}`, by: me.name, at: new Date(at + 'T12:00:00').toISOString(), noSw: true });
+    if (sx) { if (body.split === 'solo') sx.split = [who]; e.payments[e.payments.length - 1].soc = sx.id; const d = socCfg(); if (d.sw.on && d.sw.key && d.sw.group) swPush(sx).catch((er) => { sx.swErr = er.message.slice(0, 140); }); }
+  }
   if (e.payments.length > 240) e.payments = e.payments.slice(-240);
   if (e.every) e.due = expNext(e, e.due); else e.done = true;
   e.sent = {};
-  addLog('ajustes', null, `Gasto pagado: ${e.name} (${money2(amount)})`, me);
+  for (const m of e.askMsgs || []) tg('editMessageReplyMarkup', { chat_id: m.chat, message_id: m.mid, reply_markup: { inline_keyboard: [[{ text: `✅ Pagado${sx ? ' por ' + (socMember(sx.who) || {}).name + (body.split === 'solo' ? ' · solo suyo' : ' · a medias') : ''}`, callback_data: 'gx:done' }]] } }).catch(() => {});
+  delete e.askMsgs;
+  addLog('ajustes', null, `Gasto pagado: ${e.name} (${money2(amount)})${sx ? ` · en Socios: ${(socMember(sx.who) || {}).name}, ${body.split === 'solo' ? 'solo suyo' : 'a medias'}` : ''}`, me);
+  return { expense: e, soc: sx };
+}
+route('POST', '/api/expenses/:id/pay', SUPER, ({ me, params, body }) => lock(async () => {
+  const r = expPay(me, expFind(params.id), body);
   saveDb();
-  return { ok: true, expense: e };
+  return { ok: true, expense: r.expense };
 }));
+/** «Hoy toca pagar X: ¿quién lo paga y cómo?» por Telegram, con botones (solo con Socios encendido) */
+async function expAskTg(e) {
+  const sup = db.users.find((u) => u.role === 'super'); if (!sup || !socOn()) return;
+  const ms = socCfg().members, late = diffDays(e.due, today()) < 0;
+  const text = `🧾 ${late ? 'Sin pagar todavía' : 'Hoy toca pagar'}: ${e.name}\nImporte: ${money2(e.amount)}${late ? `\nEra el ${e.due.split('-').reverse().join('/')}` : ''}\n\n¿Quién lo paga y cómo se apunta en Socios? 👇`;
+  const kb = { inline_keyboard: [ms.map((m) => ({ text: `💶 ${m.name} · a medias`, callback_data: `gx:${e.id}:${m.id}:h` })), ms.map((m) => ({ text: `👤 ${m.name} · solo suyo`, callback_data: `gx:${e.id}:${m.id}:s` })), [{ text: '✅ Pagado, sin apuntar en Socios', callback_data: `gx:${e.id}:-:n` }]] };
+  const msgs = [];
+  for (const chat of userChats(sup)) { try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch { /* sin Telegram */ } }
+  if (msgs.length) { e.askMsgs = msgs; lock(async () => saveDb()).catch(() => {}); }
+}
 route('POST', '/api/expenses/:id/unpay', SUPER, ({ me, params }) => lock(async () => {
   const e = expFind(params.id), p = (e.payments || []).pop();
   if (!p) throw new HttpError(400, 'Este gasto no tiene pagos que deshacer.');
@@ -7741,6 +7774,7 @@ function expDaily() {
   if (soon.length) out.push('🗓️ Próximos pagos:', ...soon.map((e) => line(e, `el ${fd(e.due)} (${diffDays(e.due, t) === 1 ? 'mañana' : 'en ' + diffDays(e.due, t) + ' días'})`)), '');
   out.push('Márcalos como pagados en Panel › Gastos.');
   for (const u of db.users) if (u.role === 'super' && !u.disabled) notifyUser(u, out.join('\n'));
+  if (socOn()) for (const e of [...now, ...late]) expAskTg(e).catch(() => {}); // con botones para apuntarlo en Socios
   lock(async () => saveDb()).catch(() => {});
 }
 
