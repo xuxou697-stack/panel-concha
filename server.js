@@ -6497,12 +6497,20 @@ route('POST', '/api/monitor/stop', '*', async ({ me, body }) => {
   const text = str(body.message, 300) || 'Tu reproducción ha sido detenida.';
   await stopSession(s, x, text); // Emby ha aceptado la orden…
   // …pero hay que mirar si el aparato la ha cumplido
-  await new Promise((r) => setTimeout(r, Number(process.env.STOP_CHECK_MS) || 4000));
-  let still = null;
-  try { still = ((await emby(s, 'GET', '/Sessions')) || []).find((y) => String(y.Id) === String(x.Id) && y.NowPlayingItem && String(y.NowPlayingItem.Id) === String(x.NowPlayingItem.Id)); } catch { /* no se pudo comprobar */ }
+  const wait = () => new Promise((r) => setTimeout(r, Number(process.env.STOP_CHECK_MS) || 4000));
+  const playing = async () => { try { return ((await emby(s, 'GET', '/Sessions')) || []).find((y) => String(y.Id) === String(x.Id) && y.NowPlayingItem && String(y.NowPlayingItem.Id) === String(x.NowPlayingItem.Id)) || null; } catch { return null; } };
+  await wait();
+  let still = await playing(), how = 'orden';
+  // Aparatos que no obedecen (navegador, apps sin control remoto): se corta la conversión en el servidor
+  if (still && s.kind !== 'plex') {
+    const ps = (still.PlayState && still.PlayState.PlaySessionId) || (x.PlayState && x.PlayState.PlaySessionId) || '';
+    if (x.DeviceId) { await emby(s, 'DELETE', `/Videos/ActiveEncodings?DeviceId=${encodeURIComponent(x.DeviceId)}${ps ? '&PlaySessionId=' + encodeURIComponent(ps) : ''}`).catch(() => {}); await wait(); still = await playing(); if (!still) how = 'corte'; }
+  }
+  // Último recurso, si se ha pedido: cerrar la sesión en ese aparato (tendrá que volver a entrar)
+  if (still && body.force && s.kind !== 'plex') { try { await logoutDevice(s, x); await wait(); still = await playing(); if (!still) how = 'sesion'; } catch { /* sin aparato */ } }
   const stopped = !still;
   await lock(async () => { addLog('monitor', c, `${stopped ? 'Reproducción detenida' : 'Orden de detener enviada (el aparato siguió reproduciendo)'}: ${sessionTitle(x)} (${x.DeviceName || 'dispositivo'}, ${s.name})`, me); saveDb(); });
-  return { ok: true, stopped, note: stopped ? 'Emby aceptó la orden y el aparato ha dejado de reproducir.' : `Emby aceptó la orden, pero el aparato sigue reproduciendo.${x.SupportsRemoteControl === false ? ' Este aparato no admite control remoto.' : ' Algunas apps ignoran esta orden.'}` };
+  return { ok: true, stopped, note: stopped ? (how === 'sesion' ? 'Parado: se ha cerrado la sesión en ese aparato (tendrá que volver a entrar con su usuario).' : how === 'corte' ? 'Parado: el aparato no obedecía, así que se ha cortado la conversión en el servidor.' : 'Emby aceptó la orden y el aparato ha dejado de reproducir.') : `Emby aceptó la orden, pero el aparato sigue reproduciendo.${x.SupportsRemoteControl === false ? ' Este aparato no admite control remoto.' : ' Algunas apps ignoran esta orden.'}` };
 });
 route('POST', '/api/monitor/message', '*', async ({ me, body }) => {
   const { s, x, c } = await findSession(me, body);
