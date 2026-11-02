@@ -2426,6 +2426,7 @@ dialog form h2:empty{display:none}.mlist3{gap:16px}
 .tc-w{color:var(--muted);font-size:12.5px}.tc-r.xr.late .tc-w{color:#ef4444}.tc-cat{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:6px}
 .tc-xacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0 4px}
 @media (max-width:420px){.tc-tabs.four button{font-size:12.5px}}
+.tc-iam{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}.tc-iam>span{color:var(--muted);font-size:14px}.tc-iam button{border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-weight:700;padding:6px 14px;border-radius:99px;cursor:pointer}.tc-iam button.on{background:var(--brand);border-color:var(--brand);color:#fff}.tc-iam small{flex-basis:100%;color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
@@ -7107,6 +7108,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 216, d: '2026-11-02', items: ['🤝 Socios › Saldos: botón «Tú eres: Xuxo / Angus» para decir quién eres y que «Debes» o «Te debe» salga desde tu lado'] },
   { v: 215, d: '2026-11-02', items: ['🤝 Socios: nueva opción «Los dos» en «Pagado por» (y en «Recibido por»): para lo que habéis pagado entre los dos, cada uno su parte. Cuenta como gasto pero no cambia lo que os debéis. También en el botón de Telegram de los gastos'] },
   { v: 214, d: '2026-11-01', items: ['🗓️ Socios unido a Gastos: nueva pestaña «Gastos» con lo que toca pagar, lo próximo y lo pagado. El día que toca pagar te llega a Telegram «Hoy toca pagar Servidores 380 €» con botones: quién lo paga y si va a medias, solo suyo o sin apuntar. Se puede cambiar después con ✏️', '🤝 Socios con formato Tricount: pestañas Movimientos, Saldos y Fotos. Arriba «Cobrado por ti» y «Total del mes»; en Saldos, en grande «Debes X € a Angus» (o «Angus te debe…») y el saldo de cada uno en verde o rojo. Siguen los botones ✏️ Modificar y 🗑️ Eliminar en cada movimiento'] },
   { v: 213, d: '2026-11-01', items: ['⏹️ Monitor: los botones de cada reproducción (aviso, mensaje y ✕ detener) siempre se ven, también en el móvil. Si el aparato no obedece a «Detener» (navegador, algunas apps), el panel corta la conversión en el servidor y, si hace falta, cierra su sesión en ese aparato'], team: ['⏹️ Monitor: el botón ✕ para detener siempre se ve en el móvil, y para también los aparatos que no obedecían (navegador, algunas apps)'] },
@@ -7684,7 +7686,8 @@ function vSocios() {
     : `<div class="tc-big ok"><span class="tc-bi">✅</span><div><b>Estáis en paz</b><small>Nadie le debe nada a nadie${d.month ? ' este mes' : ''}</small></div></div>`;
   const people = b.people.map((p) => { const v = -p.saldo; return `<details class="tc-p"><summary><span class="tc-av">${esc(p.name.slice(0, 1))}</span><span class="tc-pn"><b>${esc(p.name)}</b>${p.id === mine ? '<small>Yo</small>' : ''}</span><b class="tc-pv ${v > 0.009 ? 'pos' : v < -0.009 ? 'neg' : ''}">${v > 0.009 ? '+' : ''}${eur(v)}</b></summary>
     <div class="tc-pd"><div><span>Ha cobrado</span><b>${eur(p.cobros)}</b></div>${p.gastos ? `<div><span>Ha pagado gastos</span><b>−${eur(p.gastos)}</b></div>` : ''}${p.enviado ? `<div><span>Ha pasado al otro</span><b>−${eur(p.enviado)}</b></div>` : ''}${p.recibido ? `<div><span>Le han pasado</span><b>+${eur(p.recibido)}</b></div>` : ''}<div><span>Tiene ahora</span><b>${eur(p.tiene)}</b></div><div><span>Le toca</span><b>${eur(p.toca)}</b></div></div></details>`; }).join('');
-  const salTab = `${peace}<h3 class="tc-day">Saldos</h3><div class="tc-ps">${people}</div>
+  const iam = `<div class="tc-iam"><span>Tú eres:</span>${cfg.members.map((m) => `<button type="button" class="${m.id === mine ? 'on' : ''}" data-act="so-iam" data-k="${m.id}">${m.id === mine ? '✓ ' : ''}${esc(m.name)}</button>`).join('')}<small>Así sale «Debes» o «Te debe» desde tu lado.</small></div>`;
+  const salTab = `${iam}${peace}<h3 class="tc-day">Saldos</h3><div class="tc-ps">${people}</div>
     <p class="tc-note">➕ en verde: le deben dinero · ➖ en rojo: tiene dinero que no es suyo. Toca un nombre para ver las cuentas.</p>
     ${sw ? `<p class="small muted">🔗 Copiando en Splitwise${cfg.sw.groupName ? ` (grupo «${esc(cfg.sw.groupName)}»)` : ''}.${d.entries.some((x) => !x.sw) ? ` <button class="linkbtn" data-act="so-swretry">Reenviar los que faltan</button>` : ''}</p>` : ''}`;
   // Fotos
@@ -9819,6 +9822,8 @@ document.addEventListener('click', (e) => {
   if (a === 'so-on') { const d = S.so.data, c = d.cfg, def = c.members.every((m) => /^(Yo|Socio)$/.test(m.name));
     const body = def ? { on: true, members: [{ id: c.members[0].id, name: 'Xux', users: d.staff.length ? [d.staff[0].id] : [], chats: d.chats[0] ? [d.chats[0].id] : [] }, { id: c.members[1].id, name: 'Angus', users: [], chats: d.chats[1] ? [d.chats[1].id] : [] }], online: c.members[0].id } : { on: true };
     api('PUT', '/api/socios/cfg', body).then(() => { toast('🤝 Socios encendido'); S.so.data = null; loadSo(); }, (x) => toast(x.message, true)); return; }
+  if (a === 'so-iam') { const k = el.dataset.k, m = S.so.data.cfg.members.find((x) => x.id === k); if (!m || k === S.so.data.mine) return;
+    dConfirm(`¿Tú eres ${esc(m.name)}?`, `Desde ahora «Yo» será <b>${esc(m.name)}</b>: verás «Debes» o «Te debe» desde su lado y lo que apuntes tú irá a su nombre. Tu Telegram también pasa a ser el de ${esc(m.name)} (para los pagos que confirmes desde ahí). Las cuentas no cambian.`, `Sí, soy ${m.name}`, async () => { await api('PUT', '/api/socios/me', { member: k, chat: true }); S.so.data = null; await loadSo(); }, `Hecho: eres ${m.name}`); return; }
   if (a === 'so-tab') { S.so.tab = el.dataset.k; render(); return; }
   if (a === 'so-xpay') { soExpPay(+el.dataset.id); return; }
   if (a === 'so-cfg') { soCfgDlg(); return; }

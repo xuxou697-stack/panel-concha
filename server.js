@@ -7578,6 +7578,19 @@ route('DELETE', '/api/socios/entries/:id', SUPER, ({ me, params }) => lock(async
   addLog('ajustes', null, `Socios: borrado ${x.kind} de ${money2(x.amount)} (${x.desc})`, me);
   saveDb(); return { ok: true };
 }));
+/** «Yo soy…»: dice qué socio es el usuario que está usando el panel (para «Yo», «Debes…» y lo que se apunta a su nombre) */
+route('PUT', '/api/socios/me', SUPER, ({ me, body }) => lock(async () => {
+  const d = socCfg(), m = socMember(body.member); if (!m) throw new HttpError(400, 'Elige quién eres.');
+  for (const x of d.members) x.users = (x.users || []).filter((id) => id !== me.id);
+  m.users = [...(m.users || []), me.id];
+  if (body.chat && me.tgChat) { // tu Telegram pasa a ser tuyo; si eráis dos, los otros Telegram que tenías tú pasan al otro socio
+    const c = String(me.tgChat), moved = (m.chats || []).filter((v) => v !== c), others = d.members.filter((x) => x !== m);
+    for (const x of d.members) x.chats = (x.chats || []).filter((v) => v !== c);
+    m.chats = [c];
+    if (others.length === 1) others[0].chats = [...new Set([...(others[0].chats || []), ...moved])];
+  }
+  addLog('ajustes', null, `Socios: ${me.name} es ${m.name}`, me); saveDb(); return { ok: true };
+}));
 route('PUT', '/api/socios/entries/:id/who', SUPER, ({ me, params, body }) => lock(async () => {
   const x = socCfg().entries.find((e) => e.id === params.id); if (!x) throw new HttpError(404, 'Ese movimiento ya no existe.');
   socSetWho(x, body.who, me.name); saveDb(); return { ok: true };
