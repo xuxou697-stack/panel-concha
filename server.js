@@ -3217,7 +3217,7 @@ async function botCallback(cq) {
     let r;
     try { r = await lock(async () => { const x = expPay(sup, e, { payer: mid, split: how === 's' ? 'solo' : how === 'n' ? 'none' : 'half' }); saveDb(); return x; }); }
     catch (er) { return tg('sendMessage', { chat_id: chat, text: '⚠️ ' + er.message }).catch(() => {}); }
-    return tg('sendMessage', { chat_id: chat, text: r.soc ? `📒 Apuntado en Socios: ${e.name} · ${money2(r.soc.amount)} pagado por ${(socMember(r.soc.who) || {}).name} (${how === 's' ? 'solo suyo' : 'a medias'}).
+    return tg('sendMessage', { chat_id: chat, text: r.soc ? `📒 Apuntado en Socios: ${e.name} · ${money2(r.soc.amount)} ${r.soc.who === '*' ? 'pagado entre los dos (cada uno su parte)' : `pagado por ${(socMember(r.soc.who) || {}).name} (${how === 's' ? 'solo suyo' : 'a medias'})`}.
 Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como pagado.` }).catch(() => {});
   }
   if (data.startsWith('sk:')) { // «¿Quién lo ha cobrado?» de Socios
@@ -7416,7 +7416,7 @@ Toca tu nombre y se apunta en Socios 👇`;
 }
 /** Dice quién cobró un movimiento (desde el panel o desde Telegram) */
 function socSetWho(x, who, by) {
-  if (!socMember(who)) throw new HttpError(400, 'Elige quién.');
+  if (!socMember(who) && !(who === '*' && x.kind !== 'pago')) throw new HttpError(400, 'Elige quién.');
   const was = x.ask; x.who = who; delete x.ask; x.whoBy = by;
   for (const m of x.askMsgs || []) tg('editMessageReplyMarkup', { chat_id: m.chat, message_id: m.mid, reply_markup: { inline_keyboard: [[{ text: `✅ Lo cobró ${socMember(who).name}`, callback_data: 'sk:done' }]] } }).catch(() => {});
   delete x.askMsgs;
@@ -7430,8 +7430,13 @@ function socBalance(month) {
   const by = Object.fromEntries(d.members.map((m) => [m.id, { id: m.id, name: m.name, cobros: 0, gastos: 0, enviado: 0, recibido: 0, toca: 0, tiene: 0 }]));
   let cobros = 0, gastos = 0;
   for (const x of list) {
-    const m = by[x.who]; if (!m) continue;
     const c = Math.round(x.amount * 100);
+    if (x.who === '*' && (x.kind === 'gasto' || x.kind === 'cobro')) { // «entre los dos»: cada uno ha puesto (o se ha quedado) su parte
+      const g = x.kind === 'gasto'; if (g) gastos += c; else cobros += c;
+      for (const [id, v] of Object.entries(socParts(x))) if (by[id]) { if (g) { by[id].gastos += v; by[id].tiene -= v; by[id].toca -= v; } else { by[id].cobros += v; by[id].tiene += v; by[id].toca += v; } }
+      continue;
+    }
+    const m = by[x.who]; if (!m) continue;
     if (x.kind === 'cobro') { m.cobros += c; m.tiene += c; cobros += c; for (const [id, v] of Object.entries(socParts(x))) if (by[id]) by[id].toca += v; }
     else if (x.kind === 'gasto') { m.gastos += c; m.tiene -= c; gastos += c; for (const [id, v] of Object.entries(socParts(x))) if (by[id]) by[id].toca -= v; }
     else if (x.kind === 'pago' && by[x.to]) { m.enviado += c; m.tiene -= c; by[x.to].recibido += c; by[x.to].tiene += c; }
@@ -7471,7 +7476,8 @@ function swForm(x) {
   if (ids.some((v) => !v)) throw new Error('Falta decir quién es cada socio en Splitwise.');
   const cents = Math.round(x.amount * 100), parts = socParts(x);
   let cost, rows; // rows[i] = [pagado, debe] en céntimos
-  if (x.kind === 'gasto') { cost = cents; rows = d.members.map((m) => [m.id === x.who ? cents : 0, parts[m.id] || 0]); }
+  if (x.who === '*') { if (x.kind !== 'gasto') return { form: {}, empty: true }; cost = cents; rows = d.members.map((m) => [parts[m.id] || 0, parts[m.id] || 0]); }
+  else if (x.kind === 'gasto') { cost = cents; rows = d.members.map((m) => [m.id === x.who ? cents : 0, parts[m.id] || 0]); }
   else if (x.kind === 'pago') { cost = cents; rows = d.members.map((m) => [m.id === x.who ? cents : 0, m.id === x.to ? cents : 0]); }
   else { // ingreso: el que lo recibe le debe su parte a cada uno de los demás
     cost = cents - (parts[x.who] || 0);
@@ -7534,7 +7540,7 @@ route('PUT', '/api/socios/cfg', SUPER, ({ me, body }) => lock(async () => {
 function socReadEntry(body, x) {
   const kind = x ? x.kind : ['cobro', 'gasto', 'pago'].includes(body.kind) ? body.kind : null; if (!kind) throw new HttpError(400, 'Elige gasto, ingreso o transferencia.');
   const who = body.who !== undefined ? body.who : x && x.who, to = body.to !== undefined ? body.to : x && x.to;
-  if (!socMember(who) || (kind === 'pago' && (!socMember(to) || to === who))) throw new HttpError(400, 'Elige quién.');
+  if (!(socMember(who) || (who === '*' && kind !== 'pago')) || (kind === 'pago' && (!socMember(to) || to === who))) throw new HttpError(400, 'Elige quién.');
   const amount = body.amount !== undefined ? Number(String(body.amount).replace(',', '.')) : x.amount; if (!(amount > 0 && amount < 1e7)) throw new HttpError(400, 'Escribe un importe válido.');
   const ids = socCfg().members.map((m) => m.id), split = Array.isArray(body.split) ? ids.filter((id) => body.split.includes(id)) : x ? x.split : undefined;
   if (Array.isArray(body.split) && !split.length) throw new HttpError(400, 'Marca al menos a una persona en «Dividir».');
@@ -7706,16 +7712,16 @@ function expPay(me, e, body) {
   e.payments.push({ due: e.due, at, amount, method: str(body.method, 30) || e.method || '', ts: new Date().toISOString() });
   let sx = null;
   if (socOn() && socCfg().auto.expenses && body.split !== 'none') {
-    const who = socMember(body.payer) ? body.payer : socWho(me);
+    const who = socMember(body.payer) || body.payer === '*' ? body.payer : socWho(me);
     sx = socAdd({ kind: 'gasto', amount, who, desc: e.name, cat: '🧾', src: 'gasto', ref: `ex-${e.id}-${e.payments.length}-${Date.now()}`, by: me.name, at: new Date(at + 'T12:00:00').toISOString(), noSw: true });
-    if (sx) { if (body.split === 'solo') sx.split = [who]; e.payments[e.payments.length - 1].soc = sx.id; const d = socCfg(); if (d.sw.on && d.sw.key && d.sw.group) swPush(sx).catch((er) => { sx.swErr = er.message.slice(0, 140); }); }
+    if (sx) { if (body.split === 'solo' && who !== '*') sx.split = [who]; e.payments[e.payments.length - 1].soc = sx.id; const d = socCfg(); if (d.sw.on && d.sw.key && d.sw.group) swPush(sx).catch((er) => { sx.swErr = er.message.slice(0, 140); }); }
   }
   if (e.payments.length > 240) e.payments = e.payments.slice(-240);
   if (e.every) e.due = expNext(e, e.due); else e.done = true;
   e.sent = {};
-  for (const m of e.askMsgs || []) tg('editMessageReplyMarkup', { chat_id: m.chat, message_id: m.mid, reply_markup: { inline_keyboard: [[{ text: `✅ Pagado${sx ? ' por ' + (socMember(sx.who) || {}).name + (body.split === 'solo' ? ' · solo suyo' : ' · a medias') : ''}`, callback_data: 'gx:done' }]] } }).catch(() => {});
+  for (const m of e.askMsgs || []) tg('editMessageReplyMarkup', { chat_id: m.chat, message_id: m.mid, reply_markup: { inline_keyboard: [[{ text: `✅ Pagado${sx ? (sx.who === '*' ? ' entre los dos' : ' por ' + (socMember(sx.who) || {}).name + (body.split === 'solo' ? ' · solo suyo' : ' · a medias')) : ''}`, callback_data: 'gx:done' }]] } }).catch(() => {});
   delete e.askMsgs;
-  addLog('ajustes', null, `Gasto pagado: ${e.name} (${money2(amount)})${sx ? ` · en Socios: ${(socMember(sx.who) || {}).name}, ${body.split === 'solo' ? 'solo suyo' : 'a medias'}` : ''}`, me);
+  addLog('ajustes', null, `Gasto pagado: ${e.name} (${money2(amount)})${sx ? ` · en Socios: ${sx.who === '*' ? 'entre los dos' : `${(socMember(sx.who) || {}).name}, ${body.split === 'solo' ? 'solo suyo' : 'a medias'}`}` : ''}`, me);
   return { expense: e, soc: sx };
 }
 route('POST', '/api/expenses/:id/pay', SUPER, ({ me, params, body }) => lock(async () => {
@@ -7728,7 +7734,7 @@ async function expAskTg(e) {
   const sup = db.users.find((u) => u.role === 'super'); if (!sup || !socOn()) return;
   const ms = socCfg().members, late = diffDays(e.due, today()) < 0;
   const text = `🧾 ${late ? 'Sin pagar todavía' : 'Hoy toca pagar'}: ${e.name}\nImporte: ${money2(e.amount)}${late ? `\nEra el ${e.due.split('-').reverse().join('/')}` : ''}\n\n¿Quién lo paga y cómo se apunta en Socios? 👇`;
-  const kb = { inline_keyboard: [ms.map((m) => ({ text: `💶 ${m.name} · a medias`, callback_data: `gx:${e.id}:${m.id}:h` })), ms.map((m) => ({ text: `👤 ${m.name} · solo suyo`, callback_data: `gx:${e.id}:${m.id}:s` })), [{ text: '✅ Pagado, sin apuntar en Socios', callback_data: `gx:${e.id}:-:n` }]] };
+  const kb = { inline_keyboard: [ms.map((m) => ({ text: `💶 ${m.name} · a medias`, callback_data: `gx:${e.id}:${m.id}:h` })), ms.map((m) => ({ text: `👤 ${m.name} · solo suyo`, callback_data: `gx:${e.id}:${m.id}:s` })), [{ text: `🤝 Pagado entre ${ms.length === 2 ? 'los dos' : 'todos'} (cada uno su parte)`, callback_data: `gx:${e.id}:*:h` }], [{ text: '✅ Pagado, sin apuntar en Socios', callback_data: `gx:${e.id}:-:n` }]] };
   const msgs = [];
   for (const chat of userChats(sup)) { try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch { /* sin Telegram */ } }
   if (msgs.length) { e.askMsgs = msgs; lock(async () => saveDb()).catch(() => {}); }

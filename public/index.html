@@ -7107,6 +7107,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 215, d: '2026-11-02', items: ['🤝 Socios: nueva opción «Los dos» en «Pagado por» (y en «Recibido por»): para lo que habéis pagado entre los dos, cada uno su parte. Cuenta como gasto pero no cambia lo que os debéis. También en el botón de Telegram de los gastos'] },
   { v: 214, d: '2026-11-01', items: ['🗓️ Socios unido a Gastos: nueva pestaña «Gastos» con lo que toca pagar, lo próximo y lo pagado. El día que toca pagar te llega a Telegram «Hoy toca pagar Servidores 380 €» con botones: quién lo paga y si va a medias, solo suyo o sin apuntar. Se puede cambiar después con ✏️', '🤝 Socios con formato Tricount: pestañas Movimientos, Saldos y Fotos. Arriba «Cobrado por ti» y «Total del mes»; en Saldos, en grande «Debes X € a Angus» (o «Angus te debe…») y el saldo de cada uno en verde o rojo. Siguen los botones ✏️ Modificar y 🗑️ Eliminar en cada movimiento'] },
   { v: 213, d: '2026-11-01', items: ['⏹️ Monitor: los botones de cada reproducción (aviso, mensaje y ✕ detener) siempre se ven, también en el móvil. Si el aparato no obedece a «Detener» (navegador, algunas apps), el panel corta la conversión en el servidor y, si hace falta, cierra su sesión en ese aparato'], team: ['⏹️ Monitor: el botón ✕ para detener siempre se ve en el móvil, y para también los aparatos que no obedecían (navegador, algunas apps)'] },
   { v: 212, d: '2026-10-31', items: ['🔍 Buscador en la Papelera, en Demos vencidas y en Seguimiento de demos: por nombre, usuario, email, teléfono, Telegram o vendedor'], team: ['🔍 Buscador en la Papelera, en Demos vencidas y en Seguimiento de demos'] },
@@ -7615,8 +7616,8 @@ async function soExpPay(id) {
   const opt = (v, t, sm, on) => `<label class="mg-opt"><input type="radio" name="split" value="${v}"${on ? ' checked' : ''}><span><b>${t}</b><small>${sm}</small></span></label>`;
   openDlg({ title: `🧾 ${e.name}`, submit: 'Apuntar pago',
     body: `<label class="sx-amt"><input name="amount" type="text" inputmode="decimal" value="${String(e.amount).replace('.', ',')}"><b>€</b></label>
-      ${so.length ? `<div class="sx-lbl">¿Quién lo paga?</div><div class="sx-pills">${so.map(pill).join('')}</div>
-      <div class="sx-lbl">¿Cómo se apunta en Socios?</div><div class="mg-opts">${opt('half', '⚖️ A medias', 'cada uno pone la mitad', true)}${opt('solo', '👤 Solo de quien paga', 'es solo suyo, no se reparte')}${opt('none', '🚫 No apuntar', 'solo marcarlo como pagado')}</div>` : ''}
+      ${so.length ? `<div class="sx-lbl">¿Quién lo paga?</div><div class="sx-pills">${so.map(pill).join('')}<label class="sx-pill"><input type="radio" name="payer" value="*"><span><i>🤝</i>${so.length > 2 ? 'Todos' : 'Los dos'}</span></label></div>
+      <div class="sx-lbl">¿Cómo se apunta en Socios?</div><div class="mg-opts">${opt('half', '⚖️ A medias', 'cada uno pone la mitad (si lo pagó uno, el otro le debe su parte)', true)}${opt('solo', '👤 Solo de quien paga', 'es solo suyo, no se reparte')}${opt('none', '🚫 No apuntar', 'solo marcarlo como pagado')}</div>` : ''}
       <div class="sx-lbl">Cuándo</div><div class="sx-when"><input type="date" name="at" value="${S.gx.data.today}"></div>
       <p class="small muted" style="margin-top:8px">${e.every ? `El siguiente pago quedará para el <b>${fmt(gxNext(e, e.due))}</b>.` : 'Es de una sola vez.'} Luego se puede cambiar en Socios con ✏️.</p>`,
     onSubmit: async (fd) => { await api('POST', `/api/expenses/${id}/pay`, { amount: String(fd.get('amount')).replace(',', '.'), at: fd.get('at'), payer: fd.get('payer') || undefined, split: fd.get('split') || 'half' }); await loadGx(); S.so.data = null; loadSo(); return `${e.name}: apuntado`; } });
@@ -7627,7 +7628,7 @@ async function loadSo() {
   S.so.busy = false;
   if (S.view === 'socios') render();
 }
-const soName = (id) => ((S.so.data && S.so.data.cfg.members.find((m) => m.id === id)) || {}).name || '?';
+const soName = (id) => (id === '*' ? ((S.so.data && S.so.data.cfg.members.length > 2) ? 'Todos' : 'Los dos') : ((S.so.data && S.so.data.cfg.members.find((m) => m.id === id)) || {}).name || '?');
 const SO_SRC = { cuenta: ['👤', 'Alta o renovación a mano'], cliente: ['💳', 'Pago de cliente'], creditos: ['🪙', 'Créditos online'], recarga: ['🔋', 'Recarga de vendedor'], gasto: ['🧾', 'Gasto'], manual: ['✍️', 'Apuntado a mano'] };
 const soMonthTxt = (m) => { if (!m) return 'Todo'; const t = new Date(m + '-15').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(' de ', ' '); return t.charAt(0).toUpperCase() + t.slice(1); };
 function vSocios() {
@@ -7664,7 +7665,7 @@ function vSocios() {
     const [ico0, src] = x.kind === 'pago' ? ['🔁', 'Entre socios'] : SO_SRC[x.src] || SO_SRC.manual, ico = x.cat || (x.kind === 'cobro' ? '💰' : ico0);
     const only = Array.isArray(x.split) && x.split.length && x.kind !== 'pago' ? ` · solo ${x.split.map(soName).map(esc).join(' y ')}` : '';
     if (x.ask) return `<div class="tc-r ask"><span class="tc-ic">❓</span><div class="tc-t"><b>${esc(x.desc || src)}</b><small>¿Quién lo ha cobrado?</small><span class="so-askb">${cfg.members.map((m) => `<button type="button" class="sx-mini" data-act="so-who" data-id="${x.id}" data-k="${m.id}"><i>${esc(m.name.slice(0, 1))}</i>${esc(m.name)}</button>`).join('')}</span></div><div class="tc-a"><b>${eur(x.amount)}</b>${tools(x)}</div></div>`;
-    const who = x.kind === 'pago' ? `<b>${esc(soName(x.who))}</b> → <b>${esc(soName(x.to))}</b>` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`;
+    const who = x.kind === 'pago' ? `<b>${esc(soName(x.who))}</b> → <b>${esc(soName(x.to))}</b>` : x.who === '*' ? `${x.kind === 'gasto' ? 'Pagado' : 'Cobrado'} <b>entre ${S.so.data.cfg.members.length > 2 ? 'todos' : 'los dos'}</b>` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`;
     return `<div class="tc-r ${x.kind}"><button type="button" class="tc-hit" data-act="so-more" data-id="${x.id}" aria-label="Modificar"></button><span class="tc-ic">${ico}</span>
       <div class="tc-t"><b>${esc(x.desc || src)}${x.photo ? ' 📎' : ''}</b><small>${who}${only}</small></div>
       <div class="tc-a"><b>${x.kind === 'gasto' ? '−' : x.kind === 'pago' ? '' : '+'}${eur(x.amount)}</b>${tools(x)}</div></div>`;
@@ -7769,7 +7770,7 @@ function soAddDlg(kind, pre, x) {
     <input type="hidden" name="cat" value="${esc(x && x.cat ? x.cat : '')}">
     <div class="sx-cats" hidden>${SO_CATS.map(([e, t]) => `<button type="button" data-sx="pick" data-e="${e}" class="${x && x.cat === e ? 'on' : ''}"><span>${e}</span><small>${t}</small></button>`).join('')}</div>
     <div class="sx-photo"${x && x.photo ? '' : ' hidden'}>${x && x.photo ? `<img src="/api/socios/photo/${x.id}?t=${Date.now()}" alt="Ticket">` : '<img alt="Ticket">'}<button type="button" data-sx="nophoto">Quitar foto</button></div>
-    <div class="sx-lbl" data-l="who">${SO_KIND[k0][2]}</div><div class="sx-pills">${ms.map((m) => pill('who', m, m.id === who0)).join('')}</div>
+    <div class="sx-lbl" data-l="who">${SO_KIND[k0][2]}</div><div class="sx-pills">${ms.map((m) => pill('who', m, m.id === who0)).join('')}<label class="sx-pill sx-both"${k0 === 'pago' ? ' hidden' : ''}><input type="radio" name="who" value="*"${who0 === '*' ? ' checked' : ''}><span><i>🤝</i>${ms.length > 2 ? 'Todos' : 'Los dos'}</span></label></div>
     <div class="sx-to"${k0 === 'pago' ? '' : ' hidden'}><div class="sx-lbl">Para</div><div class="sx-pills">${ms.map((m) => pill('to', m, m.id === to0)).join('')}</div></div>
     <div class="sx-lbl">Cuándo</div><div class="sx-when"><input type="date" name="date" value="${x ? x.at.slice(0, 10) : today0}" max="${today0}"><button type="button" data-sx="day" data-d="${today0}">Hoy</button><button type="button" data-sx="day" data-d="${yest}">Ayer</button></div>
     <div class="sx-split"${k0 === 'pago' ? ' hidden' : ''}><div class="sx-lbl sx-row"><span>Dividir a partes iguales entre</span><button type="button" data-sx="all">Todos</button></div>
@@ -7785,7 +7786,8 @@ function soAddDlg(kind, pre, x) {
       const nm = (id) => (ms.find((m) => m.id === id) || {}).name || '';
       const paint = () => {
         const kd = f.kind.value, sp = [...f.querySelectorAll('[name=split]:checked')].map((i) => i.value), tot = cents(), who = (f.querySelector('[name=who]:checked') || {}).value;
-        $$('[data-l=who]').textContent = SO_KIND[kd][2]; $$('.sx-to').hidden = kd !== 'pago'; $$('.sx-split').hidden = kd === 'pago';
+        $$('[data-l=who]').textContent = SO_KIND[kd][2]; $$('.sx-to').hidden = kd !== 'pago'; $$('.sx-split').hidden = kd === 'pago'; $$('.sx-both').hidden = kd === 'pago';
+        if (kd === 'pago' && who === '*') { f.querySelector('[name=who]').checked = true; }
         f.querySelectorAll('.sx-seg span').forEach((s2) => s2.parentNode.classList.toggle('on', s2.previousElementSibling.checked));
         const base = sp.length ? Math.floor(tot / sp.length) : 0; let extra = tot - base * sp.length;
         ms.forEach((m) => { const e = f.querySelector(`[data-part="${m.id}"]`); const on = sp.includes(m.id); const v = on ? base + (extra-- > 0 ? 1 : 0) : 0; e.textContent = soEur(v); e.closest('.sx-p').classList.toggle('off', !on); });
@@ -7794,6 +7796,7 @@ function soAddDlg(kind, pre, x) {
         if (tot) {
           if (kd === 'pago') { const to = (f.querySelector('[name=to]:checked') || {}).value; t = to && to !== who ? `🔁 <b>${esc(nm(who))}</b> le pasa <b>${soEur(tot)}</b> a <b>${esc(nm(to))}</b>` : '⚠️ Elige dos personas distintas'; }
           else if (!sp.length) t = '⚠️ Marca al menos a una persona';
+          else if (who === '*') t = kd === 'gasto' ? '🤝 Cada uno ha puesto su parte: <b>no cambia lo que os debéis</b> (cuenta como gasto en el beneficio)' : '🤝 Cada uno se ha quedado su parte: <b>no cambia lo que os debéis</b>';
           else { const mine = sp.includes(who) ? Math.floor(tot / sp.length) : 0, rest = tot - mine;
             t = kd === 'gasto' ? (rest ? `💡 Los demás le deberán <b>${soEur(rest)}</b> a <b>${esc(nm(who))}</b> por este gasto` : `💡 Es solo de ${esc(nm(who))}: no cambia las cuentas`)
               : (rest ? `💡 De estos ${soEur(tot)}, <b>${soEur(rest)}</b> son ${(() => { const o = sp.filter((id) => id !== who); return o.length === 1 ? 'de <b>' + esc(nm(o[0])) + '</b>' : 'de los demás'; })()}${mine ? ` y ${esc(nm(who))} se queda ${soEur(mine)}` : ''}` : `💡 Es todo para ${esc(nm(who))}: no cambia las cuentas`); }
