@@ -2106,6 +2106,35 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .onl{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#19c37d;padding:2px 9px;border-radius:20px;background:color-mix(in srgb,#19c37d 14%,transparent);vertical-align:2px}
 .onl::before{content:"";width:8px;height:8px;border-radius:50%;background:#19c37d;box-shadow:0 0 0 0 rgba(25,195,125,.6);animation:onp 1.8s infinite}
 @keyframes onp{0%{box-shadow:0 0 0 0 rgba(25,195,125,.55)}70%{box-shadow:0 0 0 7px rgba(25,195,125,0)}100%{box-shadow:0 0 0 0 rgba(25,195,125,0)}}
+/* ✨ Vendedores con estilo nuevo (colores y cristal) */
+.vxt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 16px}
+@media (min-width:900px){.vxt{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.vxt-i{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:2px;padding:12px 12px 11px;border-radius:18px;min-width:0;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--a) 26%,transparent),color-mix(in srgb,var(--b) 10%,transparent) 70%),var(--surface);
+  border:1px solid color-mix(in srgb,var(--a) 45%,var(--line));box-shadow:0 8px 24px -14px color-mix(in srgb,var(--a) 80%,transparent)}
+.vxt-i::after{content:"";position:absolute;right:-26px;top:-26px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--b) 45%,transparent),transparent 70%);pointer-events:none}
+.vxt-ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:linear-gradient(135deg,var(--a),var(--b));box-shadow:0 4px 12px -4px var(--a);margin-bottom:6px}
+.vxt-i b{font-size:26px;font-weight:850;line-height:1.05;letter-spacing:-.5px;background:linear-gradient(90deg,var(--text),color-mix(in srgb,var(--a) 70%,var(--text)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.vxt-i small{font-size:12px;color:var(--muted);line-height:1.25}
+.vx .onstrip{position:relative;background:linear-gradient(120deg,color-mix(in srgb,#19c37d 14%,transparent),color-mix(in srgb,#6366f1 10%,transparent)),var(--surface);border:1px solid color-mix(in srgb,#19c37d 40%,var(--line));border-radius:18px;box-shadow:0 10px 30px -18px #19c37d}
+.vx .onp{background:color-mix(in srgb,#19c37d 10%,var(--raised));box-shadow:0 0 0 3px color-mix(in srgb,#19c37d 10%,transparent)}
+.vx .onp i{box-shadow:0 0 12px -2px #19c37d}
+.vx .vtools #uq{min-height:46px;border-radius:16px;padding-left:44px;border:1px solid color-mix(in srgb,#8b5cf6 35%,var(--line));
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23a78bfa' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='9' cy='9' r='6'/%3E%3Cpath d='m14 14 4 4'/%3E%3C/svg%3E") 15px 50%/18px no-repeat,linear-gradient(120deg,color-mix(in srgb,#8b5cf6 10%,transparent),color-mix(in srgb,#06b6d4 8%,transparent)),var(--surface)}
+.vx .vtools #uq:focus{outline:none;border-color:#8b5cf6;box-shadow:0 0 0 4px color-mix(in srgb,#8b5cf6 22%,transparent)}
+.vx .vc2-st>div{position:relative;overflow:hidden;border:1px solid var(--line)}
+.vx .vc2-st>div:nth-child(1){background:linear-gradient(145deg,color-mix(in srgb,#f59e0b 22%,transparent),transparent 75%),var(--raised);border-color:color-mix(in srgb,#f59e0b 40%,var(--line))}
+.vx .vc2-st>div:nth-child(1) b{color:#fbbf24}
+.vx .vc2-st>div:nth-child(2){background:linear-gradient(145deg,color-mix(in srgb,#38bdf8 22%,transparent),transparent 75%),var(--raised);border-color:color-mix(in srgb,#38bdf8 40%,var(--line))}
+.vx .vc2-st>div:nth-child(2) b{color:#38bdf8}
+.vx .vc2-st>div:nth-child(3){background:linear-gradient(145deg,color-mix(in srgb,#22c55e 20%,transparent),transparent 75%),var(--raised);border-color:color-mix(in srgb,#22c55e 35%,var(--line))}
+.vx .vc2-st>div:nth-child(3) b:not(.mid):not(.low){color:#4ade80}
+.vx .vc2-st small::before{margin-right:4px}
+.vx .vc2-st>div:nth-child(1) small::before{content:"🪙"}.vx .vc2-st>div:nth-child(2) small::before{content:"👥"}.vx .vc2-st>div:nth-child(3) small::before{content:"🔁"}
+.vx .vc2 footer .btn.primary{background:linear-gradient(135deg,#f59e0b,#ec4899);border:0;color:#fff;box-shadow:0 6px 18px -8px #ec4899;font-weight:800}
+.vx .vc2 footer .vib{border-radius:12px;border-color:color-mix(in srgb,var(--k) 40%,var(--line));background:color-mix(in srgb,var(--k) 14%,var(--raised));color:var(--k)}
+.vx .vc2 footer .vib:hover{background:color-mix(in srgb,var(--k) 26%,var(--raised));border-color:var(--k);color:var(--k);transform:translateY(-1px)}
+.vx .vib[data-act=user-stats]{--k:#a78bfa}.vx .vib[data-act=user-ledger]{--k:#38bdf8}.vx .vib[data-act=user-edit]{--k:#2dd4bf}.vx .vib[data-act=user-power]{--k:#fb7185}.vx .vib[data-act=user-power]:not(.warn){--k:#4ade80}.vx .vib[data-act=user-more]{--k:#94a3b8}
 .onstrip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
 .onp{display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:var(--raised);color:var(--text);font-size:13.5px}
 .onp i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px;color:#fff;background:linear-gradient(135deg,#19c37d,#0ea5a4)}.onp small{color:var(--muted);font-size:11.5px}
@@ -5417,12 +5446,14 @@ function vEquipo(off) {
   const vend = all.filter(hasCredits);
   const clients = S.d.clients.filter((c) => c.status !== 'trash' && !c.demo).length;
   const tile = (n, label, cls = '') => `<div class="tile ${cls}"><b>${n}</b><span>${label}</span></div>`;
-  const tiles = off ? '' : `<div class="tiles">
-      ${tile(all.length, 'Total')}${tile(all.filter((u) => !u.disabled).length, 'Activos', 'active')}
-      ${tile(clients, 'Clientes', 'mine')}${tile(vend.reduce((a, u) => a + u.credits, 0), 'Créditos en total', 'soon')}
-      ${tile(vend.length ? (clients / vend.length).toFixed(1).replace('.', ',') : '0', 'Clientes por vendedor')}
-      ${tile(all.filter((u) => u.role === 'reseller' && all.some((x) => x.parentId === u.id)).length, 'Con subresellers')}
+  const xt = (n, label, e, a, b) => `<div class="vxt-i" style="--a:${a};--b:${b}"><span class="vxt-ic" aria-hidden="true">${e}</span><b>${n}</b><small>${label}</small></div>`;
+  const tiles = off ? '' : `<div class="vxt">
+      ${xt(all.length, 'Total', '🧑‍🤝‍🧑', '#8b5cf6', '#6366f1')}${xt(all.filter((u) => !u.disabled).length, 'Activos', '✅', '#22c55e', '#14b8a6')}
+      ${xt(clients, 'Clientes', '📺', '#38bdf8', '#3b82f6')}${xt(vend.reduce((a, u) => a + u.credits, 0), 'Créditos en total', '🪙', '#f59e0b', '#f97316')}
+      ${xt(vend.length ? (clients / vend.length).toFixed(1).replace('.', ',') : '0', 'Clientes por vendedor', '📊', '#ec4899', '#a855f7')}
+      ${xt(all.filter((u) => u.role === 'reseller' && all.some((x) => x.parentId === u.id)).length, 'Con subresellers', '🌳', '#06b6d4', '#10b981')}
     </div>`;
+  void tile;
   const vs = vStyle();
   const cards = list.length ? (vs === 'cards' ? `<div class="vc2-grid">${vendorTree(list).map(([u]) => vCardNew(u)).join('')}</div>`
     : vs === 'list' ? `<div class="vr2-wrap"><div class="vr2 vr2-head"><div>Vendedor</div><div>Créditos</div><div>Clientes</div><div>Renuevan</div><div>Actividad</div><div></div></div>${vendorTree(list).map(([u, d]) => vRowNew(u, d)).join('')}</div>`
@@ -5432,8 +5463,8 @@ function vEquipo(off) {
   const mayCreate = staff() || me().canCreateSubs;
   const onl = S.d.users.filter((u) => u.online && u.id !== me().id && !u.disabled);
   const onStrip = !off && S.d.users.length > 1 ? `<div class="onstrip">${onl.length ? `<span class="onl">En línea ahora</span>${onl.map((u) => `<span class="onp"><i>${esc(u.name.charAt(0).toUpperCase())}</i>${esc(u.name)}<small>${ROLE[u.role]}</small></span>`).join('')}` : '<span class="muted small">Nadie de tu equipo tiene el panel abierto ahora mismo.</span>'}</div>` : '';
-  return head(title, sub + (mayCreate ? '' : ' Tu cuenta no tiene permiso para crear subresellers: pídeselo a tu administrador.'), mayCreate ? `<button class="btn primary" data-act="user-new">${ic('userplus')}${staff() ? 'Crear vendedor' : 'Crear subreseller'}</button>` : '') + onStrip + tiles +
-    `<div class="tools vtools"><input type="search" id="uq" placeholder="Buscar vendedor por nombre o usuario" value="${esc(S.uq)}" aria-label="Buscar vendedores">${vPicker(vs)}</div>` + cards;
+  return head(title, sub + (mayCreate ? '' : ' Tu cuenta no tiene permiso para crear subresellers: pídeselo a tu administrador.'), mayCreate ? `<button class="btn primary" data-act="user-new">${ic('userplus')}${staff() ? 'Crear vendedor' : 'Crear subreseller'}</button>` : '') + `<div class="vx">` + onStrip + tiles +
+    `<div class="tools vtools"><input type="search" id="uq" placeholder="Buscar vendedor por nombre o usuario" value="${esc(S.uq)}" aria-label="Buscar vendedores">${vPicker(vs)}</div>` + cards + `</div>`;
 }
 /* ---------- Administradores ---------- */
 const PERM_INFO = [
@@ -7110,6 +7141,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 222, d: '2026-11-02', items: ['🎨 Vendedores con diseño nuevo: recuadros de colores con iconos, «En línea ahora» con brillo, buscador moderno y en cada tarjeta créditos, clientes y renovación con su color, y botones de colores'] },
   { v: 221, d: '2026-11-02', items: ['🧾 Recibo de recarga de créditos nuevo: llega por Telegram como una tarjeta en imagen con tu marca (créditos añadidos, saldo antes y después, importe, forma de pago, fecha y nº de recibo) y un texto con todos los detalles'], team: ['🧾 Ahora el recibo de cada recarga de créditos te llega por Telegram como una tarjeta bonita, con tu saldo antes y después, el importe, la forma de pago, la fecha y el nº de recibo'] },
   { v: 220, d: '2026-11-02', items: ['📺 Al crear o cambiar una cuenta, el superadministrador puede elegir 3 pantallas (los vendedores siguen con 1, 2 o 4)', '💶 Precios de venta con 3 pantallas puestos: 1 mes 16 €, 3 meses 34 €, 6 meses 55 € y 1 año 105 € (y el resto como nos pasaste)'] },
   { v: 219, d: '2026-11-02', items: ['🤖 Bot de clientes renovado: al escribir /start (o cualquier cosa) sale su tarjeta de cuenta en imagen, con tu logo y marca, y un menú con botones grandes', '🎫 «Mi cuenta» en el bot: tarjeta con los días que le quedan, una barra de color, vencimiento, pantallas, contenido y plataforma (Emby, Jellyfin o Plex)', '🔎 Buscador en el bot: el cliente escribe un título y le dice si lo tenéis, con la carátula. Solo busca en su contenido (Básico o 4K). No se pueden pedir títulos', '☀️ Vendedores: cada mañana les llega por Telegram SOLO su lista de cuentas que caducan hoy, esta semana y ayer, y sus créditos', '🔋 Vendedores: aviso cuando les quedan pocos créditos (por defecto 3). Se cambia en Cobros y deudas › Ajustes'] },
