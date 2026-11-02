@@ -2523,6 +2523,8 @@ const plural = (n, one, many) => (n === 1 ? `1 ${one}` : `${n} ${many}`);
 const options = (list, sel) => list.map(([v, t]) => `<option value="${esc(v)}"${String(v) === String(sel) ? ' selected' : ''}>${esc(t)}</option>`).join('');
 const MONTH_OPTS = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '12 meses']];
 const SCREEN_OPTS = [[1, '1 pantalla'], [2, '2 pantallas'], [4, '4 pantallas']];
+/** Pantallas al crear o cambiar una cuenta: el superadministrador también tiene 3 (los vendedores, 1, 2 o 4). Si la cuenta ya tiene 3, se mantiene */
+const scrOpts = (cur) => (isSuper() || cur === 3 ? [[1, '1 pantalla'], [2, '2 pantallas'], [3, '3 pantallas'], [4, '4 pantallas']] : SCREEN_OPTS);
 const Q = { basico: 'Básico', k4: '4K' };
 const ROLE = { super: 'Superadministrador', admin: 'Administrador', reseller: 'Reseller', sub: 'Subreseller' };
 const RANK = { super: 0, admin: 1, reseller: 2, sub: 3 };
@@ -2744,7 +2746,7 @@ const live = () => S.d.clients.filter((c) => c.status !== 'trash');
 const trash = () => S.d.clients.filter((c) => c.status === 'trash');
 const byExpiry = (a, b) => (a.expiresAt || a.expires).localeCompare(b.expiresAt || b.expires) || a.panelName.localeCompare(b.panelName);
 const priceTab = (k) => { const kk = k || kindTab(), t = kk !== 'emby' && S.d.settings.pricesBy && S.d.settings.pricesBy[kk]; return t || S.d.settings.prices; };
-const priceOf = (m, s, k) => (priceTab(k)[m] || {})[s];
+const priceOf = (m, s, k) => { const r = priceTab(k)[m] || {}; return r[s] !== undefined ? r[s] : s === 3 ? r[4] : undefined; };
 function canManage(u) {
   const m = me();
   if (u.id === m.id) return false;
@@ -3420,7 +3422,7 @@ function tpBody(c, k) {
     return `<div class="tp-h">${ic('server')}<b>Cambiar de servidor</b></div><div class="tp-l">${list.map((x) => tpOpt(x.id, esc(x.name), x.id === c.serverId ? 'Está aquí' : x.off ? 'Pausado' : x.full ? 'Lleno' : (c.password ? 'Mismo usuario y contraseña' : 'Mismo usuario; te pedirá contraseña'), x.id === c.serverId, '🖥️')).join('')}</div>`;
   }
   if (k === 'q') return `<div class="tp-h">${ic('box')}<b>Cambiar el contenido</b></div><div class="tp-l">${tpOpt('basico', 'Básico', 'Películas y series en HD', c.quality === 'basico', '📺')}${tpOpt('k4', '4K', 'Incluye las bibliotecas 4K', c.quality === 'k4', '✨')}</div><p class="tp-f">Cambia en Emby al momento. No cuesta créditos.</p>`;
-  return `<div class="tp-h">${ic('screen')}<b>Cambiar las pantallas</b></div><div class="tp-g">${SCREEN_OPTS.map(([n]) => `<button type="button" class="tp-sc${(c.screens || 1) === n ? ' cur' : ''}" data-act="tp-pick" data-v="${n}"${(c.screens || 1) === n ? ' disabled aria-current="true"' : ''}><b>${n}</b><small>${n === 1 ? 'pantalla' : 'pantallas'}</small>${(c.screens || 1) === n ? '<em>Ahora</em>' : ''}</button>`).join('')}</div><p class="tp-f">${pays() ? 'Subir cuesta la diferencia por el tiempo que le queda. Bajar es gratis.' : 'Sin coste de créditos para ti.'}</p>`;
+  return `<div class="tp-h">${ic('screen')}<b>Cambiar las pantallas</b></div><div class="tp-g">${scrOpts(c.screens).map(([n]) => `<button type="button" class="tp-sc${(c.screens || 1) === n ? ' cur' : ''}" data-act="tp-pick" data-v="${n}"${(c.screens || 1) === n ? ' disabled aria-current="true"' : ''}><b>${n}</b><small>${n === 1 ? 'pantalla' : 'pantallas'}</small>${(c.screens || 1) === n ? '<em>Ahora</em>' : ''}</button>`).join('')}</div><p class="tp-f">${pays() ? 'Subir cuesta la diferencia por el tiempo que le queda. Bajar es gratis.' : 'Sin coste de créditos para ti.'}</p>`;
 }
 function tpOpen(anchor, c, k) {
   const same = TP.anchor === anchor; tpClose(); if (same) return;
@@ -4037,7 +4039,7 @@ function vNuevo(demo) {
   const plan = demo
     ? `<label class="f">Duración de la demo *<select name="hours" data-chip="dur">${options(hours, hours[0][0])}</select></label>`
     : `<label class="f">Duración *<select name="months">${options(MONTH_OPTS, 1)}</select></label>
-      <label class="f">Pantallas *<select name="screens">${options(SCREEN_OPTS, 1)}</select></label>`;
+      <label class="f">Pantallas *<select name="screens">${options(scrOpts(), 1)}</select></label>`;
   const kpick = multiKind() ? `<div class="nwk nojf" role="group" aria-label="Plataforma">${['emby', 'jellyfin', 'plex'].filter((k) => kindsHere().has(k)).map((k) => `<button type="button" class="${KIND_CLS[k]}" data-act="nw-kind" data-k="${k}" aria-pressed="${kindTab() === k}">${kIco(k)}<span>${KIND_NAME[k]}<small>${k === 'plex' ? 'con su cuenta de Plex' : 'usuario y contraseña'}</small></span></button>`).join('')}</div>` : '';
   return head(title, demo ? 'Crea una cuenta de prueba gratuita. Al cumplirse sus horas se desactiva sola.' : 'Crea la cuenta en el servidor Emby y la deja activa al momento.') + kpick + `
   <form id="newClient" class="formpage"${demo ? ' data-demo="1"' : ''}>
@@ -6906,10 +6908,10 @@ function cpPendingCard(orders, money) {
   const pend = (orders || []).filter((o) => o.manual && o.status === 'pending').sort((a, b) => (b.claimed ? 1 : 0) - (a.claimed ? 1 : 0));
   if (!pend.length) return '';
   return `<section class="ap-card" style="border-color:#f59e0b"><h2>⏳ Pagos por confirmar</h2><p class="muted small" style="margin:-4px 0 10px">Mira si te ha llegado el dinero y confirma (aunque el cliente no haya pulsado «Ya he pagado»). También puedes hacerlo desde Telegram.</p>
-    ${pend.map((o) => `<div class="ap-h" style="flex-wrap:wrap;gap:8px"><b>${esc(o.user)}</b><span>${MP_T[o.method] || ''} · <b>${money(o.amount)}</b> · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens} ${o.screens === 1 ? 'pantalla' : 'pant.'} · concepto <b>${esc(o.ref)}</b> · ${fmtTs(o.created, true)}${o.claimed ? ' · <b style="color:#16a34a">dice que ya ha pagado</b>' : ' · <i>aún no ha pulsado «Ya he pagado»</i>'}</span>
-      <span style="display:flex;gap:6px;margin-left:auto"><button type="button" class="btn sm primary" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="1">✅ Ha llegado</button><button type="button" class="btn sm ghost" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="0">❌ No ha llegado</button></span></div>`).join('')}</section>`;
+    ${pend.map((o) => `<div class="ap-h" style="flex-wrap:wrap;gap:8px"><b>${esc(o.user)}</b><span>${MP_T[o.method] || ''} · <b>${money(o.amount)}</b> · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens} ${o.screens === 1 ? 'pantalla' : 'pant.'} · concepto <b>${esc(o.ref)}</b> · ${fmtTs(o.created, true)}${o.vendor ? ` · cliente de <b>${esc(o.vendor)}</b>` : ''}${o.claimed ? ' · <b style="color:#16a34a">dice que ya ha pagado</b>' : ' · <i>aún no ha pulsado «Ya he pagado»</i>'}</span>
+      <span style="display:flex;gap:6px;margin-left:auto"><button type="button" class="btn sm primary" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="1">✅ Ha llegado</button><button type="button" class="btn sm ghost" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="0">❌ No ha llegado</button><button type="button" class="btn sm ghost" data-act="cp-drop" data-id="${esc(o.id)}" title="Quitar de la lista" aria-label="Quitar de la lista">🗑️</button></span></div>`).join('')}</section>`;
 }
-const cpSt = (o) => (o.status === 'pending' && o.manual ? (o.claimed ? ['⏳', 'Por confirmar'] : ['🕐', 'Sin confirmar']) : ({ paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'], rejected: ['❌', 'No recibido'] }[o.status] || ['•', o.status]));
+const cpSt = (o) => (o.status === 'pending' && o.manual ? (o.claimed ? ['⏳', 'Por confirmar'] : ['🕐', 'Sin confirmar']) : ({ paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'], rejected: ['❌', 'No recibido'], cancelled: ['🗑️', 'Quitado'] }[o.status] || ['•', o.status]));
 function vCobroCli() {
   const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#6366f1 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#3b0764)"><span class="ap-ic">💳</span><div><h1>Cobro a clientes</h1><p>Tus clientes pagan desde su enlace (tarjeta, Bizum, PayPal o Revolut) y su cuenta se renueva sola.</p></div></section>`;
   if (!isSuper()) return vCobroVend(hero);
@@ -7108,6 +7110,11 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 221, d: '2026-11-02', items: ['🧾 Recibo de recarga de créditos nuevo: llega por Telegram como una tarjeta en imagen con tu marca (créditos añadidos, saldo antes y después, importe, forma de pago, fecha y nº de recibo) y un texto con todos los detalles'], team: ['🧾 Ahora el recibo de cada recarga de créditos te llega por Telegram como una tarjeta bonita, con tu saldo antes y después, el importe, la forma de pago, la fecha y el nº de recibo'] },
+  { v: 220, d: '2026-11-02', items: ['📺 Al crear o cambiar una cuenta, el superadministrador puede elegir 3 pantallas (los vendedores siguen con 1, 2 o 4)', '💶 Precios de venta con 3 pantallas puestos: 1 mes 16 €, 3 meses 34 €, 6 meses 55 € y 1 año 105 € (y el resto como nos pasaste)'] },
+  { v: 219, d: '2026-11-02', items: ['🤖 Bot de clientes renovado: al escribir /start (o cualquier cosa) sale su tarjeta de cuenta en imagen, con tu logo y marca, y un menú con botones grandes', '🎫 «Mi cuenta» en el bot: tarjeta con los días que le quedan, una barra de color, vencimiento, pantallas, contenido y plataforma (Emby, Jellyfin o Plex)', '🔎 Buscador en el bot: el cliente escribe un título y le dice si lo tenéis, con la carátula. Solo busca en su contenido (Básico o 4K). No se pueden pedir títulos', '☀️ Vendedores: cada mañana les llega por Telegram SOLO su lista de cuentas que caducan hoy, esta semana y ayer, y sus créditos', '🔋 Vendedores: aviso cuando les quedan pocos créditos (por defecto 3). Se cambia en Cobros y deudas › Ajustes'] },
+  { v: 218, d: '2026-11-02', items: ['🗑️ Pagos por confirmar: nuevo botón para quitar de la lista los pagos viejos u olvidados (sin renovar y sin avisar al cliente)', '🔧 Arreglado «Ese pago no existe» al confirmar pagos de clientes de tus vendedores: ahora tú también puedes confirmarlos, y se ve de qué vendedor es cada cliente'] },
+  { v: 217, d: '2026-11-02', items: ['🔗 Mensaje al cliente con un solo enlace: la página de su cuenta sirve para renovar y también tiene el botón para activar los avisos de Telegram (antes iban dos enlaces)'], team: ['🔗 Mensaje al cliente con un solo enlace: la página de su cuenta sirve para renovar y también para activar los avisos de Telegram'] },
   { v: 216, d: '2026-11-02', items: ['🤝 Socios › Saldos: botón «Tú eres: Xuxo / Angus» para decir quién eres y que «Debes» o «Te debe» salga desde tu lado'] },
   { v: 215, d: '2026-11-02', items: ['🤝 Socios: nueva opción «Los dos» en «Pagado por» (y en «Recibido por»): para lo que habéis pagado entre los dos, cada uno su parte. Cuenta como gasto pero no cambia lo que os debéis. También en el botón de Telegram de los gastos'] },
   { v: 214, d: '2026-11-01', items: ['🗓️ Socios unido a Gastos: nueva pestaña «Gastos» con lo que toca pagar, lo próximo y lo pagado. El día que toca pagar te llega a Telegram «Hoy toca pagar Servidores 380 €» con botones: quién lo paga y si va a medias, solo suyo o sin apuntar. Se puede cambiar después con ✏️', '🤝 Socios con formato Tricount: pestañas Movimientos, Saldos y Fotos. Arriba «Cobrado por ti» y «Total del mes»; en Saldos, en grande «Debes X € a Angus» (o «Angus te debe…») y el saldo de cada uno en verde o rojo. Siguen los botones ✏️ Modificar y 🗑️ Eliminar en cada movimiento'] },
@@ -8222,6 +8229,8 @@ function vCobrosVen() {
       <div class="row2"><label class="f">Recordarle por Telegram cada (días, 0 = no)<input type="number" name="remind" min="0" max="60" value="${c.remind || 0}"></label><label class="f">Avisarme si otro carga más de (créditos)<input type="number" name="giftAlert" min="1" value="${c.giftAlert || 50}"></label></div>
       <label class="check"><input type="checkbox" name="receipts"${c.receipts !== false ? ' checked' : ''}> Mandarle un justificante por Telegram en cada recarga y pago</label>
       <label class="check"><input type="checkbox" name="monthly"${c.monthly ? ' checked' : ''}> Mandarle su extracto del mes anterior cada día 1</label>
+      <label class="check"><input type="checkbox" name="vdaily"${c.vdaily !== false ? ' checked' : ''}> ☀️ Mandarle cada mañana sus cuentas que caducan (solo las suyas, nunca las de otro)</label>
+      <label class="f" style="margin-top:6px">🔋 Avisarle cuando le queden estos créditos o menos (0 = no avisar)<input type="number" name="lowCred" min="0" max="100000" value="${c.lowCred != null ? c.lowCred : 3}"></label>
       <button class="btn primary" type="submit" style="margin-top:8px">Guardar</button></form></details>` : '';
   return head('Cobros y deudas', sub, `<button class="btn" data-act="vp-reload">${ic('refresh')}Actualizar</button>`) + tiles + debt + month + recent + cfg;
 }
@@ -8495,7 +8504,7 @@ const ownerSelect = (sel) => (staff() && S.d.users.length > 1
 const qualityOpts = (sel, custom) => options([...(custom ? [['custom', 'Bibliotecas actuales']] : []), ['basico', 'Básico'], ['k4', '4K']], sel);
 const planFields = (m, s, q, custom) => `<div class="row3">
     <label class="f">Duración<select name="months">${options(MONTH_OPTS, m)}</select></label>
-    <label class="f">Pantallas<select name="screens">${options(SCREEN_OPTS, s)}</select></label>
+    <label class="f">Pantallas<select name="screens">${options(scrOpts(+s), s)}</select></label>
     <label class="f">Contenido<select name="quality">${qualityOpts(q, custom)}</select></label>
   </div><p class="preview" id="cost"></p>`;
 /** Mantiene al dia la linea de coste y bloquea el boton si no llegan los creditos o falta configurar el contenido */
@@ -8631,7 +8640,7 @@ function dRenew(c) {
     title: c.demo ? 'Convertir demo en cuenta' : 'Renovar cuenta Emby', submit: c.demo ? 'Convertir en cuenta ✨' : 'Renovar ✨',
     body: `<div class="bzhero rnhero"><div class="bztk" id="rnTk"></div></div>
       <div class="rnf"><span class="rnl">⏳ Duración</span><select name="months">${options(MONTH_OPTS, 1)}</select></div>
-      <div class="rnf"><span class="rnl">📺 Pantallas</span><select name="screens">${options(SCREEN_OPTS, c.screens || 1)}</select></div>
+      <div class="rnf"><span class="rnl">📺 Pantallas</span><select name="screens">${options(scrOpts(c.screens), c.screens || 1)}</select></div>
       <div class="rnf"><span class="rnl">🎬 Contenido</span><select name="quality" data-chip="big">${qualityOpts(c.quality || 'custom', c.quality === null)}</select></div>
       <div class="rnf"><span class="rnl">💶 Cobro</span>${paidSelect(true).replace(/<label class="f">Cobro al cliente/, '<label class="f rnhide">Cobro al cliente')}</div>
       ${socOwn(c) ? socFields(1, c.screens || 1) : ''}
@@ -8664,7 +8673,7 @@ function dRenew(c) {
 function dEdit(c) {
   const adminPart = staff() ? `<div class="row3">
       ${c.demo ? '' : `<label class="f">Vence el<input type="date" name="expires" required value="${esc(c.expires)}"></label>`}
-      <label class="f">Pantallas<select name="screens">${options([...(c.screens ? [] : [[0, 'Sin límite']]), ...SCREEN_OPTS], c.screens)}</select></label>
+      <label class="f">Pantallas<select name="screens">${options([...(c.screens ? [] : [[0, 'Sin límite']]), ...scrOpts(c.screens)], c.screens)}</select></label>
       <label class="f">Contenido<select name="quality">${qualityOpts(c.quality || 'custom', c.quality === null)}</select></label>
     </div>${ownerSelect(c.ownerId)}` : '';
   openDlg({
@@ -8783,7 +8792,7 @@ function dScreens(c) {
   let cost = 0;
   openDlg({
     title: `Pantallas de ${c.panelName}`, submit: 'Guardar pantallas',
-    body: `<label class="f">Reproducciones a la vez<select name="screens">${options(SCREEN_OPTS, c.screens || 1)}</select></label>
+    body: `<label class="f">Reproducciones a la vez<select name="screens">${options(scrOpts(c.screens), c.screens || 1)}</select></label>
       <div class="preview" id="scCost">${payer ? 'Elige las pantallas para ver lo que cuesta.' : 'Cambio de administrador: no descuenta créditos.'}</div>
       ${payer ? `<p class="muted small">Subir pantallas cuesta la diferencia de precio para el tiempo que le queda (hasta el ${fmt(c.expires)}). Bajar pantallas no cuesta nada, pero tampoco devuelve créditos.</p>` : ''}`,
     onOpen: () => {
@@ -8866,7 +8875,7 @@ function dBulkScreens() {
   openDlg({
     title: 'Cambiar pantallas', submit: 'Cambiar pantallas',
     body: `<p class="preview">Afecta a <b>${bulkScope(ids)}</b>: ${n(1)} con 1 pantalla, ${n(2)} con 2 y ${n(4)} con 4.</p>
-      <label class="f">Poner a todas<select name="screens">${SCREEN_OPTS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></label>
+      <label class="f">Poner a todas<select name="screens">${scrOpts().map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></label>
       <p class="muted small">Se cambia al momento en Emby cuántas pantallas pueden ver a la vez. No cambia la fecha, ni el contenido, ni se gastan créditos. Las que ya tienen ese número se saltan.</p>`,
     onSubmit: async (fd) => bulkResult(await bulkCall('/api/bulk/screens', ids, { screens: +fd.get('screens') }), 'Cambiar pantallas', 'cuenta cambiada', 'cuentas cambiadas', 'ya tenían esas pantallas'),
   });
@@ -9291,9 +9300,11 @@ function dMessage(c, password, key) {
       const link = () => { const a = $('#waLink', f); if (a) a.href = `https://wa.me/${wa}?text=${encodeURIComponent(f.elements.msg.value)}`; };
       const upd = () => {
         const k = f.elements.tpl.value, add = f.elements.guide.checked && (k === 'created' || k === 'demo'), main = fillTpl(k, c, password);
-        const tg = f.elements.tg && f.elements.tg.checked && k !== 'quality' && !main.includes(tgLink(c)) ? '\n\n' + tgBlock(c) : '';
+        // Un solo enlace: la página de su cuenta sirve para renovar y también para activar los avisos de Telegram
+        const wantPay = f.elements.pay && f.elements.pay.checked && k !== 'quality' && !main.includes(c.payLink), wantTg = f.elements.tg && f.elements.tg.checked && k !== 'quality' && !main.includes(tgLink(c));
+        const tg = wantTg && !wantPay ? '\n\n' + tgBlock(c) : '';
         const ap = f.elements.app && f.elements.app.checked && k !== 'quality' && !main.includes(appUrl()) ? '\n\n' + appBlock() : '';
-        const py = f.elements.pay && f.elements.pay.checked && k !== 'quality' && !main.includes(c.payLink) ? `\n\n💳 Renueva tú mismo en 1 minuto (eliges pantallas y tiempo y pagas con tarjeta, Apple Pay o Google Pay):\n${c.payLink}` : '';
+        const py = wantPay ? (wantTg ? `\n\n👤 Tu cuenta (guárdalo):\n💳 Renueva tú mismo en 1 minuto\n🔔 Activa los avisos gratis por Telegram\n👉 ${c.payLink}` : `\n\n💳 Renueva tú mismo en 1 minuto (eliges pantallas y tiempo y pagas con tarjeta, Apple Pay o Google Pay):\n${c.payLink}`) : '';
         f.elements.msg.value = main + py + ap + tg + (add ? '\n\n' + fillTpl('quality', c, password) : ''); link();
       };
       f.elements.tpl.onchange = upd; f.elements.guide.onchange = upd; if (f.elements.app) f.elements.app.onchange = upd; if (f.elements.pay) f.elements.pay.onchange = upd; if (f.elements.tg) f.elements.tg.onchange = upd; f.elements.msg.oninput = link; upd();
@@ -9973,6 +9984,8 @@ document.addEventListener('click', (e) => {
     case 'cp-dec': { const ok = el.dataset.ok === '1';
       dConfirm(ok ? '¿Te ha llegado el pago?' : '¿No te ha llegado?', ok ? 'Su cuenta se renovará ahora y le llegará su recibo por Telegram.' : 'Se le avisará de que no has recibido el pago, para que lo revise contigo.', ok ? '✅ Sí, ha llegado' : '❌ No ha llegado',
         () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { ok }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), ok ? 'Confirmado' : 'Marcado como no recibido'); } break;
+    case 'cp-drop': dConfirm('¿Quitar este pago de la lista?', 'Se quita sin renovar la cuenta y sin avisar al cliente. Úsalo para pagos viejos u olvidados.', '🗑️ Quitar',
+        () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { drop: true }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), 'Quitado'); break;
     case 'cpv-wh': copyText(S.cp && S.cp.webhook || '').then(() => toast('Dirección copiada')); break;
     case 'cpv-del': dConfirm('Desconectar tu Stripe', 'Tus clientes dejarán de poder pagar con tarjeta hasta que vuelvas a conectarlo (Bizum, PayPal y Revolut siguen funcionando si los tienes puestos).', 'Desconectar', () => api('PUT', '/api/my-client-pay', { removeKey: true }).then(() => { S.cp = null; }), 'Stripe desconectado'); break;
     case 'm-paylink': if (c) dPayLink(c); break;
@@ -10190,7 +10203,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'vpCfg') {
     e.preventDefault();
     const fd = new FormData(e.target);
-    api('PUT', '/api/vpay/config', { limit: +fd.get('limit'), days: +fd.get('days'), remind: +fd.get('remind'), giftAlert: +fd.get('giftAlert'), receipts: fd.get('receipts') === 'on', monthly: fd.get('monthly') === 'on' })
+    api('PUT', '/api/vpay/config', { limit: +fd.get('limit'), days: +fd.get('days'), remind: +fd.get('remind'), giftAlert: +fd.get('giftAlert'), receipts: fd.get('receipts') === 'on', monthly: fd.get('monthly') === 'on', vdaily: fd.get('vdaily') === 'on', lowCred: +fd.get('lowCred') })
       .then(() => { toast('Ajustes de cobros guardados'); S.vp.data = null; loadVpay(); }).catch((x) => toast(x.message, true));
     return;
   }
