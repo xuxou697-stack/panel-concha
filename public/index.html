@@ -7152,6 +7152,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 225, d: '2026-11-03', items: ['🔋 Vendedores: el aviso para que recarguen ahora llega cuando les quedan menos de 10 créditos (antes, 3 o menos). Se cambia en Cobros y deudas › Ajustes'] },
   { v: 224, d: '2026-11-03', items: ['✨ Seguimiento de demos: ahora TODAS las demos terminadas tienen «Pasar a cliente». Si la demo ya se borró del servidor, abre «Nuevo cliente» con su nombre, usuario, contacto, servidor y vendedor ya puestos'] },
   { v: 223, d: '2026-11-02', items: ['🚫 Descargas bloqueadas: los clientes ya no pueden descargar películas ni series en Emby, Jellyfin ni Plex. Se aplica solo a todas las cuentas (las que ya tienes, las nuevas y las renovadas). Se cambia en Servidores › «Descargas de los clientes»', '🔍 Auditoría: avisa si alguna cuenta puede descargar, y «Reparar» lo arregla'] },
   { v: 222, d: '2026-11-02', items: ['🎨 Vendedores con diseño nuevo: recuadros de colores con iconos, «En línea ahora» con brillo, buscador moderno y en cada tarjeta créditos, clientes y renovación con su color, y botones de colores'] },
@@ -8276,7 +8277,7 @@ function vCobrosVen() {
       <label class="check"><input type="checkbox" name="receipts"${c.receipts !== false ? ' checked' : ''}> Mandarle un justificante por Telegram en cada recarga y pago</label>
       <label class="check"><input type="checkbox" name="monthly"${c.monthly ? ' checked' : ''}> Mandarle su extracto del mes anterior cada día 1</label>
       <label class="check"><input type="checkbox" name="vdaily"${c.vdaily !== false ? ' checked' : ''}> ☀️ Mandarle cada mañana sus cuentas que caducan (solo las suyas, nunca las de otro)</label>
-      <label class="f" style="margin-top:6px">🔋 Avisarle cuando le queden estos créditos o menos (0 = no avisar)<input type="number" name="lowCred" min="0" max="100000" value="${c.lowCred != null ? c.lowCred : 3}"></label>
+      <label class="f" style="margin-top:6px">🔋 Avisarle para que recargue cuando le queden estos créditos o menos (9 = menos de 10 · 0 = no avisar)<input type="number" name="lowCred" min="0" max="100000" value="${c.lowCred != null ? c.lowCred : 9}"></label>
       <button class="btn primary" type="submit" style="margin-top:8px">Guardar</button></form></details>` : '';
   return head('Cobros y deudas', sub, `<button class="btn" data-act="vp-reload">${ic('refresh')}Actualizar</button>`) + tiles + debt + month + recent + cfg;
 }

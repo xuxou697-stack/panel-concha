@@ -130,6 +130,7 @@ function loadDb() {
   if (!db.licState || typeof db.licState !== 'object') db.licState = {};
   if (!db.mustPwMig) { for (const u of db.users) if (u.role !== 'super' && !u.lastLogin) u.mustPw = true; db.mustPwMig = true; } // quien aún no ha entrado nunca: cambiará la contraseña al entrar
   db.settings.vpay = { limit: 0, days: 0, remind: 3, receipts: true, monthly: false, giftAlert: 50, ...(db.settings.vpay || {}) };
+  if (!db.settings.lowCred225) { db.settings.lowCred225 = true; if (db.settings.vpay.lowCred == null || Number(db.settings.vpay.lowCred) === 3) db.settings.vpay.lowCred = 9; } // aviso de recarga: con menos de 10 créditos
   db.settings.guard = { on: true, limit: 10, minutes: 10, block: false, ...(db.settings.guard || {}) };
   if (!Array.isArray(db.churn)) { // renovaciones y bajas por vendedor; la primera vez se rellena con el registro
     db.churn = [];
@@ -8373,7 +8374,7 @@ setTimeout(() => { if (!db.settings.noDl223 && noDl() && !SUPERSEDED) { db.setti
    Cada vendedor recibe SOLO sus propias cuentas (las que él ha creado: ownerId = él). Nunca las de otro
    vendedor, ni las de sus subvendedores, ni las tuyas. */
 const vdOn = () => db.settings.vpay.vdaily !== false;
-const vdLow = () => { const n = Number(db.settings.vpay.lowCred); return Number.isFinite(n) && n >= 0 ? n : 3; };
+const vdLow = () => { const v = db.settings.vpay.lowCred, n = Number(v); return v != null && v !== '' && Number.isFinite(n) && n >= 0 ? n : 9; }; // por defecto: aviso con menos de 10 créditos
 const vdIsVendor = (u) => !u.disabled && (u.role === 'reseller' || u.role === 'sub');
 function vendorDailyText(u) {
   const t = today(), mine = db.clients.filter((c) => c.ownerId === u.id && !c.demo && c.status !== 'trash' && c.expires);
