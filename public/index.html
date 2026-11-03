@@ -2135,6 +2135,10 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .vx .vc2 footer .vib{border-radius:12px;border-color:color-mix(in srgb,var(--k) 40%,var(--line));background:color-mix(in srgb,var(--k) 14%,var(--raised));color:var(--k)}
 .vx .vc2 footer .vib:hover{background:color-mix(in srgb,var(--k) 26%,var(--raised));border-color:var(--k);color:var(--k);transform:translateY(-1px)}
 .vx .vib[data-act=user-stats]{--k:#a78bfa}.vx .vib[data-act=user-ledger]{--k:#38bdf8}.vx .vib[data-act=user-edit]{--k:#2dd4bf}.vx .vib[data-act=user-power]{--k:#fb7185}.vx .vib[data-act=user-power]:not(.warn){--k:#4ade80}.vx .vib[data-act=user-more]{--k:#94a3b8}
+.dlbox{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:18px;border:1px solid var(--line);background:var(--surface)}
+.dlbox.on{border-color:color-mix(in srgb,#ef4444 40%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#ef4444 12%,transparent),color-mix(in srgb,#8b5cf6 8%,transparent)),var(--surface)}
+.dl-ic{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:20px;background:var(--raised)}.dlbox.on .dl-ic{background:color-mix(in srgb,#ef4444 18%,var(--raised))}
+.dl-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.dl-t small{color:var(--muted);font-size:12.5px;line-height:1.35}
 .onstrip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
 .onp{display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;border-radius:20px;border:1px solid color-mix(in srgb,#19c37d 35%,var(--line));background:var(--raised);color:var(--text);font-size:13.5px}
 .onp i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12px;color:#fff;background:linear-gradient(135deg,#19c37d,#0ea5a4)}.onp small{color:var(--muted);font-size:11.5px}
@@ -5900,7 +5904,14 @@ function vServidores() {
     </div>`;
   };
   const legend = `<div class="sv-legend"><span>${ic('power')}ON/OFF: admite cuentas nuevas o está pausado</span><span>${ic('refresh')}Comprobar</span>${sup ? `<span>${ic('bolt')}Reiniciar Emby</span><span>${ic('power')}Reiniciar VPS (con agente)</span>` : ''}<span>${ic('info')}Detalles</span>${can ? `<span>${ic('trash')}Quitar</span>` : ''}</div>`;
-  return head('Servidores Emby', 'Tus servidores de un vistazo. En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', can ? `<button class="btn primary" data-act="server-new">${ic('plus')}Conectar otro servidor</button>` : '') + tiles + legend + `<div class="sv-list">${rows.map(card).join('')}</div>`;
+  return head('Servidores Emby', 'Tus servidores de un vistazo. En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', can ? `<button class="btn primary" data-act="server-new">${ic('plus')}Conectar otro servidor</button>` : '') + tiles + svDlBox() + legend + `<div class="sv-list">${rows.map(card).join('')}</div>`;
+}
+/** Descargas de los clientes: un interruptor para bloquearlas en todas las cuentas (Emby, Jellyfin y Plex) */
+function svDlBox() {
+  if (!isSuper()) return '';
+  const on = !S.d.settings || S.d.settings.noDownload !== false;
+  return `<div class="dlbox${on ? ' on' : ''}"><span class="dl-ic" aria-hidden="true">${on ? '🚫' : '⬇️'}</span><div class="dl-t"><b>Descargas de los clientes</b><small>${on ? 'Bloqueadas: los clientes no pueden descargar películas ni series en Emby, Jellyfin ni Plex. Las cuentas nuevas y renovadas ya salen así.' : 'Permitidas: los clientes pueden descargar el contenido en sus aparatos.'}</small></div>
+    <button type="button" class="ap-big${on ? ' on' : ''}" data-act="dl-tog" aria-pressed="${on}" aria-label="Bloquear descargas"><i></i></button></div>`;
 }
 /** Máximo de clientes de un servidor: chip con la ocupación (se pulsa para cambiarlo) */
 function svMaxChip(s, can) {
@@ -7141,6 +7152,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 224, d: '2026-11-03', items: ['✨ Seguimiento de demos: ahora TODAS las demos terminadas tienen «Pasar a cliente». Si la demo ya se borró del servidor, abre «Nuevo cliente» con su nombre, usuario, contacto, servidor y vendedor ya puestos'] },
+  { v: 223, d: '2026-11-02', items: ['🚫 Descargas bloqueadas: los clientes ya no pueden descargar películas ni series en Emby, Jellyfin ni Plex. Se aplica solo a todas las cuentas (las que ya tienes, las nuevas y las renovadas). Se cambia en Servidores › «Descargas de los clientes»', '🔍 Auditoría: avisa si alguna cuenta puede descargar, y «Reparar» lo arregla'] },
   { v: 222, d: '2026-11-02', items: ['🎨 Vendedores con diseño nuevo: recuadros de colores con iconos, «En línea ahora» con brillo, buscador moderno y en cada tarjeta créditos, clientes y renovación con su color, y botones de colores'] },
   { v: 221, d: '2026-11-02', items: ['🧾 Recibo de recarga de créditos nuevo: llega por Telegram como una tarjeta en imagen con tu marca (créditos añadidos, saldo antes y después, importe, forma de pago, fecha y nº de recibo) y un texto con todos los detalles'], team: ['🧾 Ahora el recibo de cada recarga de créditos te llega por Telegram como una tarjeta bonita, con tu saldo antes y después, el importe, la forma de pago, la fecha y el nº de recibo'] },
   { v: 220, d: '2026-11-02', items: ['📺 Al crear o cambiar una cuenta, el superadministrador puede elegir 3 pantallas (los vendedores siguen con 1, 2 o 4)', '💶 Precios de venta con 3 pantallas puestos: 1 mes 16 €, 3 meses 34 €, 6 meses 55 € y 1 año 105 € (y el resto como nos pasaste)'] },
@@ -7388,7 +7401,8 @@ function vSeguimiento() {
     const contact = [x.whatsapp ? `<span class="fu-ch">💬 ${esc(x.whatsapp)}</span>` : '', x.telegram ? `<span class="fu-ch">✈️ ${esc(x.telegram)}</span>` : '', x.email ? `<span class="fu-ch">✉️ ${esc(x.email)}</span>` : '', x.tgLinked ? '<span class="fu-ch ok">🔔 bot enlazado</span>' : ''].join('');
     const st = x.status === 'pending' ? '' : `<span class="fu-st ${x.status}">${ST[x.status] || x.status}</span>`;
     const main = now ? `<button class="btn sm" data-act="fu-open" data-id="${c.id}">${ic('users')}Ver cliente</button>`
-      : conv ? `<button class="btn fu-go" data-act="fu-conv" data-id="${c.id}">✨ Pasar a cliente</button>` : '';
+      : conv ? `<button class="btn fu-go" data-act="fu-conv" data-id="${c.id}">✨ Pasar a cliente</button>`
+        : `<button class="btn fu-go" data-act="fu-new" data-k="${esc(x.id)}" title="La demo ya se borró del servidor: se le crea su cuenta con sus mismos datos">✨ Pasar a cliente</button>`; // demo ya borrada: se crea la cuenta con sus datos
     const msg = x.status === 'pending' ? `<button class="btn sm primary" data-act="fu-msg" data-k="${x.id}">${ic('send')}Escribirle</button>` : '';
     const small = (x.status === 'pending' ? `<button class="fu-mini" data-act="fu-set" data-k="${x.id}" data-st="done" title="Ya le he escrito">${ic('check')}Ya le escribí</button><button class="fu-mini" data-act="fu-set" data-k="${x.id}" data-st="skip" title="No hace falta escribirle">Descartar</button>`
       : x.status !== 'bought' ? `<button class="fu-mini" data-act="fu-set" data-k="${x.id}" data-st="pending">↩︎ Volver a pendientes</button>` : '')
@@ -9928,6 +9942,20 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (a === 'fu-tab') { S.fu.tab = el.dataset.k; render(); return; }
+  if (a === 'fu-new') { // la demo ya no existe (se borró al terminar): abre «Nuevo cliente» con sus datos puestos
+    const x = S.fu.data && S.fu.data.list.find((v) => String(v.id) === String(el.dataset.k)); if (!x) return;
+    if (x.serverId && S.dAll && kindOfSrv(x.serverId)) setKind(kindOfSrv(x.serverId));
+    S.view = 'nuevo'; render(); window.scrollTo(0, 0);
+    setTimeout(() => {
+      const f = $('#newClient'); if (!f) return; const E = f.elements;
+      const put = (n, v) => { if (E[n] && v != null && v !== '') { E[n].value = v; E[n].dispatchEvent(new Event('input', { bubbles: true })); E[n].dispatchEvent(new Event('change', { bubbles: true })); } };
+      put('panelName', x.name); put('embyName', x.emby); put('email', x.email); put('telegram', x.telegram); put('whatsapp', x.whatsapp);
+      if (x.serverId && E.serverId && [...(E.serverId.options || [])].some((o) => +o.value === x.serverId)) put('serverId', String(x.serverId));
+      if (x.ownerId && E.ownerId && [...(E.ownerId.options || [])].some((o) => +o.value === x.ownerId)) put('ownerId', String(x.ownerId));
+      toast('Datos de la demo puestos. Elige contraseña, tiempo y pantallas y pulsa «Crear cliente» ✨');
+    }, 60);
+    return;
+  }
   if (a === 'fu-conv') { let c = S.d.clients.find((v) => v.id === id); if (!c && S.dAll) { const o = S.dAll.clients.find((v) => v.id === id); if (o) { setKind(kindOfSrv(o.serverId)); c = S.d.clients.find((v) => v.id === id); } } if (c) { S.fu.at = 0; dRenew(c); } else toast('Esa demo ya no está en el panel', true); return; }
   if (a === 'fu-open') { if (!S.d.clients.some((v) => v.id === id) && S.dAll) { const o = S.dAll.clients.find((v) => v.id === id); if (o) setKind(kindOfSrv(o.serverId)); } openCf(id); return; }
   if (a === 'fu-msg') { const x = (S.fu.data.list || []).find((v) => v.id === el.dataset.k); if (x) dQuickMsg({ panelName: x.name, whatsapp: x.whatsapp, tgLinked: x.tgLinked }, 'Escribir a ' + x.name, x.text, x.tgLinked && S.d.settings.notices.telegram.bot ? `/api/followups/${x.id}/telegram` : ''); return; }
@@ -10018,6 +10046,9 @@ document.addEventListener('click', (e) => {
         () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { ok }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), ok ? 'Confirmado' : 'Marcado como no recibido'); } break;
     case 'cp-drop': dConfirm('¿Quitar este pago de la lista?', 'Se quita sin renovar la cuenta y sin avisar al cliente. Úsalo para pagos viejos u olvidados.', '🗑️ Quitar',
         () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { drop: true }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), 'Quitado'); break;
+    case 'dl-tog': { const on = !(!S.d.settings || S.d.settings.noDownload !== false);
+      dConfirm(on ? '¿Bloquear las descargas?' : '¿Permitir las descargas?', on ? 'Los clientes no podrán descargar películas ni series. Se cambia ahora en todas las cuentas (tarda unos minutos) y te aviso por Telegram al terminar.' : 'Los clientes podrán volver a descargar el contenido. Se cambia ahora en todas las cuentas y te aviso por Telegram al terminar.', on ? '🚫 Bloquear' : '⬇️ Permitir',
+        () => api('PUT', '/api/nodownload', { on }).then(() => api('POST', '/api/nodownload/apply', {})).then(() => reload()), on ? 'Bloqueando en todas las cuentas…' : 'Permitiendo en todas las cuentas…'); } break;
     case 'cpv-wh': copyText(S.cp && S.cp.webhook || '').then(() => toast('Dirección copiada')); break;
     case 'cpv-del': dConfirm('Desconectar tu Stripe', 'Tus clientes dejarán de poder pagar con tarjeta hasta que vuelvas a conectarlo (Bizum, PayPal y Revolut siguen funcionando si los tienes puestos).', 'Desconectar', () => api('PUT', '/api/my-client-pay', { removeKey: true }).then(() => { S.cp = null; }), 'Stripe desconectado'); break;
     case 'm-paylink': if (c) dPayLink(c); break;

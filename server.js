@@ -535,11 +535,11 @@ async function pxApply(s, id, e, pol) {
   const ids = keys.map((k) => sec[k]).filter(Boolean).map(Number);
   if (!ids.length) { const err = new Error('Plex no reconoce las bibliotecas del paquete. Entra en Servidores › Contenido, vuelve a marcarlas y guarda.'); err.embyStatus = 400; throw err; }
   if (e.shareId) {
-    try { await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers/${encodeURIComponent(e.shareId)}`, 'PUT', { server_id: mid, shared_server: { library_section_ids: ids } }); return; }
+    try { await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers/${encodeURIComponent(e.shareId)}`, 'PUT', { server_id: mid, shared_server: { library_section_ids: ids } }); await pxSyncPerm(s, e); return; }
     catch (er) { if (er.embyStatus !== 404) throw er; e.shareId = null; }
   }
   let x;
-  try { x = await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers`, 'POST', { server_id: mid, shared_server: { library_section_ids: ids, invited_email: e.email || e.name }, sharing_settings: {} }); }
+  try { x = await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers`, 'POST', { server_id: mid, shared_server: { library_section_ids: ids, invited_email: e.email || e.name }, sharing_settings: noDl() ? { allowSync: '0' } : {} }); }
   catch (er) {
     const t = String(er.body || '');
     if (/already|existe/i.test(t)) { await pxSync(s); const sh = Object.values(pxReg(s).users).find((z) => z !== e && z.shareId && [pxNorm(z.name), pxNorm(z.email)].includes(pxNorm(e.email || e.name))); if (sh) { e.shareId = sh.shareId; e.uid = sh.uid; e.accepted = sh.accepted; return pxApply(s, id, e, pol); } }
@@ -551,6 +551,15 @@ async function pxApply(s, id, e, pol) {
   e.accepted = !!(a.acceptedAt && String(a.acceptedAt) !== '0');
   if (!e.shareId) { await pxSync(s); }
   if (e.token) await pxAccept(s, e).catch((er) => console.error('Plex (aceptar invitación):', er.message));
+  if (noDl()) e.syncOff = !!e.uid; // al invitar ya va sin descargas
+  await pxSyncPerm(s, e);
+}
+/** Plex: quita (o devuelve) el permiso de descargar a un amigo. Si plex.tv no deja, no rompe nada: se vuelve a intentar otro día */
+async function pxSyncPerm(s, e) {
+  const want = noDl();
+  if (!e.uid || e.syncOff === want) return;
+  try { await pxTv(s, `/api/friends/${encodeURIComponent(e.uid)}?allowSync=${want ? 0 : 1}&allowCameraUpload=0&allowChannels=0`, 'PUT'); e.syncOff = want; }
+  catch (er) { console.error('Plex (descargas):', er.message); }
 }
 /** Sesiones de Plex con la forma de las de Emby (lo que usa el Monitor, las pantallas, las estadísticas…) */
 function pxSessionsOut(s, mc) {
@@ -856,6 +865,8 @@ function accessOf(client) {
   return s.packages[client.quality];
 }
 /** Las cuentas del panel son siempre usuarios normales de Emby: nunca administradores ni con permisos de gestion */
+/** ¿Bloquear las descargas a los clientes? Encendido salvo que lo apagues en Servidores */
+const noDl = () => !db.settings || db.settings.noDownload !== false;
 function lockDown(pol) {
   pol.IsAdministrator = false;
   pol.EnableContentDeletion = false;
@@ -864,6 +875,7 @@ function lockDown(pol) {
   pol.EnableLiveTvManagement = false;
   pol.EnableVideoPlaybackTranscoding = false; // ningun cliente puede transcodificar video: es lo que mas carga el servidor
   pol.RemoteClientBitrateLimit = 0; // sin tope de velocidad en el servidor: un tope bajo obliga a convertir el video
+  if (noDl()) { pol.EnableContentDownloading = false; pol.EnableSyncTranscoding = false; pol.EnableMediaConversion = false; } // sin descargas: los clientes no pueden bajarse el contenido
   return pol;
 }
 const polHasLibs = (pol) => !!pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0;
@@ -883,6 +895,35 @@ function embyPlanOf(s, pol) {
   else if (!K.all) q = (K.folders || []).map(nf).some((f) => !inB.has(f) && has.has(f)) ? 'k4' : 'basico';
   else q = B.all ? 'basico' : [...has].some((f) => !inB.has(f)) ? 'k4' : 'basico';
   return { q, screens };
+}
+/* ---------- Descargas de los clientes: bloquear (o permitir) en todas las cuentas de Emby, Jellyfin y Plex ---------- */
+let dlJob = null;
+function dlApplyAll(me) {
+  if (dlJob && !dlJob.finished) return dlJob;
+  const want = noDl(), list = db.clients.filter((c) => c.status !== 'trash' && c.embyId && db.servers.some((x) => x.id === c.serverId && !x.off));
+  const job = (dlJob = { total: list.length, done: 0, changed: 0, failed: 0, want, finished: false, at: new Date().toISOString() });
+  (async () => {
+    for (const c of list) {
+      const s = db.servers.find((x) => x.id === c.serverId);
+      try {
+        await lock(async () => {
+          if (!s) return;
+          if (s.kind === 'plex') { const e = pxReg(s).users[c.embyId]; if (e && e.uid && e.syncOff !== want) { await pxSyncPerm(s, e); if (e.syncOff === want) job.changed++; } return; }
+          const pol = await readPolicy(s, c.embyId);
+          if (want ? pol.EnableContentDownloading !== false || pol.EnableSyncTranscoding !== false : pol.EnableContentDownloading === false) {
+            Object.assign(pol, want ? { EnableContentDownloading: false, EnableSyncTranscoding: false, EnableMediaConversion: false } : { EnableContentDownloading: true });
+            await emby(s, 'POST', `/Users/${c.embyId}/Policy`, pol); job.changed++;
+          }
+        });
+      } catch (e) { if (e.embyStatus !== 404) job.failed++; }
+      job.done++;
+      await new Promise((ok) => setTimeout(ok, 120));
+    }
+    job.finished = true;
+    lock(async () => { addLog('ajustes', null, `Descargas de los clientes ${want ? 'bloqueadas' : 'permitidas'} en las cuentas: ${job.changed} ${job.changed === 1 ? 'cambiada' : 'cambiadas'} de ${job.total}${job.failed ? `, ${job.failed} con error (servidor sin respuesta)` : ''}`, me || null); saveDb(); }).catch(() => {});
+    if (job.changed || job.failed) notifyStaff('payments', `⬇️ Descargas de los clientes ${want ? 'bloqueadas 🚫' : 'permitidas ✅'}: ${job.changed} ${job.changed === 1 ? 'cuenta cambiada' : 'cuentas cambiadas'} de ${job.total}${job.failed ? `. ${job.failed} no se pudieron cambiar (servidor sin respuesta): se arreglan solas al renovar o con «Reparar»` : ''}.`);
+  })();
+  return job;
 }
 async function readPolicy(s, embyId) { return (await emby(s, 'GET', `/Users/${embyId}`)).Policy || {}; }
 /** Da acceso: activa la cuenta, le pone SIEMPRE las bibliotecas de su paquete y su limite de pantallas, y comprueba que Emby lo ha aplicado */
@@ -4694,6 +4735,7 @@ route('GET', '/api/audit', STAFF, async () => {
       if (u.Name !== c.embyName) problems.push(`en Emby ahora se llama "${u.Name}"`);
       if (pol.IsAdministrator) problems.push('es administrador en Emby y no debería');
       if (pol.EnableVideoPlaybackTranscoding !== false) problems.push('tiene permitida la transcodificación de vídeo');
+      if (noDl() && s.kind !== 'plex' && pol.EnableContentDownloading !== false) problems.push('puede descargar el contenido');
       if (pol.RemoteClientBitrateLimit > 0) problems.push(`tiene en Emby un tope de velocidad de ${Math.round(pol.RemoteClientBitrateLimit / 1e5) / 10} Mbit/s, que obliga a convertir el vídeo`);
       if (c.status === 'active' && !c.off && !pol.IsDisabled && hasLibs && c.quality && packageReady(s, c.quality)) {
         const pk = s.packages[c.quality];
@@ -8317,6 +8359,16 @@ function vpayDaily() {
   lock(async () => saveDb()).catch(() => {});
 }
 
+/* ---------- Descargas de los clientes: rutas ---------- */
+route('GET', '/api/nodownload', SUPER, () => ({ on: noDl(), job: dlJob }));
+route('PUT', '/api/nodownload', SUPER, ({ me, body }) => lock(async () => {
+  db.settings.noDownload = !!body.on;
+  addLog('ajustes', null, `Descargas de los clientes: ${body.on ? 'bloqueadas' : 'permitidas'}`, me); saveDb();
+  return { ok: true, on: noDl() };
+}));
+route('POST', '/api/nodownload/apply', SUPER, ({ me }) => ({ ok: true, job: dlApplyAll(me) }));
+// La primera vez con esta versión: se bloquean solas las descargas en todas las cuentas que ya existen
+setTimeout(() => { if (!db.settings.noDl223 && noDl() && !SUPERSEDED) { db.settings.noDl223 = true; dlApplyAll(null); } }, 90000);
 /* ---------- Vendedores: resumen de cada mañana y aviso de pocos créditos ----------
    Cada vendedor recibe SOLO sus propias cuentas (las que él ha creado: ownerId = él). Nunca las de otro
    vendedor, ni las de sus subvendedores, ni las tuyas. */
