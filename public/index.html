@@ -6173,6 +6173,18 @@ function ajSections() {
       <label class="f" style="margin-top:10px">Token del bot de Telegram${g.notices.telegram.hasToken ? ` (guardado${g.notices.telegram.bot ? ', bot @' + esc(g.notices.telegram.bot) : ''}; vacío = no cambiarlo)` : ''}<input name="tgToken" type="password" autocomplete="off" placeholder="123456789:ABC-DEF…"></label>
       <p class="muted small" style="margin:-6px 0 12px">El bot se crea gratis en Telegram hablando con @BotFather (orden /newbot), que te da el token. Telegram solo deja escribir a quien ha abierto el bot: cada cliente debe pulsar una vez su enlace personal (Más, Avisos por Telegram). Se envía entre las 10:00 y las 21:00. El texto es la plantilla «Aviso de vencimiento». WhatsApp no permite envíos automáticos: se mandan con un toque desde Clientes, Avisos de vencimiento.</p>
       <div class="acts"><button class="btn primary" type="submit">Guardar avisos</button>${g.notices.telegram.hasToken ? '<button class="btn ghost" type="button" data-act="tg-remove">Quitar bot</button>' : ''}</div>
+    </form></div></section>
+  <section><h2>🤖 Imagen y nombre del bot</h2>
+    <div class="panel pad"><form id="botBrandForm" style="max-width:560px">
+      <p class="muted small" style="margin:0 0 12px">Salen en la bienvenida (con confeti 🎉), en la tarjeta de cada cliente, en el menú y en los recibos de Telegram. Si los dejas vacíos, se usan los de la marca del panel.</p>
+      <div class="brandrow"><span class="logo" id="botPrev" style="border-radius:22%">${g.botBrand && g.botBrand.logo ? `<img src="${esc(g.botBrand.logo)}" alt="" style="border-radius:22%">` : (g.brand && g.brand.logo ? `<img src="${esc(g.brand.logo)}" alt="">` : LOGO)}</span>
+        <div><label class="btn" style="display:inline-block">Subir imagen del bot<input type="file" id="botFile" accept="image/png,image/jpeg,image/webp" hidden></label>
+          <button type="button" class="btn ghost" data-act="bot-nologo">Usar la de la marca</button>
+          <p class="muted small" style="margin-top:6px">PNG, JPG o WEBP. Mejor cuadrada.</p></div></div>
+      <input type="hidden" name="logo" value="${esc((g.botBrand && g.botBrand.logo) || '')}">
+      <label class="f">Nombre que ven los clientes en el bot<input name="name" maxlength="40" placeholder="${esc((g.brand && g.brand.name) || 'Concha')}" value="${esc((g.botBrand && g.botBrand.name) || '')}"></label>
+      <div class="acts"><button class="btn primary" type="submit">Guardar</button><button class="btn ghost" type="button" data-act="bot-test">🎉 Probar la bienvenida (me llega a mí)</button></div>
+      <p class="muted small" style="margin-top:10px">La foto de perfil del bot y la imagen o animación que se ve <b>antes</b> de pulsar «Iniciar» solo se cambian en Telegram: abre @BotFather y usa /setuserpic (foto de perfil) y /setdescriptionpic (imagen o GIF de bienvenida). El texto de bienvenida de esa pantalla lo pone el panel solo.</p>
     </form></div></section>`,
     brand: `  <section><h2>Marca del panel</h2>
     <div class="panel pad"><form id="brandForm" style="max-width:520px">
@@ -7152,6 +7164,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 227, d: '2026-11-04', items: ['🎉 Bienvenida nueva en el bot: cuando un cliente acepta su enlace le llega una imagen con tu logo y «Bienvenido», con confeti animado de Telegram, un mensaje amplio con todo lo que puede hacer y, después, su tarjeta con el menú', '🤖 Ajustes › Avisos: «Imagen y nombre del bot», para poner la imagen y el nombre que ven los clientes (y un botón para probar la bienvenida)', '📝 La pantalla del bot antes de pulsar «Iniciar» ahora tiene un texto de bienvenida'] },
+  { v: 226, d: '2026-11-04', items: ['🧾 Compra de créditos online (tarjeta o cripto): al vendedor ahora le llega el recibo bonito en imagen, con créditos sumados, saldo antes y después, importe, paquete, fecha y nº de recibo'], team: ['🧾 Cuando compras créditos online, te llega al momento un recibo bonito por Telegram con todos los datos'] },
   { v: 225, d: '2026-11-03', items: ['🔋 Vendedores: el aviso para que recarguen ahora llega cuando les quedan menos de 10 créditos (antes, 3 o menos). Se cambia en Cobros y deudas › Ajustes'] },
   { v: 224, d: '2026-11-03', items: ['✨ Seguimiento de demos: ahora TODAS las demos terminadas tienen «Pasar a cliente». Si la demo ya se borró del servidor, abre «Nuevo cliente» con su nombre, usuario, contacto, servidor y vendedor ya puestos'] },
   { v: 223, d: '2026-11-02', items: ['🚫 Descargas bloqueadas: los clientes ya no pueden descargar películas ni series en Emby, Jellyfin ni Plex. Se aplica solo a todas las cuentas (las que ya tienes, las nuevas y las renovadas). Se cambia en Servidores › «Descargas de los clientes»', '🔍 Auditoría: avisa si alguna cuenta puede descargar, y «Reparar» lo arregla'] },
@@ -9708,6 +9722,15 @@ document.addEventListener('change', (e) => {
   if (e.target.id === 'aServer') { S.al.server = +e.target.value || 0; S.al.page = 1; render(); }
   if (e.target.id === 'aOwner') { S.al.owner = +e.target.value || 0; S.al.page = 1; render(); }
   if (e.target.name === 'expcol') { e.target.checked ? S.expCols.add(e.target.value) : S.expCols.delete(e.target.value); expCount(); }
+  if (e.target.id === 'botFile' && e.target.files[0]) { // se pasa a PNG cuadrado de 512 px aquí mismo, en el navegador
+    const file = e.target.files[0], img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const S2 = 320, cv = document.createElement('canvas'); cv.width = S2; cv.height = S2; const k = Math.max(S2 / img.width, S2 / img.height), w = img.width * k, hh = img.height * k;
+      cv.getContext('2d').drawImage(img, (S2 - w) / 2, (S2 - hh) / 2, w, hh); URL.revokeObjectURL(url); const out = cv.toDataURL('image/png');
+      if (out.length > 690000) { toast('La imagen pesa demasiado. Prueba con otra.', true); return; }
+      $('#botBrandForm').elements.logo.value = out; $('#botPrev').innerHTML = `<img src="${out}" alt="" style="border-radius:22%">`; };
+    img.onerror = () => { URL.revokeObjectURL(url); toast('No se ha podido leer esa imagen', true); };
+    img.src = url; e.target.value = '';
+  }
   if (e.target.id === 'brandFile' && e.target.files[0]) {
     const file = e.target.files[0];
     if (file.size > 300000) { toast('El logo pesa demasiado. Usa una imagen de menos de 300 KB.', true); e.target.value = ''; return; }
@@ -10050,6 +10073,8 @@ document.addEventListener('click', (e) => {
     case 'dl-tog': { const on = !(!S.d.settings || S.d.settings.noDownload !== false);
       dConfirm(on ? '¿Bloquear las descargas?' : '¿Permitir las descargas?', on ? 'Los clientes no podrán descargar películas ni series. Se cambia ahora en todas las cuentas (tarda unos minutos) y te aviso por Telegram al terminar.' : 'Los clientes podrán volver a descargar el contenido. Se cambia ahora en todas las cuentas y te aviso por Telegram al terminar.', on ? '🚫 Bloquear' : '⬇️ Permitir',
         () => api('PUT', '/api/nodownload', { on }).then(() => api('POST', '/api/nodownload/apply', {})).then(() => reload()), on ? 'Bloqueando en todas las cuentas…' : 'Permitiendo en todas las cuentas…'); } break;
+    case 'bot-nologo': { const f = $('#botBrandForm'); if (f) { f.elements.logo.value = ''; $('#botPrev').innerHTML = (S.d.settings.brand && S.d.settings.brand.logo) ? `<img src="${esc(S.d.settings.brand.logo)}" alt="">` : LOGO; } } break;
+    case 'bot-test': api('POST', '/api/bot-brand/test', {}).then(() => toast('Mira tu Telegram 🎉'), (x) => toast(x.message, true)); break;
     case 'cpv-wh': copyText(S.cp && S.cp.webhook || '').then(() => toast('Dirección copiada')); break;
     case 'cpv-del': dConfirm('Desconectar tu Stripe', 'Tus clientes dejarán de poder pagar con tarjeta hasta que vuelvas a conectarlo (Bizum, PayPal y Revolut siguen funcionando si los tienes puestos).', 'Desconectar', () => api('PUT', '/api/my-client-pay', { removeKey: true }).then(() => { S.cp = null; }), 'Stripe desconectado'); break;
     case 'm-paylink': if (c) dPayLink(c); break;
@@ -10381,6 +10406,8 @@ document.addEventListener('submit', (e) => {
     const fd = new FormData(e.target);
     act(() => api('PUT', '/api/notices', { screen: { on: fd.get('screenOn') === 'on', days: +fd.get('screenDays'), message: fd.get('screenMsg') }, chat: { days: +fd.get('chatDays'), d1: fd.get('d1') === 'on', d0: fd.get('d0') === 'on', after: +(fd.get('after') || 0) }, referral: { days: +(fd.get('refDays') || 0) }, telegram: { on: fd.get('tgOn') === 'on', token: fd.get('tgToken') } }), 'Avisos guardados');
   }
+  if (e.target.id === 'botBrandForm') { e.preventDefault(); const fd = new FormData(e.target);
+    api('PUT', '/api/bot-brand', { name: fd.get('name') || '', logo: fd.get('logo') || '' }).then(async () => { toast('Imagen y nombre del bot guardados 🤖'); await reload(); }, (x) => toast(x.message, true)); return; }
   if (e.target.id === 'brandForm') {
     e.preventDefault();
     const fd = new FormData(e.target);

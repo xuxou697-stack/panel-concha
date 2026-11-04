@@ -2985,10 +2985,11 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
             const days = (db.settings.notices.chat || {}).days || 5, fd = c.expires ? c.expires.split('-').reverse().join('/') : '';
             reply = `🎉 ¡Listo, ${c.panelName}! Tus avisos están activados.\n\nDesde ahora te escribiré por aquí:\n📅 ${days} ${days === 1 ? 'día' : 'días'} antes de que caduque tu cuenta${fd && !c.demo ? ` (ahora vence el ${fd})` : ''}\n💳 Con un botón para renovarla tú mismo, al momento\n📢 Si hay novedades o avisos importantes\n\nNo tienes que hacer nada más 😊\n\n📋 Escribe /suscripcion cuando quieras para ver cuántos días te quedan (o pulsa «Menú» abajo).\nSi algún día no quieres más avisos, escribe /stop.`;
             if (!c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) welcomeBtn = { inline_keyboard: [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] };
-            jobs.push(() => botMenu(chat, db.clients.filter((x) => x.tgChat === chat))); // y justo después, su tarjeta con el menú de botones
+            { const wb = welcomeBtn; jobs.push(() => botWelcome(chat, c, wb)); } // bienvenida con imagen y confeti 🎉, y después su tarjeta con el menú
+            reply = null; welcomeBtn = null;
           } else reply = '👋 ¡Hola! Para activar tus avisos abre el enlace personal que te ha enviado tu proveedor y pulsa «Iniciar».';
         }
-        await tg('sendMessage', { chat_id: chat, text: reply, ...(welcomeBtn ? { reply_markup: welcomeBtn } : {}) }).catch(() => {});
+        if (reply) await tg('sendMessage', { chat_id: chat, text: reply, ...(welcomeBtn ? { reply_markup: welcomeBtn } : {}) }).catch(() => {});
       }
       saveDb();
     });
@@ -3086,6 +3087,9 @@ const BOT_MENU = [['menu', '🏠 Menú con botones'], ['suscripcion', '📋 Cuá
 function tgSetCommands() {
   if (!db.settings.notices.telegram.token) return;
   tg('setMyCommands', { commands: BOT_MENU.map(([command, description]) => ({ command, description })) }).catch(() => {});
+  const nm = botName();
+  tg('setMyDescription', { description: `🍿 Bienvenido al asistente de ${nm}.\n\nAquí recibes tus avisos antes de que caduque tu cuenta, renuevas en 1 minuto, buscas si tenemos tu peli o serie y tienes ayuda al momento.\n\n👇 Pulsa «Iniciar» para empezar.`.slice(0, 512) }).catch(() => {});
+  tg('setMyShortDescription', { short_description: `🍿 Asistente de ${nm}: avisos, renovación en 1 minuto, buscador y ayuda.`.slice(0, 120) }).catch(() => {});
 }
 setTimeout(tgSetCommands, 20000);
 function botAnswer(kind, list) {
@@ -3168,6 +3172,19 @@ class CardCanvas {
     const r = w / 2, minX = Math.floor(Math.min(x1, x2) - r - 1), maxX = Math.ceil(Math.max(x1, x2) + r + 1), minY = Math.floor(Math.min(y1, y2) - r - 1), maxY = Math.ceil(Math.max(y1, y2) + r + 1), dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy || 1;
     for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) { const px = x + 0.5, py = y + 0.5, t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / L)), d = Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy)), cov = Math.max(0, Math.min(1, r - d + 0.5)); if (cov > 0) this.dot(x, y, c, a * cov); }
   }
+  /** Imagen (RGBA) en un cuadrado con esquinas redondeadas */
+  imgRound(img, x0, y0, sz, rad) {
+    const sc = Math.min(img.w, img.h) / sz;
+    for (let y = Math.floor(y0); y < y0 + sz; y++) for (let x = Math.floor(x0); x < x0 + sz; x++) {
+      const px = x + 0.5, py = y + 0.5, dx = px < x0 + rad ? x0 + rad - px : px > x0 + sz - rad ? px - (x0 + sz - rad) : 0, dy = py < y0 + rad ? y0 + rad - py : py > y0 + sz - rad ? py - (y0 + sz - rad) : 0;
+      const cov = dx > 0 && dy > 0 ? Math.max(0, Math.min(1, rad - Math.hypot(dx, dy) + 0.5)) : 1; if (cov <= 0) continue;
+      let R = 0, G = 0, B = 0, A = 0;
+      for (let sj = 0; sj < 3; sj++) for (let si = 0; si < 3; si++) {
+        const sx = Math.max(0, Math.min(img.w - 1, Math.floor(img.w / 2 + (x + (si + 0.5) / 3 - x0 - sz / 2) * sc))), sy = Math.max(0, Math.min(img.h - 1, Math.floor(img.h / 2 + (y + (sj + 0.5) / 3 - y0 - sz / 2) * sc))), i = (sy * img.w + sx) * 4, al = img.d[i + 3];
+        R += img.d[i] * al; G += img.d[i + 1] * al; B += img.d[i + 2] * al; A += al; }
+      if (A) this.dot(x, y, [R / A, G / A, B / A], cov * (A / 9 / 255));
+    }
+  }
   measure(s, k) { const f = cardFont(k); let w = 0; for (const ch of s) { const g = f.g[ch]; if (g) w += g[6]; } return w; }
   /** Escribe texto; y es la parte de arriba de la línea */
   text(s, x, y, k, c, a = 1, align = 'left') {
@@ -3218,9 +3235,11 @@ function cardReadPng(buf) {
     return { w, h, d: out };
   } catch { return null; }
 }
+/** Nombre e imagen que usa el bot de Telegram (si no los pones, los de la marca del panel) */
+const botName = () => String((db.settings.botBrand || {}).name || (db.settings.brand || {}).name || 'Concha');
 let cardLogoMemo = { k: null, img: null };
 function cardLogo() {
-  const l = String((db.settings.brand || {}).logo || ''), m = /^data:image\/png;base64,(.+)$/.exec(l);
+  const l = String((db.settings.botBrand || {}).logo || (db.settings.brand || {}).logo || ''), m = /^data:image\/png;base64,(.+)$/.exec(l);
   if (!m) return null;
   if (cardLogoMemo.k !== l.length + ':' + l.slice(-40)) cardLogoMemo = { k: l.length + ':' + l.slice(-40), img: cardReadPng(Buffer.from(m[1], 'base64')) };
   return cardLogoMemo.img;
@@ -3235,7 +3254,7 @@ function accountCard(c) {
   cv.grad(cardMix(brand, night, 0.55), night);
   cv.glow(900, -40, 460, brand, 0.55); cv.glow(40, 620, 420, [236, 72, 153], 0.25); cv.glow(560, 300, 300, cardMix(brand, white, 0.2), 0.08);
   // Cabecera: logo y marca
-  const bname = cardTxt((db.settings.brand || {}).name || 'Concha') || 'Concha', logo = cardLogo();
+  const bname = cardTxt(botName()) || 'Concha', logo = cardLogo();
   cv.circle(96, 92, 40, white, 0.14);
   if (logo) cv.imgCircle(logo, 96, 92, 36); else { cv.circle(96, 92, 36, cardMix(brand, white, 0.15), 1); cv.text(bname.slice(0, 1).toUpperCase(), 96, 68, 'b40', white, 1, 'center'); }
   const s = db.servers.find((x) => x.id === c.serverId), [kName, kCol] = CARD_KIND[kindOf(s)] || CARD_KIND.emby;
@@ -3277,7 +3296,7 @@ function cardBase(W, H, tint, sub, pill, pillCol) {
   const brand = cardHex((db.settings.brand || {}).color, '6366f1'), night = [11, 16, 32];
   cv.grad(cardMix(tint || brand, night, 0.55), night);
   cv.glow(W - 100, -40, 460, tint || brand, 0.5); cv.glow(40, H + 60, 420, [236, 72, 153], 0.22);
-  const bname = cardTxt((db.settings.brand || {}).name || 'Concha') || 'Concha', logo = cardLogo();
+  const bname = cardTxt(botName()) || 'Concha', logo = cardLogo();
   cv.circle(96, 92, 40, white, 0.14);
   if (logo) cv.imgCircle(logo, 96, 92, 36); else { cv.circle(96, 92, 36, cardMix(brand, white, 0.15), 1); cv.text(bname.slice(0, 1).toUpperCase(), 96, 68, 'b40', white, 1, 'center'); }
   const pillW = cv.measure(pill, 'b28') + 44;
@@ -3298,7 +3317,7 @@ function rechargeCard(u, r) {
   else { cv.line(92, 233, 105, 247, 9, white); cv.line(105, 247, 130, 219, 9, white); }
   const end = cv.text('+' + r.credits, 186, 170, 'b96', white);
   cv.text(r.credits === 1 ? 'crédito' : 'créditos', end + 14, 216, 'b40', white, 0.95);
-  cv.text(r.pending ? 'Recarga hecha · pendiente de pago' : r.gift ? 'Recarga de regalo · sin coste' : 'Recarga confirmada y pagada', end + 16, 264, 'r22', soft, 0.9);
+  cv.text(r.pending ? 'Recarga hecha · pendiente de pago' : r.gift ? 'Recarga de regalo · sin coste' : r.online ? 'Compra online · pagada y sumada al momento' : 'Recarga confirmada y pagada', end + 16, 264, 'r22', soft, 0.9);
   // Saldo: antes -> ahora
   const by = 318; cv.rect(60, by, W - 120, 92, white, 0.07, 22);
   cv.text('Saldo anterior', 88, by + 18, 'r22', soft, 0.85); cv.text(`${r.before} ${r.before === 1 ? 'crédito' : 'créditos'}`, 88, by + 46, 'b28', white, 0.8);
@@ -3316,7 +3335,7 @@ function rechargeCard(u, r) {
 function sendRechargeReceipt(me, u, credits, pay, rec, packName) {
   const now = new Date(), tz = process.env.TZ || 'Europe/Madrid';
   const date = now.toLocaleDateString('es-ES', { timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric' }), time = now.toLocaleTimeString('es-ES', { timeZone: tz, hour: '2-digit', minute: '2-digit' });
-  const no = String(rec.id || '').toUpperCase().slice(0, 8), before = (u.credits || 0) - credits, pending = pay.status === 'pending', brand = db.settings.brand.name || 'tu panel';
+  const no = String(rec.id || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(-8), before = (u.credits || 0) - credits, pending = pay.status === 'pending', brand = botName();
   let reach = ''; try { const p1 = price(1, 1); if (p1 > 0 && u.credits > 0) { const n = Math.floor(u.credits / p1); reach = `🎬 Te da para unas <b>${n}</b> ${n === 1 ? 'cuenta' : 'cuentas'} de 1 mes`; } } catch { /* sin precio */ }
   const debt = pending ? debtOf(u).amount : 0;
   const L = [`🧾 <b>Recibo de recarga</b> · ${hEsc(brand)}`, '',
@@ -3326,23 +3345,63 @@ function sendRechargeReceipt(me, u, credits, pay, rec, packName) {
   L.push(pending ? `📌 Estado: <b>pendiente de pago</b>${debt ? ` · debes ${money2(debt)}` : ''}` : pay.gift ? '📌 Estado: regalo' : '📌 Estado: <b>pagado</b> ✅');
   L.push('', `🔋 Saldo anterior: ${before} ${before === 1 ? 'crédito' : 'créditos'}`, `🔋 <b>Saldo nuevo: ${u.credits} ${u.credits === 1 ? 'crédito' : 'créditos'}</b>`);
   if (reach) L.push(reach);
-  L.push('', `📅 ${date} · ${time}`, `🔖 Recibo nº ${no}`, `👤 Recargado por: ${hEsc(me.name)}`, '', pending ? '🙏 Cuando hagas el pago, se marcará como pagado.' : '🙌 ¡Gracias! Ya puedes crear y renovar cuentas.');
+  L.push('', `📅 ${date} · ${time}`, `🔖 Recibo nº ${no}`, me.online ? '🛒 Compra online: pagado y sumado al momento ⚡' : `👤 Recargado por: ${hEsc(me.name)}`, '', pending ? '🙏 Cuando hagas el pago, se marcará como pagado.' : '🙌 ¡Gracias! Ya puedes crear y renovar cuentas.');
   const caption = L.join('\n');
-  const foot = `${brand} · ${pending ? 'Pendiente de pago' : pay.gift ? 'Sin coste' : 'Gracias por tu recarga'} · ${time}`;
+  const foot = `${brand} · ${pending ? 'Pendiente de pago' : pay.gift ? 'Sin coste' : me.online ? 'Compra online · sumado al momento' : 'Gracias por tu recarga'} · ${time}`;
   let png = null;
-  try { png = rechargeCard(u, { credits, before, after: u.credits, amount: pay.amount, method: pay.method, gift: !!pay.gift, pending, date, no, foot }); } catch (e) { console.error('Recibo (imagen):', e.message); }
+  try { png = rechargeCard(u, { credits, before, after: u.credits, amount: pay.amount, method: pay.method, gift: !!pay.gift, pending, date, no, foot, online: !!me.online }); } catch (e) { console.error('Recibo (imagen):', e.message); }
   for (const chat of userChats(u)) {
     (png ? tgPhoto(chat, png, caption, null, true) : Promise.reject(new Error('sin imagen')))
       .catch(() => tg('sendMessage', { chat_id: chat, text: caption, parse_mode: 'HTML', disable_web_page_preview: true }).catch((e) => console.error('Telegram (recibo):', e.message)));
   }
 }
+/** Tarjeta de bienvenida al bot: logo grande, «¡Bienvenido!» y lo que puede hacer */
+function welcomeCard(c) {
+  const W = 1000, H = 560, cv = new CardCanvas(W, H), white = [255, 255, 255], soft = [203, 213, 225];
+  const brand = cardHex((db.settings.brand || {}).color, '6366f1'), night = [11, 16, 32], red = [239, 68, 68];
+  cv.grad(cardMix(brand, night, 0.5), night);
+  cv.glow(860, -60, 480, red, 0.38); cv.glow(80, 620, 440, brand, 0.5); cv.glow(500, 260, 320, [236, 72, 153], 0.12);
+  // destellos (confeti suave)
+  [[620, 70, 5, [250, 204, 21]], [930, 210, 4, [56, 189, 248]], [700, 500, 6, [236, 72, 153]], [960, 470, 4, [34, 197, 94]], [560, 160, 3, white], [880, 120, 3, white]].forEach(([x, y, r, col]) => { cv.circle(x, y, r, col, 0.85); cv.glow(x, y, r * 6, col, 0.25); });
+  const logo = cardLogo(), name = cardTxt(botName()) || 'Concha';
+  cv.rect(56, 56, 208, 208, white, 0.12, 48);
+  if (logo) cv.imgRound(logo, 64, 64, 192, 42); else { cv.rect(64, 64, 192, 192, cardMix(brand, white, 0.1), 1, 42); cv.text(name.slice(0, 1).toUpperCase(), 160, 128, 'b40', white, 1, 'center'); }
+  cv.rect(300, 78, cv.measure('BIENVENIDO', 'b28') + 44, 46, red, 0.25, 23); cv.text('BIENVENIDO', 322, 85, 'b28', [254, 202, 202]);
+  cv.text(cv.fit(name, 'b40', W - 360), 300, 140, 'b40', white);
+  cv.text(cv.fit(cardTxt(`Hola, ${c.panelName}`), 'r22', W - 360), 302, 196, 'r22', soft, 0.95);
+  cv.text('Tu asistente personal ya está activado', 302, 226, 'r22', soft, 0.8);
+  const feats = [['Avisos antes de caducar', [245, 158, 11]], ['Renueva en 1 minuto', [34, 197, 94]], ['Busca pelis y series', [56, 189, 248]], ['Ayuda al momento', [236, 72, 153]]];
+  const gap = 16, bw = (W - 112 - gap) / 2;
+  feats.forEach(([t, col], i) => { const x = 56 + (i % 2) * (bw + gap), y = 300 + Math.floor(i / 2) * 92;
+    cv.rect(x, y, bw, 76, col, 0.13, 20); cv.circle(x + 36, y + 38, 13, col, 1); cv.circle(x + 36, y + 38, 22, col, 0.22);
+    cv.text(cv.fit(t, 'b28', bw - 86), x + 70, y + 22, 'b28', white, 0.95); });
+  cv.text(cv.fit(cardTxt(`${name} · toca un botón del menú para empezar`), 'r22', W - 112), W / 2, 506, 'r22', soft, 0.65, 'center');
+  return cv.png();
+}
+const TG_PARTY = '5046509860389126442'; // efecto 🎉 (confeti) de Telegram en el mensaje
+/** Bienvenida al aceptar el bot: imagen con confeti, un texto largo y, después, la tarjeta con el menú */
+async function botWelcome(chat, c, kb) {
+  const days = (db.settings.notices.chat || {}).days || 5, fd = c.expires ? c.expires.split('-').reverse().join('/') : '', n = String(c.panelName || '').split(/\s+/)[0];
+  const cap = [`🎉 <b>¡Bienvenido a ${hEsc(botName())}${n ? ', ' + hEsc(n) : ''}!</b>`, '', '✅ Tu asistente personal ya está <b>activado</b>. A partir de ahora lo tienes todo aquí, en Telegram:', '',
+    `📅 Te aviso <b>${days} ${days === 1 ? 'día' : 'días'} antes</b> de que caduque tu cuenta${fd && !c.demo ? ` (ahora vence el <b>${fd}</b>)` : ''}`,
+    '💳 Renuevas tú mismo en <b>1 minuto</b>, sin esperar a nadie', '🔎 Buscas si tenemos una peli o serie', '🛠️ Solucionas problemas al momento', '🔑 Ves tus datos de acceso y tus aparatos', '📢 Te enteras de las novedades y de cualquier aviso del servidor', '',
+    'No tienes que hacer nada más 😊 Te dejo abajo tu tarjeta y el menú 👇', '', '<i>Si algún día no quieres más avisos, escribe /stop.</i>'].join('\n');
+  const plain = { chat_id: chat, text: cap, parse_mode: 'HTML', disable_web_page_preview: true, ...(kb ? { reply_markup: kb } : {}) };
+  let png = null; try { png = welcomeCard(c); } catch (e) { console.error('Bot (bienvenida):', e.message); }
+  let sent = false;
+  if (png) { try { await tgPhoto(chat, png, cap, kb, true, 'image/png', TG_PARTY); sent = true; } catch { try { await tgPhoto(chat, png, cap, kb, true); sent = true; } catch (e) { console.error('Bot (bienvenida):', e.message); } } }
+  if (!sent) await tg('sendMessage', { ...plain, message_effect_id: TG_PARTY }).catch(() => tg('sendMessage', plain)).catch(() => {});
+  const list = db.clients.filter((x) => x.tgChat === chat);
+  return list.length ? botMenu(chat, list) : null;
+}
 /** Manda una foto (bytes) por Telegram */
-async function tgPhoto(chat, buf, caption, kb, html, type = 'image/png') {
+async function tgPhoto(chat, buf, caption, kb, html, type = 'image/png', effect) {
   const cfg = db.settings.notices.telegram, form = new FormData();
   form.append('chat_id', String(chat));
   if (caption) form.append('caption', caption.slice(0, 1024));
   if (html) form.append('parse_mode', 'HTML');
   if (kb) form.append('reply_markup', JSON.stringify(kb));
+  if (effect) form.append('message_effect_id', effect);
   form.append('photo', new Blob([buf], { type }), type === 'image/png' ? 'tarjeta.png' : 'foto.jpg');
   const res = await fetch(`${TG_API}/bot${cfg.token}/sendPhoto`, { method: 'POST', body: form, signal: AbortSignal.timeout(30000) });
   const j = await res.json().catch(() => ({}));
@@ -3369,7 +3428,7 @@ async function sendCard(chat, c, caption, kb, html) {
 }
 async function botMenu(chat, list) {
   const c = list.find((x) => !x.demo) || list[0], name = String(c.panelName || '').split(/\s+/)[0];
-  const cap = `👋 ¡Hola${name ? ', ' + name : ''}! Bienvenido a ${db.settings.brand.name || 'tu servicio'} 🍿\n\n¿Qué quieres hacer? Toca un botón 👇`;
+  const cap = `👋 ¡Hola${name ? ', ' + name : ''}! Bienvenido a ${botName()} 🍿\n\n¿Qué quieres hacer? Toca un botón 👇`;
   return sendCard(chat, c, cap, botMenuKb(list));
 }
 /** Mi cuenta: una tarjeta por cuenta (hasta 3) con su texto debajo */
@@ -5773,7 +5832,9 @@ function markPaid(o, via) {
   db.vpay.unshift({ id: crypto.randomBytes(5).toString('hex'), at: o.paidAt, userId: u.id, user: u.name, credits: o.credits, amount: o.amount, method: o.method === 'stripe' ? 'Tarjeta (online)' : 'Cripto (online)', ref: o.id, status: 'paid', paidAt: o.paidAt, by: 'Compra online', byId: null, online: true });
   const soc = socOn() && socCfg().auto.credits ? socAdd({ kind: 'cobro', amount: o.amount, who: socCfg().online, desc: `${u.name} · ${o.credits} créditos (${how})`, src: 'creditos', ref: o.id, at: o.paidAt }) : null;
   notifyStaff('payments', `💰 ${u.name} ha comprado ${o.credits} créditos con ${how}.\nImporte: ${o.amount.toFixed(2)} ${o.currency}\nSaldo nuevo: ${u.credits}\n${whenTxt()}${socLine(soc)}`);
-  notifyUser(u, `✅ Pago recibido: se han sumado ${o.credits} créditos a tu cuenta. Saldo: ${u.credits}.`);
+  // Recibo bonito (imagen + todos los datos), igual que las recargas a mano. Sin bot, el aviso de siempre
+  if (u.tgChat && db.settings.notices.telegram.token) sendRechargeReceipt({ name: 'Compra online', online: true }, u, o.credits, { method: o.method === 'stripe' ? 'Tarjeta' : 'Cripto', amount: o.amount, status: 'paid' }, { id: o.id }, o.pack);
+  else notifyUser(u, `✅ Pago recibido: se han sumado ${o.credits} créditos a tu cuenta. Saldo: ${u.credits}.`);
   return true;
 }
 route('GET', '/api/pay', '*', ({ me }) => {
@@ -8360,6 +8421,23 @@ function vpayDaily() {
   lock(async () => saveDb()).catch(() => {});
 }
 
+/* ---------- Nombre e imagen del bot de Telegram ---------- */
+route('PUT', '/api/bot-brand', SUPER, ({ me, body }) => lock(async () => {
+  const name = str(body.name, 40).trim(), logo = typeof body.logo === 'string' ? body.logo : '';
+  if (logo && !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(logo)) throw new HttpError(400, 'La imagen del bot debe ser PNG.');
+  if (logo.length > 700000) throw new HttpError(400, 'La imagen pesa demasiado.');
+  if (logo && !cardReadPng(Buffer.from(logo.split(',')[1], 'base64'))) throw new HttpError(400, 'No se ha podido leer esa imagen. Prueba con otra.');
+  db.settings.botBrand = { name, logo };
+  addLog('ajustes', null, `Bot de Telegram: nombre «${name || 'el de la marca'}»${logo ? ' e imagen nueva' : ''}`, me); saveDb();
+  tgSetCommands();
+  return { ok: true };
+}));
+route('POST', '/api/bot-brand/test', SUPER, async ({ me }) => {
+  const chats = userChats(me); if (!chats.length) throw new HttpError(400, 'Enlaza primero tu Telegram en Ajustes › Seguridad.');
+  const c = db.clients.find((x) => !x.demo && x.status === 'active') || { panelName: me.name, embyName: me.username, expires: addDays(today(), 30), screens: 2, quality: 'k4', serverId: (db.servers[0] || {}).id };
+  await botWelcome(chats[0], { ...c, panelName: me.name }, null);
+  return { ok: true };
+});
 /* ---------- Descargas de los clientes: rutas ---------- */
 route('GET', '/api/nodownload', SUPER, () => ({ on: noDl(), job: dlJob }));
 route('PUT', '/api/nodownload', SUPER, ({ me, body }) => lock(async () => {
