@@ -2135,6 +2135,9 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 .vx .vc2 footer .vib{border-radius:12px;border-color:color-mix(in srgb,var(--k) 40%,var(--line));background:color-mix(in srgb,var(--k) 14%,var(--raised));color:var(--k)}
 .vx .vc2 footer .vib:hover{background:color-mix(in srgb,var(--k) 26%,var(--raised));border-color:var(--k);color:var(--k);transform:translateY(-1px)}
 .vx .vib[data-act=user-stats]{--k:#a78bfa}.vx .vib[data-act=user-ledger]{--k:#38bdf8}.vx .vib[data-act=user-edit]{--k:#2dd4bf}.vx .vib[data-act=user-power]{--k:#fb7185}.vx .vib[data-act=user-power]:not(.warn){--k:#4ade80}.vx .vib[data-act=user-more]{--k:#94a3b8}
+.tr-kbtn{font:inherit;color:inherit;text-align:left;cursor:pointer;border:1px solid color-mix(in srgb,var(--k) 45%,var(--line))!important;transition:transform .15s,box-shadow .15s}
+.tr-kbtn:hover{transform:translateY(-2px);box-shadow:0 10px 26px -14px var(--k)}.tr-kbtn.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--k) 40%,transparent)}
+.tr-tg{background:linear-gradient(135deg,#0ea5e9,#6366f1)!important;color:#fff!important;border:0!important}
 .dlbox{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:18px;border:1px solid var(--line);background:var(--surface)}
 .dlbox.on{border-color:color-mix(in srgb,#ef4444 40%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#ef4444 12%,transparent),color-mix(in srgb,#8b5cf6 8%,transparent)),var(--surface)}
 .dl-ic{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:20px;background:var(--raised)}.dlbox.on .dl-ic{background:color-mix(in srgb,#ef4444 18%,var(--raised))}
@@ -4439,8 +4442,11 @@ function papeleraTable(rows) {
   const list = rows.map((c) => ({ c, x: info(c) })).sort((p, q) => (p.x.left === null ? 1e9 : p.x.left) - (q.x.left === null ? 1e9 : q.x.left));
   const soon = list.filter((r) => r.x.left !== null && r.x.left <= 5).length, bot = list.filter((r) => r.c.tgLinked).length, demos = list.filter((r) => r.c.demo).length;
   const tile = (n, t, col, e) => `<div class="tr-k" style="--k:${col}"><span>${e}</span><b>${n}</b><small>${t}</small></div>`;
-  const tiles = `<div class="tr-ks">${tile(list.length, list.length === 1 ? 'cliente en la papelera' : 'clientes en la papelera', '#6366f1', '🗂️')}${tile(soon, 'se borran en 5 días o menos', '#f97316', '⏳')}${tile(bot, 'con el bot: puedes escribirles', '#0ea5e9', '📲')}${demos ? tile(demos, demos === 1 ? 'demo terminada' : 'demos terminadas', '#a855f7', '🎁') : ''}</div>`;
-  const shown = list.filter(({ c }) => trHit(c));
+  // el recuadro del bot se toca: enseña solo los que tienen el bot, para escribirles (otra vez: todos)
+  const botTile = bot ? `<button type="button" class="tr-k tr-kbtn${S.trBot ? ' on' : ''}" style="--k:#0ea5e9" data-act="tr-bot" aria-pressed="${!!S.trBot}"><span>📲</span><b>${bot}</b><small>${S.trBot ? 'mostrando solo los del bot · toca para ver todos' : `con el bot: toca para ${bot === 1 ? 'verlo' : 'verlos'} y escribirles`}</small></button>` : tile(0, 'con el bot: puedes escribirles', '#0ea5e9', '📲');
+  const tiles = `<div class="tr-ks">${tile(list.length, list.length === 1 ? 'cliente en la papelera' : 'clientes en la papelera', '#6366f1', '🗂️')}${tile(soon, 'se borran en 5 días o menos', '#f97316', '⏳')}${botTile}${demos ? tile(demos, demos === 1 ? 'demo terminada' : 'demos terminadas', '#a855f7', '🎁') : ''}</div>`;
+  if (S.trBot && !bot) S.trBot = false;
+  const shown = list.filter(({ c }) => trHit(c) && (!S.trBot || c.tgLinked));
   const cards = shown.map(({ c, x }) => {
     const col = c.demo ? '#a855f7' : x.left !== null && x.left <= 5 ? '#f97316' : '#6366f1';
     const owner = S.d.users.length > 1 && c.ownerId !== me().id ? userName(c.ownerId) : '';
@@ -4458,6 +4464,7 @@ function papeleraTable(rows) {
       ${c.trashReason ? `<p class="tr-why">📝 ${esc(c.trashReason)}</p>` : ''}${c.note ? `<p class="tr-why">💬 ${esc(c.note)}</p>` : ''}${contactHtml(c)}${c.lastError ? `<div class="err">${esc(c.lastError)}</div>` : ''}
       <div class="tr-acts">
         ${x.valid ? `<button class="btn primary" data-act="restore" data-id="${c.id}">♻️ Restaurar</button>` : `<button class="btn primary" data-act="renew" data-id="${c.id}">${c.demo ? '🚀 Convertir en cuenta' : '🔄 Renovar y recuperar'}</button>`}
+        ${c.tgLinked ? `<button class="btn tr-tg" data-act="m-tgmsg" data-id="${c.id}">✈️ Escribirle por el bot</button>` : ''}
         ${c.payLink ? `<button class="btn" data-act="m-paylink" data-id="${c.id}">💳 Enlace de pago</button>` : ''}
         ${wa ? `<a class="btn" href="https://wa.me/${wa}" target="_blank" rel="noopener">🟢 WhatsApp</a>` : ''}
         <button class="btn ghost" data-act="ficha" data-id="${c.id}">📇 Ficha</button>
@@ -7164,6 +7171,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 228, d: '2026-11-05', items: ['📲 Papelera: toca el recuadro «con el bot» y te enseña solo esos clientes, cada uno con su botón «✈️ Escribirle por el bot». Vuelve a tocarlo para ver todos'] },
   { v: 227, d: '2026-11-04', items: ['🎉 Bienvenida nueva en el bot: cuando un cliente acepta su enlace le llega una imagen con tu logo y «Bienvenido», con confeti animado de Telegram, un mensaje amplio con todo lo que puede hacer y, después, su tarjeta con el menú', '🤖 Ajustes › Avisos: «Imagen y nombre del bot», para poner la imagen y el nombre que ven los clientes (y un botón para probar la bienvenida)', '📝 La pantalla del bot antes de pulsar «Iniciar» ahora tiene un texto de bienvenida'] },
   { v: 226, d: '2026-11-04', items: ['🧾 Compra de créditos online (tarjeta o cripto): al vendedor ahora le llega el recibo bonito en imagen, con créditos sumados, saldo antes y después, importe, paquete, fecha y nº de recibo'], team: ['🧾 Cuando compras créditos online, te llega al momento un recibo bonito por Telegram con todos los datos'] },
   { v: 225, d: '2026-11-03', items: ['🔋 Vendedores: el aviso para que recarguen ahora llega cuando les quedan menos de 10 créditos (antes, 3 o menos). Se cambia en Cobros y deudas › Ajustes'] },
@@ -9966,6 +9974,7 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (a === 'fu-tab') { S.fu.tab = el.dataset.k; render(); return; }
+  if (a === 'tr-bot') { S.trBot = !S.trBot; render(); const g0 = $('.tr-grid') || $('.tr-empty'); if (S.trBot && g0) g0.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   if (a === 'fu-new') { // la demo ya no existe (se borró al terminar): abre «Nuevo cliente» con sus datos puestos
     const x = S.fu.data && S.fu.data.list.find((v) => String(v.id) === String(el.dataset.k)); if (!x) return;
     if (x.serverId && S.dAll && kindOfSrv(x.serverId)) setKind(kindOfSrv(x.serverId));
