@@ -2179,6 +2179,7 @@ button.fz-d{cursor:pointer}button.fz-d:hover{border-color:var(--brand)}
 #main[data-v=auditoria] p.err::before{content:"⚠️";position:absolute;left:12px;top:9px}
 #main[data-v=calidad] .panel li::marker{color:var(--brand)}#main[data-v=calidad] .panel b{color:color-mix(in srgb,var(--brand) 60%,var(--text))}
 #main[data-v=calendario] .panel{background:linear-gradient(160deg,color-mix(in srgb,var(--brand) 8%,transparent),transparent 60%),var(--surface)}
+.mt-ban{background:linear-gradient(120deg,#d97706,#ef4444)!important;box-shadow:0 8px 22px -12px #ef4444!important}
 .demo-ban{margin:0 0 12px;padding:9px 14px;border-radius:14px;font-size:13px;text-align:center;color:#fff;background:linear-gradient(120deg,#7c3aed,#ec4899);box-shadow:0 8px 22px -12px #ec4899}
 .dlbox{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:18px;border:1px solid var(--line);background:var(--surface)}
 .dlbox.on{border-color:color-mix(in srgb,#ef4444 40%,var(--line));background:linear-gradient(120deg,color-mix(in srgb,#ef4444 12%,transparent),color-mix(in srgb,#8b5cf6 8%,transparent)),var(--surface)}
@@ -2505,6 +2506,28 @@ dialog form h2:empty{display:none}.mlist3{gap:16px}
 .tc-xacts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0 4px}
 @media (max-width:420px){.tc-tabs.four button{font-size:12.5px}}
 .tc-iam{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}.tc-iam>span{color:var(--muted);font-size:14px}.tc-iam button{border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-weight:700;padding:6px 14px;border-radius:99px;cursor:pointer}.tc-iam button.on{background:var(--brand);border-color:var(--brand);color:#fff}.tc-iam small{flex-basis:100%;color:var(--muted);font-size:12px}
+/* v239: administrador solo técnico: se esconden los botones de crear, renovar y borrar */
+body.tech1 [data-act=new],body.tech1 [data-act=demo],body.tech1 [data-act=import],body.tech1 .mlist3 .mgrp.g-ren,body.tech1 .mlist3 .mgrp.g-acc,body.tech1 .mlist3 .mgrp.danger,body.tech1 [data-act=renew],body.tech1 [data-act=renew-same]{display:none!important}
+/* v239: modo mantenimiento */
+#maintBox{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--bg,#0b0b14) 82%,transparent);backdrop-filter:blur(10px)}
+#maintBox .mt-card{max-width:420px;width:100%;text-align:center;padding:28px 22px;border-radius:22px;border:1px solid color-mix(in srgb,#f59e0b 45%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,#f59e0b 16%,transparent),transparent 70%),var(--surface);box-shadow:0 20px 50px -25px #f59e0b}
+#maintBox .mt-ic{font-size:44px;line-height:1;margin-bottom:8px;animation:mtb 2.4s ease-in-out infinite}
+#maintBox h2{margin:0 0 8px}#maintBox p{margin:0 0 18px;color:var(--muted);white-space:pre-line}
+#maintBox .mt-acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@keyframes mtb{50%{transform:translateY(-4px) rotate(-4deg)}}
+.seccard.mt-on{border-color:color-mix(in srgb,#ef4444 55%,var(--line));box-shadow:0 0 0 3px color-mix(in srgb,#ef4444 15%,transparent)}
+/* v239: Eliminados (vendedores y administradores) */
+.ut-list{display:grid;gap:12px}
+.ut-card{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,#64748b 12%,transparent),transparent 70%),var(--surface)}
+.ut-av{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:18px;color:#fff;background:linear-gradient(135deg,#64748b,#334155);filter:grayscale(.3)}
+.ut-id b{display:block}.ut-id small{color:var(--muted)}
+.ut-ch{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.ut-ch span{font-size:12px;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--text) 7%,transparent)}
+.ut-ch .ut-warn{background:color-mix(in srgb,#ef4444 18%,transparent);color:color-mix(in srgb,#ef4444 70%,var(--text))}
+.ut-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:640px){.ut-card{grid-template-columns:auto 1fr}.ut-acts{grid-column:1/-1;justify-content:flex-start}}
+.mt-srv{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.mt-srv>b{display:block}.mt-srv>small{display:block;color:var(--muted);margin:2px 0 6px}
+.smt-opts{display:grid;gap:8px;margin:0 0 12px}.smt-opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;border:1px solid var(--line);cursor:pointer}
+.smt-opt:has(input:checked){border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,transparent)}.smt-opt input{margin-top:4px}.smt-opt b{display:block}.smt-opt small{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -2618,8 +2641,18 @@ async function api(method, url, body, opt) {
   if (r.status === 401 && !url.startsWith('/api/login')) { showGate(false); throw new Error('La sesión ha caducado. Vuelve a entrar.'); }
   if (r.status === 403 && j.mustPw && S.d && !document.getElementById('mustPw')) { S.d.me.mustPw = true; showMustPw(); }
   if (r.status === 423 && j.licLocked) { api('GET', '/api/state').then((st) => st.license && showLock(st.license)).catch(() => {}); throw new Error(j.error); }
+  if (r.status === 503 && j.maint) showMaint(j.error);
   if (!r.ok) { const e = new Error(j.error || 'Algo ha fallado.'); e.status = r.status; throw e; }
   return j;
+}
+/** Modo mantenimiento (v239): pantalla tranquila para los vendedores mientras el superadministrador hace cambios */
+function showMaint(msg) {
+  let m = document.getElementById('maintBox');
+  if (!m) { m = document.createElement('div'); m.id = 'maintBox'; document.body.appendChild(m); }
+  m.innerHTML = `<div class="mt-card"><div class="mt-ic">🚧</div><h2>Panel en mantenimiento</h2><p>${esc(msg || '')}</p>
+    <div class="mt-acts"><button type="button" class="btn primary" id="mtRetry">Volver a probar</button><button type="button" class="btn ghost" id="mtOut">Salir</button></div></div>`;
+  $('#mtRetry').onclick = () => location.reload();
+  $('#mtOut').onclick = async () => { try { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch (e) { /* nada */ } location.reload(); };
 }
 let toastTimer;
 function toast(msg, bad) {
@@ -2702,7 +2735,10 @@ const canDo = (p) => !!(me().perms && me().perms[p]);
 /** Si a mi me descuentan creditos al crear o renovar */
 const pays = () => !staff() || !!me().useCredits;
 /** Administrador al que no le han dado permiso para ver clientes */
-const noCli = () => me().role === 'admin' && !canDo('clients');
+const noCli = () => me().role === 'admin' && !canDo('clients') && !canDo('support');
+/** Administrador «solo técnico» (v239): ve y repara cuentas, pero no crea, renueva, cambia ni borra */
+const techOnly = () => me().role === 'admin' && !canDo('clients') && canDo('support');
+const TECH_NO = new Set(['new', 'demo', 'import', 'renew', 'renew-same', 'trash', 'delete', 'del-refund', 'c-off', 'c-on', 'm-pass', 'm-quality', 'm-screens', 'm-owner', 'm-move', 'm-plex', 'm-notes', 'm-paylink', 'bulk-off', 'bulk-on', 'bulk-trash', 'bulk-pkg', 'bulk-scr', 'bulk-dates', 'bulk-mig', 'demo-again', 'restore', 'qs-bcast']);
 /** Menu lateral agrupado. v = vista, f = filtro de la lista, a = accion, h = titulo de grupo, l = nivel */
 /** Menu lateral por grupos plegables. v = vista, f = filtro de la lista, i = icono, n = contador, hot = contador que pide atencion */
 function navGroups() {
@@ -2765,7 +2801,7 @@ function navGroups() {
   const venOk = me().role === 'admin' ? canDo('resellers') || canDo('credits') : me().role !== 'sub';
   const eq = venOk ? [
     { v: 'equipo', t: staff() ? 'Vendedores' : 'Subresellers', i: 'users' }, { v: 'atencion', t: 'Atención', i: 'alert', n: S.d.teamCount || 0, hot: true },
-    { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length }, { v: 'stats', t: 'Estadísticas', i: 'chart' },
+    { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length }, { v: 'equipodel', t: 'Eliminados', i: 'trash' }, { v: 'stats', t: 'Estadísticas', i: 'chart' },
     { v: 'mensajeeq', t: staff() ? 'Mensaje al equipo' : 'Mensaje a subresellers', i: 'send' },
     ...(staff() && canDo('resellers') ? [{ v: 'venajustes', t: 'Reglas del equipo', i: 'sliders' }] : [])] : [];
   if (canDo('admins')) eq.push({ v: 'admins', t: 'Administradores', i: 'shield' });
@@ -3186,9 +3222,10 @@ function render() {
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
   const fn = { hoy: vHoy, resumen: vResumen, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
-    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
+    demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), equipodel: vEquipoDel, stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   $('#main').dataset.v = S.view; // para dar a cada pantalla su toque de color
-  try { $('#main').innerHTML = (S.d.demoMode ? '<div class="demo-ban">🧪 <b>Panel de demostración</b> · los clientes y servidores son de mentira · se deja como nuevo cada noche</div>' : '') + (hasJf() ? kindSwitchHtml() : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() !== 'emby') jfWatch(); bzAll($('#main')); }
+  document.body.classList.toggle('tech1', techOnly());
+  try { $('#main').innerHTML = (S.d.demoMode ? '<div class="demo-ban">🧪 <b>Panel de demostración</b> · los clientes y servidores son de mentira · se deja como nuevo cada noche</div>' : '') + (staff() && !(S.d.settings.maintenance || {}).on && Object.values(S.d.settings.srvMaint || {}).some((m) => m && m.on) ? `<div class="demo-ban mt-ban">🚧 <b>Servidor en mantenimiento:</b> ${esc((S.dAll || S.d).servers.filter((v) => ((S.d.settings.srvMaint || {})[v.id] || {}).on).map((v) => v.name).join(', '))} · los clientes reciben el aviso${isSuper() ? ' · <button type="button" class="lnk" data-view="seguridad" style="color:#fff;text-decoration:underline">quitarlo</button>' : ''}</div>` : '') + ((S.d.settings.maintenance || {}).on && staff() ? `<div class="demo-ban mt-ban">🚧 <b>Modo mantenimiento puesto</b> · los vendedores no pueden entrar${isSuper() ? ' · <button type="button" class="lnk" data-view="seguridad" style="color:#fff;text-decoration:underline">quitarlo</button>' : ''}</div>` : '') + (hasJf() ? kindSwitchHtml() : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() !== 'emby') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
     $('#main').innerHTML = `<div class="panel pad" style="max-width:720px"><h2>Esta pantalla no se ha podido mostrar</h2><p class="err" style="max-width:none;margin:10px 0">${esc(ex && ex.message)}</p>
@@ -3198,6 +3235,7 @@ function render() {
   document.querySelectorAll('.brand .sub').forEach((x) => { if (/\b(Emby|Jellyfin|Plex)\b/.test(x.textContent)) x.textContent = x.textContent.replace(/\b(Emby|Jellyfin|Plex)\b/g, KIND_NAME[kindTab()]); });
   if ((S.view === 'pagos' || S.view === 'creditos') && !S.pay && !S.payBusy) loadPay();
   if (S.view === 'seguridad' && !S.sec && !S.secBusy) loadSec();
+  if (S.view === 'equipodel' && !S.utr && !S.utrBusy) loadUtr();
   if (S.view === 'copias' && !S.bk && !S.bkBusy) loadBk();
   if (S.view === 'uso' && !S.uso && !S.usoBusy) loadUso();
   if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
@@ -4136,7 +4174,7 @@ function vNuevo(demo) {
       ${isPlexTab() ? `<label class="f">Email de Plex *<input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" inputmode="email" placeholder="email@ejemplo.com"><small class="muted" id="pxHint">Con este email se le invita a tu servidor.</small></label>
       <label class="f" id="pxPw"><span id="pxPwT">Contraseña de su Plex <span class="muted">(opcional)</span></span><span class="inrow"><input name="password" autocomplete="off" placeholder="Si la pones, el panel acepta la invitación por él">${gen('password', 'Generar una contraseña')}</span><small class="muted" id="pxPwH">Sin contraseña, le llega la invitación a su email y la acepta él.</small></label>`
     : `<label class="f">Nombre en Emby *<span class="inrow"><input name="embyName" required maxlength="60" autocomplete="off" autocapitalize="none" placeholder="user.12abc">${gen('embyName', 'Generar un usuario')}</span></label>
-      <label class="f">Contraseña *<span class="inrow"><input name="password" required minlength="${pwMin()}" autocomplete="off" placeholder="${pwMin() === 8 ? '8 o más letras y números' : 'Contraseña'}">${gen('password', 'Generar una contraseña')}</span>${pwMin() === 8 ? '<small class="muted">Con 8 o más, valdrá igual si algún día pasa a Plex.</small>' : ''}</label>
+      <label class="f">Contraseña *<span class="inrow"><input name="password" required minlength="${pwMinAll()}" autocomplete="off" placeholder="${pwMin() === 8 ? '8 o más letras y números' : 'Contraseña'}">${gen('password', 'Generar una contraseña')}</span>${pwMin() === 8 ? '<small class="muted">Con 8 o más, valdrá igual si algún día pasa a Plex.</small>' : ''}</label>
       <label class="f">Email <span class="muted">(recomendado)</span><span class="inrow"><input type="email" name="email" maxlength="120" autocomplete="off" placeholder="email@ejemplo.com">${gen('email', 'Generar un email a partir del nombre')}</span><small class="muted">Su email de verdad: sin él no se podrá pasar a Plex.</small></label>`}
     </div>
     <h2>${demo ? 'La demo' : 'El plan'}</h2>
@@ -4950,7 +4988,22 @@ function vSeguridad() {
       <p>Usa uno de tus <b>códigos de rescate</b>. Si tampoco los tienes, entra en <b>Coolify › tu panel › Terminal</b> y escribe:</p>
       <pre>node server.js sin2fa</pre><p>Quita la verificación en dos pasos del superadministrador. Para poner una contraseña nueva:</p><pre>node server.js clave TuClaveNueva123</pre>
       <p class="muted small">Se aplica en unos segundos, sin reiniciar. A otros usuarios se la quitas desde su ficha (Más › Quitar verificación en dos pasos).</p></details></section>` : '';
-  return head('Seguridad', sub, '<button class="btn" data-act="sec-reload">Actualizar</button>') + hero + `<div class="secgrid">${tfa}${tgc}</div>` + ses + pol;
+  // 5) Modo mantenimiento y normas de contraseña de los clientes (v239, solo superadministrador)
+  const g = S.d.settings, mt = g.maintenance || {}, cr = g.cliPass || {};
+  const swx = (act, k, on, label, hint) => `<div class="secrow"><div><b>${label}</b><small>${hint}</small></div><button type="button" class="sw" role="switch" aria-checked="${!!on}" data-act="${act}" data-k="${k}" aria-label="${label}"><i></i></button></div>`;
+  const mnt = isSuper() ? `<section class="seccard${mt.on ? ' mt-on' : ''}"><div class="sc-h"><span class="sc-i" style="--c:#ef4444">🚧</span><div><h2>Modo mantenimiento</h2><small>Para hacer cambios tranquilo. Tus clientes siguen viendo con normalidad.</small></div>
+      <span class="pillst ${mt.on ? 'on' : 'off'}">${mt.on ? 'Puesto' : 'Quitado'}</span></div>
+    ${swx('mt-tog', 'on', mt.on, 'Cerrar el panel a los vendedores', 'Mientras esté puesto, solo entráis tú y tus administradores. Los vendedores ven el mensaje de abajo.')}
+    <label class="f">Mensaje que verán<textarea id="mtMsg" rows="2" maxlength="300" placeholder="Estamos mejorando el panel. Vuelve en un rato, por favor 🙏">${esc(mt.msg || '')}</textarea></label>
+    <div class="dfoot" style="justify-content:flex-start"><button class="btn" data-act="mt-save">Guardar mensaje</button></div>
+    ${(() => { const sv = (S.dAll || S.d).servers.filter((v) => ['emby', 'jellyfin', 'plex'].includes(v.kind || 'emby')), sm = g.srvMaint || {}; return sv.length ? `<div class="mt-srv"><b>📺 Mantenimiento de un servidor (para los clientes)</b><small>Eliges si solo avisar o cerrarlo un rato (30 minutos, 1 hora…). Mensaje en pantalla, aviso al entrar en Emby y Jellyfin, y el bot lo dice en «¿Funciona?» con la hora a la que vuelve.</small>
+      ${sv.map((v) => { const on = !!(sm[v.id] && sm[v.id].on); return `<div class="secrow"><div><b>${kIco(KIND_OF(v))} ${esc(v.name)}</b><small>${on ? (sm[v.id].cut ? '⛔ Cerrado' : '📢 Avisando') + ' desde las ' + new Date(sm[v.id].at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + (sm[v.id].until ? ' · se quita solo a las ' + new Date(sm[v.id].until).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '') : KIND_NAME[KIND_OF(v)] || ''}</small></div><button type="button" class="sw" role="switch" aria-checked="${on}" data-act="smt-tog" data-id="${v.id}" aria-label="Mantenimiento de ${esc(v.name)}"><i></i></button></div>`; }).join('')}</div>` : ''; })()}</section>` : '';
+  const cpw = isSuper() ? `<section class="seccard"><div class="sc-h"><span class="sc-i" style="--c:#6366f1">${ic('lock')}</span><div><h2>Contraseñas de los clientes</h2><small>Normas para las contraseñas nuevas de las cuentas (Emby, Jellyfin e IPTV). Las que ya existen no cambian.</small></div></div>
+    <label class="f" style="max-width:360px">Largo mínimo<select id="cpMin">${options([[0, `Normal (${pwMin()} caracteres)`], [8, '8 caracteres'], [10, '10 caracteres'], [12, '12 caracteres']].filter((o, i) => !i || o[0] > pwMin()), +cr.min > pwMin() ? +cr.min : 0)}</select></label>
+    ${swx('cp-rule', 'digit', cr.digit, 'Que lleve al menos un número', 'Por ejemplo «casa2024» sí; «casacasa» no.')}
+    ${swx('cp-rule', 'notUser', cr.notUser, 'Que no sea igual que el usuario', 'Evita cuentas tipo usuario «pepe» y contraseña «pepe».')}
+    <p class="muted small">El botón «Generar» ya crea contraseñas que cumplen estas normas.</p></section>` : '';
+  return head('Seguridad', sub, '<button class="btn" data-act="sec-reload">Actualizar</button>') + hero + `<div class="secgrid">${tfa}${tgc}</div>` + ses + pol + (isSuper() ? `<div class="secgrid">${mnt}${cpw}</div>` : '');
 }
 function dTotpOn() {
   api('POST', '/api/security/totp/start', {}).then((r) => {
@@ -5150,7 +5203,7 @@ const QS_KEYS = {
   servidores: 'servidor emby api key bibliotecas paquetes basico 4k conectar', plantillas: 'mensajes plantillas textos whatsapp', calendario: 'fechas calendario vencimientos',
   directo: 'en directo viendo ahora reproduciendo', monitor: 'monitor sesiones reproducciones viendo transcode detener caratulas mensaje pantalla', inactivos: 'inactivos no ven sin conexion ultima conexion',
   uso: 'estadisticas lo mas visto horas punta peliculas series', altrans: 'transcode alertas conversion', alses: 'sesiones excedidas pantallas compartir cuenta limite', alhist: 'historial alertas',
-  equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
+  equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', equipodel: 'eliminados papelera vendedores borrados restaurar administradores', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
   admins: 'administradores socio permisos admin', creditos: 'creditos saldo recargar asignar comprar pagar tarjeta cripto', pagos: 'pagos online stripe tarjeta cripto nowpayments cobrar automatico comprar creditos', ingresos: 'ingresos dinero ganancias informe facturacion euros', migplex: 'migrar migracion plex pasar emby jellyfin masivo cambio email', socios: 'socios socio tricount splitwise repartir cuentas deber debe quien cobro reparto mitad', gastos: 'gastos pagos facturas contabilidad calendario vps ovh contenido nube dominio recordatorio', ajustes: 'precios paquetes tarifas meses pantallas',
   perfil: 'perfil nombre email moneda soporte mi contraseña cambiar clave', seguridad: 'seguridad 2fa verificacion dos pasos google authenticator telegram sesiones contraseña codigo rescate proteger',
   copias: 'copias seguridad backup restaurar descargar guardar datos google drive comprobar', tiempos: 'tiempos dias gracia papelera demo duracion vigilancia intervalo', retencion: 'retencion borrar datos antiguos limpieza',
@@ -5494,6 +5547,25 @@ function vTeamNew(list) {
     </section>`;
   }).join('');
 }
+/** Eliminados (v239): vendedores y administradores borrados, 30 días para restaurarlos con sus créditos */
+async function loadUtr() {
+  S.utrBusy = true;
+  try { S.utr = await api('GET', '/api/users-trash'); } catch (e) { S.utr = { error: e.message, items: [] }; }
+  S.utrBusy = false;
+  if (S.view === 'equipodel') render();
+}
+function vEquipoDel() {
+  const sub = 'Los que borras pasan aquí 30 días, por si fue sin querer. Al restaurarlos vuelven con su usuario, su contraseña y sus créditos.';
+  const x = S.utr;
+  if (!x) return head('Eliminados', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (x.error) return head('Eliminados', sub) + `<p class="err">${esc(x.error)}</p>`;
+  const card = (u) => `<article class="ut-card"><span class="ut-av">${esc((u.name || '?').slice(0, 1))}</span>
+    <div class="ut-id"><b>${esc(u.name)}</b><small>@${esc(u.username)} · ${ROLE[u.role] || u.role}${u.parentName ? ' de ' + esc(u.parentName) : ''}</small>
+      <div class="ut-ch"><span>🗓️ Borrado el ${fmt(u.delAt.slice(0, 10))}${u.delByName ? ' por ' + esc(u.delByName) : ''}</span>${u.credits ? `<span>🪙 ${plural(u.credits, 'crédito', 'créditos')}</span>` : ''}<span class="${u.left <= 5 ? 'ut-warn' : ''}">⏳ ${u.left ? `Se borra del todo en ${plural(u.left, 'día', 'días')}` : 'Se borra hoy'}</span></div></div>
+    <div class="ut-acts"><button type="button" class="btn sm primary" data-act="utr-back" data-id="${u.id}">↩️ Restaurar</button><button type="button" class="btn sm danger" data-act="utr-del" data-id="${u.id}">🗑️ Borrar para siempre</button></div></article>`;
+  return head('Eliminados', sub, '<button class="btn" data-act="utr-reload">Actualizar</button>')
+    + (x.items.length ? `<div class="ut-list">${x.items.map(card).join('')}</div>` : '<div class="panel"><div class="empty">🗂️ No hay nadie en Eliminados. Cuando borres un vendedor o un administrador, aparecerá aquí 30 días.</div></div>');
+}
 function vEquipo(off) {
   const all = S.d.users;
   const q = S.uq.trim().toLowerCase();
@@ -5536,6 +5608,7 @@ const PERM_INFO = [
   ['packages', 'Gestionar Paquetes', 'Elegir las bibliotecas de Básico y 4K de cada servidor'],
   ['reports', 'Ver Reportes', 'Auditoría, estadísticas e historial de créditos de todos'],
   ['system', 'Configuración del Sistema', 'Precios, reglas, avisos, plantillas, marca y alertas'],
+  ['support', 'Soporte técnico', 'Ver las cuentas, repararlas y mirar el Monitor, sin crear, renovar ni borrar nada'],
 ];
 const CURRENCIES = [['EUR', 'Euro (€)'], ['USD', 'Dólar ($)'], ['MXN', 'Peso mexicano'], ['COP', 'Peso colombiano'], ['ARS', 'Peso argentino'], ['CLP', 'Peso chileno'], ['PEN', 'Sol peruano'], ['GBP', 'Libra (£)']];
 const money = (n, cur) => n.toLocaleString('es-ES', { style: 'currency', currency: cur || 'EUR' });
@@ -5613,6 +5686,7 @@ function dPerms(u) {
   openDlg({
     title: `Permisos de ${u.name}`, submit: 'Guardar permisos',
     body: `<p class="muted small" style="margin:-8px 0 12px">Selecciona los permisos que deseas otorgar a este administrador.</p>
+      ${canDo('support') ? `<button type="button" class="btn sm" data-act="perm-tech" style="margin:0 0 10px">🛠️ Solo técnico</button><small class="muted" style="margin-left:8px">Marca solo «Soporte técnico»: repara y mira, pero no toca cuentas ni dinero</small>` : ''}
       <div class="permlist">${PERM_INFO.map(([k, t, hint]) => { const dis = !canDo(k); return `<label class="${dis ? 'dis' : ''}"><input type="checkbox" name="p" value="${k}"${u.perms[k] ? ' checked' : ''}${dis ? ' disabled' : ''}><span>${t}<small>${hint}${dis ? '. No puedes darlo porque tú no lo tienes' : ''}</small></span></label>`; }).join('')}</div>
       <p class="preview">Sin permisos, solo podrá ver su resumen básico.</p>
       <p class="muted small" style="margin-top:8px">«Gestionar Servidores» y «Gestionar Paquetes» incluyen ver los servidores. Dalos, igual que «Gestionar Admins» y «Configuración del Sistema», solo a personas de total confianza.</p>`,
@@ -7221,6 +7295,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 241, d: '2026-11-06', items: ['⛔ Mantenimiento de servidor: ahora puedes elegir «Cerrar el servidor» un rato (15 min, 30 min, 1 hora, 2, 3 o hasta que lo quites). Nadie ve mientras dura, se para lo que estén viendo, el bot les dice a qué hora vuelve y, al acabar, todas las cuentas vuelven solas'] },
+  { v: 240, d: '2026-11-06', items: ['🚧 Mantenimiento también para los clientes de Emby, Jellyfin y Plex (Seguridad › Modo mantenimiento): eliges el servidor y les avisa sin cortar nada. Mensaje en pantalla a quien está viendo (y a quien empiece mientras dure), aviso al entrar en Emby y Jellyfin, el bot lo dice en «¿Funciona?», y si quieres también se lo manda por el bot'] },
+  { v: 239, d: '2026-11-06', items: ['🚧 Modo mantenimiento (Seguridad): cierras el panel a los vendedores mientras haces cambios, con tu propio mensaje. Tú y tus administradores seguís entrando y los clientes siguen viendo', '🗂️ Equipo › Eliminados: los vendedores y administradores que borras se quedan 30 días por si fue sin querer, y los restauras con su usuario y sus créditos', '🛠️ Permiso nuevo «Soporte técnico» y botón «Solo técnico»: un administrador que ve y repara cuentas y mira el Monitor, sin crear, renovar ni borrar nada', '🔑 Normas de contraseña para las cuentas de los clientes (Seguridad): largo mínimo, que lleve un número y que no sea igual que el usuario. «Generar» ya las cumple'] },
   { v: 238, d: '2026-11-05', items: ['✈️ Menú del cliente: «Mensaje Telegram» y «Telegram» ahora son un solo botón «Telegram». Si tiene el bot, le escribes; si no, te da su enlace para activarlo (y desde el mensaje puedes ver su enlace o desenlazarlo)'] },
   { v: 237, d: '2026-11-05', items: ['🗑️ Demos: «Vencidas» ahora se llama «Papelera» (Papelera de demos), con las mismas opciones que la papelera de cuentas: pasar a cliente, escribirles o borrar, y un botón nuevo «⏱️ Reactivar demo» para darle unas horas más con su mismo usuario'] },
   { v: 236, d: '2026-11-05', items: ['🧪 Modo escaparate: el mismo panel puede funcionar como demo para enseñarlo a compradores (con DEMO=1). Trae clientes, vendedores y servidores de mentira, no se conecta a nada de verdad, no manda nada por Telegram y vuelve a estar como nuevo cada noche'] },
@@ -8661,11 +8738,16 @@ function wireCost(serverId, extra, form) {
 // Convierte un nombre en algo valido para usuario/email: "José Luis" -> "jose.luis"
 const nameSlug = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '.').replace(/^[.]+|[.]+$/g, '').slice(0, 24).replace(/[.]+$/, '');
 const pwMin = () => ((S.d && S.d.settings.migrate || {}).pass8 === false ? 4 : 8);
+/** Largo mínimo de verdad, con las normas del superadministrador (v239) */
+const pwMinAll = () => Math.max(pwMin(), Math.min(20, +((S.d && S.d.settings.cliPass) || {}).min || 0));
 function genPassword() {
-  const abc = 'abcdefghjkmnpqrstuvwxyz23456789';
-  return Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => abc[b % abc.length]).join('');
+  const abc = 'abcdefghjkmnpqrstuvwxyz23456789', n = Math.max(10, pwMinAll());
+  let p = Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => abc[b % abc.length]).join('');
+  if (!/\d/.test(p)) p = p.slice(0, -1) + '23456789'[crypto.getRandomValues(new Uint8Array(1))[0] % 8]; // siempre con algún número
+  return p;
 }
-const passField = (label, req) => `<label class="f">${label}<span class="inrow"><input name="password" ${req ? 'required' : ''} minlength="${pwMin()}" autocomplete="off"${pwMin() === 8 ? ' placeholder="8 o más letras y números"' : ''}><button type="button" class="btn" data-act="gen">Generar</button></span></label>`;
+function cpSave(r) { api('PUT', '/api/cli-pass', r).then(() => { S.d.settings.cliPass = { min: +r.min || 0, digit: !!r.digit, notUser: !!r.notUser }; render(); toast('Normas de contraseña guardadas'); }, (x) => toast(x.message, true)); }
+const passField = (label, req) => `<label class="f">${label}<span class="inrow"><input name="password" ${req ? 'required' : ''} minlength="${pwMinAll()}" autocomplete="off"${pwMinAll() >= 8 ? ` placeholder="${pwMinAll()} o más letras y números"` : ''}><button type="button" class="btn" data-act="gen">Generar</button></span></label>`;
 
 function dNew() {
   openDlg({
@@ -9820,6 +9902,7 @@ document.addEventListener('change', (e) => {
   if (e.target.dataset.au) { const g = S.auSel[e.target.dataset.au]; e.target.checked ? g.add(e.target.dataset.k) : g.delete(e.target.dataset.k); const el = $('#audit'); if (el) { const y = window.scrollY; el.innerHTML = auditHtml(); window.scrollTo(0, y); } }
   if (e.target.dataset.auall) { const grp = e.target.dataset.auall, list = grp === 'emby' ? S.audit.notInPanel.map((r) => r.serverId + ':' + r.embyId) : (grp === 'gone' ? S.audit.notInEmby : S.audit.mismatch).map((r) => String(r.id)); list.forEach((k) => (e.target.checked ? S.auSel[grp].add(k) : S.auSel[grp].delete(k))); const el = $('#audit'); if (el) { const y = window.scrollY; el.innerHTML = auditHtml(); window.scrollTo(0, y); } }
   if (e.target.id === 'payMin') { api('PUT', '/api/pay/config', { min: +e.target.value }).then(() => toast('Guardado'), (x) => toast(x.message, true)); }
+  if (e.target.id === 'cpMin') { cpSave({ ...(S.d.settings.cliPass || {}), min: +e.target.value }); return; }
   if (e.target.id === 'secIdle') { api('PUT', '/api/security/policy', { idleMin: +e.target.value }).then(() => { S.sec.idleMin = +e.target.value; toast('Guardado'); }, (x) => toast(x.message, true)); }
   if (e.target.id === 'monSrv') { S.mon.srv = +e.target.value || 0; monPaint(); }
   if (e.target.id === 'monEvery') { S.mon.every = +e.target.value || 30; S.mon.left = S.mon.every; const l = $('#monLeft'); if (l && S.mon.auto) l.textContent = S.mon.left + ' s'; }
@@ -9950,6 +10033,29 @@ document.addEventListener('click', (e) => {
   if (a === 'bk-send') { el.disabled = true; api('POST', '/api/backup/send', {}).then(() => { toast('Copia enviada: mira tu Telegram'); loadBk(); }, (x) => { toast(x.message, true); el.disabled = false; }); return; }
   if (a === 'bk-restore') { openDlg({ title: 'Restaurar una copia', submit: 'Restaurar', danger: true, body: `<label class="f">Archivo de la copia (.concha)<input type="file" name="file" accept=".concha,application/octet-stream,application/json" required></label><label class="f">Contraseña de la copia<input type="password" name="pw" required autocomplete="off"></label><label class="f">Tu contraseña del panel (para confirmar)<input type="password" name="mine" required autocomplete="current-password"></label><p class="err" style="max-width:none">Todo volverá a como estaba en la copia. Lo de después se pierde.</p>`, onSubmit: async (fd) => { const f = fd.get('file'); if (!f || !f.size) throw new Error('Elige el archivo.'); const r = await api('POST', '/api/backup/restore', { content: await f.text(), password: fd.get('pw'), mine: fd.get('mine') }); setTimeout(() => location.reload(), 1500); return 'Panel restaurado. Vuelve a entrar.'; } }); return; }
   if (a === 'sec-reload') { loadSec(); return; }
+  if (a === 'utr-reload') { S.utr = null; loadUtr(); return; }
+  if (a === 'utr-back' || a === 'utr-del') { const u = ((S.utr || {}).items || []).find((v) => v.id === id); if (!u) return;
+    const back = a === 'utr-back';
+    dConfirm(back ? `Restaurar a ${u.name}` : `Borrar para siempre a ${u.name}`, back ? `Vuelve al panel con su usuario «${u.username}», su contraseña de antes${u.credits ? ` y sus ${plural(u.credits, 'crédito', 'créditos')}` : ''}.` : 'Ya no se podrá recuperar. Su historial de actividad se queda en los logs.', back ? 'Restaurar' : 'Borrar para siempre',
+      async () => { await api(back ? 'POST' : 'DELETE', `/api/users-trash/${u.id}${back ? '/restore' : ''}`, back ? {} : undefined); S.utr = null; await reload(); loadUtr(); }, back ? `${u.name} restaurado` : 'Borrado para siempre');
+    return; }
+  if (a === 'mt-tog' || a === 'mt-save') { const m = S.d.settings.maintenance || {}, on = a === 'mt-tog' ? !m.on : !!m.on, msg = ($('#mtMsg') || {}).value || '';
+    const go = () => api('PUT', '/api/maintenance', { on, msg }).then((r) => { S.d.settings.maintenance = r.maintenance; render(); toast(a === 'mt-save' ? 'Mensaje guardado' : on ? '🚧 Panel en mantenimiento: los vendedores no pueden entrar' : '✅ Mantenimiento quitado: ya pueden entrar todos'); }, (x) => toast(x.message, true));
+    if (a === 'mt-tog' && on) dConfirm('Poner en mantenimiento', 'Los vendedores y subvendedores no podrán entrar al panel hasta que lo quites. Tú y tus administradores seguís entrando, y los clientes siguen viendo con normalidad.', 'Poner mantenimiento', go); else go();
+    return; }
+  if (a === 'smt-tog') { const v = (S.dAll || S.d).servers.find((x) => x.id === id); if (!v) return; const all = S.d.settings.srvMaint || {}, cur = all[v.id] || {}, on = !cur.on;
+    const done = (r) => { S.d.settings.srvMaint = { ...all, [v.id]: r.maint || { on: false, msg: cur.msg } }; render(); return on ? `🚧 ${v.name} en mantenimiento${r.maint.cut ? ` · ${plural(r.closed, 'cuenta cerrada', 'cuentas cerradas')}` : ` · ${plural(r.sent, 'pantalla avisada', 'pantallas avisadas')}`}${r.bot ? ` · ${r.bot} por el bot` : ''}${r.disc === false ? ' · el aviso al entrar no se pudo poner' : ''}` : `✅ ${v.name}: mantenimiento quitado${r.opened ? ` · ${plural(r.opened, 'cuenta vuelve', 'cuentas vuelven')} a tener acceso` : ''}${r.bot ? ` · ${r.bot} avisados por el bot` : ''}`; };
+    const radio = (val, t, h, chk) => `<label class="smt-opt"><input type="radio" name="cut" value="${val}"${chk ? ' checked' : ''}><span><b>${t}</b><small>${h}</small></span></label>`;
+    openDlg({ title: on ? `🚧 Mantenimiento de ${v.name}` : `✅ Quitar el mantenimiento de ${v.name}`, submit: on ? 'Poner mantenimiento' : 'Quitar',
+      body: on ? `<div class="smt-opts">${radio('0', '📢 Solo avisar', 'Siguen viendo. Les sale tu mensaje en pantalla.', true)}${radio('1', '⛔ Cerrar el servidor', 'Nadie puede ver hasta que termine. Se para lo que estén viendo y vuelven todos solos al acabar.')}</div>
+        <label class="f">¿Cuánto tiempo?<select name="mins">${options([[15, '15 minutos'], [30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [180, '3 horas'], [0, 'Hasta que lo quite yo']], 30)}</select></label>
+        <label class="f">Mensaje para los clientes<textarea name="msg" rows="3" maxlength="300">${esc(cur.msg || 'Estamos haciendo mejoras en el servidor. Durante un rato no estará disponible. ¡Gracias por tu paciencia! 🙏')}</textarea></label>
+        <label class="check"><input type="checkbox" name="bot" checked> Avisar también por el bot de Telegram (y decirles cuándo vuelve)</label>
+        <p class="muted small">Cuando pase el tiempo se quita solo, y las cuentas que se cerraron vuelven a tener acceso. Las que ya estaban desactivadas o vencidas no se tocan.</p>`
+        : `<p>${cur.cut ? 'Las cuentas que se cerraron vuelven a tener acceso ahora mismo.' : 'Se quita el aviso al entrar y el bot vuelve a decir que funciona.'}</p><label class="check"><input type="checkbox" name="bot"${cur.bot ? ' checked' : ''}> Decirles por el bot que ya está todo bien</label>`,
+      onSubmit: async (fd) => done(await api('PUT', `/api/servers/${v.id}/maint`, { on, msg: fd.get('msg') || '', bot: !!fd.get('bot'), cut: fd.get('cut') === '1', mins: +fd.get('mins') || 0 })) });
+    return; }
+  if (a === 'cp-rule') { const r = { ...(S.d.settings.cliPass || {}) }; r[el.dataset.k] = !r[el.dataset.k]; cpSave(r); return; }
   if (a === 'sec-check') { el.disabled = true; api('GET', '/api/security').then((r) => { S.sec = r; render(); toast(r.tgLinked ? '✅ Telegram enlazado' : 'Todavía no está enlazado. En el bot pulsa «Iniciar» o envíale el código de «¿No se enlaza?».', !r.tgLinked); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
   if (a === 'sec-2fa-on') { dTotpOn(); return; }
   if (a === 'sec-2fa-off') { openDlg({ title: 'Desactivar la verificación en dos pasos', submit: 'Desactivar', danger: true, body: '<p>Tu cuenta quedará protegida solo con la contraseña.</p><label class="f">Tu contraseña<input type="password" name="password" required autocomplete="current-password"></label><label class="f">Código de la app (o un código de rescate)<input name="code" required autocomplete="one-time-code"></label>', onSubmit: async (fd) => { await api('POST', '/api/security/totp/disable', { password: fd.get('password'), code: fd.get('code') }); return 'Verificación desactivada'; }, after: () => { S.sec = null; loadSec(); } }); return; }
@@ -10113,6 +10219,8 @@ document.addEventListener('click', (e) => {
   if (a === 'gate-help') { el.nextElementSibling.hidden = !el.nextElementSibling.hidden; return; }
   if (a === 'theme') { applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); return; }
   if (a === 'menu') { const open = !$('.side').classList.contains('open'); $('.side').classList.toggle('open', open); $('#shade').classList.toggle('open', open); return; }
+  if (a === 'perm-tech') { const f = el.closest('form'); f.querySelectorAll('input[name=p]').forEach((i) => { if (!i.disabled) i.checked = i.value === 'support'; }); toast('Marcado: solo técnico. Pulsa «Guardar permisos».'); return; }
+  if (me() && techOnly() && TECH_NO.has(a)) { toast('Tu usuario es de soporte técnico: puedes ver y reparar, pero esto no.', true); return; }
   closeMenu();
   const c = id ? S.d.clients.find((x) => x.id === id) : null;
   const srv = id ? S.d.servers.find((x) => x.id === id) : null;
@@ -10370,7 +10478,7 @@ document.addEventListener('click', (e) => {
     case 'user-clients': if (usr) { if (dlg.open) dlg.close(); S.view = 'cuentas'; S.filter = 'all'; S.q = ''; S.fServer = 0; S.fOwner = usr.id; S.page = 1; render(); window.scrollTo(0, 0); } break;
     case 'user-toggle': case 'user-power': if (usr) dUserPower(usr); break;
     case 'user-credits': if (usr) dCredits(usr); break;
-    case 'user-del': if (usr) dConfirm(`Eliminar a ${usr.name}`, `Se borra su acceso al panel${usr.credits ? ` y se pierden sus ${plural(usr.credits, 'crédito', 'créditos')}` : ''}. Solo se puede si ya no tiene cuentas.`, 'Eliminar usuario', () => api('DELETE', `/api/users/${usr.id}`), 'Usuario eliminado'); break;
+    case 'user-del': if (usr) dConfirm(`Eliminar a ${usr.name}`, `Se borra su acceso al panel${usr.credits ? ` y se pierden sus ${plural(usr.credits, 'crédito', 'créditos')}` : ''}. Solo se puede si ya no tiene cuentas. Estará 30 días en «Eliminados» por si quieres restaurarlo.`, 'Eliminar usuario', async () => { await api('DELETE', `/api/users/${usr.id}`); S.utr = null; }, 'Usuario eliminado · está en Eliminados'); break;
     case 'logout': api('POST', '/api/logout', {}).then(() => showGate(false)); break;
   }
 });
@@ -10592,6 +10700,7 @@ setInterval(() => { if (idle()) reload().catch(() => {}); }, 60000);
 
 function bootFail(e) {
   bootLoading(false);
+  if (e && e.status === 503 && document.getElementById('maintBox')) return; // modo mantenimiento: ya se ve su pantalla
   document.body.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#061a2e;color:#eaf6fb;font:16px system-ui,sans-serif">
     <div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px">No se pudo cargar el panel</h1>
     <p style="color:#fda4af;margin:0 0 14px">${esc(e && e.message)}</p>

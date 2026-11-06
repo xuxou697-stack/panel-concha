@@ -1069,6 +1069,8 @@ async function readPolicy(s, embyId) { return (await emby(s, 'GET', `/Users/${em
 async function grantAccess(client) {
   // Desactivada a mano (por ejemplo, no ha pagado): nada la vuelve a activar salvo Activar, Renovar o Restaurar
   if (client.off) { await removeAccess(client, true); return; }
+  // Servidor cerrado por mantenimiento (v241): sigue cerrada hasta que termine; al terminar se le devuelve el acceso sola
+  if (client.maintCut && srvMaintOf(serverOf(client))) { await removeAccess(client, true); return; }
   const s = serverOf(client);
   const acc = accessOf(client);
   // Cuenta sin contenido (por ejemplo, importada de otro panel cuando ya no tenía bibliotecas): mejor avisar que dejarla vacía
@@ -1214,8 +1216,9 @@ const loginFails = new Map(); // usuario -> { count, until }
 const isStaff = (u) => u.role === 'super' || u.role === 'admin';
 /* Permisos de cada administrador. El superadministrador los tiene todos.
    Los que no se han tocado nunca conservan lo que un administrador podia hacer antes de existir los permisos. */
-const PERMS = ['credits', 'admins', 'clients', 'viewServers', 'servers', 'resellers', 'packages', 'reports', 'system'];
-const DEFAULT_PERMS = { credits: true, admins: false, clients: true, viewServers: false, servers: false, resellers: true, packages: false, reports: true, system: false };
+const PERMS = ['credits', 'admins', 'clients', 'viewServers', 'servers', 'resellers', 'packages', 'reports', 'system', 'support'];
+const DEFAULT_PERMS = { credits: true, admins: false, clients: true, viewServers: false, servers: false, resellers: true, packages: false, reports: true, system: false, support: false };
+/* «Soporte técnico» (v239): ve las cuentas, las repara y mira el Monitor, sin crear, renovar ni borrar nada */
 function permsOf(u) {
   const out = {};
   for (const k of PERMS) out[k] = u.role === 'super' ? true : u.role === 'admin' ? !!(u.perms ? u.perms[k] : DEFAULT_PERMS[k]) : false;
@@ -1228,11 +1231,15 @@ function needPerm(me, perm) {
   if (me.role === 'admin' && !can(me, perm)) throw new HttpError(403, 'Tu usuario de administrador no tiene este permiso. Pídeselo al superadministrador.');
 }
 /** Permiso que necesita un administrador para cada ruta. La primera regla que coincide manda. */
+const TECH = ['clients', 'support']; // vale cualquiera de los dos
 const PERM_RULES = [
+  ['POST', /^\/api\/clients\/\d+\/repair$/, TECH],
+  ['GET', /^\/api\/clients\/\d+\/(history|conn|connections|devices|iptv|sessions|log)$/, TECH],
   ['*', /^\/api\/(clients|demos|bulk|import)(\/|$)/, 'clients'],
-  ['GET', /^\/api\/(sessions|lastseen|alerts|monitor)$/, 'clients'],
-  ['GET', /^\/api\/poster\//, 'clients'],
-  ['POST', /^\/api\/monitor\/(stop|message|broadcast)$/, 'clients'],
+  ['GET', /^\/api\/(sessions|lastseen|alerts|monitor)$/, TECH],
+  ['GET', /^\/api\/poster\//, TECH],
+  ['POST', /^\/api\/monitor\/(stop|message)$/, TECH],
+  ['POST', /^\/api\/monitor\/broadcast$/, 'clients'],
   ['POST', /^\/api\/(run|alerts\/read|alerts\/clear)$/, 'clients'],
   ['POST', /^\/api\/audit\//, 'clients'],
   ['PUT', /^\/api\/alerts\/config$/, 'system'],
@@ -2403,8 +2410,15 @@ function readUsername(v) {
   return u;
 }
 /** Contraseñas de clientes de Emby/Jellyfin: 8 o más (así valen también para Plex el día que se migre). Se puede volver a 4 */
-const cliPassMin = () => ((db.settings.migrate || {}).pass8 === false ? 4 : 8);
-function readCliPassword(v) { const min = cliPassMin(), p = typeof v === 'string' ? v : ''; if (p.length < min) throw new HttpError(400, min === 8 ? 'La contraseña tiene que tener al menos 8 caracteres (así vale también para Plex). Pulsa «Generar» si quieres una.' : `La contraseña debe tener al menos ${min} caracteres.`); return p; }
+const cliRules = () => db.settings.cliPass || {}; // v239: normas de contraseña para las cuentas de los clientes
+const cliPassMin = () => Math.max((db.settings.migrate || {}).pass8 === false ? 4 : 8, Math.min(20, +cliRules().min || 0));
+function readCliPassword(v, user) {
+  const min = cliPassMin(), p = typeof v === 'string' ? v : '', R = cliRules();
+  if (p.length < min) throw new HttpError(400, min === 8 ? 'La contraseña tiene que tener al menos 8 caracteres (así vale también para Plex). Pulsa «Generar» si quieres una.' : `La contraseña debe tener al menos ${min} caracteres.`);
+  if (R.digit && !/\d/.test(p)) throw new HttpError(400, 'La contraseña tiene que llevar al menos un número. Pulsa «Generar» si quieres una.');
+  if (R.notUser && user && p.toLowerCase() === String(user).toLowerCase()) throw new HttpError(400, 'La contraseña no puede ser igual que el nombre de usuario.');
+  return p;
+}
 function readNewPassword(v, min = 8) {
   const p = typeof v === 'string' ? v : '';
   if (p.length < min) throw new HttpError(400, `La contraseña debe tener al menos ${min} caracteres.`);
@@ -2587,7 +2601,7 @@ function publicData(me) {
     for (const l of db.ledger) if (l.delta < 0 && admins.has(l.userId) && /^(Alta|Renovación)/.test(l.text)) admins.get(l.userId).spentTotal -= l.delta;
   }
   const P = permsOf(me), adm = me.role === 'admin';
-  const seeClients = !adm || P.clients, seeServers = me.role === 'super' || (adm && P.viewServers);
+  const seeClients = !adm || P.clients || P.support, seeServers = me.role === 'super' || (adm && P.viewServers);
   return {
     today: today(), now: new Date().toISOString(),
     me: pubUser(me),
@@ -2644,7 +2658,26 @@ const SUPER = ['super'];
 
 const SALES_EMAIL = 'clickonline69@proton.me';
 const salesEmail = () => (typeof db.settings.salesEmail === 'string' ? db.settings.salesEmail : SALES_EMAIL);
-route('GET', '/api/state', null, ({ req }) => ({ uiVer: indexFile().ver, needsSetup: !db.users.length, authed: !!currentUser(req), brand: logoRefs().brand, ...(DEMO ? { demo: { user: DEMO_USER, pass: DEMO_PASS } } : {}), support: db.settings.support, license: licStatus(), salesEmail: salesEmail() }));
+/* Modo mantenimiento (v239): mientras está puesto, solo entran el superadministrador y los administradores.
+   Los vendedores ven el mensaje; sus clientes siguen viendo con normalidad (no se toca ningún servidor) */
+const maintCfg = () => db.settings.maintenance || {};
+const maintMsg = () => String(maintCfg().msg || '').trim() || 'Estamos mejorando el panel. Vuelve en un rato, por favor 🙏';
+const maintOn = (u) => !!maintCfg().on && !!u && !isStaff(u);
+route('PUT', '/api/cli-pass', SUPER, ({ me, body }) => lock(() => {
+  const min = Math.max(0, Math.min(20, Math.round(+body.min || 0)));
+  db.settings.cliPass = { min, digit: !!body.digit, notUser: !!body.notUser };
+  addLog('ajustes', null, `Normas de contraseña de clientes: mínimo ${cliPassMin()}${body.digit ? ', con número' : ''}${body.notUser ? ', distinta del usuario' : ''}`, me);
+  saveDb();
+  return { ok: true, min: cliPassMin() };
+}));
+route('PUT', '/api/maintenance', SUPER, ({ me, body }) => lock(() => {
+  const was = !!maintCfg().on, on = !!body.on;
+  db.settings.maintenance = { on, msg: String(body.msg == null ? maintCfg().msg || '' : body.msg).slice(0, 300), at: on ? (was ? maintCfg().at : new Date().toISOString()) : null };
+  if (was !== on) addLog('ajustes', null, on ? 'Puso el panel en mantenimiento' : 'Quitó el modo mantenimiento', me);
+  saveDb();
+  return { ok: true, maintenance: db.settings.maintenance };
+}));
+route('GET', '/api/state', null, ({ req }) => ({ uiVer: indexFile().ver, needsSetup: !db.users.length, authed: !!currentUser(req), brand: logoRefs().brand, ...(DEMO ? { demo: { user: DEMO_USER, pass: DEMO_PASS } } : {}), support: db.settings.support, license: licStatus(), salesEmail: salesEmail(), ...(maintCfg().on ? { maint: maintMsg() } : {}) }));
 /* Marca del panel: nombre, color y logo propios */
 /* Los logos no viajan dentro de los datos del panel (pesan mucho y se piden cada minuto): van por su propia
    dirección y el navegador los guarda. Para ti se ve igual */
@@ -2717,6 +2750,7 @@ route('POST', '/api/login', null, async ({ req, body, res }) => {
   const pwOk = !!u && checkPassword(u, typeof body.password === 'string' ? body.password : '');
   // Contraseña buena pero acceso desactivado: se le dice claro (solo quien sabe la contraseña lo ve)
   if (pwOk && u.disabled) { addAccess(u, 'bloqueado', req); throw new HttpError(403, 'Tu acceso al panel está desactivado. Habla con quien te dio de alta.'); }
+  if (pwOk && maintOn(u)) throw new HttpError(503, maintMsg());
   const ok = pwOk;
   if (!ok) {
     addAccess(u || null, 'fallido', req, { typed: username });
@@ -3738,7 +3772,8 @@ async function botReply(chat, kind, list) {
     const seen = new Set(), lines = [];
     for (const c of accs) {
       const s = db.servers.find((x) => x.id === c.serverId); if (!s || seen.has(s.id)) continue; seen.add(s.id);
-      const h = health.get(s.id);
+      const h = health.get(s.id), mt = srvMaintOf(s);
+      if (mt) { const hm = mt.until ? new Date(mt.until).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' }) : ''; lines.push(`🚧 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} está en mantenimiento${mt.cut ? ' y ahora mismo no está disponible' : ''}.\n${mt.msg}${hm ? `\n⏰ Volvemos a las ${hm}.` : ''}`); continue; }
       lines.push(!h ? `⚪ Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''}: comprobando…` : h.down ? `🔴 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} tiene un problema ahora mismo.\nYa lo sabemos y lo estamos arreglando. Vuelve a probar en un rato 🙏` : `🟢 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} funciona correctamente.`);
     }
     return send((lines.join('\n\n') || '⚪ No he podido comprobarlo ahora.') + '\n\nSi a ti no te va, mira /problemas.');
@@ -4380,7 +4415,7 @@ route('POST', '/api/clients', '*', ({ me, body }) => lock(async () => {
   const s = serverById(body.serverId);
   assertServerAllowed(me, s);
   const embyName = str(body.embyName, 60);
-  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readCliPassword(body.password);
+  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readCliPassword(body.password, embyName);
   if (!embyName) throw new HttpError(400, s.kind === 'plex' ? 'Escribe el email (o el usuario) de Plex del cliente.' : 'Escribe el nombre de usuario de Emby.');
   if (s.kind === 'plex' && body.plexNew && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(embyName)) throw new HttpError(400, 'Para crear la cuenta de Plex escribe un email válido.');
   assertEmbyNameFree(s, embyName);
@@ -4428,7 +4463,7 @@ route('POST', '/api/demos', '*', ({ me, body }) => lock(async () => {
   assertServerAllowed(me, s);
   if (!isStaff(me) && me.allowDemos === false) throw new HttpError(403, 'Tu usuario no tiene permiso para crear demos.');
   const embyName = str(body.embyName, 60);
-  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readCliPassword(body.password);
+  const password = s.kind === 'plex' ? (body.plexNew ? readNewPassword(body.password, 8) : body.password ? readNewPassword(body.password, 1) : '') : readCliPassword(body.password, embyName);
   const hours = Number(body.hours);
   if (!embyName) throw new HttpError(400, s.kind === 'plex' ? 'Escribe el email (o el usuario) de Plex del cliente.' : 'Escribe el nombre de usuario de Emby.');
   if (!db.settings.demoHours.includes(hours)) throw new HttpError(400, 'Elige una duración de demo válida.');
@@ -4460,7 +4495,7 @@ route('PUT', '/api/clients/:id', '*', ({ me, params, body }) => lock(async () =>
   if (c.status === 'trash') throw new HttpError(400, 'Está en la papelera: renuévala o restáurala antes de editarla.');
   const s = serverOf(c);
   const changes = [];
-  const newPassword = typeof body.password === 'string' && body.password ? readCliPassword(body.password) : '';
+  const newPassword = typeof body.password === 'string' && body.password ? readCliPassword(body.password, c.embyName) : '';
   if (newPassword && s.kind === 'plex') throw new HttpError(400, 'En Plex la contraseña es la de la cuenta de plex.tv del cliente: la cambia él en plex.tv.');
   readContact(body, c); // valida antes de tocar nada
   if (!isStaff(me) && body.expires !== undefined && body.expires !== c.expires) throw new HttpError(403, 'La fecha de caducidad no se puede cambiar a mano. Usa «Renovar».');
@@ -4786,7 +4821,7 @@ async function moveClient(me, c, to, passwordIn) {
   if ((from.kind === 'plex') !== (to.kind === 'plex')) throw new HttpError(400, 'Una cuenta de Plex solo se puede pasar a otro servidor Plex (y una de Emby o Jellyfin, a uno que no sea Plex).');
   if (!c.quality) throw new HttpError(400, 'Usa bibliotecas propias del servidor actual. Asígnale contenido Básico o 4K antes de transferirla.');
   if (!packageReady(to, c.quality)) throw new HttpError(400, `El contenido ${QUALITIES[c.quality]} aún no está configurado en "${to.name}".`);
-  const password = passwordIn ? readCliPassword(passwordIn) : c.password;
+  const password = passwordIn ? readCliPassword(passwordIn, c.embyName) : c.password;
   if (!password && to.kind !== 'plex') throw new HttpError(400, 'El panel no tiene guardada su contraseña. Cámbiala primero o transfiérela sola escribiendo una nueva.');
   if (db.clients.some((x) => x.id !== c.id && x.serverId === to.id && x.embyName.toLowerCase() === c.embyName.toLowerCase())) throw new HttpError(409, 'En ese servidor ya hay una cuenta con el mismo usuario de Emby.');
   const old = { serverId: c.serverId, embyId: c.embyId };
@@ -5212,7 +5247,51 @@ route('DELETE', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params 
   if (db.users.some((x) => x.parentId === u.id)) throw new HttpError(400, 'Este reseller tiene subresellers. Elimínalos antes.');
   db.users = db.users.filter((x) => x.id !== u.id);
   dropSessions(u.id);
-  addLog('usuario', null, `Usuario eliminado: ${u.name} (${u.username})` + (u.credits ? `, tenía ${u.credits} créditos` : ''), me);
+  // v239: no se borra del todo: va a «Eliminados» 30 días por si fue sin querer (se puede restaurar con sus créditos)
+  if (!Array.isArray(db.usersTrash)) db.usersTrash = [];
+  db.usersTrash.push({ ...u, delAt: new Date().toISOString(), delBy: me.id, delByName: me.name });
+  addLog('usuario', null, `Usuario eliminado: ${u.name} (${u.username})` + (u.credits ? `, tenía ${u.credits} créditos` : '') + ' · está en Eliminados 30 días', me);
+  saveDb();
+  return { ok: true };
+}));
+/* Eliminados (v239): vendedores y administradores borrados. Cada uno ve solo los que podía gestionar */
+const USER_TRASH_DAYS = 30;
+function trashSeen(me, x) {
+  if (me.role === 'super') return true;
+  if (me.role === 'admin') return x.role === 'admin' ? can(me, 'admins') && x.delBy === me.id : can(me, 'resellers');
+  if (me.role === 'reseller') return x.role === 'sub' && x.parentId === me.id;
+  return false;
+}
+function purgeUserTrash() {
+  if (!Array.isArray(db.usersTrash) || !db.usersTrash.length) return false;
+  const lim = Date.now() - USER_TRASH_DAYS * 864e5, n = db.usersTrash.length;
+  db.usersTrash = db.usersTrash.filter((x) => Date.parse(x.delAt) > lim);
+  return db.usersTrash.length !== n;
+}
+setInterval(() => { try { if (purgeUserTrash()) saveDb(); } catch (e) { console.error('Eliminados:', e.message); } }, 6 * 3600e3).unref();
+route('GET', '/api/users-trash', ['super', 'admin', 'reseller'], ({ me }) => {
+  if (purgeUserTrash()) saveDb();
+  return { days: USER_TRASH_DAYS, items: (db.usersTrash || []).filter((x) => trashSeen(me, x)).sort((a, b) => b.delAt.localeCompare(a.delAt)).map((x) => ({
+    id: x.id, name: x.name, username: x.username, role: x.role, credits: x.credits || 0, delAt: x.delAt, delByName: x.delByName || '', parentName: (db.users.find((p) => p.id === x.parentId) || {}).name || '',
+    left: Math.max(0, Math.ceil((Date.parse(x.delAt) + USER_TRASH_DAYS * 864e5 - Date.now()) / 864e5)) })) };
+});
+route('POST', '/api/users-trash/:id/restore', ['super', 'admin', 'reseller'], ({ me, params }) => lock(() => {
+  const x = (db.usersTrash || []).find((v) => v.id === Number(params.id));
+  if (!x || !trashSeen(me, x)) throw new HttpError(404, 'Ya no está en Eliminados.');
+  if (db.users.some((v) => v.username.toLowerCase() === x.username.toLowerCase())) throw new HttpError(409, `Ya hay otro usuario que se llama «${x.username}». Cámbiale el nombre a ese antes de restaurar.`);
+  const { delAt, delBy, delByName, ...u } = x;
+  if (u.parentId && !db.users.some((v) => v.id === u.parentId)) u.parentId = me.role === 'reseller' ? me.id : (db.users.find((v) => v.role === 'super') || me).id;
+  db.users.push(u);
+  db.usersTrash = db.usersTrash.filter((v) => v !== x);
+  addLog('usuario', null, `Usuario restaurado: ${u.name} (${u.username})` + (u.credits ? ` con sus ${u.credits} créditos` : ''), me);
+  saveDb();
+  return { ok: true, name: u.name };
+}));
+route('DELETE', '/api/users-trash/:id', ['super', 'admin', 'reseller'], ({ me, params }) => lock(() => {
+  const x = (db.usersTrash || []).find((v) => v.id === Number(params.id));
+  if (!x || !trashSeen(me, x)) throw new HttpError(404, 'Ya no está en Eliminados.');
+  db.usersTrash = db.usersTrash.filter((v) => v !== x);
+  addLog('usuario', null, `Usuario borrado para siempre: ${x.name} (${x.username})`, me);
   saveDb();
   return { ok: true };
 }));
@@ -5572,6 +5651,105 @@ route('POST', '/api/monitor/broadcast', '*', async ({ me, body }) => {
   await lock(async () => { addLog('monitor', null, `Mensaje a todos${only ? ' en ' + (db.servers.find((x) => x.id === only) || {}).name : ''}: ${text.slice(0, 120)} (${sent} pantallas)`, me); saveDb(); });
   return { ok: true, sent, failed };
 });
+
+/* ---------- Mantenimiento de un servidor Emby, Jellyfin o Plex (v240): solo AVISA, no corta nada ----------
+   Al ponerlo: mensaje en pantalla a quien está viendo (y a quien empiece a ver mientras dure), aviso en la pantalla
+   de entrar de Emby y Jellyfin, y el botón «¿Funciona?» del bot lo dice. Al quitarlo se deja el aviso de entrada como estaba */
+const MAINT_KINDS = ['emby', 'jellyfin', 'plex'];
+const srvMaintAll = () => db.settings.srvMaint || (db.settings.srvMaint = {});
+const srvMaintOf = (s) => { const m = s && srvMaintAll()[s.id]; return m && m.on ? m : null; };
+const srvMaintSeen = new Map(); // serverId -> Set de sesiones ya avisadas
+async function srvMaintNotify(s, m) {
+  const seen = srvMaintSeen.get(s.id) || new Set(); srvMaintSeen.set(s.id, seen);
+  let list; try { list = await emby(s, 'GET', '/Sessions?ActiveWithinSeconds=600'); } catch { return 0; }
+  let n = 0;
+  for (const x of list || []) {
+    if (!x.Id || !x.UserId || seen.has(x.Id) || !x.NowPlayingItem) continue;
+    seen.add(x.Id);
+    try { await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: '🚧 ' + (db.settings.brand.name || 'Aviso'), Text: m.msg, TimeoutMs: 20000 }); n++; } catch { /* esa app no admite mensajes */ }
+  }
+  return n;
+}
+/** Aviso en la pantalla de entrar (Emby y Jellyfin). Guarda el que había para dejarlo igual al quitarlo */
+async function srvMaintDisclaimer(s, m, on) {
+  if (s.kind === 'plex' || DEMO) return null;
+  try {
+    const b = await emby(s, 'GET', '/System/Configuration/branding');
+    if (!b || typeof b !== 'object') return false;
+    if (on) { if (m.prevDisc === undefined) m.prevDisc = b.LoginDisclaimer || ''; b.LoginDisclaimer = '🚧 ' + m.msg; }
+    else b.LoginDisclaimer = m.prevDisc || '';
+    await emby(s, 'POST', '/System/Configuration/branding', b);
+    return true;
+  } catch (e) { console.error('Mantenimiento (aviso de entrada):', s.name, e.message); return false; }
+}
+/** Cierra el servidor: deja sin acceso a sus cuentas activas y para lo que están viendo. Solo se marca a las que se cierran */
+async function srvMaintCut(s, m) {
+  let n = 0, failed = 0;
+  for (const c of db.clients.filter((x) => x.serverId === s.id && x.status === 'active' && !x.off && !x.maintCut && x.embyId)) {
+    const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
+    if (!valid) continue;
+    c.maintCut = true;
+    try { await removeAccess(c, true); n++; } catch (e) { failed++; console.error('Mantenimiento (cerrar):', c.embyName, e.message); }
+  }
+  try { for (const x of (await emby(s, 'GET', '/Sessions?ActiveWithinSeconds=600')) || []) if (x.Id && x.NowPlayingItem) { try { await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: '🚧 ' + (db.settings.brand.name || 'Aviso'), Text: m.msg, TimeoutMs: 20000 }); await emby(s, 'POST', `/Sessions/${x.Id}/Playing/Stop`); } catch { /* nada */ } } } catch { /* nada */ }
+  return { n, failed };
+}
+/** Abre el servidor otra vez: solo a las cuentas que cerró el mantenimiento, cada una como diga el panel */
+async function srvMaintOpen(s) {
+  let n = 0;
+  for (const c of db.clients.filter((x) => x.serverId === s.id && x.maintCut)) {
+    delete c.maintCut;
+    try { await applyState(c); n++; } catch (e) { c.maintRetry = true; console.error('Mantenimiento (abrir):', c.embyName, e.message); }
+  }
+  return n;
+}
+async function srvMaintSet(me, s, body) {
+  const all = srvMaintAll(), was = all[s.id] || {}, on = !!body.on;
+  const msg = str(body.msg, 300) || was.msg || 'Estamos haciendo mejoras en el servidor. Puede ir lento o cortarse un rato. ¡Gracias por tu paciencia! 🙏';
+  const mins = on ? Math.max(0, Math.min(24 * 60, Math.round(+body.mins || 0))) : 0;
+  const cut = on && !!body.cut;
+  const m = { ...was, on, msg, cut: on ? cut || !!was.cut : false, bot: on ? !!body.bot : !!was.bot, at: on ? (was.on ? was.at : new Date().toISOString()) : null, until: on ? (mins ? new Date(Date.now() + mins * 60000).toISOString() : (body.keep && was.until) || null) : null };
+  all[s.id] = m;
+  const disc = await srvMaintDisclaimer(s, m, on);
+  let sent = 0, bot = 0, closed = 0, opened = 0;
+  if (on && cut && !was.cut) closed = (await srvMaintCut(s, m)).n;
+  if (!on) { delete m.prevDisc; srvMaintSeen.delete(s.id); opened = await srvMaintOpen(s); }
+  if (on && !cut) sent = await srvMaintNotify(s, m);
+  if (on ? body.bot : body.bot || was.bot) {
+    const chats = new Set(db.clients.filter((c) => c.serverId === s.id && c.status === 'active' && c.tgChat).map((c) => c.tgChat));
+    const hm = m.until ? new Date(m.until).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' }) : '';
+    const t = on ? `🚧 <b>${cut ? 'Servicio en mantenimiento' : 'Aviso de mantenimiento'}</b>\n\n${hEsc(msg)}${hm ? `\n\n⏰ Volvemos a las <b>${hm}</b>.` : ''}` : '✅ <b>¡Ya está!</b>\n\nHemos terminado el mantenimiento. Ya puedes ver todo con normalidad. 🍿';
+    for (const chat of chats) { try { await tg('sendMessage', { chat_id: chat, text: t, parse_mode: 'HTML' }); bot++; } catch { /* nada */ } }
+  }
+  addLog('servidor', null, on ? `Puso en mantenimiento ${s.name}${cut ? ' (cerrado: ' + closed + ' cuentas sin acceso)' : ' (solo aviso)'}${mins ? `, ${mins} minutos` : ''}: ${msg.slice(0, 100)}` : `Quitó el mantenimiento de ${s.name}${opened ? ` (${opened} cuentas vuelven a tener acceso)` : ''}`, me);
+  saveDb();
+  return { ok: true, maint: on ? { on, msg, at: m.at, until: m.until, cut: m.cut } : null, sent, bot, disc, closed, opened };
+}
+route('PUT', '/api/servers/:id/maint', SUPER, ({ me, params, body }) => lock(async () => {
+  const s = db.servers.find((x) => x.id === Number(params.id));
+  if (!s) throw new HttpError(404, 'Ese servidor ya no está en el panel.');
+  if (!MAINT_KINDS.includes(s.kind || 'emby')) throw new HttpError(400, 'El mantenimiento con aviso es para Emby, Jellyfin y Plex.');
+  return srvMaintSet(me, s, body);
+}));
+// Si al terminar alguna cuenta no se pudo abrir (servidor caído en ese momento), se reintenta cada 5 minutos
+let maintRetryAt = 0;
+setInterval(() => {
+  if (Date.now() - maintRetryAt < 5 * 60000) return;
+  const list = db.clients.filter((c) => c.maintRetry && !c.maintCut).slice(0, 30);
+  if (!list.length) return;
+  maintRetryAt = Date.now();
+  lock(async () => { let ok = 0; for (const c of list) { try { await applyState(c); delete c.maintRetry; ok++; } catch { /* la próxima vez */ } } if (ok) saveDb(); }).catch(() => {});
+}, 30000).unref();
+// Se quita solo cuando llega la hora (también si el panel se reinició mientras tanto)
+setInterval(() => {
+  const now = Date.now(), due = db.servers.filter((s) => { const m = srvMaintOf(s); return m && m.until && Date.parse(m.until) <= now; });
+  if (!due.length) return;
+  lock(async () => { for (const s of due) { try { await srvMaintSet(null, s, { on: false }); } catch (e) { console.error('Mantenimiento (fin):', e.message); } } }).catch(() => {});
+}, 20000).unref();
+// Quien empiece a ver mientras dura el mantenimiento también recibe el aviso (una vez)
+setInterval(async () => {
+  for (const s of db.servers) { const m = srvMaintOf(s); if (m) { try { await srvMaintNotify(s, m); } catch { /* nada */ } } }
+}, 60000).unref();
 
 /* ---------- Vigilancia de servidores: aviso si se cae y cuando vuelve ---------- */
 const health = new Map(); // serverId -> { fails, down, since, checked, ok }
@@ -9589,8 +9767,9 @@ const server = http.createServer(async (req, res) => {
         if (!me) return send(res, 401, { error: 'Inicia sesión.' });
         // Un administrador entra donde su permiso le deja, aunque la ruta fuera solo del superadministrador
         const need = me.role === 'admin' ? permFor(req.method, pathname) : null;
-        if (need && !can(me, need)) return send(res, 403, { error: 'Tu usuario de administrador no tiene este permiso. Pídeselo al superadministrador.' });
+        if (need && ![].concat(need).some((p) => can(me, p))) return send(res, 403, { error: 'Tu usuario de administrador no tiene este permiso. Pídeselo al superadministrador.' });
         if (r.roles !== '*' && !r.roles.includes(me.role) && !need) return send(res, 403, { error: 'Tu nivel de usuario no permite hacer esto.' });
+        if (maintOn(me) && pathname !== '/api/logout') return send(res, 503, { error: maintMsg(), maint: true });
         if (me.mustPw && !['/api/my-password', '/api/data', '/api/logout'].includes(pathname)) return send(res, 403, { error: 'Antes de seguir, cambia la contraseña que te dieron.', mustPw: true });
       }
       if (DEMO && demoBlocked(req.method, pathname)) return send(res, 403, { error: '🧪 Esto es una demo: esta opción está desactivada. En tu panel funciona.' });
