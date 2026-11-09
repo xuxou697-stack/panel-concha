@@ -4682,8 +4682,8 @@ async function setOff(me, c, off) {
     try { await removeAccess(c, true); } catch (e) { delete c.off; throw e; }
     addLog('desactivada', c, 'Desactivada: sin acceso en Emby hasta que se vuelva a activar', me);
   } else {
-    const was = c.off; delete c.off; delete c.offBy;
-    try { await applyState(c); } catch (e) { c.off = was; throw e; }
+    const was = c.off, hold = c.hold; delete c.off; delete c.offBy; delete c.hold;
+    try { await applyState(c); } catch (e) { c.off = was; if (hold) c.hold = hold; throw e; }
     const valid = c.demo ? Date.now() < Date.parse(c.expiresAt) : diffDays(c.expires, today()) >= 0;
     libCheckLater(c);
     addLog('activada', c, valid ? 'Activada de nuevo: vuelve a tener acceso en Emby' : 'Activada de nuevo, pero está vencida: renuévala para que tenga acceso', me);
@@ -4691,6 +4691,30 @@ async function setOff(me, c, off) {
   return true;
 }
 route('POST', '/api/clients/:id/off', '*', ({ me, params }) => lock(async () => { await setOff(me, clientFor(me, params.id), true); saveDb(); return { ok: true }; }));
+/* v251: «Pausar hasta que pague»: sin acceso, sin borrar nada. Se quita sola cuando paga con su enlace de pago,
+   o a mano con «Ya ha pagado». Si tiene el bot, se le avisa con el botón para pagar */
+route('POST', '/api/clients/:id/hold', '*', ({ me, params, body }) => lock(async () => {
+  const c = clientFor(me, params.id), on = !!body.on;
+  if (c.demo) throw new HttpError(400, 'Las demos no se pausan: desactívala o cancélala.');
+  if (on) {
+    if (c.hold) return { ok: true };
+    if (!c.off) await setOff(me, c, true);
+    c.hold = { at: new Date().toISOString(), by: me.name };
+    addLog('desactivada', c, 'En pausa hasta que pague: sin acceso hasta que se reciba el pago', me);
+  } else {
+    if (!c.hold) return { ok: true };
+    await setOff(me, c, false);
+    addLog('activada', c, 'Pago recibido: se quita la pausa y vuelve a tener acceso', me);
+  }
+  saveDb();
+  let bot = false;
+  if (body.bot && c.tgChat && db.settings.notices.telegram.token) {
+    const pay = on && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { inline_keyboard: [[{ text: '💳 Pagar ahora', url: cpLink(c) }]] } : null;
+    const t = on ? `⏸️ <b>Tu cuenta está en pausa</b>\n\nNo nos consta el pago de tu última renovación. En cuanto se reciba, tu cuenta vuelve a funcionar al momento.${pay ? '\n\n👇 Puedes pagar aquí mismo:' : ''}` : '✅ <b>¡Pago recibido!</b>\n\nTu cuenta ya vuelve a funcionar. ¡Gracias! 🍿';
+    try { await tg('sendMessage', { chat_id: c.tgChat, text: t, parse_mode: 'HTML', ...(pay ? { reply_markup: pay } : {}) }); bot = true; } catch (e) { console.error('Pausa (bot):', e.message); }
+  }
+  return { ok: true, bot };
+}));
 route('POST', '/api/clients/:id/on', '*', ({ me, params }) => lock(async () => { await setOff(me, clientFor(me, params.id), false); saveDb(); return { ok: true }; }));
 route('POST', '/api/clients/:id/restore', '*', ({ me, params }) => lock(async () => {
   const c = clientFor(me, params.id);
@@ -6592,7 +6616,7 @@ async function cpPaid(o, via) {
   const oldScr = c.screens;
   c.expires = addMonths(base, o.months); c.lastMonths = o.months; c.demo = false; c.status = 'active'; c.paid = true;
   if (o.screens && [1, 2, 3, 4].includes(o.screens)) c.screens = o.screens; // eligió otras pantallas al pagar
-  delete c.expiresAt; delete c.off; delete c.offBy; delete c.trashedAt; delete c.trashReason;
+  delete c.expiresAt; delete c.off; delete c.offBy; delete c.hold; delete c.trashedAt; delete c.trashReason;
   try { await grantAccess(c); delete c.lastError; }
   catch (e) { c.lastError = e.message; notifyStaff('payments', `⚠️ ${c.panelName} ha pagado y la fecha ya está renovada, pero ${srvKind(db.servers.find((x) => x.id === c.serverId))} dio un error al dar acceso: ${e.message}. El vigilante lo volverá a intentar.`); }
   const what = `${o.months} ${o.months === 1 ? 'mes' : 'meses'}, ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}${oldScr && oldScr !== c.screens ? ` (antes ${oldScr})` : ''}`;

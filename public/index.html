@@ -2533,6 +2533,28 @@ body.tech1 [data-act=new],body.tech1 [data-act=demo],body.tech1 [data-act=import
 .iv-app b{display:block;font-size:14px}.iv-app small{display:block;color:var(--muted);font-size:11.5px;line-height:1.3;margin-top:2px}
 .iv-app.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,transparent)}
 .iv-guide{white-space:pre-wrap;word-break:break-word;font:13.5px/1.5 inherit;font-family:inherit;margin:10px 0 8px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--text) 6%,transparent);border:1px solid var(--line)}
+.ptabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;padding:5px;border-radius:16px;border:1px solid var(--line);background:var(--surface);width:fit-content;max-width:100%}
+.ptabs button{border:0;background:none;color:var(--muted);font:inherit;font-weight:650;font-size:14px;padding:8px 16px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.ptabs button[aria-selected=true]{background:color-mix(in srgb,var(--brand) 18%,transparent);color:var(--text);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand) 45%,transparent)}
+.ptabs .n{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:#ef4444;color:#fff}
+/* v247: aspecto moderno (se apaga en Apariencia) */
+@font-face{font-family:Inter;font-style:normal;font-weight:400 500;font-display:swap;src:url(/fonts/inter-400.woff) format('woff')}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/inter-600.woff) format('woff')}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/inter-700.woff) format('woff')}
+@font-face{font-family:Inter;font-style:normal;font-weight:800 900;font-display:swap;src:url(/fonts/inter-800.woff) format('woff')}
+html.look-font body{font-family:Inter,"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-feature-settings:'cv11','calt'}
+html.look-font :is(td,.tile b,.vxt-i b,.n,.num,.price){font-variant-numeric:tabular-nums}
+html.look-font :is(h1,h2){letter-spacing:-.018em}
+html.look-icons .ic.lic{width:1.05em;height:1.05em;vertical-align:-.15em;margin:0 .08em;flex:none}
+@keyframes skel{to{background-position:-200% 0,0 0}}
+html.look-skel .empty.loading{color:transparent;font-size:0;min-height:150px;padding:18px;background:linear-gradient(90deg,transparent 25%,color-mix(in srgb,var(--text) 7%,transparent) 50%,transparent 75%) 0 0/200% 100%,
+  linear-gradient(color-mix(in srgb,var(--text) 11%,transparent),color-mix(in srgb,var(--text) 11%,transparent)) 18px 22px/58% 14px no-repeat,
+  linear-gradient(color-mix(in srgb,var(--text) 8%,transparent),color-mix(in srgb,var(--text) 8%,transparent)) 18px 46px/34% 11px no-repeat,
+  linear-gradient(color-mix(in srgb,var(--text) 11%,transparent),color-mix(in srgb,var(--text) 11%,transparent)) 18px 82px/66% 14px no-repeat,
+  linear-gradient(color-mix(in srgb,var(--text) 8%,transparent),color-mix(in srgb,var(--text) 8%,transparent)) 18px 106px/40% 11px no-repeat;animation:skel 1.4s linear infinite;border-radius:inherit}
+html.look-skel #main .panel > .empty:not(.loading){padding-top:26px}
+html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:block;width:120px;height:88px;margin:0 auto 12px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22150%22%20height%3D%22110%22%20viewBox%3D%220%200%20150%20110%22%20fill%3D%22none%22%3E%3Cellipse%20cx%3D%2275%22%20cy%3D%22100%22%20rx%3D%2252%22%20ry%3D%227%22%20fill%3D%22%236366f1%22%20opacity%3D%22.18%22/%3E%3Cpath%20d%3D%22M35%2045l40-18%2040%2018v40l-40%2018-40-18z%22%20fill%3D%22%236366f1%22%20fill-opacity%3D%22.16%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222.5%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M35%2045l40%2018%2040-18M75%2063v40%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222.5%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M35%2045l-12%2014%2040%2018%2012-14M115%2045l12%2014-40%2018-12-14%22%20fill%3D%22%23a78bfa%22%20fill-opacity%3D%22.25%22%20stroke%3D%22%23a78bfa%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M98%2012l3%207%207%203-7%203-3%207-3-7-7-3%207-3zM46%2016l2%204%204%202-4%202-2%204-2-4-4-2%204-2z%22%20fill%3D%22%23f0abfc%22/%3E%3C/svg%3E") center/contain no-repeat}
+@media (prefers-reduced-motion:reduce){html.look-skel .empty.loading{animation:none}}
 </style>
 </head>
 <body>
@@ -2688,12 +2710,45 @@ const IC = {
   wrench: 'M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-.5-.5-2.5z', power: 'M12 3v9M7 6.5a7 7 0 1 0 10 0', mail: 'M3 6h18v12H3zM3 7l9 6 9-6', signal: 'M5 20v-3M10 20v-7M15 20V9M20 20V4',
 };
 const ic = (n) => (IC[n] ? `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${n === 'more' ? ' style="stroke-width:3"' : ''}><path d="${IC[n]}"/></svg>` : '');
-const ICON_ACT = { 'm-plex': 'refresh', 'bulk-mig': 'refresh', 'm-paylink': 'wallet', 'renew-same': 'bolt', renew: 'clock', 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
+const ICON_ACT = { 'c-hold': 'pause', 'c-unhold': 'check', 'm-plex': 'refresh', 'bulk-mig': 'refresh', 'm-paylink': 'wallet', 'renew-same': 'bolt', renew: 'clock', 'm-tgmsg': 'send', 'user-statement': 'note', 'm-conn': 'signal', 'm-guide': 'bolt', 'user-power': 'power', 'c-off': 'pause', 'c-on': 'play', 'bulk-off': 'pause', 'bulk-on': 'play', 'del-refund': 'coins', 'user-2fa': 'shield', 'user-info': 'copy', 'user-pass': 'lock', 'm-tg': 'bell', msg: 'copy', 'm-notes': 'note', edit: 'edit', 'm-pass': 'lock', 'm-hist': 'history', 'm-quality': 'box', 'm-screens': 'screen', 'm-owner': 'users', 'm-move': 'server', 'm-repair': 'wrench', trash: 'power', delete: 'trash',
   'bulk-repair': 'wrench', 'bulk-pkg': 'box', 'bulk-scr': 'screen', 'bulk-owner': 'users', 'bulk-move': 'server', 'bulk-dates': 'calendar', 'bulk-trash': 'trash', 'user-stats': 'chart', 'user-ledger': 'history', 'user-credits': 'coins', 'user-edit': 'edit', 'user-clients': 'list', 'user-transfer': 'users', 'user-toggle': 'power', 'user-del': 'trash', 'adm-perms': 'shield', 'adm-link': 'link' };
 
 /* ---------- Marca: la bahia de La Concha ---------- */
 const LOGO = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bahía de La Concha"><rect width="48" height="48" fill="#a9dcee"/><circle cx="34" cy="13" r="5" fill="#fbe3a6"/><rect y="24" width="48" height="24" fill="#1583b0"/><path d="M-2 25c4-9 11-11 15-6l3 6z" fill="#1f6b52"/><path d="M50 25c-3-8-10-10-15-5l-3 5z" fill="#1f6b52"/><ellipse cx="24" cy="24.2" rx="5" ry="2.4" fill="#2a7d60"/><path d="M8 30q4-2 8 0t8 0 8 0 8 0M13 35q3.5-1.7 7 0t7 0 7 0" fill="none" stroke="#8fd6ee" stroke-width="1.3" stroke-linecap="round"/><path d="M-1 36Q24 50 49 36V49H-1Z" fill="#ecd29b"/><path d="M-1 36Q24 50 49 36" fill="none" stroke="#fff" stroke-width="1.4" opacity=".85"/></svg>';
 const SCENE = '<svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a6f93"/><stop offset=".55" stop-color="#8ec9dc"/><stop offset="1" stop-color="#f6d9a4"/></linearGradient><linearGradient id="se" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2792b8"/><stop offset="1" stop-color="#0d5676"/></linearGradient></defs><rect width="800" height="330" fill="url(#sk)"/><circle cx="560" cy="250" r="46" fill="#fff1c4" opacity=".9"/><rect y="320" width="800" height="280" fill="url(#se)"/><path d="M-20 322C40 210 150 170 230 240c20 18 40 52 52 82z" fill="#1c5f4a"/><path d="M820 322C770 230 680 196 610 250c-24 19-44 46-54 72z" fill="#1f6b52"/><ellipse cx="408" cy="321" rx="74" ry="26" fill="#2a7d60"/><path d="M334 321a74 26 0 0 0 148 0z" fill="#0d5676" opacity=".25"/><g fill="none" stroke="#bfe9f5" stroke-width="3" stroke-linecap="round" opacity=".55"><path d="M90 380q30-12 60 0t60 0 60 0"/><path d="M430 400q30-12 60 0t60 0 60 0 60 0"/><path d="M200 440q34-13 68 0t68 0 68 0 68 0"/><path d="M60 470q30-12 60 0t60 0"/></g><path d="M-20 500Q400 640 820 500V620H-20Z" fill="#ecd29b"/><path d="M-20 500Q400 640 820 500" fill="none" stroke="#fff" stroke-width="7" opacity=".8"/><path d="M-20 516Q400 656 820 516" fill="none" stroke="#fff" stroke-width="3" opacity=".35"/></svg>';
+/* ---------- Aspecto moderno (v247): se enciende o apaga en Sistema › Apariencia ---------- */
+const LOOK_INFO = [
+  ['font', 'Letra moderna (Inter)', 'La misma letra en todos los aparatos, con los números bien alineados.'],
+  ['icons', 'Iconos de línea', 'Los emojis de títulos, botones y casillas pasan a iconos del mismo estilo que el menú. Los mensajes a clientes no cambian.'],
+  ['skel', 'Carga suave y pantallas vacías con dibujo', 'En vez de «Cargando…», cajas grises que se mueven; y un dibujo sencillo cuando no hay nada.'],
+  ['pay', 'Página de pago con el estilo del bot', 'Colores de tu marca, efecto cristal y tu logo arriba.'],
+  ['appIcon', 'Icono del móvil con tu logo', 'Al instalar el panel en el móvil, el icono sale con tu logo (si tu logo es PNG).'],
+];
+let LOOK = {};
+const lookOn = (k) => (((S.d && S.d.settings && S.d.settings.look) || LOOK)[k] !== false);
+function applyLook(l) {
+  if (l) LOOK = l;
+  const h = document.documentElement.classList;
+  ['font', 'icons', 'skel'].forEach((k) => h.toggle('look-' + k, lookOn(k)));
+}
+/** Cambia emojis por iconos de línea solo en títulos, botones y casillas (nunca en mensajes, notas ni nombres escritos en cajas) */
+const EMO_IC = { '👥': 'users', '🧑‍💼': 'users', '🧑‍🤝‍🧑': 'users', '👤': 'user', '📅': 'calendar', '🗓️': 'calendar', '🗓': 'calendar', '💳': 'wallet', '⏳': 'timer', '⏰': 'clock', '⌛': 'timer', '🕒': 'clock', '✅': 'check', '✔️': 'check', '⚠️': 'alert', '🚨': 'alert', '📺': 'tv', '🎬': 'film', '🎞️': 'film', '🪙': 'coins', '💰': 'coins', '💶': 'coins', '💸': 'coins', '📊': 'chart', '📈': 'chart', '🗑️': 'trash', '🗂️': 'box', '📦': 'box', '🔔': 'bell', '🔑': 'key', '🔐': 'lock', '🔒': 'lock', '🔗': 'link', '✈️': 'send', '📤': 'upload', '📥': 'download', '⬇️': 'download', '🛠️': 'wrench', '🔧': 'wrench', '🛡️': 'shield', '🔄': 'refresh', '🔁': 'refresh', '☀️': 'sun', '🌙': 'moon', '💬': 'msg', '✉️': 'mail', '📧': 'mail', '📨': 'mail', '📝': 'note', '📋': 'list', '⚡': 'bolt', '🖥️': 'server', '📡': 'signal', '📶': 'wifi', '▶️': 'play', '⏸️': 'pause', '⛔': 'power', '🔌': 'power', '👁️': 'eye', '🚧': 'alert', 'ℹ️': 'info', '➕': 'plus', '✏️': 'edit', '🌳': 'users', '🔋': 'bolt', '👋': 'user', '🧾': 'note', '🧹': 'trash', '🎯': 'check', '↩️': 'refresh', '🗃️': 'box' };
+const EMO_RE = /\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}\uFE0F?)*/gu;
+/** Recorre la pantalla y cambia los emojis conocidos por iconos. No toca cajas de texto, mensajes ni vistas previas de mensajes */
+function lineIcons(root) {
+  if (!root || !lookOn('icons')) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (/\p{Extended_Pictographic}/u.test(n.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
+  const list = []; let n; while ((n = w.nextNode())) list.push(n);
+  for (const t of list) {
+    const el = t.parentElement;
+    if (!el || el.closest('textarea,pre,code,svg,[contenteditable],.demo-ban,.iv-guide,.keep-emo,option,select')) continue;
+    if (/^pre/.test(getComputedStyle(el).whiteSpace)) continue; // vista previa de un mensaje: se deja como lo recibe el cliente
+    let hit = false;
+    const html = esc(t.nodeValue).replace(EMO_RE, (e) => { const k = EMO_IC[e] || EMO_IC[e.replace(/️/g, '')]; if (!k) return e; hit = true; return ic(k).replace('class="ic"', 'class="ic lic"'); });
+    if (!hit) continue;
+    const span = document.createElement('span'); span.innerHTML = html; t.replaceWith(...span.childNodes);
+  }
+}
 let BRAND = { name: 'Concha', color: '', logo: '' };
 function applyBrand(b) {
   BRAND = { name: 'Concha', color: '', logo: '', ...(b || {}) };
@@ -2743,7 +2798,7 @@ const pays = () => !staff() || !!me().useCredits;
 const noCli = () => me().role === 'admin' && !canDo('clients') && !canDo('support');
 /** Administrador «solo técnico» (v239): ve y repara cuentas, pero no crea, renueva, cambia ni borra */
 const techOnly = () => me().role === 'admin' && !canDo('clients') && canDo('support');
-const TECH_NO = new Set(['new', 'demo', 'import', 'renew', 'renew-same', 'trash', 'delete', 'del-refund', 'c-off', 'c-on', 'm-pass', 'm-quality', 'm-screens', 'm-owner', 'm-move', 'm-plex', 'm-notes', 'm-paylink', 'bulk-off', 'bulk-on', 'bulk-trash', 'bulk-pkg', 'bulk-scr', 'bulk-dates', 'bulk-mig', 'demo-again', 'restore', 'qs-bcast']);
+const TECH_NO = new Set(['new', 'demo', 'import', 'renew', 'renew-same', 'trash', 'delete', 'del-refund', 'c-off', 'c-on', 'c-hold', 'c-unhold', 'm-pass', 'm-quality', 'm-screens', 'm-owner', 'm-move', 'm-plex', 'm-notes', 'm-paylink', 'bulk-off', 'bulk-on', 'bulk-trash', 'bulk-pkg', 'bulk-scr', 'bulk-dates', 'bulk-mig', 'demo-again', 'restore', 'qs-bcast']);
 /** Menu lateral agrupado. v = vista, f = filtro de la lista, a = accion, h = titulo de grupo, l = nivel */
 /** Menu lateral por grupos plegables. v = vista, f = filtro de la lista, i = icono, n = contador, hot = contador que pide atencion */
 function navGroups() {
@@ -2757,9 +2812,10 @@ function navGroups() {
   const cli = [
     { v: 'cuentas', f: 'all', t: 'Lista', i: 'list', n: live().length },
     { v: 'nuevo', t: 'Nuevo', i: 'userplus' },
-    { v: 'cuentas', f: 'soon', t: 'Por vencer', i: 'clock', n: cnt.soon },
-    { v: 'cuentas', f: 'expired', t: 'Vencidos', i: 'alert', n: cnt.expired, hot: true },
-    { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off },
+    // v247: «Por vencer», «Vencidos» y «Desactivados» ya están dentro de la Lista (casillas de arriba y filtro «Estado»): no salen sueltos en el menú
+    { v: 'cuentas', f: 'soon', t: 'Por vencer', i: 'clock', n: cnt.soon, hide: 'cuentas|all' },
+    { v: 'cuentas', f: 'expired', t: 'Vencidos', i: 'alert', n: cnt.expired, hot: true, hide: 'cuentas|all' },
+    { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off, hide: 'cuentas|all' },
     { v: 'calendario', t: 'Calendario', i: 'calendar' },
     { v: 'compartidas', t: 'Compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true }];
   if (staff() && !pays()) cli.push({ v: 'fechas', t: 'Ajustar fechas', i: 'calendar' });
@@ -2783,7 +2839,7 @@ function navGroups() {
       { v: 'demonueva', t: 'Nueva', i: 'plus' }, { v: 'cuentas', f: 'demo', t: 'Activas', i: 'play', n: cnt.demo },
       { v: 'demosvencidas', t: 'Papelera', i: 'trash', n: trash().filter((c) => c.demo).length }, { v: 'seguimiento', t: 'Seguimiento', i: 'send', n: S.d.followPending || 0, hot: true }] },
     { k: 'mon', t: 'En directo', i: 'radio', items: [
-      { v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'altrans', t: 'Transcode', i: 'bolt' }, { v: 'alses', t: 'Pantallas de más', i: 'screen' },
+      { v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'altrans', t: 'Transcode', i: 'bolt', hide: 'alhist|' }, { v: 'alses', t: 'Pantallas de más', i: 'screen', hide: 'alhist|' },
       { v: 'alhist', t: 'Alertas', i: 'history', n: S.d.alertsUnread, hot: true }, { v: 'inactivos', t: 'Inactivos', i: 'pause' },
       ...(staff() && canDo('reports') ? [{ v: 'uso', t: 'Uso y consumo', i: 'chart' }] : [])] },
     { k: 'msg', t: 'Mensajes', i: 'msg', items: msg },
@@ -2806,7 +2862,7 @@ function navGroups() {
   const venOk = me().role === 'admin' ? canDo('resellers') || canDo('credits') : me().role !== 'sub';
   const eq = venOk ? [
     { v: 'equipo', t: staff() ? 'Vendedores' : 'Subresellers', i: 'users' }, { v: 'atencion', t: 'Atención', i: 'alert', n: S.d.teamCount || 0, hot: true },
-    { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length }, { v: 'equipodel', t: 'Eliminados', i: 'trash' }, { v: 'stats', t: 'Estadísticas', i: 'chart' },
+    { v: 'equipooff', t: 'Desactivados', i: 'power', n: S.d.users.filter((u) => u.disabled).length, hide: 'equipo|' }, { v: 'equipodel', t: 'Eliminados', i: 'trash', hide: 'equipo|' }, { v: 'stats', t: 'Estadísticas', i: 'chart' },
     { v: 'mensajeeq', t: staff() ? 'Mensaje al equipo' : 'Mensaje a subresellers', i: 'send' },
     ...(staff() && canDo('resellers') ? [{ v: 'venajustes', t: 'Reglas del equipo', i: 'sliders' }] : [])] : [];
   if (canDo('admins')) eq.push({ v: 'admins', t: 'Administradores', i: 'shield' });
@@ -2959,7 +3015,7 @@ const salesHtml = (cls) => SALES ? `<a class="${cls}" href="mailto:${esc(SALES)}
 async function boot() {
   bootLoading(true);
   const st = await api('GET', '/api/state', null, { timeout: 15000 });
-  applyBrand(st.brand); applyTheme(); SUPPORT = st.support || null; SALES = st.salesEmail || ''; DEMO_IN = st.demo || null;
+  applyBrand(st.brand); applyLook(st.look); applyTheme(); SUPPORT = st.support || null; SALES = st.salesEmail || ''; DEMO_IN = st.demo || null;
   if (st.license && st.license.state === 'locked') return showLock(st.license);
   if (st.needsSetup) return showGate(true);
   if (!st.authed) return showGate(false);
@@ -3198,6 +3254,16 @@ function kindSessions(list, byName) {
   return (list || []).filter((x) => (byName ? names.has(x.server) : ids.has(x.serverId)));
 }
 
+/** v247: pantallas hermanas que se juntaron en una (antes eran entradas sueltas del menú): pestañas arriba */
+function pageTabs() {
+  const groups = [
+    ['alhist', 'altrans', 'alses'].includes(S.view) ? [['alhist', 'Alertas', S.d.alertsUnread], ['altrans', 'Transcode'], ['alses', 'Pantallas de más']] : null,
+    ['equipo', 'equipooff', 'equipodel'].includes(S.view) && navItems().some((x) => x.v === 'equipooff') ? [['equipo', staff() ? 'Activos' : 'Subresellers'], ['equipooff', 'Desactivados', S.d.users.filter((u) => u.disabled).length], ['equipodel', 'Eliminados']] : null,
+  ].find(Boolean);
+  if (!groups) return '';
+  return `<div class="ptabs" role="tablist">${groups.map(([v, t, n]) => `<button type="button" role="tab" data-view="${v}" aria-selected="${S.view === v}">${t}${n ? ` <span class="n">${n}</span>` : ''}</button>`).join('')}</div>`;
+}
+
 /* ---------- Pintado ---------- */
 function render() {
   // pantallas que se juntaron con otras: los enlaces antiguos siguen funcionando
@@ -3207,13 +3273,17 @@ function render() {
   if (!items.some((x) => x.v === S.view) && !(S.view === 'hoy' && !noCli()) && !(S.view === 'vendedor' && me().role !== 'sub') && !(S.view === 'srvficha' && canDo('viewServers') && S.d.servers.some((x) => x.id === S.sf.id)) && !(S.view === 'cficha' && S.d.clients.some((x) => x.id === S.cf.id))) S.view = S.view === 'srvficha' && canDo('viewServers') ? 'servidores' : 'resumen';
   const listF = ['soon', 'expired', 'demo', 'off'].includes(S.filter) ? S.filter : 'all';
   const navTop = $('#nav').scrollTop;
+  // v247: las pantallas que van como pestaña dentro de otra no salen en el menú; se ilumina la pantalla de la que forman parte
+  const hereOf = (x) => x.v === S.view && (!x.f || x.f === listF);
+  const flat = items;
   const item = (x) => {
-    const cur = x.v === S.view && (!x.f || x.f === listF);
+    if (x.hide) return '';
+    const cur = hereOf(x) || flat.some((h) => h.hide === `${x.v}|${x.f || ''}` && hereOf(h));
     return `<button type="button" data-view="${x.v}"${x.f ? ` data-filter="${x.f}"` : ''}${cur ? ' aria-current="page"' : ''}>${ic(x.i)}<span class="t">${x.t}</span>${x.n ? `<span class="n${x.hot ? ' hot' : ''}">${x.n}</span>` : ''}</button>`;
   };
   $('#nav').innerHTML = navGroups().map((g) => { // el selector de plataforma va solo arriba (antes salía dos veces)
     if (!g.t) return g.items.map(item).join('');
-    const here = g.items.some((x) => x.v === S.view && (!x.f || x.f === listF));
+    const here = g.items.some(hereOf);
     const open = NAV_OPEN.has(g.k);
     // Solo se suman los números; si algún aviso es «!», se enseña «!»
     const hot = g.items.some((x) => x.hot && x.n === '!') ? '!' : g.items.reduce((n, x) => n + (x.hot && typeof x.n === 'number' ? x.n : 0), 0);
@@ -3222,7 +3292,7 @@ function render() {
   }).join('');
   $('#nav').scrollTop = navTop;
   $('#who').innerHTML = `<b>${esc(d.me.name)}</b><br>${ROLE[d.me.role]}, ${!pays() ? 'créditos ilimitados' : plural(d.me.credits, 'crédito', 'créditos')}`;
-  applyBrand(d.settings.brand); applyTheme();
+  applyBrand(d.settings.brand); applyLook(d.settings.look); applyTheme();
   if (d.salesEmail !== undefined) SALES = d.salesEmail || '';
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
@@ -3230,7 +3300,7 @@ function render() {
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), equipodel: vEquipoDel, stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   $('#main').dataset.v = S.view; // para dar a cada pantalla su toque de color
   document.body.classList.toggle('tech1', techOnly());
-  try { $('#main').innerHTML = (S.d.demoMode ? '<div class="demo-ban">🧪 <b>Panel de demostración</b> · los clientes y servidores son de mentira · se deja como nuevo cada noche</div>' : '') + (staff() && !(S.d.settings.maintenance || {}).on && Object.values(S.d.settings.srvMaint || {}).some((m) => m && m.on) ? `<div class="demo-ban mt-ban">🚧 <b>Servidor en mantenimiento:</b> ${esc((S.dAll || S.d).servers.filter((v) => ((S.d.settings.srvMaint || {})[v.id] || {}).on).map((v) => v.name).join(', '))} · los clientes reciben el aviso${isSuper() ? ' · <button type="button" class="lnk" data-view="seguridad" style="color:#fff;text-decoration:underline">quitarlo</button>' : ''}</div>` : '') + ((S.d.settings.maintenance || {}).on && staff() ? `<div class="demo-ban mt-ban">🚧 <b>Modo mantenimiento puesto</b> · los vendedores no pueden entrar${isSuper() ? ' · <button type="button" class="lnk" data-view="seguridad" style="color:#fff;text-decoration:underline">quitarlo</button>' : ''}</div>` : '') + (hasJf() ? kindSwitchHtml() : '') + fn(); jfWords($('#main')); jfWords($('#nav')); if (kindTab() !== 'emby') jfWatch(); bzAll($('#main')); }
+  try { $('#main').innerHTML = (S.d.demoMode ? '<div class="demo-ban">🧪 <b>Panel de demostración</b> · los clientes y servidores son de mentira · se deja como nuevo cada noche</div>' : '') + (staff() && !(S.d.settings.maintenance || {}).on && Object.values(S.d.settings.srvMaint || {}).some((m) => m && m.on) ? `<div class="demo-ban mt-ban">🚧 <b>Servidor en mantenimiento:</b> ${esc((S.dAll || S.d).servers.filter((v) => ((S.d.settings.srvMaint || {})[v.id] || {}).on).map((v) => v.name).join(', '))} · los clientes reciben el aviso${isSuper() ? ' · <button type="button" class="lnk" data-view="seguridad" style="color:#fff;text-decoration:underline">quitarlo</button>' : ''}</div>` : '') + ((S.d.settings.maintenance || {}).on && staff() ? `<div class="demo-ban mt-ban">🚧 <b>Modo mantenimiento puesto</b> · los vendedores no pueden entrar${isSuper() ? ' · <button type="button" class="lnk" data-view="seguridad" style="color:#fff;text-decoration:underline">quitarlo</button>' : ''}</div>` : '') + (hasJf() ? kindSwitchHtml() : '') + pageTabs() + fn(); lineIcons($('#main')); lineIcons(document.querySelector('aside')); jfWords($('#main')); jfWords($('#nav')); if (kindTab() !== 'emby') jfWatch(); bzAll($('#main')); }
   catch (ex) { // si una pantalla falla con algun dato, se avisa en vez de dejarla en negro
     console.error(ex);
     $('#main').innerHTML = `<div class="panel pad" style="max-width:720px"><h2>Esta pantalla no se ha podido mostrar</h2><p class="err" style="max-width:none;margin:10px 0">${esc(ex && ex.message)}</p>
@@ -3643,7 +3713,7 @@ function clientCard(c) {
   const renewLabel = c.demo ? 'Convertir en cuenta' : 'Extender';
   // Bloque «cuándo vence» con barra y datos en recuadros (mismo estilo que la Papelera)
   const dl = c.demo ? null : diff(c.expires, S.d.today), span = Math.max(30, (c.lastMonths || 1) * 30);
-  const wTxt = c.off ? '⏸️ Desactivada' : c.demo ? (st === 'demo' ? '🎁 Demo en curso' : '⏱️ Demo terminada') : dl < 0 ? `⛔ Caducó hace ${plural(-dl, 'día', 'días')}` : dl === 0 ? '🔥 Vence hoy' : dl === 1 ? '⏰ Vence mañana' : `${st === 'soon' ? '⏰' : '✅'} Vence en ${dl} días`;
+  const wTxt = c.hold ? '⏸️ Pendiente de pago' : c.off ? '⏸️ Desactivada' : c.demo ? (st === 'demo' ? '🎁 Demo en curso' : '⏱️ Demo terminada') : dl < 0 ? `⛔ Caducó hace ${plural(-dl, 'día', 'días')}` : dl === 0 ? '🔥 Vence hoy' : dl === 1 ? '⏰ Vence mañana' : `${st === 'soon' ? '⏰' : '✅'} Vence en ${dl} días`;
   const wDate = c.demo ? (c.expiresAt ? 'termina ' + fmtTs(c.expiresAt) : '') : fmt(c.expires);
   const wPct = c.demo ? 50 : dl <= 0 ? 0 : Math.max(4, Math.min(100, Math.round((dl / span) * 100)));
   const wBox = `<div class="ccw"><div class="tr-wt"><b>${wTxt}</b><small>${wDate}</small></div>${c.demo ? `<small class="muted">⏳ ${leftText(c)}</small>` : `<div class="ccw-bar"><i style="width:${wPct}%"></i></div><small class="muted">${dl >= 0 ? `Le quedan ${leftText(c)}${c.lastMonths ? ' · plan de ' + plural(c.lastMonths, 'mes', 'meses') : ''}` : 'Renuévala para que vuelva a funcionar'}</small>`}</div>`;
@@ -3654,7 +3724,7 @@ function clientCard(c) {
     <header>
       ${staff() ? `<input type="checkbox" class="pick" data-sel="${c.id}"${picked ? ' checked' : ''} aria-label="Seleccionar a ${esc(c.panelName)}">` : ''}
       <button type="button" class="cav st-${st} ccopy" data-act="c-copy" data-id="${c.id}" title="Copiar los datos de la cuenta" aria-label="Copiar los datos de ${esc(c.panelName)}">${esc((c.panelName || c.embyName || '?').trim().charAt(0).toUpperCase())}</button>
-      <div class="who" style="flex:1"><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">@${esc(c.embyName)} <span class="cst st-${st}">${STAGE_SHORT[st] || STAGE[st]}</span>${mine ? '' : ` <span class="cown" title="Cuenta de ${esc(userName(c.ownerId) || '—')}">${ic('user')}${esc(userName(c.ownerId) || '—')}</span>`}</div></div>
+      <div class="who" style="flex:1"><button type="button" class="name ccopy-n" data-act="c-copy" data-id="${c.id}" title="Toca para copiar usuario, contraseña y fecha">${esc(c.panelName)}</button><div class="small muted">@${esc(c.embyName)} <span class="cst st-${st}">${(c.hold ? 'Pendiente de pago' : STAGE_SHORT[st] || STAGE[st])}</span>${mine ? '' : ` <span class="cown" title="Cuenta de ${esc(userName(c.ownerId) || '—')}">${ic('user')}${esc(userName(c.ownerId) || '—')}</span>`}</div></div>
       <div class="hd">${ib('edit', 'edit', 'Editar')}${ib('renew', 'clock', renewLabel, 'pri')}${ib('more', 'more', 'Más opciones')}<button type="button" class="ib plain" data-act="toggle" data-id="${c.id}" aria-expanded="${open}" aria-label="${open ? 'Ocultar detalles' : 'Ver detalles'}" title="${open ? 'Ocultar detalles' : 'Ver detalles'}">${ic('chev')}</button></div>
     </header>
     <div class="kv">${ic('mail')}<em>Email:</em><span>${c.email ? esc(c.email) : '—'}</span></div>
@@ -3666,7 +3736,8 @@ function clientCard(c) {
     ${open && !liveOf(c) ? '' : `<div class="cline"><span data-live="${c.id}">${liveOf(c) || `${ic('signal')}Últ. conexión: <span data-seen="${c.id}">${seenText(c.id)}</span>`}</span></div>`}
     ${flags ? `<div class="flags">${flags}</div>` : ''}
     ${note}
-    ${c.off ? `<div class="offbar">${ic('pause')}<span>Desactivada${c.off.length > 9 ? ' el ' + fmt(c.off.slice(0, 10)) : ''}: no puede ver nada en Emby. No se borra ni pasa a la papelera.</span><button type="button" class="btn sm primary" data-act="c-on" data-id="${c.id}">${ic('play')}Activar</button></div>` : ''}
+    ${c.hold ? `<div class="offbar">${ic('pause')}<span>En pausa hasta que pague${c.hold.at ? ' (desde el ' + fmt(c.hold.at.slice(0, 10)) + ')' : ''}: no puede ver nada. Si paga con su enlace de pago se quita sola.</span><button type="button" class="btn sm primary" data-act="c-unhold" data-id="${c.id}">${ic('check')}Ya ha pagado</button></div>` : ''}
+    ${c.off && !c.hold ? `<div class="offbar">${ic('pause')}<span>Desactivada${c.off.length > 9 ? ' el ' + fmt(c.off.slice(0, 10)) : ''}: no puede ver nada en Emby. No se borra ni pasa a la papelera.</span><button type="button" class="btn sm primary" data-act="c-on" data-id="${c.id}">${ic('play')}Activar</button></div>` : ''}
     ${c.lastError ? `<div class="err">No se pudo aplicar en Emby: ${esc(c.lastError)}</div>` : ''}
     ${more}
   </article>`;
@@ -4219,9 +4290,25 @@ function nwTicket() {
 /* ---------- Avisos de vencimiento ---------- */
 const tgLink = (c) => { const b = S.d.settings.notices.telegram.bot; return b ? `https://t.me/${b}?start=${c.tgCode}` : ''; };
 /** Texto con el enlace personal de Telegram, para añadirlo al mensaje que se le da al cliente */
-const tgBlock = (c) => { const l = tgLink(c); return l ? `🔔 Activa tus avisos gratis por Telegram\n✅ Te avisamos antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n👉 Abre este enlace y pulsa «INICIAR»:\n${l}` : ''; };
+/** v249: el regalo por activar el bot, si está encendido y la cuenta aún no lo ha recibido */
+const giftLeftH = (c) => { const g = S.d.settings.tgGift || {}, lim = (g.limit || 12) * 3600000, at = Date.parse(c.giftOfferAt || ''); return at ? Math.max(0, Math.ceil((at + lim - Date.now()) / 3600000)) : g.limit || 12; };
+const giftTxt = (c) => { const g = S.d.settings.tgGift || {}; if (!g.on || c.tgGift || c.tgLinked || c.status !== 'active' || !giftLeftH(c)) return ''; return c.demo ? plural(g.hours || 24, 'hora', 'horas') + ' más de prueba' : plural(g.days || 3, 'día', 'días') + ' gratis'; };
+/** Texto del plazo: «en las próximas 12 horas» */
+const giftWhen = (c) => { const h = giftLeftH(c); return h <= 1 ? 'en la próxima hora' : `en las próximas ${h} horas`; };
+document.addEventListener('click', (e) => { const an = e.target.closest && e.target.closest('a[href*="wa.me/"],a[href*="t.me/share"],a[href*="signal.me"]'); if (an) try { giftMark(decodeURIComponent(an.href)); } catch (x) { /* nada */ } }, true);
+/** Al copiar o enviar un mensaje con la oferta, empieza a contar su plazo (v250) */
+function giftMark(text) {
+  const t = String(text || ''); if (!t.includes('🎁')) return;
+  for (const m of t.matchAll(/start=c(\d+)_/g)) {
+    const c = (S.dAll || S.d).clients.find((x) => x.id === +m[1]); if (!c || c.giftOfferAt || !giftTxt(c)) continue;
+    c.giftOfferAt = new Date().toISOString();
+    api('POST', `/api/clients/${c.id}/gift-offer`, {}).then((r) => { if (r.at) c.giftOfferAt = r.at; }, () => {});
+  }
+}
+function giftSave(g) { api('PUT', '/api/tg-gift', g).then((r) => { S.d.settings.tgGift = r.gift; render(); toast(r.gift.on ? '🎁 Regalo guardado' : 'Regalo apagado'); }, (x) => toast(x.message, true)); }
+const tgBlock = (c) => { const l = tgLink(c), gt = giftTxt(c); return l ? `${gt ? `🎁 Actívalos ${giftWhen(c)} y te regalamos ${gt}\n` : '🔔 Activa tus avisos gratis por Telegram\n'}✅ Te avisamos antes de que caduque tu cuenta\n💳 Con un botón para renovar tú mismo en 1 minuto\n👉 Toca este enlace y pulsa «INICIAR» (solo una vez):\n${l}` : ''; };
 /** Invitación completa al bot (para mandarla sola por WhatsApp o Telegram) */
-const tgInvite = (c) => (tgLink(c) ? fillTpl('tginvite', c) : '');
+const tgInvite = (c) => { if (!tgLink(c)) return ''; const t = fillTpl('tginvite', c), gt = giftTxt(c); return gt && !/regal/i.test(t) ? `🎁 ¡Te regalamos ${gt} si activas tus avisos ${giftWhen(c)}!\n\n${t}` : t; };
 /** Mensaje con el enlace de pago (se cambia en Plantillas de mensajes › «Enlace de pago») */
 const payInvite = (c) => fillTpl('payinvite', c);
 /** Botones para enviar un texto: copiar, WhatsApp y Telegram */
@@ -4949,7 +5036,7 @@ async function loadSec() {
 function vSeguridad() {
   const sub = 'Protege tu cuenta del panel para que nadie más pueda entrar.';
   const x = S.sec;
-  if (!x) return head('Seguridad', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!x) return head('Seguridad', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (x.error) return head('Seguridad', sub) + `<p class="err">${esc(x.error)}</p>`;
   const sw = (k, on, label, hint) => `<div class="secrow"><div><b>${label}</b><small>${hint}</small></div><button type="button" class="sw" role="switch" aria-checked="${on}" data-act="sec-al" data-k="${k}" aria-label="${label}"><i></i></button></div>`;
   const pts = (x.twoFa ? 2 : 0) + (x.tgLinked ? 1 : 0) + (x.sessions.length <= 2 ? 1 : 0) + (!isSuper() || x.idleMin ? 1 : 0);
@@ -5089,7 +5176,7 @@ function vUso() {
   const sub = 'Lo que se ve en tus servidores. El panel lo apunta cada minuto mientras está en marcha.';
   const u = S.uso, days = S.usoDays || 30;
   const per = `<div class="tools" style="margin:0">${[[7, '7 días'], [30, '30 días'], [90, '90 días']].map(([n, t]) => `<button type="button" class="chip${days === n ? ' on' : ''}" data-act="uso-days" data-k="${n}">${t}</button>`).join('')}</div>`;
-  if (!u) return head('Estadísticas de uso', sub, per) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!u) return head('Estadísticas de uso', sub, per) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (u.error) return head('Estadísticas de uso', sub, per) + `<p class="err">${esc(u.error)}</p>`;
   if (!u.m) return head('Estadísticas de uso', sub, per) + `<div class="panel pad"><h2>Todavía no hay datos</h2><p class="muted">Desde que actualices el panel, se apunta cada minuto qué se está viendo. En unas horas verás aquí lo más visto, las horas punta y qué servidores se usan más.</p></div>`;
   const k = (n, label, c, icon) => `<div class="ktile" style="--c:${c}">${ic(icon)}<b>${n}</b><span>${label}</span></div>`;
@@ -5122,7 +5209,7 @@ async function loadIng() {
 function vIngresos() {
   const sub = 'Créditos vendidos a tus vendedores, cuentas nuevas y renovaciones de cada mes.';
   const x = S.ing;
-  if (!x) return head('Informe de ingresos', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!x) return head('Informe de ingresos', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (x.error) return head('Informe de ingresos', sub) + `<p class="err">${esc(x.error)}</p>`;
   const cur = (n) => money(n || 0, x.currency), M = x.months, last = M[M.length - 1], prev = M[M.length - 2] || {};
   const yearMoney = M.reduce((n, r) => n + r.money, 0), yearSold = M.reduce((n, r) => n + r.sold, 0);
@@ -5159,7 +5246,7 @@ async function loadBk() {
 function vCopias() {
   const sub = 'Guarda tus datos fuera del servidor: si el VPS falla, podrás recuperarlo todo.';
   const b = S.bk;
-  if (!b) return head('Copias de seguridad', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!b) return head('Copias de seguridad', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (b.error) return head('Copias de seguridad', sub) + `<p class="err">${esc(b.error)}</p>`;
   const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' KB');
   const c = b.cfg;
@@ -5278,7 +5365,7 @@ function qsResults(q) {
   // Clientes y vendedores por nombre, usuario, correo o teléfono
   const pool = multiKind() ? (S.dAll || S.d).clients : S.d.clients; // con varias plataformas, busca en todas
   const cl = noCli() ? [] : pool.filter((c) => words.every((w) => norm(`${c.panelName} ${c.embyName} ${c.email || ''} ${c.whatsapp || ''} ${c.telegram || ''}`).includes(w))).slice(0, 8)
-    .map((c) => ({ kind: 'Cliente', icon: c.demo ? 'timer' : 'user', label: c.panelName, sub: `${multiKind() ? KIND_NAME[kindOfSrv(c.serverId)] + ' · ' : ''}${c.embyName} · ${STAGE[stage(c)]}${(S.dAll || S.d).servers.length > 1 ? ' · ' + ((((S.dAll || S.d).servers.find((x) => x.id === c.serverId)) || {}).name || '') : ''}`, client: c.id }));
+    .map((c) => ({ kind: 'Cliente', icon: c.demo ? 'timer' : 'user', label: c.panelName, sub: `${multiKind() ? KIND_NAME[kindOfSrv(c.serverId)] + ' · ' : ''}${c.embyName} · ${(c.hold ? 'Pendiente de pago' : STAGE[stage(c)])}${(S.dAll || S.d).servers.length > 1 ? ' · ' + ((((S.dAll || S.d).servers.find((x) => x.id === c.serverId)) || {}).name || '') : ''}`, client: c.id }));
   const us = S.d.users.filter((u) => u.id !== me().id && words.every((w) => norm(`${u.name} ${u.username} ${u.email || ''}`).includes(w))).slice(0, 4)
     .map((u) => ({ kind: 'Vendedor', icon: 'users', label: u.name, sub: `@${u.username} · ${ROLE[u.role]}`, user: u.id }));
   return [...opts, ...cl, ...us];
@@ -5385,7 +5472,7 @@ async function payReturn() {
 function vPagos() {
   const sub = 'Tus vendedores compran créditos desde el panel y se les suman solos al pagar.';
   const p = S.pay;
-  if (!p) return head('Pagos online', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!p) return head('Pagos online', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (p.error) return head('Pagos online', sub) + `<p class="err">${esc(p.error)}</p>`;
   const c = p.cfg, base = (S.d.settings.brand.url || location.origin).replace(/\/+$/, '');
   const copy = (txt) => `<div class="cpy"><code>${esc(txt)}</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(txt)}">${ic('copy')}Copiar</button></div>`;
@@ -5562,7 +5649,7 @@ async function loadUtr() {
 function vEquipoDel() {
   const sub = 'Los que borras pasan aquí 30 días, por si fue sin querer. Al restaurarlos vuelven con su usuario, su contraseña y sus créditos.';
   const x = S.utr;
-  if (!x) return head('Eliminados', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!x) return head('Eliminados', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (x.error) return head('Eliminados', sub) + `<p class="err">${esc(x.error)}</p>`;
   const card = (u) => `<article class="ut-card"><span class="ut-av">${esc((u.name || '?').slice(0, 1))}</span>
     <div class="ut-id"><b>${esc(u.name)}</b><small>@${esc(u.username)} · ${ROLE[u.role] || u.role}${u.parentName ? ' de ' + esc(u.parentName) : ''}</small>
@@ -6308,6 +6395,13 @@ function ajSections() {
       <p class="muted small" style="margin:-6px 0 12px">El bot se crea gratis en Telegram hablando con @BotFather (orden /newbot), que te da el token. Telegram solo deja escribir a quien ha abierto el bot: cada cliente debe pulsar una vez su enlace personal (Más, Avisos por Telegram). Se envía entre las 10:00 y las 21:00. El texto es la plantilla «Aviso de vencimiento». WhatsApp no permite envíos automáticos: se mandan con un toque desde Clientes, Avisos de vencimiento.</p>
       <div class="acts"><button class="btn primary" type="submit">Guardar avisos</button>${g.notices.telegram.hasToken ? '<button class="btn ghost" type="button" data-act="tg-remove">Quitar bot</button>' : ''}</div>
     </form></div></section>
+  ${isSuper() ? (() => { const gf = g.tgGift || {}; return `<section><h2>🎁 Regalo por activar el bot</h2><div class="panel pad">
+    <p class="muted small" style="margin:0 0 10px">Lo que más anima a un cliente a pulsar el enlace: un regalo. Se da solo una vez por cuenta, solo si está activa, y le llega un mensaje en el bot con su nueva fecha. Los mensajes que copias ya lo anuncian.</p>
+    <div class="secrow"><div><b>Regalar tiempo al activar el bot</b><small>${gf.on ? `Encendido: ${plural(gf.days || 3, 'día', 'días')} en cuentas y ${plural(gf.hours || 24, 'hora', 'horas')} en demos, si lo activa en ${plural(gf.limit || 12, 'hora', 'horas')}` : 'Apagado'}</small></div><button type="button" class="sw" role="switch" aria-checked="${!!gf.on}" data-act="gift-tog" aria-label="Regalo por activar el bot"><i></i></button></div>
+    <div class="grid2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:10px"><label class="f">Días de regalo en cuentas<select id="giftDays">${options([[1, '1 día'], [2, '2 días'], [3, '3 días'], [5, '5 días'], [7, '7 días']], gf.days || 3)}</select></label>
+    <label class="f">Horas de regalo en demos<select id="giftHours">${options([[6, '6 horas'], [12, '12 horas'], [24, '24 horas'], [48, '48 horas']], gf.hours || 24)}</select></label>
+    <label class="f">Plazo para aceptarla<select id="giftLimit">${options([[6, '6 horas'], [12, '12 horas'], [24, '24 horas'], [48, '48 horas']], gf.limit || 12)}</select></label></div>
+    <p class="muted small" style="margin:8px 0 0">El plazo empieza cuando copias o envías el mensaje con la oferta. Si no lo activa a tiempo, pierde el regalo (los avisos sí se le activan igual).</p></div></section>`; })() : ''}
   <section><h2>🤖 Imagen y nombre del bot</h2>
     <div class="panel pad"><form id="botBrandForm" style="max-width:560px">
       <p class="muted small" style="margin:0 0 12px">Salen en la bienvenida (con confeti 🎉), en la tarjeta de cada cliente, en el menú y en los recibos de Telegram. Si los dejas vacíos, se usan los de la marca del panel.</p>
@@ -6547,6 +6641,9 @@ function vApariencia() {
   <section><h2>Tema visual</h2>
     <div class="panel pad"><div class="chips"><button class="chip" data-act="theme-set" data-k="dark" aria-pressed="${!light}">Oscuro</button><button class="chip" data-act="theme-set" data-k="light" aria-pressed="${light}">Claro</button></div>
       <p class="muted small" style="margin-top:10px">El tema se guarda en cada navegador: cada usuario elige el suyo con el botón del sol y la luna.</p></div></section>
+  <section><h2>Aspecto moderno</h2>
+    <div class="panel pad">${LOOK_INFO.map(([k, t, hint]) => `<div class="secrow"><div><b>${t}</b><small>${hint}</small></div><button type="button" class="sw" role="switch" aria-checked="${lookOn(k)}" data-act="look-tog" data-k="${k}" aria-label="${t}"><i></i></button></div>`).join('')}
+      <p class="muted small" style="margin-top:10px">Lo ven todos los usuarios del panel. Si algo no te gusta, apágalo y vuelve a estar como antes.</p></div></section>
   ${ajSections().brand.replace('<h2>Marca del panel</h2>', '<h2>Marca y colores</h2>')}`;
 }
 /* ---------- Ajustes: Notificaciones ---------- */
@@ -6928,7 +7025,7 @@ document.addEventListener('click', (e) => {
   if (a === 'iv-reset') { S.iv = { rows: null, check: null, result: null }; render(); }
   if (a === 'iv-tpl') ivDownload('﻿usuario;nombre;tipo;reseller;creditos;contraseña\r\nmaria;María López;reseller;;50;\r\njuan;Juan Pérez;subreseller;maria;10;\r\n', 'plantilla-vendedores.csv');
   if (a === 'iv-csv' && v.result) ivDownload(ivCsvText(v.result.created), `vendedores-importados-${S.d.today}.csv`);
-  if (a === 'iv-copy' && v.result) navigator.clipboard && navigator.clipboard.writeText(v.result.created.map((x) => `${x.name} (${x.username}): ${x.password}`).join('\n')).then(() => toast('Copiado')).catch(() => toast('No se pudo copiar', true));
+  if (a === 'iv-copy' && v.result) navigator.clipboard && navigator.clipboard.writeText(tgSafe(v.result.created.map((x) => `${x.name} (${x.username}): ${x.password}`).join('\n'))).then(() => toast('Copiado')).catch(() => toast('No se pudo copiar', true));
   if (a === 'iv-go' && v.rows && !v.busy) {
     v.busy = true; render();
     api('POST', '/api/users/import', { rows: v.rows }).then(async (r) => { v.result = r; v.busy = false; await reload(); toast(plural(r.created.length, 'vendedor creado', 'vendedores creados')); }, (x) => { v.busy = false; toast(x.message, true); render(); });
@@ -7049,7 +7146,7 @@ async function loadRq() { S.rqBusy = true; try { S.rq = await api('GET', '/api/r
 function vPeticiones() {
   const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#f59e0b 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#3b1d0a,#4c1d95)"><span class="ap-ic">🙋</span><div><h1>Peticiones</h1><p>Lo que tus clientes piden por el bot con /pedir. Cuando lo subas, márcalo y el bot les avisa solo.</p></div></section>`;
   const d = S.rq;
-  if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return hero + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   const pend = d.list.filter((r) => r.status === 'pending'), done = d.list.filter((r) => r.status !== 'pending');
   const card = (r) => `<div class="rq ${r.status}"><div class="rq-t"><b>«${esc(r.title)}»</b><small>${esc(r.name)} · @${esc(r.emby)}${S.d.users.length > 1 && r.ownerId !== me().id ? ' · de ' + esc(userName(r.ownerId)) : ''} · ${fmtTs(r.at, true)}${r.tg ? '' : ' · sin Telegram'}</small></div>
     <div class="rq-a">${r.status === 'pending' ? `<button type="button" class="btn sm primary" data-act="rq-done" data-id="${r.id}">✅ Ya está</button><button type="button" class="btn sm" data-act="rq-no" data-id="${r.id}">🙏 No disponible</button>` : `<span class="rq-st">${r.status === 'done' ? '✅ Disponible · avisado' : '🙏 No disponible · avisado'}</span>`}<button type="button" class="btn sm ghost" data-act="rq-del" data-id="${r.id}" title="Borrar">🗑️</button></div></div>`;
@@ -7106,7 +7203,7 @@ function vCobroCli() {
   const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#6366f1 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#1e1b4b,#3b0764)"><span class="ap-ic">💳</span><div><h1>Cobro a clientes</h1><p>Tus clientes pagan desde su enlace (tarjeta, Bizum, PayPal o Revolut) y su cuenta se renueva sola.</p></div></section>`;
   if (!isSuper()) return vCobroVend(hero);
   const d = S.cp;
-  if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return hero + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const c = d.cfg, pr = c.prices || {}, cur = S.d.settings.currency || 'EUR';
   const money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
@@ -7138,7 +7235,7 @@ function cpTable(pr, desc, note) {
 /* Cobro a clientes de un reseller o subreseller: sus precios y su propio Stripe */
 function vCobroVend(hero) {
   const d = S.cp;
-  if (!d) return hero + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return hero + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (d.error) return hero + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const c = d.cfg, cur = S.d.settings.currency || 'EUR', money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
   const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a tus clientes activado' : '⏸️ Cobro a tus clientes apagado'}</b><small>${c.on ? 'Tus clientes reciben el botón «💳 Pagar y renovar» en el aviso de caducidad.' : c.hasKey || (c.pp && c.pp.on) || ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]) ? 'Revisa tus precios y actívalo cuando quieras.' : 'Primero conecta tu Stripe o pon tu Bizum, PayPal o Revolut aquí abajo.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cpv-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
@@ -7300,6 +7397,14 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 251, d: '2026-11-09', items: ['⏸️ «Pausar hasta que pague» en el menú de la cuenta: se queda sin acceso sin borrar nada y conserva su fecha. Si paga con su enlace de pago, se quita sola al momento; si no, pulsas «Ya ha pagado». Si tiene el bot, se le avisa con el botón para pagar'] },
+  { v: 250, d: '2026-11-09', items: ['⏳ Regalo por activar el bot con plazo: el cliente tiene unas horas para aceptarlo (12 por defecto; también 6, 24 o 48). El plazo empieza cuando copias o envías el mensaje, y el texto lo dice: «Actívalos en las próximas 12 horas y te regalamos 3 días gratis». Si no llega a tiempo, pierde el regalo'] },
+  { v: 249, d: '2026-11-09', items: ['🎁 Regalo por activar el bot (Notificaciones › Avisos): eliges cuántos días (cuentas) u horas (demos) regalas. Se da una sola vez y los mensajes que copias lo anuncian: «Activa tus avisos y te regalamos 3 días gratis»', '🔗 En los mensajes con el enlace de pago, el enlace del bot va aparte: un toque y se abre Telegram directamente, sin pasar por la página'] },
+  { v: 248, d: '2026-11-09', items: ['👥 Cuentas compartidas: ahora solo avisa si una cuenta ve en MÁS pantallas a la vez de las contratadas. Tener la sesión abierta en muchos aparatos o conectarse desde varios sitios ya no cuenta (se puede volver a encender en esa misma pantalla)', '🔔 Alertas de pantallas de más (en «solo aviso»): el exceso tiene que verse en dos revisiones seguidas, así no salta al cambiar de un aparato a otro'] },
+  { v: 247, d: '2026-11-09', items: ['✨ Aspecto moderno (se enciende o apaga en Sistema › Apariencia): letra Inter en todos los aparatos, iconos de línea en vez de emojis en títulos y botones, carga suave y pantallas vacías con dibujo, página de pago con el estilo del bot y tu logo, e icono del móvil con tu logo', '🧹 Menú más sencillo: «Por vencer», «Vencidos» y «Desactivados» se quedan dentro de la Lista de clientes; «Transcode» y «Pantallas de más» son pestañas de «Alertas»; «Desactivados» y «Eliminados» son pestañas de «Vendedores». No se ha quitado ninguna pantalla'] },
+  { v: 246, d: '2026-11-09', items: ['🔗 Enlaces más seguros: al copiar un mensaje se quitan los caracteres invisibles o espacios raros que pueden cortar un enlace, y la dirección del panel se limpia sola si se escribió con un espacio'] },
+  { v: 245, d: '2026-11-09', items: ['✈️ Página de pago: el botón «Activar avisos en Telegram» abre directamente la app de Telegram. Así funciona también cuando el cliente abre el enlace desde dentro de Telegram. Debajo hay otro enlace de reserva y el código para escribírselo al bot a mano'] },
+  { v: 244, d: '2026-11-09', items: ['✈️ Repasados todos los mensajes que se copian para los clientes (cuenta nueva, demo, renovación, aviso de caducidad, calidad, rescate, pago, Telegram, seguimiento, vendedores, IPTV y la guía de la app) en Emby, Jellyfin, Plex e IPTV: todos salen sin «formato avanzado» de Telegram'] },
   { v: 243, d: '2026-11-09', items: ['✈️ Mensajes para Telegram sin pagar Premium: al copiar un mensaje para el cliente (alta, renovación, pago, calidad…) las listas «1.», «•» y «-» se cambian por emojis (1️⃣, ▪️). Telegram ya no lo toma como «formato avanzado» de pago y se manda bien, con sus saltos de línea'] },
   { v: 242, d: '2026-11-06', items: ['📲 IPTV: guía de apps para tus clientes (MaxPlayer, IPTV Smarters, TiviMate, XCIPTV, IBO Player y VLC). En «Datos IPTV» tocas una app y te salen sus pasos con los datos del cliente, listos para copiar. En el bot, «Instalar la app» le enseña un botón por cada app con sus pasos'] },
   { v: 241, d: '2026-11-06', items: ['⛔ Mantenimiento de servidor: ahora puedes elegir «Cerrar el servidor» un rato (15 min, 30 min, 1 hora, 2, 3 o hasta que lo quites). Nadie ve mientras dura, se para lo que estén viendo, el bot les dice a qué hora vuelve y, al acabar, todas las cuentas vuelven solas'] },
@@ -7512,10 +7617,14 @@ async function loadShared() {
 }
 function vCompartidas() {
   const d = S.sh.data;
-  const sub = 'Cuentas que en los últimos 7 días se han usado desde demasiados aparatos o sitios, o con más pantallas a la vez de las contratadas.';
+  const R = { devices: false, places: false, ...(S.d.settings.shareRules || {}) };
+  const sub = R.devices || R.places ? 'Cuentas que en los últimos 7 días han visto en más pantallas a la vez de las contratadas, o se han usado desde demasiados aparatos o sitios.' : 'Cuentas que en los últimos 7 días han visto en más pantallas a la vez de las contratadas. Abrir la sesión en muchos aparatos no cuenta.';
+  const rules = isSuper() ? `<div class="panel pad" style="margin:0 0 14px"><div class="secrow"><div><b>Avisar solo si ven en más pantallas de las contratadas</b><small>Es lo único que de verdad indica que comparten. Siempre encendido.</small></div><button type="button" class="sw" role="switch" aria-checked="true" disabled aria-label="Siempre encendido"><i></i></button></div>
+    <div class="secrow"><div><b>Avisar también si usa muchos aparatos distintos</b><small>Aunque no vean a la vez. Suele dar avisos de más con quien tiene 2 o 4 pantallas.</small></div><button type="button" class="sw" role="switch" aria-checked="${R.devices}" data-act="sh-rule" data-k="devices" aria-label="Muchos aparatos"><i></i></button></div>
+    <div class="secrow"><div><b>Avisar también si se conecta desde muchos sitios</b><small>Casa, móvil, trabajo… Suele dar avisos de más.</small></div><button type="button" class="sw" role="switch" aria-checked="${R.places}" data-act="sh-rule" data-k="places" aria-label="Muchos sitios"><i></i></button></div></div>` : '';
   if (!d) return head('Cuentas compartidas', sub) + '<div class="panel"><div class="empty">Revisando conexiones…</div></div>';
   const since = d.since ? `<p class="small muted" style="margin:-6px 0 14px">El panel apunta conexiones desde el ${fmtTs(d.since)}. Con al menos una semana de datos el detector es más fiable.</p>` : '<p class="small muted" style="margin:-6px 0 14px">El panel empieza a apuntar las conexiones a partir de esta versión. En unos días verás resultados aquí.</p>';
-  if (!d.list.length) return head('Cuentas compartidas', sub) + since + `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Todo en orden</b><span>Ninguna cuenta parece compartida ahora mismo.</span></div></div>`;
+  if (!d.list.length) return head('Cuentas compartidas', sub) + rules + since + `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Todo en orden</b><span>Ninguna cuenta parece compartida ahora mismo.</span></div></div>`;
   const cards = d.list.map((x) => {
     const c = S.d.clients.find((v) => v.id === x.id); if (!c) return '';
     const chip = (n, l) => `<div class="cs"><b>${n}</b><span>${l}</span></div>`;
@@ -7527,7 +7636,7 @@ function vCompartidas() {
       <div class="acts"><button class="btn sm ghost clr" data-act="sh-clear1" data-id="${c.id}" title="Ya lo he revisado: borrar sus datos y empezar de cero">${ic('check')}Revisado</button><button class="btn sm" data-act="m-conn" data-id="${c.id}">${ic('signal')}Conexiones</button><button class="btn sm primary" data-act="sh-msg" data-id="${c.id}">${ic('send')}Escribirle</button>${c.off ? '' : `<button class="btn sm ghost" data-act="c-off" data-id="${c.id}">${ic('pause')}Desactivar</button>`}</div>
     </article>`;
   }).join('');
-  return head('Cuentas compartidas', sub, `<button class="btn" data-act="sh-reload">${ic('refresh')}Actualizar</button><button class="btn clr" data-act="sh-clear">${ic('trash')}Vaciar lista</button>`) + since + `<div class="shgrid">${cards}</div>`;
+  return head('Cuentas compartidas', sub, `<button class="btn" data-act="sh-reload">${ic('refresh')}Actualizar</button><button class="btn clr" data-act="sh-clear">${ic('trash')}Vaciar lista</button>`) + rules + since + (cards.trim() ? `<div class="shgrid">${cards}</div>` : `<div class="panel"><div class="empty okmsg">${ic('check')}<b>Todo en orden aquí</b><span>Ninguna cuenta de esta plataforma parece compartida. Mira las otras pestañas de arriba.</span></div></div>`);
 }
 function dShareMsg(c) {
   const text = `Hola ${c.panelName} 👋\n\nHemos visto tu cuenta de Emby conectada desde varios aparatos y sitios distintos a la vez. Tu plan incluye ${c.screens ? (c.screens === 1 ? '1 pantalla' : c.screens + ' pantallas') : 'las pantallas contratadas'}.\n\nSi la usáis más personas, te puedo ampliar pantallas por poco más. ¿Te lo preparo?`;
@@ -7556,7 +7665,7 @@ async function loadFollow() {
 function vSeguimiento() {
   const f = S.fu, d = f.data;
   const sub = 'Demos que terminaron y no se pasaron a cuenta. Un mensaje a tiempo recupera muchas ventas.';
-  if (!d) return head('Seguimiento de demos', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return head('Seguimiento de demos', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   const pend = d.list.filter((x) => x.status === 'pending'), done = d.list.filter((x) => x.status !== 'pending');
   const tabs = `<div class="tabs" role="tablist"><button role="tab" data-act="fu-tab" data-k="pending" aria-selected="${f.tab === 'pending'}">Por escribir (${pend.length})</button><button role="tab" data-act="fu-tab" data-k="done" aria-selected="${f.tab === 'done'}">Hechos (${done.length})</button></div>`;
   const rows0 = f.tab === 'pending' ? pend : done, rows = rows0.filter((x) => srchHit(S.fuq, x.name, x.emby, x.whatsapp, x.telegram, x.email, userName(x.ownerId)));
@@ -7654,7 +7763,7 @@ function agChart(hist, keys, title, unit, max) {
 }
 function vEstado() {
   const d = S.ag.data, sub = 'Cómo va la máquina donde está Emby: procesador, memoria, disco e internet. Se actualiza solo cada minuto.';
-  if (!d) return head('Estado del servidor', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return head('Estado del servidor', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (!d.servers.length) return head('Estado del servidor', sub) + noServer();
   if (!S.hl || Date.now() - S.hl.at > 30000) srvHealth();
   if (!S.live && !S.liveBusyE) { S.liveBusyE = 1; loadLive().finally(() => { S.liveBusyE = 0; if (S.view === 'estado' && !dlg.open) render(); }); }
@@ -7855,7 +7964,7 @@ const SO_SRC = { cuenta: ['👤', 'Alta o renovación a mano'], cliente: ['💳'
 const soMonthTxt = (m) => { if (!m) return 'Todo'; const t = new Date(m + '-15').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(' de ', ' '); return t.charAt(0).toUpperCase() + t.slice(1); };
 function vSocios() {
   const d = S.so.data, sub = 'Lo que entra y sale, quién lo tiene y cuánto le toca a cada uno. Solo lo ves tú.';
-  if (!d) return head('🤝 Socios', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return head('🤝 Socios', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (d.error) return head('🤝 Socios', sub) + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const cfg = d.cfg, b = d.balance;
   const cfgBtn = cfg.on ? `<button class="btn" data-act="so-cfg">${ic('wrench')}Ajustes</button>` : '';
@@ -8084,7 +8193,7 @@ const gxSum = (arr) => Math.round(arr.reduce((n, o) => n + (o.amount || 0), 0) *
 function vGastos() {
   const d = S.gx.data, sub = 'Tus pagos fijos: servidores, contenido, dominio… Solo lo ves tú.';
   const acts = `<button class="btn primary" data-act="gx-new">${ic('plus')}Nuevo gasto</button>`;
-  if (!d) return head('Gastos', sub, acts) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return head('Gastos', sub, acts) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (d.error) return head('Gastos', sub, acts) + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const t = d.today, ym = t.slice(0, 7), cur = d.months[d.months.length - 1] || { paid: 0, income: 0 };
   const occ = gxOcc(ym), late = d.list.filter((e) => !e.done && e.due < t), now = d.list.filter((e) => !e.done && e.due === t);
@@ -8228,7 +8337,7 @@ function vLicencias() {
   const d = S.lic.data;
   const sub = 'Quién usa tu panel, hasta qué día ha pagado y cuándo renueva.';
   const acts = `<button class="btn primary" data-act="lic-new">${ic('plus')}Nueva licencia</button>`;
-  if (!d) return head('Licencias', sub, acts) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return head('Licencias', sub, acts) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (d.error) return head('Licencias', sub, acts) + `<div class="panel pad"><p class="err">${esc(d.error)}</p></div>`;
   const L = d.list.slice().sort((a, b) => a.until.localeCompare(b.until));
   const act = L.filter((l) => l.state === 'ok' || l.state === 'soon' || l.state === 'grace');
@@ -8418,7 +8527,7 @@ const monthName = (m) => { const [y, mm] = m.split('-').map(Number); return `${M
 function vCobrosVen() {
   const d = S.vp.data;
   const sub = 'Lo que te pagan tus vendedores por los créditos, y quién te debe.';
-  if (!d) return head('Cobros y deudas', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return head('Cobros y deudas', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   const diff = d.prevTotal ? Math.round(((d.total - d.prevTotal) / d.prevTotal) * 100) : null;
   const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
   const tiles = `<div class="vptiles">${tile(eur(d.total), 'Cobrado en ' + monthName(d.month), diff == null ? plural(d.count, 'pago', 'pagos') : `${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)}% que el mes anterior`, 'ok')}${tile(eur(d.debt), 'Te deben ahora', plural(d.debtors.length, 'vendedor', 'vendedores'), d.debt ? 'bad' : '')}${d.gifts ? tile(d.gifts, 'Créditos sin cobro', 'este mes', 'warn') : ''}</div>`;
@@ -8588,7 +8697,7 @@ function accRows() {
 function vAccesos() {
   const f = S.acc, d = f.data;
   const sub = 'Quién ha entrado al panel, cuándo, desde qué IP y con qué aparato. Se guarda aparte del resto del registro (hasta 400 días) y va dentro de las copias de seguridad.';
-  if (!d) return head('Historial de accesos', sub) + '<div class="panel"><div class="empty">Cargando…</div></div>';
+  if (!d) return head('Historial de accesos', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   const rows = accRows(), shown = rows.slice(0, 400);
   const users = [...new Map(d.access.filter((e) => e.userId).map((e) => [e.userId, e.name || e.user])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
   const fails = d.access.filter((e) => /fallido|bloqueado/.test(e.kind) && Date.now() - Date.parse(e.ts) < 7 * 86400000).length;
@@ -8935,7 +9044,7 @@ function showDlg(title, body) {
   dlgForm.onchange = null; dlgForm.oninput = null; dlgForm.onsubmit = (e) => e.preventDefault();
   dlgForm.innerHTML = `<h2>${esc(title)}</h2>${body}<div class="dfoot"><button type="button" class="btn ghost" data-act="close">Cerrar</button></div>`;
   if (dlg.open) dlg.close();
-  dlg.showModal(); navDlgOpened(); jfWords(dlgForm);
+  dlg.showModal(); navDlgOpened(); jfWords(dlgForm); lineIcons(dlgForm);
 }
 function dMore(c) {
   const it = (act, label, hint, cls = '') => `<button type="button" class="mitem ${cls}" data-act="${act}" data-id="${c.id}">${ic(ICON_ACT[act])}<span>${label}${hint ? `<small>${hint}</small>` : ''}</span></button>`;
@@ -8945,7 +9054,7 @@ function dMore(c) {
   const grp = (title, items, cls = '') => { const html = items.filter(Boolean).join(''); return html ? `<div class="mgrp ${cls}"><h4>${title}</h4><div class="mgrid2">${html}</div></div>` : ''; };
   // Cabecera: quién es, en qué plataforma y cómo está su cuenta
   const k = kindOfSrv(c.serverId), srv = allSrv().find((x) => x.id === c.serverId), left = c.demo ? null : diff(c.expires, S.d.today);
-  const [stT, stC] = c.status === 'trash' ? ['🗂️ En la papelera', 'bad'] : c.off ? ['⏸️ Desactivada', 'warn'] : c.demo ? ['🎁 Demo', 'info'] : left < 0 ? ['⛔ Caducada', 'bad'] : left <= 7 ? [`⏳ Caduca ${left === 0 ? 'hoy' : left === 1 ? 'mañana' : `en ${left} días`}`, 'warn'] : ['✅ Activa', 'ok'];
+  const [stT, stC] = c.status === 'trash' ? ['🗂️ En la papelera', 'bad'] : c.hold ? ['⏸️ Pendiente de pago', 'warn'] : c.off ? ['⏸️ Desactivada', 'warn'] : c.demo ? ['🎁 Demo', 'info'] : left < 0 ? ['⛔ Caducada', 'bad'] : left <= 7 ? [`⏳ Caduca ${left === 0 ? 'hoy' : left === 1 ? 'mañana' : `en ${left} días`}`, 'warn'] : ['✅ Activa', 'ok'];
   const hdr = `<div class="mh"><span class="mh-av">${esc((c.panelName || c.embyName || '?').slice(0, 1))}</span><div class="mh-id"><b>${esc(c.panelName)}</b><small>${kIco(k)} @${esc(c.embyName)}${srv ? ' · ' + esc(srv.name) : ''}</small></div></div>
     <div class="mh-chips"><span class="mh-st ${stC}">${stT}</span>${c.demo ? '' : `<span class="mh-ch">📅 ${c.status === 'trash' ? 'Venció' : 'Vence'} el ${fmt(c.expires)}</span>`}${c.screens ? `<span class="mh-ch">📺 ${plural(c.screens, 'pantalla', 'pantallas')}</span>` : ''}${c.tgLinked ? '<span class="mh-ch">🔔 Telegram</span>' : ''}${c.paid === false ? '<span class="mh-ch warn">💶 Pendiente de cobro</span>' : ''}</div>`;
   showDlg('', `<div class="mlist2 mlist3">${hdr}
@@ -8954,7 +9063,8 @@ function dMore(c) {
     ${grp('💬 Enviar al cliente', [it('m-tgmsg', c.tgLinked ? 'Telegram ✓' : 'Telegram'), it('msg', 'Copiar info'), it('m-guide', 'Guía calidad'), c.payLink ? it('m-paylink', 'Enlace de pago') : ''])}
     ${grp('⚙️ Cuenta', [...(kindOfSrv(c.serverId) === 'iptv' ? [it('m-iptv', 'Datos IPTV y lista M3U')] : []), it('m-pass', 'Contraseña'), it('m-quality', 'Paquete'), c.demo ? '' : it('m-screens', 'Pantallas'), it('m-notes', 'Notas'), staff() && S.d.users.length > 1 ? it('m-owner', 'Vendedor') : '', others && (staff() || c.status !== 'trash') ? it('m-move', 'Servidor') : '', isSuper() && !c.demo && kindOfSrv(c.serverId) !== 'iptv' && allSrv().some((x) => x.kind !== 'iptv' && KIND_OF(x) !== kindOfSrv(c.serverId)) ? it('m-plex', 'Migrar plataforma') : ''])}
     ${grp('🔎 Revisar', [it('m-hist', 'Historial'), it('m-conn', 'Conexiones'), it('m-repair', 'Reparar')])}
-    ${grp('⚠️ Bloquear o borrar', [c.status === 'trash' ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
+    ${grp('⚠️ Bloquear o borrar', [c.status === 'trash' || c.demo ? '' : c.hold ? it('c-unhold', 'Ya ha pagado', 'Quita la pausa y vuelve a ver') : c.off ? '' : it('c-hold', 'Pausar hasta que pague', 'Sin acceso hasta que pague'),
+      c.status === 'trash' || c.hold ? '' : c.off ? it('c-on', 'Activar', 'Vuelve a darle acceso') : it('c-off', c.demo ? 'Desactivar demo' : 'Desactivar', 'Sin borrar nada'),
       it('trash', c.demo ? 'Cancelar demo' : 'Dar de baja', 'A la papelera'),
       c.demo || noCredits ? '' : it('del-refund', 'Eliminar y devolver', 'Devuelve los créditos', 'bad'),
       staff() ? it('delete', 'Eliminar', 'Para siempre', 'bad') : ''], 'danger')}
@@ -9260,7 +9370,7 @@ const EXP_COLS = [
   ['usuario_emby', 'Usuario Emby', (c) => c.embyName], ['servidor', 'Servidor', (c) => serverName(c.serverId)], ['paquete', 'Paquete', (c) => (c.quality ? Q[c.quality] : 'Bibliotecas propias')],
   ['pantallas', 'Pantallas', (c) => (c.screens ? String(c.screens) : 'Sin límite')], ['vendedor', 'Vendedor', (c) => userName(c.ownerId) || ''],
   ['fin_suscripcion', 'Fin suscripción', (c) => (c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : c.expires.split('-').reverse().join('/'))],
-  ['estado', 'Estado', (c) => STAGE[stage(c)]], ['telegram', 'Telegram', (c) => c.telegram || ''], ['whatsapp', 'WhatsApp', (c) => c.whatsapp || ''], ['signal', 'Signal', (c) => c.signal || ''],
+  ['estado', 'Estado', (c) => (c.hold ? 'Pendiente de pago' : STAGE[stage(c)])], ['telegram', 'Telegram', (c) => c.telegram || ''], ['whatsapp', 'WhatsApp', (c) => c.whatsapp || ''], ['signal', 'Signal', (c) => c.signal || ''],
 ];
 /** Exportación «codificada»: fuera del equipo del panel principal (resellers, subresellers y paneles alquilados),
  * el servidor, el paquete con sus pantallas y el vendedor salen como códigos internos, igual que hace el panel antiguo */
@@ -9434,7 +9544,8 @@ function fillTpl(key, c, password) {
     Al copiar un mensaje se cambian por emojis (1️⃣, ▪️, »): se ve igual de ordenado y se puede mandar sin Premium. No cambia ninguna palabra */
 const KEYCAP = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 function tgSafe(text) {
-  const t = String(text == null ? '' : text);
+  // caracteres invisibles (de copiar y pegar) que pueden cortar un enlace: fuera; el espacio duro pasa a espacio normal
+  const t = String(text == null ? '' : text).replace(/[\u200b\u200c\u2060\ufeff]/g, '').replace(/[\u00a0\u202f]/g, ' ');
   if (!t.includes('\n')) return t; // un dato suelto (usuario, enlace, contraseña) se copia tal cual
   return t.split('\n').map((l) => l
     .replace(/^(\s*)[•●◦▪∙·\-–—*+]\s+(?=\S)/u, '$1▪️ ')
@@ -9444,8 +9555,11 @@ function tgSafe(text) {
     .replace(/^(\s*)\[[ xX]\]\s+/, '$1☑️ ')).join('\n')
     .replace(/```/g, '');
 }
-async function copyText(text, el) {
-  text = tgSafe(text);
+async function copyText(text, el, raw) {
+  const orig = String(text == null ? '' : text);
+  text = raw ? orig : tgSafe(orig);
+  if (!raw) try { giftMark(text); } catch (e) { /* nada */ }
+  if (text !== orig) el = null; // así la copia de reserva también lleva el texto ya preparado para Telegram
   try { await navigator.clipboard.writeText(text); }
   catch (e) {
     let tmp = null;
@@ -9583,7 +9697,7 @@ function dMessage(c, password, key) {
         const wantPay = f.elements.pay && f.elements.pay.checked && k !== 'quality' && !main.includes(c.payLink), wantTg = f.elements.tg && f.elements.tg.checked && k !== 'quality' && !main.includes(tgLink(c));
         const tg = wantTg && !wantPay ? '\n\n' + tgBlock(c) : '';
         const ap = f.elements.app && f.elements.app.checked && k !== 'quality' && !main.includes(appUrl()) ? '\n\n' + appBlock() : '';
-        const py = wantPay ? (wantTg ? `\n\n👤 Tu cuenta (guárdalo):\n💳 Renueva tú mismo en 1 minuto\n🔔 Activa los avisos gratis por Telegram\n👉 ${c.payLink}` : `\n\n💳 Renueva tú mismo en 1 minuto (eliges pantallas y tiempo y pagas con tarjeta, Apple Pay o Google Pay):\n${c.payLink}`) : '';
+        const py = wantPay ? (wantTg ? `\n\n💳 Renueva tú mismo en 1 minuto (guárdalo):\n${c.payLink}\n\n${tgBlock(c)}` : `\n\n💳 Renueva tú mismo en 1 minuto (eliges pantallas y tiempo y pagas con tarjeta, Apple Pay o Google Pay):\n${c.payLink}`) : '';
         const iv = ivInfo(c, password), ivTxt = iv && ['created', 'demo', 'renewed', 'password'].includes(k) && !main.includes(iv.m3u) ? '\n\n' + ivBlock(iv) : ''; // IPTV: sus datos para la app y su lista M3U
         f.elements.msg.value = main + ivTxt + py + ap + tg + (add && !iv ? '\n\n' + fillTpl('quality', c, password) : ''); link();
       };
@@ -9935,6 +10049,7 @@ document.addEventListener('change', (e) => {
   if (e.target.dataset.au) { const g = S.auSel[e.target.dataset.au]; e.target.checked ? g.add(e.target.dataset.k) : g.delete(e.target.dataset.k); const el = $('#audit'); if (el) { const y = window.scrollY; el.innerHTML = auditHtml(); window.scrollTo(0, y); } }
   if (e.target.dataset.auall) { const grp = e.target.dataset.auall, list = grp === 'emby' ? S.audit.notInPanel.map((r) => r.serverId + ':' + r.embyId) : (grp === 'gone' ? S.audit.notInEmby : S.audit.mismatch).map((r) => String(r.id)); list.forEach((k) => (e.target.checked ? S.auSel[grp].add(k) : S.auSel[grp].delete(k))); const el = $('#audit'); if (el) { const y = window.scrollY; el.innerHTML = auditHtml(); window.scrollTo(0, y); } }
   if (e.target.id === 'payMin') { api('PUT', '/api/pay/config', { min: +e.target.value }).then(() => toast('Guardado'), (x) => toast(x.message, true)); }
+  if (['giftDays', 'giftHours', 'giftLimit'].includes(e.target.id)) { giftSave({ ...(S.d.settings.tgGift || {}), [{ giftDays: 'days', giftHours: 'hours', giftLimit: 'limit' }[e.target.id]]: +e.target.value }); return; }
   if (e.target.id === 'cpMin') { cpSave({ ...(S.d.settings.cliPass || {}), min: +e.target.value }); return; }
   if (e.target.id === 'secIdle') { api('PUT', '/api/security/policy', { idleMin: +e.target.value }).then(() => { S.sec.idleMin = +e.target.value; toast('Guardado'); }, (x) => toast(x.message, true)); }
   if (e.target.id === 'monSrv') { S.mon.srv = +e.target.value || 0; monPaint(); }
@@ -10066,6 +10181,17 @@ document.addEventListener('click', (e) => {
   if (a === 'bk-send') { el.disabled = true; api('POST', '/api/backup/send', {}).then(() => { toast('Copia enviada: mira tu Telegram'); loadBk(); }, (x) => { toast(x.message, true); el.disabled = false; }); return; }
   if (a === 'bk-restore') { openDlg({ title: 'Restaurar una copia', submit: 'Restaurar', danger: true, body: `<label class="f">Archivo de la copia (.concha)<input type="file" name="file" accept=".concha,application/octet-stream,application/json" required></label><label class="f">Contraseña de la copia<input type="password" name="pw" required autocomplete="off"></label><label class="f">Tu contraseña del panel (para confirmar)<input type="password" name="mine" required autocomplete="current-password"></label><p class="err" style="max-width:none">Todo volverá a como estaba en la copia. Lo de después se pierde.</p>`, onSubmit: async (fd) => { const f = fd.get('file'); if (!f || !f.size) throw new Error('Elige el archivo.'); const r = await api('POST', '/api/backup/restore', { content: await f.text(), password: fd.get('pw'), mine: fd.get('mine') }); setTimeout(() => location.reload(), 1500); return 'Panel restaurado. Vuelve a entrar.'; } }); return; }
   if (a === 'sec-reload') { loadSec(); return; }
+  if (a === 'look-tog') { const k = el.dataset.k, cur = { ...(S.d.settings.look || {}) }; cur[k] = !lookOn(k);
+    api('PUT', '/api/look', cur).then((r) => { S.d.settings.look = r.look; applyLook(r.look); render(); toast(r.look[k] ? 'Encendido' : 'Apagado: vuelve a estar como antes'); }, (x) => toast(x.message, true)); return; }
+  if (a === 'sh-rule') { const R = { devices: false, places: false, ...(S.d.settings.shareRules || {}) }; R[el.dataset.k] = !R[el.dataset.k];
+    api('PUT', '/api/shared/rules', R).then(async (r) => { S.d.settings.shareRules = r.rules; S.sh.data = null; await reload(); toast('Guardado'); }, (x) => toast(x.message, true)); return; }
+  if (a === 'gift-tog') { const gf = { ...(S.d.settings.tgGift || {}) }; giftSave({ ...gf, on: !gf.on }); return; }
+  if ((a === 'c-hold' || a === 'c-unhold') && id) { const c = (S.dAll || S.d).clients.find((x) => x.id === id); if (!c) return; const on = a === 'c-hold'; closeMenu();
+    openDlg({ title: on ? `⏸️ Pausar a ${c.panelName} hasta que pague` : `✅ ${c.panelName} ya ha pagado`, submit: on ? 'Pausar' : 'Quitar la pausa',
+      body: on ? `<p>Se queda sin acceso, pero no se borra nada y conserva su fecha (vence el ${fmt(c.expires)}).</p><p class="muted small">Si paga con su enlace de pago, la pausa se quita sola al momento. Si te paga de otra forma, pulsa «Ya ha pagado».</p>${c.tgLinked ? '<label class="check"><input type="checkbox" name="bot" checked> Avisarle por el bot, con el botón para pagar</label>' : ''}`
+        : `<p>Vuelve a tener acceso al momento.</p>${c.tgLinked ? '<label class="check"><input type="checkbox" name="bot" checked> Decírselo por el bot</label>' : ''}`,
+      onSubmit: async (fd) => { const r = await api('POST', `/api/clients/${c.id}/hold`, { on, bot: !!fd.get('bot') }); await reload(); return (on ? '⏸️ En pausa hasta que pague' : '✅ Pausa quitada: ya puede ver') + (r.bot ? ' · avisado por el bot' : ''); } });
+    return; }
   if (a === 'utr-reload') { S.utr = null; loadUtr(); return; }
   if (a === 'utr-back' || a === 'utr-del') { const u = ((S.utr || {}).items || []).find((v) => v.id === id); if (!u) return;
     const back = a === 'utr-back';
@@ -10122,7 +10248,7 @@ document.addEventListener('click', (e) => {
   if (a === 'ag-cancel') { api('POST', `/api/servers/${id}/power-cancel`, {}).then(() => { toast('Reinicio programado cancelado'); S.ag.data = null; loadAgents(); }, (x) => toast(x.message, true)); return; }
   if (a === 'ag-rescue') { const on = el.checked; api('POST', `/api/servers/${id}/rescue`, { on }).then(() => toast(on ? 'Rescate automático activado' : 'Rescate automático desactivado'), (x) => { el.checked = !on; toast(x.message, true); }); return; }
   if (a === 'ag-link') { agLink(id); return; }
-  if (a === 'ag-copy') { copyText($('#agCmd').textContent, $('#agCmd')).then(() => toast('Orden copiada')); return; }
+  if (a === 'ag-copy') { copyText($('#agCmd').textContent, $('#agCmd'), true).then(() => toast('Orden copiada')); return; }
   if (a === 'ag-del') { const s = S.ag.data.servers.find((x) => x.id === id); dConfirm('Quitar el agente de ' + s.name, 'El panel dejará de aceptar sus datos y se borra lo guardado. Para quitarlo también del VPS, ejecuta allí:<br><code style="font-size:12px;word-break:break-all">sudo systemctl disable --now panel-agente && sudo rm -rf /opt/panel-agente /etc/panel-agente.conf /etc/systemd/system/panel-agente.service</code>', 'Quitar', async () => { await api('POST', `/api/servers/${id}/agent/remove`, {}); S.ag.data = null; loadAgents(); }, 'Agente quitado'); return; }
   if (a === 'fx-apply') { fxApply(); return; }
   if (a === 'fx-all') { fxState().only = null; render(); return; }
@@ -10176,7 +10302,7 @@ document.addEventListener('click', (e) => {
   if (a === 'lic-more') { licMore(id); return; }
   if (a === 'lic-msg') { licMsg(id); return; }
   if (a === 'lic-cal') { const st = +el.dataset.step, [yy, mm] = S.lic.cal.split('-').map(Number), t = new Date(Date.UTC(yy, mm - 1 + st, 1)); S.lic.cal = `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}`; render(); return; }
-  if (a === 'lic-copy') { copyText($('#licTok').textContent, $('#licTok')).then(() => toast('Clave copiada')); return; }
+  if (a === 'lic-copy') { copyText($('#licTok').textContent, $('#licTok'), true).then(() => toast('Clave copiada')); return; }
   if (a === 'lic-block') { const l = licOf(id); api('POST', `/api/licenses/${id}/block`, { blocked: !l.blocked }).then(() => { dlg.close(); toast(l.blocked ? `${l.name}: desbloqueada` : `${l.name}: bloqueada`); S.lic.data = null; loadLic(); }, (x) => toast(x.message, true)); return; }
   if (a === 'lic-token') { const l = licOf(id); openDlg({ title: 'Clave nueva para ' + l.name, submit: 'Crear clave nueva', danger: true, body: '<p>La clave actual dejará de servir. Tendrás que poner la nueva en Coolify, en su aplicación, o su panel se pausará.</p>', onSubmit: async () => { S.lic.tok = { name: l.name, token: (await api('POST', `/api/licenses/${id}/token`, {})).token }; return ''; }, after: () => { if (S.lic.tok) { licShowToken(S.lic.tok.name, S.lic.tok.token); S.lic.tok = null; } } }); return; }
   if (a === 'lic-del') { const l = licOf(id); dConfirm('Borrar la licencia de ' + l.name, 'Su panel se pondrá en pausa en unos minutos. Las cuentas Emby de sus clientes no se tocan.', 'Borrar', async () => { await api('DELETE', `/api/licenses/${id}`); S.lic.data = null; loadLic(); }, 'Licencia borrada'); return; }
