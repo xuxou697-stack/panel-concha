@@ -3708,9 +3708,27 @@ const cliJf = (c) => { const s = c && db.servers.find((x) => x.id === c.serverId
 const cliPx = (c) => { const s = c && db.servers.find((x) => x.id === c.serverId); return !!(s && s.kind === 'plex'); };
 const cliKindName = (c) => (cliPx(c) ? 'Plex' : cliJf(c) ? 'Jellyfin' : cliTv(c) ? 'IPTV' : 'Emby');
 const cliTv = (c) => { const s = c && db.servers.find((x) => x.id === c.serverId); return !!(s && s.kind === 'iptv'); };
+/* Apps de IPTV (v242): guía corta de cada app para que el cliente la instale y meta sus datos. Solo explica: no se conecta a ninguna app */
+const IPTV_APPS = [
+  ['max', 'MaxPlayer', 'Smart TV Samsung y LG, Android TV, Fire TV y móvil', 'xtream'],
+  ['smarters', 'IPTV Smarters Pro', 'Android, Fire TV, iPhone, iPad y Smart TV', 'xtream'],
+  ['tivimate', 'TiviMate', 'Android TV, Google TV y Fire TV', 'xtream'],
+  ['xciptv', 'XCIPTV', 'Android, Android TV y Fire TV', 'xtream'],
+  ['ibo', 'IBO Player', 'Smart TV Samsung y LG, Android TV y Fire TV', 'mac'],
+  ['vlc', 'VLC', 'Ordenador, móvil y tablet', 'm3u'],
+];
+/** Texto de la guía de una app. pw: la contraseña de verdad (solo en el panel) o null (en el bot: se ve con /datos) */
+function iptvAppGuide(k, c, pw) {
+  const a = IPTV_APPS.find((x) => x[0] === k); if (!a) return '';
+  const lk = c ? xuiLinks(c) : null, pass = pw ? `🔒 Contraseña: ${pw}` : '🔒 Contraseña: escribe /datos para verla';
+  const head = `📲 ${a[1].toUpperCase()}\n\n1️⃣ Instálala desde la tienda de tu aparato (${a[2]}).`;
+  if (a[3] === 'xtream') return `${head}\n2️⃣ Ábrela y elige «Xtream Codes» (a veces pone «Login with Xtream Codes API» o «Añadir usuario»).\n3️⃣ Escribe tus datos:${lk ? `\n   🌐 Servidor: ${lk.host}` : ''}${c ? `\n   👤 Usuario: ${c.embyName}` : ''}\n   ${pass}\n4️⃣ Pulsa «Añadir» o «Entrar» y espera a que carguen los canales.\n\n💡 Pon el servidor tal cual, con el «http://» y los números del final.`;
+  if (a[3] === 'mac') return `${head}\n2️⃣ Al abrirla te enseña dos códigos: «MAC» y «Device Key». Apúntalos.\n3️⃣ Entra en la web de la app desde el móvil o el ordenador y, con esos dos códigos, añade tu lista:\n   • Con «Xtream»:${lk ? ` servidor ${lk.host},` : ''}${c ? ` usuario ${c.embyName}` : ''} y tu contraseña\n   • O con el enlace M3U${pw && lk ? `: ${lk.m3u}` : ' (escribe /datos para verlo)'}\n4️⃣ Vuelve a la tele, reinicia la app y ya salen los canales.\n\n💡 Esta app puede pedir pagar su activación en su propia web: eso es de la app, no de tu suscripción.`;
+  return `${head}\n2️⃣ Ábrela y ve a «Medio» › «Abrir ubicación de red» (en el móvil: «Red» o «Transmisión»).\n3️⃣ Pega tu enlace M3U${pw && lk ? `:\n   ${lk.m3u}` : ' (escribe /datos para verlo)'}\n4️⃣ Pulsa «Reproducir».\n\n💡 En VLC no hay guía de canales: es lo más sencillo para probar en el ordenador.`;
+}
 const guideKb = (skip, c) => { const jf = cliJf(c);
   if (cliTv(c)) return { inline_keyboard: [ // clientes de IPTV: su app y cómo entrar
-    ...(skip === 'tvapp' ? [] : [[{ text: '📥 Instalar la app de IPTV', callback_data: 'gd:tvapp' }]]),
+    ...(skip === 'tvapp' ? IPTV_APPS.reduce((r, a, i) => { if (i % 2 === 0) r.push([]); r[r.length - 1].push({ text: '📲 ' + a[1], callback_data: 'ga:' + a[0] }); return r; }, []) : [[{ text: '📥 Instalar la app de IPTV', callback_data: 'gd:tvapp' }]]),
     ...(skip === 'login' ? [] : [[{ text: '🔑 Cómo entrar con mis datos', callback_data: 'gd:login' }]]),
     ...(skip === 'where' ? [] : [[{ text: '📱 ¿Dónde puedo verlo?', callback_data: 'gd:where' }]])] };
   if (cliPx(c)) return { inline_keyboard: [ // clientes de Plex: su invitación, su app y cómo entrar
@@ -3729,7 +3747,7 @@ function guideText(k, c) {
   if (s.kind === 'iptv') { // clientes de IPTV: apps con «Xtream Codes» o con su lista M3U
     const lk = c ? xuiLinks(c) : null;
     if (k === 'main') return `📺 ¿Te dice que hay demasiadas conexiones?\n\nTu plan permite ${c && c.screens ? c.screens : 'varias'} ${c && c.screens === 1 ? 'conexión' : 'conexiones'} a la vez. Cierra la app en los aparatos que no uses y vuelve a probar.`;
-    if (k === 'tvapp') return '📥 APPS DE IPTV\n\n📺 Smart TV / Android TV / Fire TV → «IPTV Smarters Pro», «TiviMate» o «XCIPTV»\n📱 Móvil Android → «IPTV Smarters Pro» en Play Store\n🍏 iPhone / iPad / Apple TV → «IPTV Smarters Player Lite» o «GSE Smart IPTV»\n💻 PC → VLC (con tu lista M3U)\n\nDespués escribe /instalar y toca «🔑 Cómo entrar con mis datos».';
+    if (k === 'tvapp') return '📥 APPS DE IPTV\n\n📺 Smart TV / Android TV / Fire TV → «IPTV Smarters Pro», «TiviMate» o «XCIPTV»\n📱 Móvil Android → «IPTV Smarters Pro» en Play Store\n🍏 iPhone / iPad / Apple TV → «IPTV Smarters Player Lite» o «GSE Smart IPTV»\n💻 PC → VLC (con tu lista M3U)\n\n🟣 También valen MaxPlayer e IBO Player (Samsung, LG, Android TV).\n\n👇 Toca tu app y te digo los pasos con tus datos.';
     if (k === 'login') return '🔑 CÓMO ENTRAR\n\n1️⃣ Abre la app y elige «Xtream Codes» (o «Login with Xtream Codes API»)\n2️⃣ Escribe:' + (lk ? `\n   🌐 Servidor: ${lk.host}` : '') + (c ? `\n   👤 Usuario: ${c.embyName}` : '') + '\n   🔒 Contraseña: escribe /datos para verla\n3️⃣ Pulsa «Añadir usuario» y espera a que carguen los canales.\n\n💡 Si tu app pide una «lista M3U», escribe /datos: ahí tienes tu enlace.';
     return '📱 ¿DÓNDE PUEDO VERLO?\n\n📺 Smart TV Samsung / LG → app «IPTV Smarters Pro» o «Smart IPTV»\n🤖 Android TV / Google TV / Fire TV → «TiviMate» o «IPTV Smarters Pro»\n📱 Móvil y tablet → «IPTV Smarters Pro»\n🍏 Apple → «IPTV Smarters Player Lite»\n💻 PC → VLC\n\nEscribe /instalar para ver los pasos.';
   }
@@ -3886,6 +3904,10 @@ Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como
     const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
     if (!['main', 'moon', 'dl', 'jf', 'pxinv', 'pxapp', 'tvapp', 'login', 'where'].includes(k)) return;
     return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: guideKb(k, c) });
+  }
+  if (data.startsWith('ga:')) { // guía de una app de IPTV
+    const c = db.clients.find((x) => x.tgChat === chat && cliTv(x)), t = iptvAppGuide(data.slice(3), c, null); if (!t) return;
+    return tg('sendMessage', { chat_id: chat, text: t, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '📥 Otra app', callback_data: 'gd:tvapp' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
   }
   if (data.startsWith('pt:')) { // problemas de IPTV
     const p = PROBS_TV.find(([k]) => k === data.slice(3)); if (!p) return;
@@ -8847,6 +8869,10 @@ route('POST', '/api/bot/announce', SUPER, ({ me }) => {
   return { ok: true, job };
 });
 /* ---------- IPTV: probar la línea como lo haría la app y ver o cortar sus conexiones ---------- */
+route('GET', '/api/clients/:id/iptv-apps', '*', ({ me, params }) => {
+  const c = clientFor(me, params.id); if (!cliTv(c)) throw new HttpError(400, 'Esto es para las líneas de IPTV.');
+  return { apps: IPTV_APPS.map(([k, name, where]) => ({ k, name, where, text: iptvAppGuide(k, c, c.password || '') })) };
+});
 route('GET', '/api/clients/:id/iptv', '*', async ({ me, params }) => {
   const c = clientFor(me, params.id), s = serverOf(c);
   if (!s || s.kind !== 'iptv') throw new HttpError(400, 'Esta cuenta no es de IPTV.');

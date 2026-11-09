@@ -2528,6 +2528,11 @@ body.tech1 [data-act=new],body.tech1 [data-act=demo],body.tech1 [data-act=import
 .mt-srv{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.mt-srv>b{display:block}.mt-srv>small{display:block;color:var(--muted);margin:2px 0 6px}
 .smt-opts{display:grid;gap:8px;margin:0 0 12px}.smt-opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;border:1px solid var(--line);cursor:pointer}
 .smt-opt:has(input:checked){border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,transparent)}.smt-opt input{margin-top:4px}.smt-opt b{display:block}.smt-opt small{color:var(--muted)}
+.iv-apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.iv-app{text-align:left;padding:9px 11px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--text) 4%,transparent);color:var(--text);cursor:pointer;font:inherit}
+.iv-app b{display:block;font-size:14px}.iv-app small{display:block;color:var(--muted);font-size:11.5px;line-height:1.3;margin-top:2px}
+.iv-app.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,transparent)}
+.iv-guide{white-space:pre-wrap;word-break:break-word;font:13.5px/1.5 inherit;font-family:inherit;margin:10px 0 8px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--text) 6%,transparent);border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -4223,7 +4228,7 @@ const payInvite = (c) => fillTpl('payinvite', c);
 function shareBtns(text, wa) {
   return `<div class="qacts" style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn primary" data-act="pl-copy">📋 Copiar</button>
     ${wa ? `<a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(text)}">🟢 WhatsApp</a>` : ''}
-    <a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(text)}">✈️ Telegram</a></div>`;
+    <a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(tgSafe(text))}">✈️ Telegram</a></div>`;
 }
 function noticeRows() {
   const days = S.d.settings.notices.chat.days;
@@ -7295,6 +7300,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 243, d: '2026-11-09', items: ['✈️ Mensajes para Telegram sin pagar Premium: al copiar un mensaje para el cliente (alta, renovación, pago, calidad…) las listas «1.», «•» y «-» se cambian por emojis (1️⃣, ▪️). Telegram ya no lo toma como «formato avanzado» de pago y se manda bien, con sus saltos de línea'] },
+  { v: 242, d: '2026-11-06', items: ['📲 IPTV: guía de apps para tus clientes (MaxPlayer, IPTV Smarters, TiviMate, XCIPTV, IBO Player y VLC). En «Datos IPTV» tocas una app y te salen sus pasos con los datos del cliente, listos para copiar. En el bot, «Instalar la app» le enseña un botón por cada app con sus pasos'] },
   { v: 241, d: '2026-11-06', items: ['⛔ Mantenimiento de servidor: ahora puedes elegir «Cerrar el servidor» un rato (15 min, 30 min, 1 hora, 2, 3 o hasta que lo quites). Nadie ve mientras dura, se para lo que estén viendo, el bot les dice a qué hora vuelve y, al acabar, todas las cuentas vuelven solas'] },
   { v: 240, d: '2026-11-06', items: ['🚧 Mantenimiento también para los clientes de Emby, Jellyfin y Plex (Seguridad › Modo mantenimiento): eliges el servidor y les avisa sin cortar nada. Mensaje en pantalla a quien está viendo (y a quien empiece mientras dure), aviso al entrar en Emby y Jellyfin, el bot lo dice en «¿Funciona?», y si quieres también se lo manda por el bot'] },
   { v: 239, d: '2026-11-06', items: ['🚧 Modo mantenimiento (Seguridad): cierras el panel a los vendedores mientras haces cambios, con tu propio mensaje. Tú y tus administradores seguís entrando y los clientes siguen viendo', '🗂️ Equipo › Eliminados: los vendedores y administradores que borras se quedan 30 días por si fue sin querer, y los restauras con su usuario y sus créditos', '🛠️ Permiso nuevo «Soporte técnico» y botón «Solo técnico»: un administrador que ve y repara cuentas y mira el Monitor, sin crear, renovar ni borrar nada', '🔑 Normas de contraseña para las cuentas de los clientes (Seguridad): largo mínimo, que lleve un número y que no sea igual que el usuario. «Generar» ya las cumple'] },
@@ -9423,7 +9430,22 @@ function fillTpl(key, c, password) {
   const txt = tplText(key).replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
   return srv.kind === 'jellyfin' ? txt.replace(/\bEmby\b/g, 'Jellyfin') : txt; // cliente de Jellyfin: el mensaje habla de Jellyfin
 }
+/** v243: Telegram convierte en «formato avanzado» (de pago, Premium) las líneas que empiezan por «1.», «•», «-» o «>».
+    Al copiar un mensaje se cambian por emojis (1️⃣, ▪️, »): se ve igual de ordenado y se puede mandar sin Premium. No cambia ninguna palabra */
+const KEYCAP = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+function tgSafe(text) {
+  const t = String(text == null ? '' : text);
+  if (!t.includes('\n')) return t; // un dato suelto (usuario, enlace, contraseña) se copia tal cual
+  return t.split('\n').map((l) => l
+    .replace(/^(\s*)[•●◦▪∙·\-–—*+]\s+(?=\S)/u, '$1▪️ ')
+    .replace(/^(\s*)(\d{1,2})[.)]\s+(?=\S)/, (m, sp, n) => sp + (KEYCAP[+n] || n + ' ·') + ' ')
+    .replace(/^(\s*)>\s?/, '$1» ')
+    .replace(/^(\s*)#{1,6}\s+/, '$1')
+    .replace(/^(\s*)\[[ xX]\]\s+/, '$1☑️ ')).join('\n')
+    .replace(/```/g, '');
+}
 async function copyText(text, el) {
+  text = tgSafe(text);
   try { await navigator.clipboard.writeText(text); }
   catch (e) {
     let tmp = null;
@@ -9508,6 +9530,8 @@ function dIptv(c) {
       <p class="iv-h">📋 Lista M3U <small>(VLC, Smart IPTV, GSE…)</small></p>
       ${row('📺', 'Enlace M3U', iv.m3u, 'm3u', true)}${row('🗓️', 'Guía de programación (EPG)', iv.epg, 'epg', true)}
       ${iv.host ? '' : '<p class="small muted" style="margin-top:8px">⚠️ Falta la «Dirección que das a los clientes» del servidor IPTV (Servidores › Editar): sin ella no se puede hacer la lista M3U.</p>'}
+      <p class="iv-h">📲 Apps que puede usar <small>(MaxPlayer, Smarters, IBO…)</small></p>
+      <div id="ivApps"><button type="button" class="btn" data-act="iv-apps" style="width:100%">📲 Ver las apps y sus pasos con sus datos</button></div>
       <p class="iv-h">🔌 Ahora mismo <small>(conexiones y prueba de la línea)</small></p>
       <div id="ivLive"><button type="button" class="btn" data-act="iv-check" style="width:100%">🧪 Probar la línea y ver quién está conectado</button></div>
       ${c.tgLinked ? `<button type="button" class="btn iv-tg" data-act="m-tgmsg" data-id="${c.id}" style="margin-top:12px;width:100%">✈️ Mandarle un mensaje por el bot</button>` : ''}`,
@@ -9521,6 +9545,15 @@ function dIptv(c) {
             box.innerHTML = test + cs + '<button type="button" class="btn sm ghost" data-act="iv-check" style="margin-top:6px">↻ Volver a mirar</button>';
           }, (x) => { box.innerHTML = `<p class="err">${esc(x.message)}</p>`; }); };
           if (ck.dataset.act === 'iv-kill') api('POST', `/api/clients/${c.id}/iptv/kill`, { id: ck.dataset.k }).then(() => { toast('Conexión cortada'); load(); }, (x) => toast(x.message, true)); else load();
+          return; }
+        const ap = e.target.closest('[data-act=iv-apps],[data-act=iv-app],[data-act=iv-appcp]');
+        if (ap) { e.preventDefault(); e.stopPropagation(); const box = $('#ivApps');
+          const draw = (sel) => { const L = S.ivApps || [], a = L.find((x) => x.k === sel);
+            box.innerHTML = `<div class="iv-apps">${L.map((x) => `<button type="button" class="iv-app${x.k === sel ? ' on' : ''}" data-act="iv-app" data-k="${x.k}"><b>${esc(x.name)}</b><small>${esc(x.where)}</small></button>`).join('')}</div>`
+              + (a ? `<pre class="iv-guide">${esc(a.text)}</pre><button type="button" class="btn sm primary" data-act="iv-appcp" data-k="${a.k}">${ic('copy')}Copiar estos pasos para mandárselos</button>` : '<p class="small muted" style="margin:6px 0 0">Toca una app y te salen los pasos con sus datos, listos para copiar.</p>'); };
+          if (ap.dataset.act === 'iv-apps') { box.innerHTML = '<p class="small muted">⏳ Cargando…</p>'; api('GET', `/api/clients/${c.id}/iptv-apps`).then((r) => { S.ivApps = r.apps; draw(null); }, (x) => { box.innerHTML = `<p class="err">${esc(x.message)}</p>`; }); }
+          else if (ap.dataset.act === 'iv-app') draw(ap.dataset.k);
+          else { const a = (S.ivApps || []).find((x) => x.k === ap.dataset.k); if (a) copyText(`Hola ${c.panelName} 👋\n\n${a.text}`).then(() => toast('Pasos copiados: pégalos en su chat ✅')); }
           return; }
         const b = e.target.closest('[data-act=iv-copy]'); if (!b) return; e.preventDefault(); e.stopPropagation(); const v = { host: iv.host, user: iv.user, pw: iv.pw, m3u: iv.m3u, epg: iv.epg }[b.dataset.k]; copyText(v).then(() => toast('Copiado ✅')); }; },
     onSubmit: async () => { await copyText(`Hola ${c.panelName} 👋\n\n${ivBlock(iv)}\n\n📅 Vence el ${fmt(c.expires)}`); return 'Datos copiados: pégalos en su chat'; } });
@@ -9988,9 +10021,9 @@ document.addEventListener('click', (e) => {
     const vence = c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : dmy(c.expires);
     const t = [srv.publicUrl ? `Servidor: ${srv.publicUrl}` : '', srv.kind === 'plex' ? `Cuenta de Plex: ${c.embyName}` : `Usuario: ${c.embyName}`, `Contraseña: ${c.password || (srv.kind === 'plex' ? '(la de tu cuenta de Plex)' : '(la que ya tienes)')}`, srv.kind === 'iptv' && srv.publicUrl && c.password ? `Lista M3U: ${String(srv.publicUrl).replace(/\/+$/, '')}/get.php?username=${encodeURIComponent(c.embyName)}&password=${encodeURIComponent(c.password)}&type=m3u_plus&output=ts` : '', `Caduca: ${vence}`].filter(Boolean).join('\n');
     const done = () => { el.classList.add('copied'); setTimeout(() => el.classList.remove('copied'), 1200); toast(c.password ? `Datos de ${c.panelName} copiados: pégalos en el chat` : `Copiado. Ojo: el panel no tiene guardada la contraseña de ${c.panelName}`, !c.password); };
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done, () => { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); ok ? done() : toast('No se pudo copiar', true); });
+    (navigator.clipboard ? navigator.clipboard.writeText(tgSafe(t)) : Promise.reject()).then(done, () => { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); ok ? done() : toast('No se pudo copiar', true); });
     return; }
-  if (a === 'copy-txt') { navigator.clipboard.writeText(el.dataset.t).then(() => toast('Copiado'), () => toast('No se pudo copiar', true)); return; }
+  if (a === 'copy-txt') { navigator.clipboard.writeText(tgSafe(el.dataset.t)).then(() => toast('Copiado'), () => toast('No se pudo copiar', true)); return; }
   if (a === 'pay-stripe') { const c = S.pay.cfg.stripe; openDlg({ title: 'Claves de Stripe', submit: 'Guardar y probar', body: `<label class="f">Clave secreta (sk_live_… o sk_test_… para pruebas)<input name="key" autocomplete="off" spellcheck="false" placeholder="${c.hasKey ? 'Vacío = no cambiarla' : 'sk_live_…'}"></label><label class="f">Secreto del webhook (whsec_…, opcional)<input name="wh" autocomplete="off" spellcheck="false" placeholder="${c.hasWh ? 'Vacío = no cambiarlo' : 'whsec_…'}"></label><p class="muted small">No la compartas con nadie ni la pegues en chats.</p>`, onSubmit: async (fd) => { await api('PUT', '/api/pay/config', { stripe: { key: fd.get('key'), whsec: fd.get('wh'), on: true } }); return 'Stripe conectado y activado'; }, after: () => { S.pay = null; loadPay(); } }); return; }
   if (a === 'pay-now') { const c = S.pay.cfg.nowpay; openDlg({ title: 'Claves de NOWPayments', submit: 'Guardar y probar', body: `<label class="f">API key<input name="key" autocomplete="off" spellcheck="false" placeholder="${c.hasKey ? 'Vacío = no cambiarla' : ''}"></label><label class="f">IPN secret<input name="ipn" autocomplete="off" spellcheck="false" placeholder="${c.hasIpn ? 'Vacío = no cambiarlo' : ''}"></label>`, onSubmit: async (fd) => { await api('PUT', '/api/pay/config', { nowpay: { key: fd.get('key'), ipn: fd.get('ipn'), on: true } }); return 'NOWPayments conectado y activado'; }, after: () => { S.pay = null; loadPay(); } }); return; }
   if (a === 'pay-onoff') { api('PUT', '/api/pay/config', { [el.dataset.k]: { on: el.dataset.on === 'true' } }).then(() => { toast('Guardado'); S.pay = null; loadPay(); }, (x) => toast(x.message, true)); return; }
@@ -10152,7 +10185,7 @@ document.addEventListener('click', (e) => {
   if (a === 'vp-remind') { vpRemind(id); return; }
   if (a === 'vp-tg') { el.disabled = true; api('POST', '/api/vpay/remind', { userId: id, text: (dlgForm.elements.msg || {}).value || '' }).then(() => { if (dlg.open) dlg.close(); toast('Recordatorio enviado por Telegram'); }, (x) => { el.disabled = false; toast(x.message, true); }); return; }
   if (a === 'st-tg') { el.disabled = true; api('POST', `/api/users/${id}/statement/send`, { days: +el.dataset.days }).then(() => toast('Extracto enviado por Telegram'), (x) => { el.disabled = false; toast(x.message, true); }); return; }
-  if (a === 'st-copy') { const t = S.vp.st && S.vp.st.text; if (t) navigator.clipboard.writeText(t).then(() => toast('Resumen copiado: pégalo en el chat'), () => toast('No se pudo copiar', true)); return; }
+  if (a === 'st-copy') { const t = S.vp.st && S.vp.st.text; if (t) navigator.clipboard.writeText(tgSafe(t)).then(() => toast('Resumen copiado: pégalo en el chat'), () => toast('No se pudo copiar', true)); return; }
   if (a === 'st-csv') { const st = S.vp.st; if (!st) return; const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`; const lines = [['Fecha', 'Movimiento', 'Créditos', 'Saldo'].map(q).join(';'), ...st.rows.map((r) => [new Date(r.ts).toLocaleString('es-ES'), r.text, r.delta, r.balance].map(q).join(';'))]; const l = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })), download: `extracto-${st.user.name}-${S.d.today}.csv` }); l.click(); return; }
   if (a === 'tm-reload') { S.tm.data = null; loadTeam(); render(); return; }
   if (a === 'tm-acc') { S.acc.user = String(id); S.acc.kind = 'all'; S.acc.data = null; S.view = 'accesos'; render(); window.scrollTo(0, 0); return; }
@@ -10365,7 +10398,7 @@ document.addEventListener('click', (e) => {
     case 'tg-copy': { const box = $('#tgLinkBox'); copyText(box.value).then(() => { el.textContent = '✓ Enlace copiado'; }).catch((x) => toast(x.message, true)); break; }
     case 'tg-unlink': if (c) { if (dlg.open) dlg.close(); act(() => api('POST', `/api/clients/${c.id}/tg-unlink`, {}), 'Telegram desenlazado'); } break;
     case 'noticed': if (c) {
-      if (el.dataset.copy) navigator.clipboard && navigator.clipboard.writeText(fillTpl('expiring', c, '')).then(() => toast('Mensaje copiado: pégalo en el chat')).catch(() => {});
+      if (el.dataset.copy) navigator.clipboard && navigator.clipboard.writeText(tgSafe(fillTpl('expiring', c, ''))).then(() => toast('Mensaje copiado: pégalo en el chat')).catch(() => {});
       api('POST', `/api/clients/${c.id}/noticed`, { via: el.dataset.via || '' }).then(() => setTimeout(() => reload().catch(() => {}), el.tagName === 'A' ? 1200 : 0)).catch((x) => toast(x.message, true));
     } break; // si es un enlace, el navegador lo abre igualmente
     case 'tg-remove': dConfirm('Quitar el bot de Telegram', 'Se borra el token y se dejan de enviar avisos por Telegram. Los clientes siguen enlazados por si lo vuelves a poner.', 'Quitar bot', () => api('PUT', '/api/notices', { telegram: { remove: true } }), 'Bot quitado'); break;
