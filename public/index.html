@@ -2555,6 +2555,7 @@ html.look-skel .empty.loading{color:transparent;font-size:0;min-height:150px;pad
 html.look-skel #main .panel > .empty:not(.loading){padding-top:26px}
 html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:block;width:120px;height:88px;margin:0 auto 12px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22150%22%20height%3D%22110%22%20viewBox%3D%220%200%20150%20110%22%20fill%3D%22none%22%3E%3Cellipse%20cx%3D%2275%22%20cy%3D%22100%22%20rx%3D%2252%22%20ry%3D%227%22%20fill%3D%22%236366f1%22%20opacity%3D%22.18%22/%3E%3Cpath%20d%3D%22M35%2045l40-18%2040%2018v40l-40%2018-40-18z%22%20fill%3D%22%236366f1%22%20fill-opacity%3D%22.16%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222.5%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M35%2045l40%2018%2040-18M75%2063v40%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222.5%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M35%2045l-12%2014%2040%2018%2012-14M115%2045l12%2014-40%2018-12-14%22%20fill%3D%22%23a78bfa%22%20fill-opacity%3D%22.25%22%20stroke%3D%22%23a78bfa%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M98%2012l3%207%207%203-7%203-3%207-3-7-7-3%207-3zM46%2016l2%204%204%202-4%202-2%204-2-4-4-2%204-2z%22%20fill%3D%22%23f0abfc%22/%3E%3C/svg%3E") center/contain no-repeat}
 @media (prefers-reduced-motion:reduce){html.look-skel .empty.loading{animation:none}}
+.alx{display:inline-block;margin-left:6px;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:800;background:#ef4444;color:#fff;vertical-align:1px}
 </style>
 </head>
 <body>
@@ -4499,7 +4500,7 @@ function vAlertas(kind) {
   const now = Date.now();
   const tile = (n, label, cls = '') => `<div class="tile ${cls}"><b>${n}</b><span>${label}</span></div>`;
   const tiles = def.type
-    ? tile(all.length, 'Total de detecciones') + tile(all.filter((x) => now - Date.parse(x.ts) < 86400000).length, 'Últimas 24 horas', 'soon') + tile(new Set(all.map((x) => x.clientId)).size, 'Usuarios afectados', 'mine')
+    ? tile(all.reduce((n, x) => n + (x.count || 1), 0), 'Total de detecciones') + tile(all.filter((x) => now - Date.parse(x.ts) < 86400000).reduce((n, x) => n + (x.count || 1), 0), 'Últimas 24 horas', 'soon') + tile(new Set(all.map((x) => x.clientId)).size, 'Usuarios afectados', 'mine')
     : tile(all.length, 'Total') + tile(all.filter((x) => !x.read).length, 'Sin leer', 'soon') + tile(all.filter((x) => x.level === 'critica').length, 'Críticas', 'expired') + tile(all.filter((x) => x.type === 'sesiones').length, 'Sesiones excedidas');
   const module = cfg ? `<div class="module">
       <div class="grow"><b>Vigilancia en Emby</b><div class="small muted">${cfg.on ? (cfg.stop ? 'Encendida: detiene la reproducción y avisa al usuario en pantalla.' : def.key === 'transcode' && cfg.tip !== false ? 'Encendida: no corta nada, pero le explica en su pantalla cómo subir la calidad.' : 'Encendida: solo registra el aviso, no detiene nada.') : 'Apagada: no se vigila ni se detiene nada.'} Guarda el historial ${plural(cfg.retention, 'día', 'días')}.</div></div>
@@ -4513,6 +4514,9 @@ function vAlertas(kind) {
       <label class="check"><input type="checkbox" name="stop"${cfg.stop ? ' checked' : ''}> Detener la reproducción automáticamente (si no, solo se registra el aviso)</label>
       ${def.key === 'sessions' ? `<label class="check"><input type="checkbox" name="logout"${cfg.logout !== false ? ' checked' : ''}> Si un aparato no obedece y sigue reproduciendo, cerrar su sesión (tendrá que volver a entrar con su usuario y contraseña)</label>` : ''}
       ${def.key === 'transcode' ? `<label class="check"><input type="checkbox" name="onlyVideo"${cfg.onlyVideo ? ' checked' : ''}> Actuar solo cuando se convierte el vídeo (ignorar si solo cambia el audio o los subtítulos)</label>` : ''}
+      ${def.key === 'transcode' ? `<label class="check"><input type="checkbox" name="webSoft"${cfg.webSoft !== false ? ' checked' : ''}> En el navegador (Emby Web, Chrome, Brave…) no cortar: avisarle en pantalla de que use la app. En el navegador muchos vídeos no se pueden ver sin convertir</label>
+      <label class="f" style="max-width:420px;margin-left:28px">Si sigue convirtiendo después del aviso, cortarle a los<select name="webGrace">${[[2, '2 minutos'], [5, '5 minutos'], [10, '10 minutos'], [15, '15 minutos'], [30, '30 minutos']].map(([v, t]) => `<option value="${v}"${(cfg.webGrace ?? 5) === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label class="check"><input type="checkbox" name="bot"${cfg.bot !== false ? ' checked' : ''}> Explicárselo también por el bot de Telegram, para que sepa que no es un fallo del servidor (como mucho una vez cada 30 minutos)</label>` : ''}
       <label class="f" style="margin-top:14px">Mensaje que ve el usuario al detenerle<textarea name="message" rows="3" maxlength="300">${esc(cfg.message)}</textarea></label>
       ${def.key === 'transcode' ? `<h2 class="sep">Aviso de calidad baja</h2>
       <label class="check"><input type="checkbox" name="tip"${cfg.tip !== false ? ' checked' : ''}> Si no se detiene, mandarle a su pantalla cómo poner la calidad al máximo. Solo cuando el vídeo pierde calidad de verdad: si solo se convierte el audio o el formato, no se avisa.</label>
@@ -4525,7 +4529,7 @@ function vAlertas(kind) {
     </form>`;
   } else if (def.type && a.tab === 'rep') {
     const by = new Map();
-    all.forEach((x) => { const r = by.get(x.clientId) || { n: 0, last: x.ts, x }; r.n++; if (x.ts > r.last) r.last = x.ts; by.set(x.clientId, r); });
+    all.forEach((x) => { const r = by.get(x.clientId) || { n: 0, last: x.ts, x }; r.n += x.count || 1; if (x.ts > r.last) r.last = x.ts; by.set(x.clientId, r); });
     const rows = [...by.values()].filter((r) => r.n >= 2).sort((p, q) => q.n - p.n);
     body = rows.length ? `<div class="panel"><table class="cards"><thead><tr><th>Cliente</th><th>Detecciones</th><th>Última vez</th><th>Vendedor</th><th class="r"></th></tr></thead><tbody>${rows.map((r) => `<tr>
         <td><div class="name">${esc(r.x.client)}</div><div class="small muted">@${esc(r.x.emby)}</div></td><td><b class="minus">${r.n}</b></td><td>${fmtTs(r.last, true)}</td><td>${esc(userName(r.x.ownerId) || '—')}</td>
@@ -4552,7 +4556,7 @@ function vAlertas(kind) {
         ${pages > 1 ? `<button class="btn sm" data-act="al-page" data-step="-1"${a.page === 1 ? ' disabled' : ''}>Anterior</button><span>${a.page} / ${pages}</span><button class="btn sm" data-act="al-page" data-step="1"${a.page === pages ? ' disabled' : ''}>Siguiente</button>` : ''}
       </span></div>`;
     const table = shown.length ? `<div class="panel"><table class="cards"><thead><tr><th>Fecha</th><th>Cliente</th>${def.type ? '' : '<th>Tipo</th>'}<th>Dispositivo</th><th>Contenido</th><th>Motivo</th><th>Acción</th></tr></thead><tbody>${shown.map((x) => `<tr${x.read ? '' : ' class="unread"'}>
-        <td style="white-space:nowrap">${fmtTs(x.ts, true)}${x.level === 'critica' ? '<div class="lvl">Crítica: reincidente</div>' : ''}</td>
+        <td style="white-space:nowrap">${fmtTs(x.ts, true)}${x.count > 1 ? ` <span class="alx" title="Veces seguidas: la primera a las ${new Date(x.first).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}">×${x.count}</span><div class="small muted">desde las ${new Date(x.first).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>` : ''}${x.level === 'critica' ? '<div class="lvl">Crítica: reincidente</div>' : ''}</td>
         <td><div class="name">${esc(x.client)}</div><div class="small muted">@${esc(x.emby)}${S.d.users.length > 1 ? ', de ' + esc(userName(x.ownerId) || '—') : ''}</div></td>
         ${def.type ? '' : `<td>${AL_TYPE[x.type] || esc(x.type)}</td>`}
         <td>${esc(x.device)}${x.app ? `<div class="small muted">${esc(x.app)}</div>` : ''}</td><td>${esc(x.item)}</td><td>${esc(x.reason)}</td><td>${esc(x.action)}</td></tr>`).join('')}</tbody></table></div>`
@@ -4563,8 +4567,8 @@ function vAlertas(kind) {
 }
 function alertsCsv(kind) {
   const cell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const lines = [['Fecha', 'Tipo', 'Nivel', 'Cliente', 'Usuario Emby', 'Vendedor', 'Servidor', 'Dispositivo', 'App', 'Contenido', 'Motivo', 'Accion'].map(cell).join(';')];
-  alertRows(kind).forEach((x) => lines.push([new Date(x.ts).toLocaleString('es-ES'), AL_TYPE[x.type] || x.type, x.level, x.client, x.emby, userName(x.ownerId), x.server, x.device, x.app, x.item, x.reason, x.action].map(cell).join(';')));
+  const lines = [['Fecha', 'Tipo', 'Nivel', 'Cliente', 'Usuario Emby', 'Vendedor', 'Servidor', 'Dispositivo', 'App', 'Contenido', 'Motivo', 'Accion', 'Veces'].map(cell).join(';')];
+  alertRows(kind).forEach((x) => lines.push([new Date(x.ts).toLocaleString('es-ES'), AL_TYPE[x.type] || x.type, x.level, x.client, x.emby, userName(x.ownerId), x.server, x.device, x.app, x.item, x.reason, x.action, x.count || 1].map(cell).join(';')));
   const url = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
   const link = Object.assign(document.createElement('a'), { href: url, download: `alertas-${S.d.today}.csv` });
   document.body.appendChild(link); link.click(); link.remove();
@@ -7397,6 +7401,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 254, d: '2026-11-10', items: ['✂️ Transcode en el navegador: primero se le avisa; si sigue convirtiendo pasados unos minutos (5 por defecto; 2, 10, 15 o 30), se le corta como en las apps, y si vuelve a la media hora, se le corta directamente'] },
+  { v: 253, d: '2026-11-10', items: ['🌐 Transcode en el navegador: si el cliente ve desde Emby Web (Chrome, Brave…), ya no se le corta cada minuto. Le sale un aviso en pantalla para que use la app de Emby (como mucho cada 15 minutos)', '💬 Cuando se le para un vídeo, el mensaje se repite con el vídeo ya parado (para que le dé tiempo a leerlo) y, si tiene el bot, se le explica por Telegram que no es un fallo y cómo arreglarlo. Se puede apagar en Alertas › Transcode › Configuración'] },
+  { v: 252, d: '2026-11-10', items: ['🔁 Alertas sin repetir: si el mismo cliente vuelve a hacer transcode (o a pasarse de pantallas) en menos de 30 minutos, no sale otra alerta: se suma a la de antes con un numerito (×2, ×3…) y pone desde qué hora'] },
   { v: 251, d: '2026-11-09', items: ['⏸️ «Pausar hasta que pague» en el menú de la cuenta: se queda sin acceso sin borrar nada y conserva su fecha. Si paga con su enlace de pago, se quita sola al momento; si no, pulsas «Ya ha pagado». Si tiene el bot, se le avisa con el botón para pagar'] },
   { v: 250, d: '2026-11-09', items: ['⏳ Regalo por activar el bot con plazo: el cliente tiene unas horas para aceptarlo (12 por defecto; también 6, 24 o 48). El plazo empieza cuando copias o envías el mensaje, y el texto lo dice: «Actívalos en las próximas 12 horas y te regalamos 3 días gratis». Si no llega a tiempo, pierde el regalo'] },
   { v: 249, d: '2026-11-09', items: ['🎁 Regalo por activar el bot (Notificaciones › Avisos): eliges cuántos días (cuentas) u horas (demos) regalas. Se da una sola vez y los mensajes que copias lo anuncian: «Activa tus avisos y te regalamos 3 días gratis»', '🔗 En los mensajes con el enlace de pago, el enlace del bot va aparte: un toque y se abre Telegram directamente, sin pasar por la página'] },
@@ -10778,7 +10785,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'alcfg') {
     e.preventDefault();
     const fd = new FormData(e.target), k = e.target.dataset.k;
-    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', tip: fd.get('tip') === 'on', ...(k === 'transcode' ? { tipEvery: +fd.get('tipEvery'), tipText: fd.get('tipText') } : { logout: fd.get('logout') === 'on' }), message: fd.get('message'), retention: +fd.get('retention') } })
+    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', tip: fd.get('tip') === 'on', ...(k === 'transcode' ? { tipEvery: +fd.get('tipEvery'), tipText: fd.get('tipText'), webSoft: fd.get('webSoft') === 'on', bot: fd.get('bot') === 'on', webGrace: +fd.get('webGrace') } : { logout: fd.get('logout') === 'on' }), message: fd.get('message'), retention: +fd.get('retention') } })
       .then(async () => { await loadAlerts(); await reload(); toast('Configuración guardada'); }).catch((x) => toast(x.message, true));
   }
   if (e.target.id === 'noticeForm') {

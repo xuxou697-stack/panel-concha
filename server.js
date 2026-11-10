@@ -5509,6 +5509,21 @@ route('PUT', '/api/price-tiers', SUPER, ({ me, body }) => lock(async () => {
 
 /* ---------- Alertas: transcodificacion y sesiones excedidas ---------- */
 const recent = new Map(); // clave -> momento del ultimo aviso, para no repetir el mismo
+const WEB_TIP = 'Estás viendo desde el navegador y este vídeo necesita convertirse, por eso puede ir a saltos. Para verlo perfecto y sin cortes, usa la app de Emby (tele, móvil o tablet). Si sigues en el navegador, pon la calidad al máximo en Ajustes › Reproducción.';
+/** v253: le explica también por el bot de Telegram por qué se le ha parado (como mucho una vez cada 30 minutos) */
+const tcBotAt = new Map();
+const webWarn = new Map(); // cliente -> { at: cuándo se le avisó en el navegador, last: última vez visto convirtiendo }
+function tcBot(c, why) {
+  const a = db.settings.alerts.transcode;
+  if (a.bot === false || !c.tgChat || !db.settings.notices.telegram.token) return;
+  const last = tcBotAt.get(c.id) || 0; if (Date.now() - last < 30 * 60000) return;
+  tcBotAt.set(c.id, Date.now());
+  const app = cliJf(c) ? 'Jellyfin' : 'Emby';
+  const t = why === 'web'
+    ? `💡 <b>Para verlo sin cortes</b>\n\nEstás viendo desde el navegador y ese vídeo necesita convertirse, por eso puede ir a saltos.\n\n✅ Lo mejor: usa la <b>app de ${app}</b> en la tele, el móvil o la tablet.\n⚙️ Si sigues en el navegador: Ajustes › Reproducción › pon la calidad al máximo.`
+    : `⏸️ <b>Te hemos parado el vídeo, no es un fallo</b>\n\nTu aparato estaba convirtiendo el vídeo y eso satura el servidor para todos.\n\n✅ Para que no vuelva a pasar:\n1️⃣ Entra en Ajustes › Reproducción de la app.\n2️⃣ Pon la calidad al máximo (no «Auto»).\n3️⃣ Si estás en el navegador, mejor usa la app de ${app}.\n\nDespués, vuelve a darle a reproducir. 🍿`;
+  tg('sendMessage', { chat_id: c.tgChat, text: t, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '🛠️ Más ayuda', callback_data: 'bm:problemas' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {});
+}
 async function stopSession(s, x, text) {
   await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Aviso', Text: text, TimeoutMs: 10000 }).catch(() => {});
   await emby(s, 'POST', `/Sessions/${x.Id}/Playing/Stop`, {});
@@ -5571,9 +5586,26 @@ async function monitor() {
             if (recent.has(key) && now - recent.get(key) < (cfg.transcode.stop ? 20000 : 6 * 3600000)) continue;
             recent.set(key, now);
             let action = 'Solo aviso';
-            if (cfg.transcode.stop) {
-              try { await stopSession(s, x, cfg.transcode.message); action = 'Reproducción detenida'; live = live.filter((y) => y !== x); }
-              catch (e) { action = 'No se pudo detener'; }
+            // v253: en el navegador (Emby Web, Chrome, Brave…) muchos vídeos no se pueden ver sin convertir: ahí no se corta, se le explica que use la app
+            const web = /\bweb\b|chrome|firefox|safari|edge|brave|opera|navegador/i.test(`${x.Client || ''} ${x.DeviceName || ''}`);
+            const wk = `w:${s.id}:${c.id}`, w = webWarn.get(wk), graceMs = (cfg.transcode.webGrace ?? 5) * 60000;
+            if (cfg.transcode.stop && web && cfg.transcode.webSoft !== false && (!w || now - w.last > 30 * 60000)) {
+              // primera vez: se le avisa y se le deja seguir unos minutos
+              webWarn.set(wk, { at: now, last: now });
+              try { await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Consejo para verlo mejor', Text: WEB_TIP, TimeoutMs: 60000 }); action = 'Navegador: avisado, sin cortar'; } catch { action = 'Navegador: sin cortar'; }
+              tcBot(c, 'web');
+            } else if (cfg.transcode.stop && web && cfg.transcode.webSoft !== false && now - w.at < graceMs) {
+              w.last = now; continue; // dentro de los minutos de margen tras el aviso
+            } else if (cfg.transcode.stop) {
+              // v254: si después del aviso sigue (o vuelve) convirtiendo, se le corta como en las apps
+              if (w && web) w.last = now;
+              try {
+                await stopSession(s, x, cfg.transcode.message); action = w && web ? 'Navegador: siguió tras el aviso, detenida' : 'Reproducción detenida'; live = live.filter((y) => y !== x);
+                // el mensaje se repite con la reproducción ya parada, para que le dé tiempo a leerlo y no piense que es un fallo del servidor
+                const msg = cfg.transcode.message;
+                setTimeout(() => { emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Por qué se ha parado', Text: msg, TimeoutMs: 60000 }).catch(() => {}); }, 2500);
+                tcBot(c, 'cut');
+              } catch (e) { action = 'No se pudo detener'; }
             } else if (tipped) action = 'Aviso de calidad en su pantalla';
             events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x),
               reason: (ti && Array.isArray(ti.TranscodeReasons) && ti.TranscodeReasons.length ? ti.TranscodeReasons.join(', ') : (video ? 'Vídeo transcodificado' : 'Audio transcodificado')) });
@@ -5629,7 +5661,16 @@ async function monitor() {
       lastPrune = now;
       await lock(async () => {
         for (const e of events) {
-          const prev = db.alerts.filter((a) => a.type === e.type && a.clientId === e.c.id && now - Date.parse(a.ts) < 86400000).length;
+          const prev = db.alerts.filter((a) => a.type === e.type && a.clientId === e.c.id && now - Date.parse(a.ts) < 86400000).reduce((n, a) => n + (a.count || 1), 0);
+          // v252: si el mismo cliente repite en menos de 30 minutos, no se crea otra alerta: se suma a la anterior (×2, ×3…)
+          const g = db.alerts.find((a) => a.type === e.type && a.clientId === e.c.id && now - Date.parse(a.ts) < 30 * 60000);
+          if (g) {
+            db.alerts = db.alerts.filter((a) => a !== g);
+            Object.assign(g, { count: (g.count || 1) + 1, first: g.first || g.ts, ts: new Date().toISOString(), read: false, level: prev >= 2 ? 'critica' : g.level,
+              device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, serverId: e.s.id, server: e.s.name });
+            db.alerts.unshift(g);
+            continue;
+          }
           db.alerts.unshift({ id: newId(), ts: new Date().toISOString(), type: e.type, level: prev >= 2 ? 'critica' : 'aviso', read: false,
             clientId: e.c.id, client: e.c.panelName, emby: e.c.embyName, ownerId: e.c.ownerId, serverId: e.s.id, server: e.s.name,
             device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action });
@@ -5658,6 +5699,9 @@ route('PUT', '/api/alerts/config', STAFF, ({ me, body }) => lock(async () => {
     if (b.stop !== undefined) cur[k].stop = !!b.stop;
     if (k === 'transcode' && b.onlyVideo !== undefined) cur[k].onlyVideo = !!b.onlyVideo;
     if (k === 'transcode' && b.tip !== undefined) cur[k].tip = !!b.tip;
+    if (k === 'transcode' && b.webSoft !== undefined) cur[k].webSoft = !!b.webSoft;
+    if (k === 'transcode' && b.bot !== undefined) cur[k].bot = !!b.bot;
+    if (k === 'transcode' && b.webGrace !== undefined) { const n = Number(b.webGrace); if ([0, 2, 5, 10, 15, 30].includes(n)) cur[k].webGrace = n; }
     if (k === 'transcode' && b.tipEvery !== undefined) { const n = Number(b.tipEvery); if (Number.isInteger(n) && n >= 5 && n <= 1440) cur[k].tipEvery = n; }
     if (k === 'transcode' && typeof b.tipText === 'string') cur[k].tipText = b.tipText.trim().slice(0, 400);
     if (b.retention !== undefined) cur[k].retention = days(b.retention, cur[k].retention);
