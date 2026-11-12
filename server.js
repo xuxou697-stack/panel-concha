@@ -5543,7 +5543,7 @@ function tcDetail(x) {
     sAudio: vi.audio, sCh: vi.audioCh,
     tRes: resOf(vi.trWidth, vi.trHeight), tW: vi.trWidth, tH: vi.trHeight, tCodec: vi.trCodec, tMbps: mb(vi.encBitrate), tAudio: vi.trAudioCodec, tCh: tr.AudioChannels || 0,
     vid: vi.trVideo, aud: vi.trAudio, subs: vi.subs ? { codec: vi.subs.codec, img: !vi.subs.text } : null,
-    reasons: vi.trReasons || [], fps: tr.Framerate ? Math.round(tr.Framerate) : 0, hw: tr.VideoEncoderIsHardware === true || /qsv|nvenc|vaapi|videotoolbox|amf/i.test(String(tr.VideoEncoder || '')),
+    noInfo: !x.TranscodingInfo, reasons: vi.trReasons || [], fps: tr.Framerate ? Math.round(tr.Framerate) : 0, hw: tr.VideoEncoderIsHardware === true || /qsv|nvenc|vaapi|videotoolbox|amf/i.test(String(tr.VideoEncoder || '')),
   };
 }
 function tcCause(x) {

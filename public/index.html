@@ -4573,6 +4573,8 @@ function alConv(d) {
   const ac = (c, ch) => (c ? (ACODEC[c] || c.toUpperCase()) + (ch ? ' ' + (ch === 6 ? '5.1' : ch === 8 ? '7.1' : ch === 2 ? 'estéreo' : ch + ' canales') : '') : '');
   const side = (res, w, h, codec, mbps, extra) => { const top = [res || (w && h ? `${w}×${h}` : ''), vc(codec)].filter(Boolean).join(' · '); return `<b>${esc(top || '—')}</b><span>${mbps ? mbps + ' Mbps' : 'velocidad sin dato'}${extra ? ' · ' + esc(extra) : ''}</span>`; };
   const rows = [];
+  const noInfo = d.noInfo || (!d.vid && !d.aud && !d.tCodec && !d.tAudio && !(d.reasons || []).length);
+  if (noInfo) return `<div class="alv"><div class="alv-t">Qué se convirtió</div><div class="alv-lvl na">⚪ Emby avisa de que está convirtiendo, pero no manda los detalles</div><div class="alv-why"><span>El vídeo original es ${esc([d.sRes, vc(d.sCodec), d.sMbps ? d.sMbps + ' Mbps' : ''].filter(Boolean).join(' · ') || 'desconocido')}. Suele ser algo ligero (sonido o formato), no una bajada de imagen.</span></div></div>`;
   if (d.vid) {
     const drop = d.sMbps && d.tMbps && d.tMbps < d.sMbps ? Math.round((1 - d.tMbps / d.sMbps) * 100) : 0;
     const resDown = d.sH && d.tH && d.tH < d.sH - 40;
@@ -7548,6 +7550,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 260, d: '2026-11-12', items: ['⚪ Si Emby avisa de un transcode pero no manda los detalles, la alerta ya lo dice claro en vez de confundir'] },
   { v: 259, d: '2026-11-12', items: ['🎞️ Cada alerta de transcode enseña qué se convirtió: cómo era el vídeo (4K, HEVC, Mbps…) y cómo le llega al cliente, cuánto baja la calidad, el sonido, los subtítulos y el motivo que da Emby'] },
   { v: 258, d: '2026-11-12', items: ['✨ Alertas con diseño nuevo: tarjetas claras con cuántas veces, desde qué hora, servidor, aparato, qué está viendo, por qué y qué hizo el panel', '💬 Botones para escribirle al momento por WhatsApp (con el mensaje ya escrito) o Telegram, y para enviarle la guía', '🔁 Aviso cuando un aparato parece estar en bucle'] },
   { v: 257, d: '2026-11-12', items: ['🖥️ Cada alerta dice de qué servidor es, y arriba ves cuántas hay en cada servidor (pulsa uno para ver solo ese)', '🔁 Apps en bucle: si un aparato vuelve a convertir 5 veces en 15 minutos, se le cierra la sesión en ese aparato y se le explica por el bot'] },
