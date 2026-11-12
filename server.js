@@ -5532,6 +5532,20 @@ function tcBot(c, why) {
 /* ---------- v255: por qué se convierte y qué títulos lo provocan ----------
    La causa se saca de lo que informa Emby/Jellyfin (motivos, códecs y subtítulos elegidos). Así se puede arreglar el archivo
    una vez, en vez de cortar a los clientes una y otra vez */
+/** v259: qué se convirtió exactamente (original → lo que manda el servidor), para enseñarlo en la alerta */
+function tcDetail(x) {
+  let vi; try { vi = videoInfo(x); } catch { return null; }
+  const it = x.NowPlayingItem || {}, v = (it.MediaStreams || []).find((m) => m.Type === 'Video') || {}, tr = x.TranscodingInfo || {};
+  const resOf = (w, h) => (w >= 3200 || h >= 1800 ? '4K' : w >= 1800 || h >= 1000 ? '1080p' : w >= 1200 || h >= 700 ? '720p' : w || h ? 'SD' : '');
+  const mb = (b) => (b ? Math.round(b / 1e5) / 10 : 0);
+  return {
+    sRes: vi.res, sW: vi.width, sH: vi.height, sCodec: vi.codec, sMbps: mb(vi.srcBitrate), sHdr: /hdr|dolby|hlg/i.test(String(v.VideoRange || v.VideoRangeType || '')) ? String(v.VideoRangeType || v.VideoRange).slice(0, 20) : '', sBits: v.BitDepth || 0,
+    sAudio: vi.audio, sCh: vi.audioCh,
+    tRes: resOf(vi.trWidth, vi.trHeight), tW: vi.trWidth, tH: vi.trHeight, tCodec: vi.trCodec, tMbps: mb(vi.encBitrate), tAudio: vi.trAudioCodec, tCh: tr.AudioChannels || 0,
+    vid: vi.trVideo, aud: vi.trAudio, subs: vi.subs ? { codec: vi.subs.codec, img: !vi.subs.text } : null,
+    reasons: vi.trReasons || [], fps: tr.Framerate ? Math.round(tr.Framerate) : 0, hw: tr.VideoEncoderIsHardware === true || /qsv|nvenc|vaapi|videotoolbox|amf/i.test(String(tr.VideoEncoder || '')),
+  };
+}
 function tcCause(x) {
   let vi = {}; try { vi = videoInfo(x); } catch { /* sin datos */ }
   const R = (vi.trReasons || []).join(' ');
@@ -5685,7 +5699,7 @@ async function monitor() {
                 } else tcBot(c, cause.kind === 'subs' ? 'subs' : 'cut');
               } catch (e) { action = 'No se pudo detener'; }
             } else if (tipped) action = 'Aviso de calidad en su pantalla';
-            events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: cause.kind, causeText: cause.text,
+            events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: cause.kind, causeText: cause.text, detail: tcDetail(x),
               reason: cause.kind !== 'other' ? cause.text : (ti && Array.isArray(ti.TranscodeReasons) && ti.TranscodeReasons.length ? ti.TranscodeReasons.join(', ') : (video ? 'Vídeo transcodificado' : 'Audio transcodificado')) });
           }
         }
@@ -5746,14 +5760,14 @@ async function monitor() {
             db.alerts = db.alerts.filter((a) => a !== g);
             if (!g.outs && /^Aparato desconectado/.test(g.action || '')) g.outs = 1;
             Object.assign(g, { count: (g.count || 1) + 1, first: g.first || g.ts, ts: new Date().toISOString(), read: false, level: prev >= 2 ? 'critica' : g.level,
-              device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, serverId: e.s.id, server: e.s.name, cause: e.cause || g.cause });
+              device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, serverId: e.s.id, server: e.s.name, cause: e.cause || g.cause, detail: e.detail || g.detail });
             if (/^Aparato desconectado/.test(e.action || '')) g.outs = (g.outs || 0) + 1; // v257: que no se pierda al agruparse
             db.alerts.unshift(g);
             continue;
           }
           db.alerts.unshift({ id: newId(), ts: new Date().toISOString(), type: e.type, level: prev >= 2 ? 'critica' : 'aviso', read: false,
             clientId: e.c.id, client: e.c.panelName, emby: e.c.embyName, ownerId: e.c.ownerId, serverId: e.s.id, server: e.s.name,
-            device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, ...(e.cause ? { cause: e.cause } : {}) });
+            device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, ...(e.cause ? { cause: e.cause } : {}), ...(e.detail ? { detail: e.detail } : {}) });
         }
         const keep = { transcode: cfg.transcode.retention, sesiones: cfg.sessions.retention };
         const before = db.alerts.length;
