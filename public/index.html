@@ -2565,6 +2565,38 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 .srvchip{display:inline-flex;gap:6px;align-items:baseline;border:1px solid var(--line,#333);background:transparent;color:inherit;border-radius:999px;padding:4px 11px;font:inherit;font-size:13px;cursor:pointer}
 .srvchip small{opacity:.6}.srvchip.on{border-color:var(--accent,#38bdf8);background:color-mix(in srgb,var(--accent,#38bdf8) 14%,transparent)}
 .srvtag{display:inline-block;white-space:nowrap;margin-top:3px;font-size:11.5px;padding:1px 7px;border-radius:6px;background:color-mix(in srgb,currentColor 9%,transparent)}
+.alc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px}
+@media(max-width:560px){.alc-list{grid-template-columns:1fr}}
+.alc{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.alc::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--cz)}
+.alc.unread{box-shadow:0 0 0 1px color-mix(in srgb,var(--brand) 35%,transparent)}
+.alc-h{display:flex;align-items:center;gap:11px}
+.alc-av{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff;background:linear-gradient(135deg,var(--cz),color-mix(in srgb,var(--cz) 45%,#000))}
+.alc-who{flex:1;min-width:0}.alc-who b{display:block;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.alc-who small{color:var(--muted);font-size:12.5px}
+.alc-n{flex:none;text-align:center;min-width:58px;padding:5px 9px;border-radius:12px;background:color-mix(in srgb,var(--cz) 16%,transparent);color:var(--cz)}
+.alc-n b{display:block;font-size:20px;line-height:1.1}.alc-n small{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.85}
+.alc-n.hot{background:var(--bad);color:#fff}
+.alc-tags{display:flex;flex-wrap:wrap;gap:6px}
+.alc-tag{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--raised);border:1px solid var(--line);white-space:nowrap}
+.alc-tag.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}.alc-tag.cz{color:var(--cz);border-color:color-mix(in srgb,var(--cz) 40%,var(--line))}
+.alc-tag.srv{font-weight:600}.alc-tag.new{background:var(--brand);color:var(--on-brand);border-color:transparent}
+.alc-when{font-size:13.5px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}.alc-arrow{color:var(--muted)}
+.alc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:380px){.alc-grid{grid-template-columns:1fr}}
+.alc-i{display:flex;gap:8px;align-items:flex-start;background:var(--raised);border-radius:11px;padding:8px 10px;min-width:0}
+.alc-ic{font-size:16px;line-height:1.3}.alc-i div{min-width:0}
+.alc-i small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.alc-i b{display:block;font-size:13.5px;font-weight:600;line-height:1.3;word-break:break-word}.alc-i em{display:block;font-style:normal;font-size:12px;color:var(--muted)}
+.alc-warn{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--warn) 13%,transparent);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);font-size:13px}
+.alc-warn b{display:block;color:var(--warn)}.alc-warn span{color:var(--text);opacity:.85}
+.alc-f{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding-top:2px}
+.alc-b{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:var(--raised);color:var(--text);text-decoration:none;cursor:pointer}
+.alc-b .ic{width:15px;height:15px}
+.alc-b.wa{background:#19c37d;border-color:#19c37d;color:#fff}.alc-b.tg{background:#2aa3e6;border-color:#2aa3e6;color:#fff}
+.alc-b.gd{color:var(--brand);border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
+.alc-b:hover{filter:brightness(1.08)}
+.alc-nc{font-size:12px;color:var(--muted)}
+@media(max-width:560px){.alc-f .alc-b{flex:1 1 auto;justify-content:center}}
 </style>
 </head>
 <body>
@@ -4523,6 +4555,47 @@ function tcTitlesView() {
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-act="tct-reload">${ic('refresh')}Actualizar</button><button type="button" class="btn sm ghost" data-act="tct-clear">Vaciar lista</button></div></div>
     <div class="tct-list">${cards}</div>`;
 }
+/** v258: tarjeta moderna de cada alerta: quién, cuánto, dónde, por qué, qué se hizo y botones para escribirle */
+function alDur(ms) { const m = Math.round(ms / 60000); if (m < 1) return 'menos de 1 min'; if (m < 60) return m + ' min'; const hh = Math.floor(m / 60), mm = m % 60; return hh + ' h' + (mm ? ' ' + mm + ' min' : ''); }
+function alertCard(x) {
+  const c = ((S.dAll || S.d).clients || []).find((v) => v.id === x.clientId);
+  const n = x.count || 1, end = Date.parse(x.ts), start = x.first ? Date.parse(x.first) : end, span = Math.max(0, end - start);
+  const cz = x.type === 'transcode' ? (TC_CAUSE[x.cause] || TC_CAUSE.other) : ['📺', 'Pantallas de más', '#f59e0b'];
+  const crit = x.level === 'critica', loop = x.type === 'transcode' && n >= 20 && span / n < 3 * 60000;
+  const hm = (t) => new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const ini = (x.client || '?').trim().charAt(0).toUpperCase();
+  const tag = crit ? '<span class="alc-tag bad">🔴 Reincidente</span>' : '<span class="alc-tag">🟡 Aviso</span>';
+  const when = n > 1 ? `<b>${hm(start)}</b><span class="alc-arrow">→</span><b>${hm(end)}</b><span class="muted">· ${alDur(span)}${n > 2 && span ? ` · 1 cada ${alDur(span / (n - 1)).replace('menos de 1 min', Math.max(1, Math.round(span / (n - 1) / 1000)) + ' s')}` : ''}</span>` : `<b>${fmtTs(x.ts, true)}</b>`;
+  const info = (icon, label, val, sub = '', st = '') => val ? `<div class="alc-i"${st}><span class="alc-ic">${icon}</span><div><small>${label}</small><b>${esc(val)}</b>${sub ? `<em>${esc(sub)}</em>` : ''}</div></div>` : '';
+  const out = /^Aparato desconectado/.test(x.action || '') || x.outs;
+  // contacto
+  const btns = [];
+  const txt = x.type === 'transcode'
+    ? `Hola ${x.client || ''} 👋 Hemos visto que tu aparato «${x.device || ''}» está convirtiendo el vídeo y por eso se te para. Para verlo sin cortes: entra en Ajustes › Reproducción de la app y pon la calidad al máximo (no «Auto»). Si usas subtítulos, prueba con otros. ¡Gracias!`
+    : `Hola ${x.client || ''} 👋 Tu cuenta se está usando en más pantallas de las contratadas. Si necesitas más pantallas, dímelo y te lo amplío.`;
+  if (c && c.whatsapp) { const w = waNum(c.whatsapp); if (w) btns.push(`<a class="alc-b wa" href="https://wa.me/${w}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">${ic('msg')}WhatsApp</a>`); }
+  if (c && c.telegram) { const t = c.telegram.replace(/^@/, ''); if (/^[A-Za-z0-9_]{3,40}$/.test(t)) btns.push(`<a class="alc-b tg" href="https://t.me/${t}" target="_blank" rel="noopener">${ic('send')}Telegram</a>`); }
+  if (x.clientId && c) btns.push(`<button type="button" class="alc-b gd" data-act="al-guide" data-id="${x.clientId}">${ic('info')}Enviar guía</button>`);
+  btns.push(`<button type="button" class="alc-b" data-act="al-client" data-q="${esc(x.emby)}">${ic('user')}Ver cliente</button>`);
+  const noContact = c && !c.whatsapp && !c.telegram ? '<span class="alc-nc">Sin WhatsApp ni Telegram guardado: añádelo en su ficha</span>' : '';
+  return `<article class="alc${x.read ? '' : ' unread'}${crit ? ' crit' : ''}" style="--cz:${cz[2]}">
+    <header class="alc-h">
+      <div class="alc-av">${esc(ini)}</div>
+      <div class="alc-who"><b>${esc(x.client)}</b><small>@${esc(x.emby)}${(S.dAll || S.d).users.length > 1 ? ' · ' + esc(userName(x.ownerId) || '—') : ''}</small></div>
+      <div class="alc-n${n >= 50 ? ' hot' : ''}"><b>${n}</b><small>${n === 1 ? 'vez' : 'veces'}</small></div>
+    </header>
+    <div class="alc-tags">${tag}<span class="alc-tag cz">${cz[0]} ${esc(x.type === 'transcode' ? cz[1] : AL_TYPE[x.type] || x.type)}</span>${x.server ? `<span class="alc-tag srv">🖥️ ${esc(x.server)}</span>` : ''}${x.read ? '' : '<span class="alc-tag new">Nueva</span>'}</div>
+    <div class="alc-when">🕒 ${when}</div>
+    <div class="alc-grid">
+      ${info('📺', 'Aparato', x.device, x.app)}
+      ${info('🎬', 'Está viendo', x.item)}
+      ${info('❓', 'Por qué', x.reason)}
+      ${info(out ? '🔌' : '✋', 'Qué hizo el panel', x.action, x.outs && !/^Aparato desconectado/.test(x.action || '') ? `Se le desconectó el aparato ${x.outs === 1 ? '1 vez' : x.outs + ' veces'}` : '')}
+    </div>
+    ${loop ? `<div class="alc-warn">🔁 <div><b>Parece una app en bucle</b><span>Vuelve a ponerse sola tras cada corte (${n} veces en ${alDur(span)}). Escríbele para que ponga la calidad al máximo o cierre la app.</span></div></div>` : ''}
+    <footer class="alc-f">${btns.join('')}${noContact}</footer>
+  </article>`;
+}
 function vAlertas(kind) {
   const def = AL[kind], a = S.al;
   if (!a.data) return head(def.title, def.sub) + '<div class="panel"><div class="empty">Cargando alertas…</div></div>';
@@ -4593,11 +4666,7 @@ function vAlertas(kind) {
         ${staff() && all.length ? '<button class="btn sm ghost" data-act="al-clear">Vaciar historial</button>' : ''}
         ${pages > 1 ? `<button class="btn sm" data-act="al-page" data-step="-1"${a.page === 1 ? ' disabled' : ''}>Anterior</button><span>${a.page} / ${pages}</span><button class="btn sm" data-act="al-page" data-step="1"${a.page === pages ? ' disabled' : ''}>Siguiente</button>` : ''}
       </span></div>`;
-    const table = shown.length ? `<div class="panel"><table class="cards"><thead><tr><th>Fecha</th><th>Cliente</th>${def.type ? '' : '<th>Tipo</th>'}<th>Dispositivo</th><th>Contenido</th><th>Motivo</th><th>Acción</th></tr></thead><tbody>${shown.map((x) => `<tr${x.read ? '' : ' class="unread"'}>
-        <td style="white-space:nowrap">${fmtTs(x.ts, true)}${x.count > 1 ? ` <span class="alx" title="Veces seguidas: la primera a las ${new Date(x.first).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}">×${x.count}</span><div class="small muted">desde las ${new Date(x.first).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>` : ''}${x.level === 'critica' ? '<div class="lvl">Crítica: reincidente</div>' : ''}</td>
-        <td><div class="name">${esc(x.client)}</div><div class="small muted">@${esc(x.emby)}${S.d.users.length > 1 ? ', de ' + esc(userName(x.ownerId) || '—') : ''}</div></td>
-        ${def.type ? '' : `<td>${AL_TYPE[x.type] || esc(x.type)}</td>`}
-        <td>${esc(x.device)}${x.app ? `<div class="small muted">${esc(x.app)}</div>` : ''}${x.server ? `<div class="srvtag">🖥️ ${esc(x.server)}</div>` : ''}</td><td>${esc(x.item)}</td><td>${esc(x.reason)}</td><td>${esc(x.action)}${x.outs && !/^Aparato desconectado/.test(x.action || '') ? `<div class="small" style="color:#f59e0b">🔁 ${x.outs === 1 ? 'Se le desconectó el aparato 1 vez (estaba en bucle)' : `Se le desconectó el aparato ${x.outs} veces (estaba en bucle)`}</div>` : ''}</td></tr>`).join('')}</tbody></table></div>`
+    const table = shown.length ? `<div class="alc-list">${shown.map(alertCard).join('')}</div>`
       : `<div class="panel"><div class="empty">${all.length ? 'Ninguna alerta coincide con los filtros.' : cfg && !cfg.on ? 'No hay eventos registrados. La vigilancia está apagada' + (staff() ? ': enciéndela arriba para empezar.' : '.') : 'No hay eventos registrados.'}</div></div>`;
     // v257: cuántas detecciones hay en cada servidor (con los mismos filtros, sin el de servidor), para ver si todo viene del mismo
     const srvSum = (() => {
@@ -7447,6 +7516,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 258, d: '2026-11-12', items: ['✨ Alertas con diseño nuevo: tarjetas claras con cuántas veces, desde qué hora, servidor, aparato, qué está viendo, por qué y qué hizo el panel', '💬 Botones para escribirle al momento por WhatsApp (con el mensaje ya escrito) o Telegram, y para enviarle la guía', '🔁 Aviso cuando un aparato parece estar en bucle'] },
   { v: 257, d: '2026-11-12', items: ['🖥️ Cada alerta dice de qué servidor es, y arriba ves cuántas hay en cada servidor (pulsa uno para ver solo ese)', '🔁 Apps en bucle: si un aparato vuelve a convertir 5 veces en 15 minutos, se le cierra la sesión en ese aparato y se le explica por el bot'] },
   { v: 256, d: '2026-11-12', items: ['🛡️ Proteger servidores (Alertas › Transcode › Configuración): en los que marques, el transcode se corta al momento, también en el navegador', '🔥 Protección automática: si un servidor convierte muchos vídeos a la vez, el panel corta al momento mientras dure y te avisa', '🧹 Limpiar temporales de transcodificación: un botón por servidor, y se pide solo cuando un servidor vuelve tras una caída (por si se llenó el disco)', '🔴 Los avisos de servidor caído ya no muestran código raro (<html>…): dicen claro que Emby no contesta'] },
   { v: 255, d: '2026-11-11', items: ['🛠️ Alertas › Transcode › «Qué arreglar»: los títulos que más transcode provocan, por qué (vídeo, sonido, subtítulos, calidad de la app) y qué hacer con cada uno. Arreglas el archivo una vez y se acaba para todos', '💬 Subtítulos: si el transcode es por unos subtítulos de imagen (PGS), al cliente se le explica que elija otros o los quite, en pantalla y por el bot, en vez del mensaje de calidad', '🔥 Aviso por Telegram si un servidor convierte muchos vídeos a la vez (5 por defecto)'] },
@@ -10425,7 +10495,7 @@ document.addEventListener('click', (e) => {
   if (a === 'qg-bk') { qBackupDl(el.dataset.name); return; }
   if (a === 'qg-backups') { qBackups(); return; }
   if (a === 'qg-undo') { qUndo(el.dataset.name); return; }
-  if (a === 'm-guide' || a === 'al-guide') { const cc = S.d.clients.find((v) => v.id === id); if (cc) dGuide(cc); else toast('Esa cuenta ya no está en el panel.', true); return; }
+  if (a === 'm-guide' || a === 'al-guide') { const cc = (S.dAll || S.d).clients.find((v) => v.id === id); if (cc) dGuide(cc); else toast('Esa cuenta ya no está en el panel.', true); return; }
   if (a === 'qg-ex') { const on = el.checked; api('POST', '/api/quality/exclude', { serverId: +el.dataset.sid, userId: el.dataset.uid, on }).then(() => { const x = S.qg.data.servers.find((v) => v.id === +el.dataset.sid), r = x && x.rows.find((v) => v.id === el.dataset.uid); if (r) { const was = r.status; r.status = on ? 'excluido' : (r.value == null ? 'nodisp' : r.value === x.bps ? 'correcto' : 'pendiente'); x.counts[was] = Math.max(0, (x.counts[was] || 0) - 1); x.counts[r.status] = (x.counts[r.status] || 0) + 1; } qPaint(); toast(on ? 'Excluido: no se le cambiará la calidad' : 'Ya no está excluido'); }, (x) => { el.checked = !on; toast(x.message, true); }); return; }
   if (a === 'mon-tpl') { const t = el.closest('form').elements.text; t.value = el.dataset.m; t.focus(); return; }
   if (a === 'gate-back') { gateStep(false); return; }
