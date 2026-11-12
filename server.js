@@ -295,6 +295,7 @@ async function emby(server, method, p, body) {
     if ((res.status === 401 || res.status === 403) && web) msg = `Algo delante de "${server.name}" (un cortafuegos o Cloudflare) bloquea al panel antes de llegar a Emby. Usa en «Dirección para el panel» la IP con el puerto (http://IP:8096) o pide que dejen pasar la IP del panel.`;
     else if (res.status === 401 || res.status === 403) msg = `"${server.name}" ha rechazado la API key. Crea una nueva en Emby (Ajustes › Avanzado › Claves de API) y pégala aquí.`;
     else if (res.status === 404) msg = `Emby no encuentra ese usuario o recurso en "${server.name}".`;
+    else if (web) msg = `Emby no contesta (error ${res.status}${[502, 503, 504].includes(res.status) ? ': la entrada del servidor está encendida, pero Emby no responde' : ''}).`; // v256: sin el código HTML de la página de error
     else msg = `Emby respondió con error ${res.status}${text ? ': ' + text.slice(0, 200) : ''}`;
     const err = new Error(msg);
     err.embyStatus = res.status;
@@ -5516,13 +5517,77 @@ const webWarn = new Map(); // cliente -> { at: cuándo se le avisó en el navega
 function tcBot(c, why) {
   const a = db.settings.alerts.transcode;
   if (a.bot === false || !c.tgChat || !db.settings.notices.telegram.token) return;
-  const last = tcBotAt.get(c.id) || 0; if (Date.now() - last < 30 * 60000) return;
+  const last = tcBotAt.get(c.id) || 0; if (why !== 'loop' && Date.now() - last < 30 * 60000) return;
   tcBotAt.set(c.id, Date.now());
   const app = cliJf(c) ? 'Jellyfin' : 'Emby';
-  const t = why === 'web'
+  const t = why === 'loop'
+    ? `🔁 <b>Hemos cerrado la sesión de tu aparato</b>\n\nTu app volvía a poner el vídeo sola una y otra vez, y cada vez tenía que convertirse. Eso satura el servidor.\n\n✅ Para arreglarlo:\n1️⃣ Vuelve a entrar con tu usuario y contraseña.\n2️⃣ Ajustes › Reproducción › calidad al máximo (no «Auto»).\n3️⃣ Si usa subtítulos, elige otros o quítalos.\n4️⃣ Si sigue pasando, cierra la app del todo y ábrela de nuevo.`
+    : why === 'subs'
+    ? `💬 <b>Te hemos parado el vídeo por los subtítulos</b>\n\nLos subtítulos que has elegido son «de imagen» y obligan a convertir el vídeo, eso satura el servidor.\n\n✅ Para seguir viendo:\n1️⃣ Abre el menú de subtítulos del reproductor.\n2️⃣ Elige otros (los que no pongan PGS ni VobSub) o quítalos.\n3️⃣ Vuelve a darle a reproducir. 🍿`
+    : why === 'web'
     ? `💡 <b>Para verlo sin cortes</b>\n\nEstás viendo desde el navegador y ese vídeo necesita convertirse, por eso puede ir a saltos.\n\n✅ Lo mejor: usa la <b>app de ${app}</b> en la tele, el móvil o la tablet.\n⚙️ Si sigues en el navegador: Ajustes › Reproducción › pon la calidad al máximo.`
     : `⏸️ <b>Te hemos parado el vídeo, no es un fallo</b>\n\nTu aparato estaba convirtiendo el vídeo y eso satura el servidor para todos.\n\n✅ Para que no vuelva a pasar:\n1️⃣ Entra en Ajustes › Reproducción de la app.\n2️⃣ Pon la calidad al máximo (no «Auto»).\n3️⃣ Si estás en el navegador, mejor usa la app de ${app}.\n\nDespués, vuelve a darle a reproducir. 🍿`;
   tg('sendMessage', { chat_id: c.tgChat, text: t, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '🛠️ Más ayuda', callback_data: 'bm:problemas' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {});
+}
+/* ---------- v255: por qué se convierte y qué títulos lo provocan ----------
+   La causa se saca de lo que informa Emby/Jellyfin (motivos, códecs y subtítulos elegidos). Así se puede arreglar el archivo
+   una vez, en vez de cortar a los clientes una y otra vez */
+function tcCause(x) {
+  let vi = {}; try { vi = videoInfo(x); } catch { /* sin datos */ }
+  const R = (vi.trReasons || []).join(' ');
+  const up = (v) => String(v || '').toUpperCase();
+  if ((vi.subs && !vi.subs.text && vi.trVideo) || /Subtitle/i.test(R)) return { kind: 'subs', text: `Subtítulos de imagen${vi.subs && vi.subs.codec ? ' (' + up(vi.subs.codec) + ')' : ''}`, fix: 'Añade unos subtítulos de texto (SRT) a ese título, o que el cliente elija otros' };
+  if (/VideoCodec|VideoProfile|VideoLevel|VideoBitDepth|VideoRange|Anamorphic|Interlaced|RefFrames/i.test(R) || (vi.trVideo && /hevc|h265|av1|vc1|mpeg2|vp9/.test(vi.codec || '') && !/Bitrate/i.test(R)))
+    return { kind: 'video', text: `Vídeo ${up(vi.codec) || ''} que el aparato no reproduce`.replace(/\s+/g, ' '), fix: 'Sube una versión en H.264 (x264) de ese título' };
+  if (/Bitrate/i.test(R)) return { kind: 'quality', text: 'La app pide menos calidad (está en «Auto»)', fix: 'No es del archivo: que el cliente ponga la calidad al máximo' };
+  if (/AudioCodec|AudioChannels|AudioProfile|AudioSampleRate|AudioBitDepth/i.test(R) || (vi.trAudio && !vi.trVideo))
+    return { kind: 'audio', text: `Sonido ${up(vi.audio) || ''} que el aparato no reproduce`.replace(/\s+/g, ' '), fix: 'Añade una pista de sonido AC3 o AAC a ese título' };
+  if (/Container/i.test(R)) return { kind: 'container', text: 'Formato del archivo no compatible', fix: 'Pásalo a MKV o MP4 sin tocar la calidad (remux)' };
+  return { kind: 'other', text: vi.trVideo ? 'Vídeo convertido' : 'Convertido', fix: '' };
+}
+const TC_FIX_SUBS = 'Los subtítulos que has elegido obligan a convertir el vídeo y saturan el servidor. Elige otros subtítulos (los que no pongan PGS ni VobSub) o quítalos, y vuelve a darle a reproducir.';
+/** Cuenta cada transcode por título (todas las veces, aunque la alerta se agrupe) */
+function tcStat(s, x, c, cause) {
+  const it = x.NowPlayingItem || {}; if (!it.Id) return;
+  if (!db.tcStats || typeof db.tcStats !== 'object') db.tcStats = {};
+  const k = `${s.id}:${it.Id}`, now = new Date().toISOString();
+  const r = db.tcStats[k] || (db.tcStats[k] = { server: s.id, serverName: s.name, item: it.Id, name: sessionTitle(x), series: it.SeriesName || '', n: 0, clients: [], causes: {}, first: now });
+  r.n++; r.last = now; r.name = sessionTitle(x) || r.name; r.serverName = s.name;
+  r.causes[cause.kind] = (r.causes[cause.kind] || 0) + 1;
+  if (!r.texts) r.texts = {}; r.texts[cause.kind] = [cause.text, cause.fix];
+  // lo que se enseña es la causa más repetida de ese título (no la última)
+  const main = Object.entries(r.causes).sort((a, b) => b[1] - a[1])[0][0]; [r.causeText, r.fix] = r.texts[main] || [cause.text, cause.fix];
+  if (!r.clients.includes(c.id)) { r.clients.push(c.id); if (r.clients.length > 100) r.clients.shift(); }
+  const keys = Object.keys(db.tcStats);
+  if (keys.length > 800) { keys.sort((a, b) => String(db.tcStats[a].last).localeCompare(String(db.tcStats[b].last))).slice(0, keys.length - 800).forEach((q) => delete db.tcStats[q]); }
+}
+route('GET', '/api/transcode/titles', ['super', 'admin'], ({ me }) => {
+  const lim = Date.now() - 60 * 864e5;
+  const list = Object.entries(db.tcStats || {}).filter(([, r]) => Date.parse(r.last) > lim).map(([k, r]) => ({ key: k, ...r, clients: r.clients.length, names: r.clients.slice(-5).map((id) => (db.clients.find((c) => c.id === id) || {}).panelName).filter(Boolean) }))
+    .sort((a, b) => b.n - a.n).slice(0, 100);
+  const total = list.reduce((n, r) => n + r.n, 0);
+  return { total, list };
+});
+route('POST', '/api/transcode/titles/fixed', ['super', 'admin'], ({ me, body }) => lock(() => {
+  const keys = [].concat(body.key || []).map(String);
+  if (body.all) db.tcStats = {}; else keys.forEach((k) => { if (db.tcStats) delete db.tcStats[k]; });
+  addLog('ajustes', null, body.all ? 'Vació la lista de títulos que provocan transcode' : `Marcó como arreglado: ${keys.map((k) => (db.tcStats && db.tcStats[k] && db.tcStats[k].name) || k).join(', ')}`, me);
+  saveDb();
+  return { ok: true };
+}));
+/** Aviso de servidor cargado: demasiadas conversiones a la vez (una vez cada 30 minutos por servidor) */
+const tcLoadAt = new Map();
+const tcLoop = new Map(); // v257: servidor:cliente:aparato -> momentos en que se le cortó (para ver si está en bucle)
+const tcBusy = new Set(); // servidores que ahora mismo convierten demasiado: protección automática
+function tcLoadCheck(s, sess) {
+  const lim = Number((db.settings.alerts.transcode || {}).loadLimit ?? 5); if (!lim) { tcBusy.delete(s.id); return; }
+  const conv = sess.filter((x) => x.NowPlayingItem && x.TranscodingInfo && x.TranscodingInfo.IsVideoDirect === false);
+  if (conv.length < lim) { tcBusy.delete(s.id); return; }
+  tcBusy.add(s.id);
+  const last = tcLoadAt.get(s.id) || 0; if (Date.now() - last < 30 * 60000) return;
+  tcLoadAt.set(s.id, Date.now());
+  const top = conv.slice(0, 5).map((x) => `• ${x.UserName || '?'}: ${sessionTitle(x).slice(0, 50)}`).join('\n');
+  notifyStaff('servers', `🔥 ${s.name} está convirtiendo ${conv.length} vídeos a la vez. Puede ir a saltos o llenar el disco.\n🛡️ Protección puesta: mientras dure, el panel corta los transcodes al momento, también en el navegador.\n${top}${conv.length > 5 ? `\n… y ${conv.length - 5} más` : ''}`);
 }
 async function stopSession(s, x, text) {
   await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Aviso', Text: text, TimeoutMs: 10000 }).catch(() => {});
@@ -5530,9 +5595,9 @@ async function stopSession(s, x, text) {
 }
 /** Último recurso cuando un aparato no obedece a «Detener»: se borra el aparato en Emby y su sesión se cierra.
     El cliente tendrá que volver a entrar con su usuario y contraseña. */
-async function logoutDevice(s, x) {
+async function logoutDevice(s, x, text) {
   if (!x.DeviceId) throw new Error('sin aparato');
-  await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Aviso', Text: 'Has superado el número de pantallas de tu cuenta. Se ha cerrado la sesión en este aparato.', TimeoutMs: 10000 }).catch(() => {});
+  await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Aviso', Text: text || 'Has superado el número de pantallas de tu cuenta. Se ha cerrado la sesión en este aparato.', TimeoutMs: 10000 }).catch(() => {});
   await emby(s, 'DELETE', `/Devices?Id=${encodeURIComponent(x.DeviceId)}`);
 }
 const stoppedAt = new Map(); // reproduccion detenida por exceso de pantallas -> cuando (para ver si de verdad se ha parado)
@@ -5562,6 +5627,7 @@ async function monitor() {
         if (!byUser.has(x.UserId)) byUser.set(x.UserId, []);
         byUser.get(x.UserId).push(x);
       }
+      if (cfg.transcode.on) { try { tcLoadCheck(s, list || []); } catch { /* nada */ } }
       for (const [uid, sess] of byUser) {
         const c = db.clients.find((k) => k.serverId === s.id && k.embyId === uid);
         if (!c) continue; // solo se vigilan las cuentas del panel
@@ -5585,30 +5651,42 @@ async function monitor() {
             const key = `t:${s.id}:${x.Id}:${(x.NowPlayingItem || {}).Id || ''}`;
             if (recent.has(key) && now - recent.get(key) < (cfg.transcode.stop ? 20000 : 6 * 3600000)) continue;
             recent.set(key, now);
+            const cause = tcCause(x);
+            try { tcStat(s, x, c, cause); } catch { /* la estadística no frena la vigilancia */ }
+            const stopMsg = cause.kind === 'subs' ? TC_FIX_SUBS : cfg.transcode.message;
             let action = 'Solo aviso';
             // v253: en el navegador (Emby Web, Chrome, Brave…) muchos vídeos no se pueden ver sin convertir: ahí no se corta, se le explica que use la app
             const web = /\bweb\b|chrome|firefox|safari|edge|brave|opera|navegador/i.test(`${x.Client || ''} ${x.DeviceName || ''}`);
             const wk = `w:${s.id}:${c.id}`, w = webWarn.get(wk), graceMs = (cfg.transcode.webGrace ?? 5) * 60000;
-            if (cfg.transcode.stop && web && cfg.transcode.webSoft !== false && (!w || now - w.last > 30 * 60000)) {
+            // v256: servidor protegido (o con demasiadas conversiones a la vez): se corta al momento, también en el navegador
+            const strict = (cfg.transcode.strict || []).includes(s.id) || tcBusy.has(s.id);
+            if (strict && web && cause.kind !== 'subs') webWarn.delete(wk);
+            if (cfg.transcode.stop && web && !strict && cause.kind !== 'subs' && cfg.transcode.webSoft !== false && (!w || now - w.last > 30 * 60000)) {
               // primera vez: se le avisa y se le deja seguir unos minutos
               webWarn.set(wk, { at: now, last: now });
               try { await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Consejo para verlo mejor', Text: WEB_TIP, TimeoutMs: 60000 }); action = 'Navegador: avisado, sin cortar'; } catch { action = 'Navegador: sin cortar'; }
               tcBot(c, 'web');
-            } else if (cfg.transcode.stop && web && cfg.transcode.webSoft !== false && now - w.at < graceMs) {
+            } else if (cfg.transcode.stop && web && !strict && cause.kind !== 'subs' && cfg.transcode.webSoft !== false && w && now - w.at < graceMs) {
               w.last = now; continue; // dentro de los minutos de margen tras el aviso
             } else if (cfg.transcode.stop) {
               // v254: si después del aviso sigue (o vuelve) convirtiendo, se le corta como en las apps
               if (w && web) w.last = now;
               try {
-                await stopSession(s, x, cfg.transcode.message); action = w && web ? 'Navegador: siguió tras el aviso, detenida' : 'Reproducción detenida'; live = live.filter((y) => y !== x);
+                await stopSession(s, x, stopMsg); action = strict && web ? (tcBusy.has(s.id) ? 'Servidor saturado: detenida al momento' : 'Servidor protegido: detenida al momento') : w && web ? 'Navegador: siguió tras el aviso, detenida' : 'Reproducción detenida'; live = live.filter((y) => y !== x);
                 // el mensaje se repite con la reproducción ya parada, para que le dé tiempo a leerlo y no piense que es un fallo del servidor
-                const msg = cfg.transcode.message;
+                const msg = stopMsg;
                 setTimeout(() => { emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Por qué se ha parado', Text: msg, TimeoutMs: 60000 }).catch(() => {}); }, 2500);
-                tcBot(c, 'cut');
+                // v257: si el mismo aparato vuelve a convertir una y otra vez (app que reintenta sola), se le saca de la cuenta
+                const lk = `${s.id}:${c.id}:${x.DeviceId || x.DeviceName || ''}`;
+                const cuts = (tcLoop.get(lk) || []).filter((t) => now - t < 15 * 60000); cuts.push(now); tcLoop.set(lk, cuts);
+                if (cfg.transcode.loopOut !== false && cuts.length >= 5 && x.DeviceId) {
+                  try { await logoutDevice(s, x, 'Tu aparato volvía a convertir el vídeo una y otra vez. Se ha cerrado la sesión: entra de nuevo y pon la calidad al máximo.'); action = `Aparato desconectado: seguía en bucle (${cuts.length} cortes en 15 min)`; tcLoop.delete(lk); tcBot(c, 'loop'); }
+                  catch { tcBot(c, cause.kind === 'subs' ? 'subs' : 'cut'); }
+                } else tcBot(c, cause.kind === 'subs' ? 'subs' : 'cut');
               } catch (e) { action = 'No se pudo detener'; }
             } else if (tipped) action = 'Aviso de calidad en su pantalla';
-            events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x),
-              reason: (ti && Array.isArray(ti.TranscodeReasons) && ti.TranscodeReasons.length ? ti.TranscodeReasons.join(', ') : (video ? 'Vídeo transcodificado' : 'Audio transcodificado')) });
+            events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: cause.kind, causeText: cause.text,
+              reason: cause.kind !== 'other' ? cause.text : (ti && Array.isArray(ti.TranscodeReasons) && ti.TranscodeReasons.length ? ti.TranscodeReasons.join(', ') : (video ? 'Vídeo transcodificado' : 'Audio transcodificado')) });
           }
         }
         if (cfg.sessions.on && c.screens > 0 && live.length > c.screens) {
@@ -5666,14 +5744,16 @@ async function monitor() {
           const g = db.alerts.find((a) => a.type === e.type && a.clientId === e.c.id && now - Date.parse(a.ts) < 30 * 60000);
           if (g) {
             db.alerts = db.alerts.filter((a) => a !== g);
+            if (!g.outs && /^Aparato desconectado/.test(g.action || '')) g.outs = 1;
             Object.assign(g, { count: (g.count || 1) + 1, first: g.first || g.ts, ts: new Date().toISOString(), read: false, level: prev >= 2 ? 'critica' : g.level,
-              device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, serverId: e.s.id, server: e.s.name });
+              device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, serverId: e.s.id, server: e.s.name, cause: e.cause || g.cause });
+            if (/^Aparato desconectado/.test(e.action || '')) g.outs = (g.outs || 0) + 1; // v257: que no se pierda al agruparse
             db.alerts.unshift(g);
             continue;
           }
           db.alerts.unshift({ id: newId(), ts: new Date().toISOString(), type: e.type, level: prev >= 2 ? 'critica' : 'aviso', read: false,
             clientId: e.c.id, client: e.c.panelName, emby: e.c.embyName, ownerId: e.c.ownerId, serverId: e.s.id, server: e.s.name,
-            device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action });
+            device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, ...(e.cause ? { cause: e.cause } : {}) });
         }
         const keep = { transcode: cfg.transcode.retention, sesiones: cfg.sessions.retention };
         const before = db.alerts.length;
@@ -5701,6 +5781,10 @@ route('PUT', '/api/alerts/config', STAFF, ({ me, body }) => lock(async () => {
     if (k === 'transcode' && b.tip !== undefined) cur[k].tip = !!b.tip;
     if (k === 'transcode' && b.webSoft !== undefined) cur[k].webSoft = !!b.webSoft;
     if (k === 'transcode' && b.bot !== undefined) cur[k].bot = !!b.bot;
+    if (k === 'transcode' && Array.isArray(b.strict)) cur[k].strict = b.strict.map(Number).filter((id) => db.servers.some((x) => x.id === id));
+    if (k === 'transcode' && b.cleanOnUp !== undefined) cur[k].cleanOnUp = !!b.cleanOnUp;
+    if (k === 'transcode' && b.loopOut !== undefined) cur[k].loopOut = !!b.loopOut;
+    if (k === 'transcode' && b.loadLimit !== undefined) { const n = Number(b.loadLimit); if ([0, 3, 5, 8, 10, 15].includes(n)) cur[k].loadLimit = n; }
     if (k === 'transcode' && b.webGrace !== undefined) { const n = Number(b.webGrace); if ([0, 2, 5, 10, 15, 30].includes(n)) cur[k].webGrace = n; }
     if (k === 'transcode' && b.tipEvery !== undefined) { const n = Number(b.tipEvery); if (Number.isInteger(n) && n >= 5 && n <= 1440) cur[k].tipEvery = n; }
     if (k === 'transcode' && typeof b.tipText === 'string') cur[k].tipText = b.tipText.trim().slice(0, 400);
@@ -5880,6 +5964,21 @@ setInterval(async () => {
   for (const s of db.servers) { const m = srvMaintOf(s); if (m) { try { await srvMaintNotify(s, m); } catch { /* nada */ } } }
 }, 60000).unref();
 
+/** v256: pide a Emby/Jellyfin que borre los temporales de transcodificación (su propia tarea programada) */
+async function tcCleanTemp(s) {
+  if (!['emby', 'jellyfin'].includes(s.kind || 'emby')) return { ok: false, why: 'Solo en Emby y Jellyfin.' };
+  const list = await emby(s, 'GET', '/ScheduledTasks');
+  const t = (Array.isArray(list) ? list : []).find((x) => /transcod/i.test(`${x.Key || ''} ${x.Name || ''}`) && /clean|limpi|delete|borr|eliminar/i.test(`${x.Key || ''} ${x.Name || ''}`));
+  if (!t) return { ok: false, why: 'Este Emby no tiene la tarea de limpiar los temporales.' };
+  await emby(s, 'POST', `/ScheduledTasks/Running/${encodeURIComponent(t.Id)}`);
+  return { ok: true, task: t.Name };
+}
+route('POST', '/api/servers/:id/tc-clean', SUPER, async ({ me, params }) => {
+  const s = serverById(params.id);
+  const r = await tcCleanTemp(s);
+  if (r.ok) await lock(async () => { addLog('servidor', null, `Limpieza de temporales de transcodificación pedida en ${s.name} («${r.task}»)`, me); saveDb(); });
+  return r;
+});
 /* ---------- Vigilancia de servidores: aviso si se cae y cuando vuelve ---------- */
 const health = new Map(); // serverId -> { fails, down, since, checked, ok }
 async function watchServers() {
@@ -5904,6 +6003,8 @@ async function watchServers() {
         h.lastUp = new Date().toISOString(); h.lastMins = mins;
         notifyStaff('servers', `🟢 El servidor «${s.name}» vuelve a funcionar.\nEstuvo caído unos ${mins < 60 ? (mins === 1 ? '1 minuto' : mins + ' minutos') : Math.round(mins / 6) / 10 + ' horas'}.\n${whenTxt()}`);
         lock(async () => { addLog('servidor', null, `Servidor ${s.name} recuperado (caído ${mins} min)`, null); saveDb(); }).catch(() => {});
+        // al volver tras una caída, se piden limpiar los temporales de transcodificación (por si se llenó el disco)
+        if ((db.settings.alerts.transcode || {}).cleanOnUp !== false) tcCleanTemp(s).then((r) => { if (r.ok) notifyStaff('servers', `🧹 He pedido a Emby de «${s.name}» que borre los temporales de transcodificación, por si la caída fue por disco lleno.`); }).catch(() => {});
       }
       h.fails = 0; h.down = false; h.since = null;
     } else {

@@ -2556,6 +2556,15 @@ html.look-skel #main .panel > .empty:not(.loading){padding-top:26px}
 html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:block;width:120px;height:88px;margin:0 auto 12px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22150%22%20height%3D%22110%22%20viewBox%3D%220%200%20150%20110%22%20fill%3D%22none%22%3E%3Cellipse%20cx%3D%2275%22%20cy%3D%22100%22%20rx%3D%2252%22%20ry%3D%227%22%20fill%3D%22%236366f1%22%20opacity%3D%22.18%22/%3E%3Cpath%20d%3D%22M35%2045l40-18%2040%2018v40l-40%2018-40-18z%22%20fill%3D%22%236366f1%22%20fill-opacity%3D%22.16%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222.5%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M35%2045l40%2018%2040-18M75%2063v40%22%20stroke%3D%22%23818cf8%22%20stroke-width%3D%222.5%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M35%2045l-12%2014%2040%2018%2012-14M115%2045l12%2014-40%2018-12-14%22%20fill%3D%22%23a78bfa%22%20fill-opacity%3D%22.25%22%20stroke%3D%22%23a78bfa%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M98%2012l3%207%207%203-7%203-3%207-3-7-7-3%207-3zM46%2016l2%204%204%202-4%202-2%204-2-4-4-2%204-2z%22%20fill%3D%22%23f0abfc%22/%3E%3C/svg%3E") center/contain no-repeat}
 @media (prefers-reduced-motion:reduce){html.look-skel .empty.loading{animation:none}}
 .alx{display:inline-block;margin-left:6px;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:800;background:#ef4444;color:#fff;vertical-align:1px}
+.tct-list{display:grid;gap:10px}.tct{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--c) 12%,transparent),transparent 65%),var(--surface)}
+.tct-n{min-width:62px;text-align:center;padding:8px;border-radius:14px;background:color-mix(in srgb,var(--c) 20%,transparent)}.tct-n b{display:block;font-size:24px;line-height:1}.tct-n small{font-size:11px;color:var(--muted)}
+.tct-b>b{display:block}.tct-b>small{color:var(--muted)}.tct-c{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px}.tct-k{display:inline-block;font-size:12.5px;font-weight:650;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 18%,transparent)}
+.tct-f{margin:6px 0 0;font-size:13px}
+@media(max-width:640px){.tct{grid-template-columns:auto 1fr}.tct>.btn{grid-column:1/-1;justify-self:start}}
+.srvsum{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}
+.srvchip{display:inline-flex;gap:6px;align-items:baseline;border:1px solid var(--line,#333);background:transparent;color:inherit;border-radius:999px;padding:4px 11px;font:inherit;font-size:13px;cursor:pointer}
+.srvchip small{opacity:.6}.srvchip.on{border-color:var(--accent,#38bdf8);background:color-mix(in srgb,var(--accent,#38bdf8) 14%,transparent)}
+.srvtag{display:inline-block;white-space:nowrap;margin-top:3px;font-size:11.5px;padding:1px 7px;border-radius:6px;background:color-mix(in srgb,currentColor 9%,transparent)}
 </style>
 </head>
 <body>
@@ -4492,6 +4501,28 @@ function alertRows(kind) {
   if (a.sort === 'client') rows.sort((p, r) => p.client.localeCompare(r.client));
   return rows;
 }
+/** v255: «Qué arreglar»: los títulos que más transcode provocan y qué hacer con cada uno */
+const TC_CAUSE = { subs: ['💬', 'Subtítulos', '#a78bfa'], video: ['🎞️', 'Vídeo', '#f43f5e'], audio: ['🔊', 'Sonido', '#f59e0b'], quality: ['⚙️', 'Calidad de la app', '#38bdf8'], container: ['📦', 'Formato', '#22c55e'], other: ['•', 'Otros', '#94a3b8'] };
+function loadTcTitles() { S.tcTit = { busy: true }; api('GET', '/api/transcode/titles').then((r) => { S.tcTit = r; render(); }, (e) => { S.tcTit = { error: e.message, list: [] }; render(); }); }
+function tcTitlesView() {
+  const t = S.tcTit;
+  if (!t) { loadTcTitles(); return '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
+  if (t.busy) return '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (t.error) return `<p class="err">${esc(t.error)}</p>`;
+  if (!t.list.length) return '<div class="panel"><div class="empty">Todavía no hay títulos. Cuando alguien haga transcode, aquí verás qué película o capítulo lo provoca y cómo arreglarlo.</div></div>';
+  const top = t.list.slice(0, 10).reduce((n, r) => n + r.n, 0), pct = t.total ? Math.round(top / t.total * 100) : 0;
+  const cards = t.list.map((r) => {
+    const main = Object.entries(r.causes || {}).sort((a, b) => b[1] - a[1])[0] || ['other'], cz = TC_CAUSE[main[0]] || TC_CAUSE.other;
+    return `<article class="tct" style="--c:${cz[2]}"><div class="tct-n"><b>${r.n}</b><small>${r.n === 1 ? 'vez' : 'veces'}</small></div>
+      <div class="tct-b"><b>${esc(r.name || 'Sin título')}</b><small>${esc(r.serverName || '')} · ${plural(r.clients, 'cliente', 'clientes')}${r.names && r.names.length ? ': ' + esc(r.names.join(', ')) : ''} · última ${fmtTs(r.last, true)}</small>
+        <div class="tct-c"><span class="tct-k">${cz[0]} ${esc(r.causeText || cz[1])}</span>${Object.entries(r.causes || {}).filter(([k]) => k !== main[0]).map(([k, n]) => `<span class="tct-k" style="--c:${(TC_CAUSE[k] || TC_CAUSE.other)[2]}">${(TC_CAUSE[k] || TC_CAUSE.other)[0]} ${(TC_CAUSE[k] || TC_CAUSE.other)[1]} ×${n}</span>`).join('')}</div>${r.fix ? `<p class="tct-f">🛠️ ${esc(r.fix)}</p>` : ''}</div>
+      <button type="button" class="btn sm" data-act="tct-fixed" data-k="${esc(r.key)}" title="Quitar de la lista">✅ Arreglado</button></article>`;
+  }).join('');
+  return `<div class="panel pad" style="margin-bottom:12px"><b>${t.list.length > 10 ? `Los 10 primeros títulos provocan el ${pct} % de los transcodes` : 'Títulos que provocan transcode'}</b>
+    <p class="muted small" style="margin:6px 0 0">Arreglando el archivo una vez, se acaba el problema para todos tus clientes. Los de «Calidad de la app» no son del archivo: es el cliente, que tiene la calidad en «Auto». Últimos 60 días.</p>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-act="tct-reload">${ic('refresh')}Actualizar</button><button type="button" class="btn sm ghost" data-act="tct-clear">Vaciar lista</button></div></div>
+    <div class="tct-list">${cards}</div>`;
+}
 function vAlertas(kind) {
   const def = AL[kind], a = S.al;
   if (!a.data) return head(def.title, def.sub) + '<div class="panel"><div class="empty">Cargando alertas…</div></div>';
@@ -4507,7 +4538,7 @@ function vAlertas(kind) {
       <span class="state${cfg.on ? ' on' : ''}">${cfg.on ? 'Activo' : 'Apagado'}</span>
       ${staff() ? `<button class="btn ${cfg.on ? '' : 'primary'}" data-act="al-toggle" data-k="${def.key}">${cfg.on ? 'Apagar' : 'Encender'}</button>` : ''}
     </div>` : '';
-  const tabs = def.type ? `<div class="tabs" role="tablist">${[['hist', 'Historial'], ...(staff() ? [['cfg', 'Configuración']] : []), ['rep', 'Reincidentes']].map(([k, t]) => `<button role="tab" data-act="al-tab" data-k="${k}" aria-selected="${a.tab === k}">${t}</button>`).join('')}</div>` : '';
+  const tabs = def.type ? `<div class="tabs" role="tablist">${[['hist', 'Historial'], ...(staff() && def.key === 'transcode' ? [['tit', 'Qué arreglar']] : []), ...(staff() ? [['cfg', 'Configuración']] : []), ['rep', 'Reincidentes']].map(([k, t]) => `<button role="tab" data-act="al-tab" data-k="${k}" aria-selected="${a.tab === k}">${t}</button>`).join('')}</div>` : '';
   let body;
   if (def.type && a.tab === 'cfg' && staff() && cfg) {
     body = `<form id="alcfg" data-k="${def.key}" class="panel pad formpage" style="max-width:720px">
@@ -4516,6 +4547,11 @@ function vAlertas(kind) {
       ${def.key === 'transcode' ? `<label class="check"><input type="checkbox" name="onlyVideo"${cfg.onlyVideo ? ' checked' : ''}> Actuar solo cuando se convierte el vídeo (ignorar si solo cambia el audio o los subtítulos)</label>` : ''}
       ${def.key === 'transcode' ? `<label class="check"><input type="checkbox" name="webSoft"${cfg.webSoft !== false ? ' checked' : ''}> En el navegador (Emby Web, Chrome, Brave…) no cortar: avisarle en pantalla de que use la app. En el navegador muchos vídeos no se pueden ver sin convertir</label>
       <label class="f" style="max-width:420px;margin-left:28px">Si sigue convirtiendo después del aviso, cortarle a los<select name="webGrace">${[[2, '2 minutos'], [5, '5 minutos'], [10, '10 minutos'], [15, '15 minutos'], [30, '30 minutos']].map(([v, t]) => `<option value="${v}"${(cfg.webGrace ?? 5) === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <div class="panel pad" style="margin:6px 0 10px"><b>🛡️ Proteger servidores</b><p class="muted small" style="margin:4px 0 8px">En los servidores marcados, el transcode se corta al momento, también en el navegador (sin minutos de margen). Útil si ese servidor tiene poco disco.</p>
+        ${(S.dAll || S.d).servers.filter((v) => ['emby', 'jellyfin'].includes(v.kind || 'emby')).map((v) => `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0"><label class="check" style="margin:0"><input type="checkbox" name="strict" value="${v.id}"${(cfg.strict || []).includes(v.id) ? ' checked' : ''}> ${esc(v.name)}</label><button type="button" class="btn sm ghost" data-act="tc-clean" data-id="${v.id}">🧹 Limpiar temporales ahora</button></div>`).join('')}
+        <label class="check" style="margin-top:8px"><input type="checkbox" name="cleanOnUp"${cfg.cleanOnUp !== false ? ' checked' : ''}> Cuando un servidor vuelva tras una caída, pedir a Emby que borre sus temporales de transcodificación</label>
+        <label class="check" style="margin-top:8px"><input type="checkbox" name="loopOut"${cfg.loopOut !== false ? ' checked' : ''}> Si un aparato vuelve a convertir 5 veces en 15 minutos (app en bucle), cerrarle la sesión en ese aparato</label></div>
+      <label class="f" style="max-width:520px">Avisarme por Telegram si un servidor convierte muchos vídeos a la vez (y cortar al momento mientras dure)<select name="loadLimit">${[[0, 'No avisar'], [3, '3 o más a la vez'], [5, '5 o más a la vez'], [8, '8 o más a la vez'], [10, '10 o más a la vez'], [15, '15 o más a la vez']].map(([v, t]) => `<option value="${v}"${(cfg.loadLimit ?? 5) === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
       <label class="check"><input type="checkbox" name="bot"${cfg.bot !== false ? ' checked' : ''}> Explicárselo también por el bot de Telegram, para que sepa que no es un fallo del servidor (como mucho una vez cada 30 minutos)</label>` : ''}
       <label class="f" style="margin-top:14px">Mensaje que ve el usuario al detenerle<textarea name="message" rows="3" maxlength="300">${esc(cfg.message)}</textarea></label>
       ${def.key === 'transcode' ? `<h2 class="sep">Aviso de calidad baja</h2>
@@ -4527,6 +4563,8 @@ function vAlertas(kind) {
       <p class="muted small" style="margin-bottom:12px">${def.key === 'transcode' ? 'Solo se vigilan las cuentas creadas o importadas en el panel. Los administradores de Emby no se tocan.' : 'El límite es el número de pantallas de cada cuenta. Las cuentas importadas sin límite de pantallas no se vigilan. Al detener, se cortan las reproducciones que llevan menos tiempo.'} La comprobación se hace cada 30 segundos.</p>
       <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="submit">Guardar configuración</button></div>
     </form>`;
+  } else if (def.type && a.tab === 'tit' && staff()) {
+    body = tcTitlesView();
   } else if (def.type && a.tab === 'rep') {
     const by = new Map();
     all.forEach((x) => { const r = by.get(x.clientId) || { n: 0, last: x.ts, x }; r.n += x.count || 1; if (x.ts > r.last) r.last = x.ts; by.set(x.clientId, r); });
@@ -4544,7 +4582,7 @@ function vAlertas(kind) {
     const filters = `<div class="tools">
         <input type="search" id="aq" placeholder="Buscar usuario, dispositivo o contenido" value="${esc(a.q)}" aria-label="Buscar alertas">
         ${def.type ? '' : sel('aType', a.type, [['all', 'Todos los tipos'], ['transcode', 'Transcode'], ['sesiones', 'Sesiones excedidas']], 'Tipo') + sel('aRead', a.read, [['all', 'Leídas y sin leer'], ['unread', 'Sin leer'], ['read', 'Leídas']], 'Leídas')}
-        ${S.d.servers.length > 1 ? sel('aServer', a.server, [[0, 'Todos los servidores'], ...S.d.servers.map((x) => [x.id, x.name])], 'Servidor') : ''}
+        ${(S.dAll || S.d).servers.length > 1 ? sel('aServer', a.server, [[0, 'Todos los servidores'], ...(S.dAll || S.d).servers.map((x) => [x.id, x.name])], 'Servidor') : ''}
         ${S.d.users.length > 1 ? sel('aOwner', a.owner, [[0, 'Todos los vendedores'], ...S.d.users.map((u) => [u.id, u.name])], 'Vendedor') : ''}
         ${sel('aPeriod', a.period, [['all', 'Todas las fechas'], ['d1', 'Últimas 24 horas'], ['d7', 'Últimos 7 días'], ['d30', 'Últimos 30 días']], 'Período')}
         ${sel('aSort', a.sort, [['new', 'Orden: más recientes'], ['old', 'Orden: más antiguas'], ['client', 'Orden: cliente']], 'Orden')}
@@ -4559,9 +4597,17 @@ function vAlertas(kind) {
         <td style="white-space:nowrap">${fmtTs(x.ts, true)}${x.count > 1 ? ` <span class="alx" title="Veces seguidas: la primera a las ${new Date(x.first).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}">×${x.count}</span><div class="small muted">desde las ${new Date(x.first).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>` : ''}${x.level === 'critica' ? '<div class="lvl">Crítica: reincidente</div>' : ''}</td>
         <td><div class="name">${esc(x.client)}</div><div class="small muted">@${esc(x.emby)}${S.d.users.length > 1 ? ', de ' + esc(userName(x.ownerId) || '—') : ''}</div></td>
         ${def.type ? '' : `<td>${AL_TYPE[x.type] || esc(x.type)}</td>`}
-        <td>${esc(x.device)}${x.app ? `<div class="small muted">${esc(x.app)}</div>` : ''}</td><td>${esc(x.item)}</td><td>${esc(x.reason)}</td><td>${esc(x.action)}</td></tr>`).join('')}</tbody></table></div>`
+        <td>${esc(x.device)}${x.app ? `<div class="small muted">${esc(x.app)}</div>` : ''}${x.server ? `<div class="srvtag">🖥️ ${esc(x.server)}</div>` : ''}</td><td>${esc(x.item)}</td><td>${esc(x.reason)}</td><td>${esc(x.action)}${x.outs && !/^Aparato desconectado/.test(x.action || '') ? `<div class="small" style="color:#f59e0b">🔁 ${x.outs === 1 ? 'Se le desconectó el aparato 1 vez (estaba en bucle)' : `Se le desconectó el aparato ${x.outs} veces (estaba en bucle)`}</div>` : ''}</td></tr>`).join('')}</tbody></table></div>`
       : `<div class="panel"><div class="empty">${all.length ? 'Ninguna alerta coincide con los filtros.' : cfg && !cfg.on ? 'No hay eventos registrados. La vigilancia está apagada' + (staff() ? ': enciéndela arriba para empezar.' : '.') : 'No hay eventos registrados.'}</div></div>`;
-    body = filters + pager + table;
+    // v257: cuántas detecciones hay en cada servidor (con los mismos filtros, sin el de servidor), para ver si todo viene del mismo
+    const srvSum = (() => {
+      const keep = a.server; a.server = 0; const base = alertRows(kind); a.server = keep;
+      const by = new Map(); base.forEach((x) => { const k = x.serverId || 0; const r = by.get(k) || { id: k, name: x.server || '—', n: 0, cl: new Set() }; r.n += x.count || 1; r.cl.add(x.clientId); by.set(k, r); });
+      const list = [...by.values()].sort((p, q) => q.n - p.n); if (!list.length) return '';
+      const tot = list.reduce((n, r) => n + r.n, 0);
+      return `<div class="srvsum"><span class="muted small">Por servidor:</span>${list.map((r) => `<button type="button" class="srvchip${a.server === r.id ? ' on' : ''}" data-act="al-srv" data-id="${r.id}" title="${plural(r.cl.size, 'cliente', 'clientes')}"><b>${esc(r.name)}</b> ${r.n}<small>${Math.round(r.n / tot * 100)} %</small></button>`).join('')}${a.server ? '<button type="button" class="srvchip" data-act="al-srv" data-id="0">Ver todos</button>' : ''}</div>`;
+    })();
+    body = filters + srvSum + pager + table;
   }
   return head(def.title, def.sub, staff() && all.length ? `<button class="btn clr" data-act="al-clear">${ic('trash')}Vaciar historial</button>` : '') + (a.data.error ? `<p class="err" style="max-width:none;margin-bottom:10px">${esc(a.data.error)}</p>` : '') + module + `<div class="tiles">${tiles}</div>` + tabs + body;
 }
@@ -7401,6 +7447,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 257, d: '2026-11-12', items: ['🖥️ Cada alerta dice de qué servidor es, y arriba ves cuántas hay en cada servidor (pulsa uno para ver solo ese)', '🔁 Apps en bucle: si un aparato vuelve a convertir 5 veces en 15 minutos, se le cierra la sesión en ese aparato y se le explica por el bot'] },
+  { v: 256, d: '2026-11-12', items: ['🛡️ Proteger servidores (Alertas › Transcode › Configuración): en los que marques, el transcode se corta al momento, también en el navegador', '🔥 Protección automática: si un servidor convierte muchos vídeos a la vez, el panel corta al momento mientras dure y te avisa', '🧹 Limpiar temporales de transcodificación: un botón por servidor, y se pide solo cuando un servidor vuelve tras una caída (por si se llenó el disco)', '🔴 Los avisos de servidor caído ya no muestran código raro (<html>…): dicen claro que Emby no contesta'] },
+  { v: 255, d: '2026-11-11', items: ['🛠️ Alertas › Transcode › «Qué arreglar»: los títulos que más transcode provocan, por qué (vídeo, sonido, subtítulos, calidad de la app) y qué hacer con cada uno. Arreglas el archivo una vez y se acaba para todos', '💬 Subtítulos: si el transcode es por unos subtítulos de imagen (PGS), al cliente se le explica que elija otros o los quite, en pantalla y por el bot, en vez del mensaje de calidad', '🔥 Aviso por Telegram si un servidor convierte muchos vídeos a la vez (5 por defecto)'] },
   { v: 254, d: '2026-11-10', items: ['✂️ Transcode en el navegador: primero se le avisa; si sigue convirtiendo pasados unos minutos (5 por defecto; 2, 10, 15 o 30), se le corta como en las apps, y si vuelve a la media hora, se le corta directamente'] },
   { v: 253, d: '2026-11-10', items: ['🌐 Transcode en el navegador: si el cliente ve desde Emby Web (Chrome, Brave…), ya no se le corta cada minuto. Le sale un aviso en pantalla para que use la app de Emby (como mucho cada 15 minutos)', '💬 Cuando se le para un vídeo, el mensaje se repite con el vídeo ya parado (para que le dé tiempo a leerlo) y, si tiene el bot, se le explica por Telegram que no es un fallo y cómo arreglarlo. Se puede apagar en Alertas › Transcode › Configuración'] },
   { v: 252, d: '2026-11-10', items: ['🔁 Alertas sin repetir: si el mismo cliente vuelve a hacer transcode (o a pasarse de pantallas) en menos de 30 minutos, no sale otra alerta: se suma a la de antes con un numerito (×2, ×3…) y pone desde qué hora'] },
@@ -10471,7 +10520,12 @@ document.addEventListener('click', (e) => {
     case 'app-hide': try { localStorage.setItem('instHide', String(Date.now() + 14 * 86400000)); } catch (e) { /* nada */ } { const b = $('#instBar'); if (b) b.remove(); } break;
     case 'ficha': if (c) { if (dlg.open) dlg.close(); openCf(c.id); } break;
     case 'edit': if (c) dEdit(c); break;
-    case 'al-tab': S.al.tab = el.dataset.k; render(); break;
+    case 'al-tab': S.al.tab = el.dataset.k; if (el.dataset.k === 'tit') S.tcTit = null; render(); break;
+    case 'tct-reload': S.tcTit = null; render(); break;
+    case 'tc-clean': { const v = (S.dAll || S.d).servers.find((x) => x.id === +el.dataset.id); el.disabled = true; api('POST', `/api/servers/${el.dataset.id}/tc-clean`, {}).then((r) => { el.disabled = false; toast(r.ok ? `🧹 Pedido a ${v ? v.name : 'Emby'}: «${r.task}»` : r.why, !r.ok); }, (x) => { el.disabled = false; toast(x.message, true); }); break; }
+    case 'tct-fixed': api('POST', '/api/transcode/titles/fixed', { key: el.dataset.k }).then(() => { S.tcTit = null; render(); toast('Quitado de la lista'); }, (x) => toast(x.message, true)); break;
+    case 'tct-clear': dConfirm('Vaciar la lista', 'Se borra el recuento de títulos. Las alertas no se tocan.', 'Vaciar', async () => { await api('POST', '/api/transcode/titles/fixed', { all: true }); S.tcTit = null; render(); }, 'Lista vaciada'); break;
+    case 'al-srv': S.al.server = +el.dataset.id || 0; S.al.page = 1; render(); break;
     case 'al-page': S.al.page = Math.max(1, S.al.page + (+el.dataset.step)); render(); window.scrollTo(0, 0); break;
     case 'al-toggle': { const k = el.dataset.k, on = !S.al.data.config[k].on; api('PUT', '/api/alerts/config', { [k]: { on } }).then(async () => { await loadAlerts(); render(); toast(on ? 'Vigilancia encendida' : 'Vigilancia apagada'); }).catch((x) => toast(x.message, true)); break; }
     case 'al-read': { const ids = alertRows(S.view).filter((x) => !x.read).map((x) => x.id); api('POST', '/api/alerts/read', { ids }).then(async () => { await loadAlerts(); await reload(); toast('Marcadas como leídas'); }).catch((x) => toast(x.message, true)); break; }
@@ -10785,7 +10839,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'alcfg') {
     e.preventDefault();
     const fd = new FormData(e.target), k = e.target.dataset.k;
-    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', tip: fd.get('tip') === 'on', ...(k === 'transcode' ? { tipEvery: +fd.get('tipEvery'), tipText: fd.get('tipText'), webSoft: fd.get('webSoft') === 'on', bot: fd.get('bot') === 'on', webGrace: +fd.get('webGrace') } : { logout: fd.get('logout') === 'on' }), message: fd.get('message'), retention: +fd.get('retention') } })
+    api('PUT', '/api/alerts/config', { [k]: { stop: fd.get('stop') === 'on', onlyVideo: fd.get('onlyVideo') === 'on', tip: fd.get('tip') === 'on', ...(k === 'transcode' ? { tipEvery: +fd.get('tipEvery'), tipText: fd.get('tipText'), webSoft: fd.get('webSoft') === 'on', bot: fd.get('bot') === 'on', webGrace: +fd.get('webGrace'), loadLimit: +fd.get('loadLimit'), strict: fd.getAll('strict').map(Number), cleanOnUp: fd.get('cleanOnUp') === 'on', loopOut: fd.get('loopOut') === 'on' } : { logout: fd.get('logout') === 'on' }), message: fd.get('message'), retention: +fd.get('retention') } })
       .then(async () => { await loadAlerts(); await reload(); toast('Configuración guardada'); }).catch((x) => toast(x.message, true));
   }
   if (e.target.id === 'noticeForm') {
