@@ -119,6 +119,7 @@ function loadDb() {
   db.settings.notices = { screen: { ...DEFAULT_NOTICES.screen, ...(nt.screen || {}) }, chat: { ...DEFAULT_NOTICES.chat, ...(nt.chat || {}) }, telegram: { ...DEFAULT_NOTICES.telegram, ...(nt.telegram || {}) } };
   if (!db.secret) db.secret = crypto.randomBytes(24).toString('hex');
   openApiKeys(db.servers);
+  openPasswords(db.clients);
   if (!Array.isArray(db.access)) db.access = [];
   if (!Array.isArray(db.followups)) db.followups = [];
   if (!Array.isArray(db.requests)) db.requests = []; // películas y series que piden los clientes por el bot
@@ -143,6 +144,10 @@ function loadDb() {
   db.quality = { servers: {}, reports: [], ...(db.quality || {}) };
   db.settings.alerts = { transcode: { ...DEFAULT_ALERTS.transcode, ...(al.transcode || {}) }, sessions: { ...DEFAULT_ALERTS.sessions, ...(al.sessions || {}) } };
   if (!Array.isArray(db.alerts)) db.alerts = [];
+  // v263: «Crecer»: recuperar caducados, resumen semanal, avisos de caídas al grupo y encuesta
+  { const g = db.settings.grow || {};
+    db.settings.grow = { winback: { on: false, d7: true, d30: true, offer: '', ...(g.winback || {}) }, weekly: { on: true, day: 1, hour: 10, last: '', ...(g.weekly || {}) },
+      outage: { on: false, chat: '', thread: 0, delay: 3, name: true, ...(g.outage || {}) }, survey: { on: false, days: 30, since: '', ...(g.survey || {}) } }; }
   db.settings.security = { idleMin: 180, ...(db.settings.security || {}) };
   db.payCfg = { stripe: { on: false, key: '', whsec: '' }, nowpay: { on: false, key: '', ipn: '' }, min: 5, ...(db.payCfg || {}) };
   if (!Array.isArray(db.orders)) db.orders = [];
@@ -188,29 +193,49 @@ function srvKey() {
   return srvKeyBuf;
 }
 const encMemo = new Map(); // clave en claro -> texto cifrado (para no recifrar en cada guardado)
-function encApiKey(plain) {
+function encApiKey(plain, salt = '') {
   if (!plain) return '';
-  if (encMemo.has(plain)) return encMemo.get(plain);
+  const mk = salt + '\u0000' + plain; // v261: cada cliente con su propio cifrado aunque compartan contraseña
+  if (encMemo.has(mk)) return encMemo.get(mk);
   const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', srvKey(), iv);
   const ct = Buffer.concat([c.update(plain, 'utf8'), c.final()]);
   const out = ['v1', iv.toString('base64'), c.getAuthTag().toString('base64'), ct.toString('base64')].join(':');
-  encMemo.set(plain, out);
+  encMemo.set(mk, out);
   return out;
 }
-function decApiKey(enc) {
+function decApiKey(enc, salt = '') {
   const [v, iv, tag, ct] = String(enc || '').split(':');
   if (v !== 'v1') throw new Error('formato desconocido');
   const d = crypto.createDecipheriv('aes-256-gcm', srvKey(), Buffer.from(iv, 'base64'));
   d.setAuthTag(Buffer.from(tag, 'base64'));
   const plain = Buffer.concat([d.update(Buffer.from(ct, 'base64')), d.final()]).toString('utf8');
-  encMemo.set(plain, enc);
+  encMemo.set(salt + '\u0000' + plain, enc);
   return plain;
 }
 /** Lo que se escribe en db.json: igual que en memoria, pero con las API keys cifradas */
 function dbForDisk() {
   // Si una clave no se pudo descifrar (falta el archivo de la clave), se guarda tal cual estaba: si el archivo vuelve, se recupera
-  return { ...db, servers: (db.servers || []).map(({ apiKey, lostEnc, keyLost, ...x }) => ({ ...x, apiKeyEnc: apiKey ? encApiKey(apiKey) : (lostEnc || '') })) };
+  return { ...db, servers: (db.servers || []).map(({ apiKey, lostEnc, keyLost, ...x }) => ({ ...x, apiKeyEnc: apiKey ? encApiKey(apiKey) : (lostEnc || '') })), clients: sealPasswords(db.clients) };
 }
+/** v261: las contraseñas de clientes y líneas también se guardan cifradas en el disco (en memoria siguen igual, nada cambia al usarlas) */
+function sealOne(o) {
+  if (!o || typeof o !== 'object') return o;
+  const { password, passLost, ...x } = o;
+  if (password) x.passwordEnc = encApiKey(String(password), 'c' + (o.id || o.username || ''));
+  else if (passLost) x.passwordEnc = passLost;
+  else if (password !== undefined) x.password = password;
+  return x;
+}
+function sealPasswords(list) {
+  return (list || []).map((c) => { const x = sealOne(c); if (x.migratedFrom && typeof x.migratedFrom === 'object') x.migratedFrom = sealOne(x.migratedFrom); return x; });
+}
+function openOne(o) {
+  if (!o || typeof o !== 'object' || !o.passwordEnc) return;
+  try { o.password = decApiKey(o.passwordEnc, 'c' + (o.id || o.username || '')); delete o.passLost; } catch { o.password = ''; o.passLost = o.passwordEnc; }
+  delete o.passwordEnc;
+}
+/** Al cargar (o al restaurar una copia): descifra las contraseñas. Si falta la clave, la contraseña queda vacía pero no se pierde lo cifrado */
+function openPasswords(list) { for (const c of list || []) { openOne(c); openOne(c.migratedFrom); } }
 /** Al cargar: descifra las API keys. Si no se puede (falta la clave), el servidor queda marcado para volver a pegar su API key */
 function openApiKeys(list) {
   for (const x of list || []) {
@@ -2627,7 +2652,7 @@ function publicData(me) {
     expDue: me.role === 'super' ? expDueCount() : 0,
     socios: me.role === 'super' && socOn() && socCfg().auto.accounts ? { members: socCfg().members.map((m) => ({ id: m.id, name: m.name })), mine: socWho(me) } : null,
     ...(DEMO ? { demoMode: true } : {}),
-    settings: { ...db.settings, ...logoRefs(), look: lookCfg(), tgGift: tgGiftCfg(), notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } },
+    settings: { ...(isStaff(me) ? db.settings : resellerSettings()), ...logoRefs(), look: lookCfg(), tgGift: tgGiftCfg(), notices: { ...db.settings.notices, telegram: { on: db.settings.notices.telegram.on, bot: db.settings.notices.telegram.bot, hasToken: !!db.settings.notices.telegram.token } },
       // La app de clientes: mientras el superadministrador no la publique, el resto del equipo no la ve
       app: me.role === 'super' || (db.settings.app || {}).public ? db.settings.app : { ...db.settings.app, file: false, tag: false, inMsg: false },
       clientPay: isStaff(me) ? db.settings.clientPay : { vendors: !!(db.settings.clientPay || {}).vendors } },
@@ -2639,6 +2664,8 @@ function publicData(me) {
     log: db.log.filter((l) => l.type !== 'login' && seeClients && (!vis ? true : (l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)).slice(0, 500),
     ledger: db.ledger.filter((l) => (adm && !P.reports ? l.userId === me.id : !vis || vis.has(l.userId))).slice(0, 500),
     lastRun: db.lastRun,
+    // v264: para el Resumen: quién quiere volver y quién está descontento (lo de «Crecer»)
+    growBadge: !seeClients ? null : { want: db.clients.filter((c) => c.wantsBack && c.status !== 'active' && (!vis || vis.has(c.ownerId))).length, low: db.clients.filter((c) => c.survey && c.survey.n <= 2 && Date.now() - Date.parse(c.survey.at) < 30 * 86400000 && (!vis || vis.has(c.ownerId))).length },
     alertsUnread: !seeClients ? 0 : db.alerts.reduce((n, a) => n + (!a.read && (!vis || vis.has(a.ownerId)) ? 1 : 0), 0),
     followPending: !seeClients ? 0 : db.followups.filter((f) => f.status === 'pending' && (!vis || vis.has(f.ownerId))).length,
     sharedCount: !seeClients ? 0 : sharedCount(vis),
@@ -2648,6 +2675,16 @@ function publicData(me) {
   };
 }
 
+/** v267: lo que un vendedor (reseller o subreseller) recibe de los ajustes: solo lo que necesita para trabajar con SUS clientes.
+    Fuera: gastos, socios, antisabotaje, «Crecer», contactos y ajustes internos del dueño, y la configuración de vigilancia por servidor. */
+const RESELLER_HIDE = ['grow', 'expenses', 'vpay', 'vpayDay', 'vdDay', 'guard', 'support', 'licContact', 'botBrand', 'importMap', 'migrate', 'retention', 'monitorSec', 'dailyLast', 'logClearedAt', 'security', 'siteBase', 'socios'];
+function resellerSettings() {
+  const out = { ...db.settings };
+  for (const k of RESELLER_HIDE) delete out[k];
+  const al = db.settings.alerts || {}, tc = al.transcode || {}, se = al.sessions || {};
+  out.alerts = { transcode: { on: !!tc.on, stop: !!tc.stop, retention: tc.retention, tipText: tc.tipText || '' }, sessions: { on: !!se.on, stop: !!se.stop, retention: se.retention } };
+  return out;
+}
 /* ---------- Rutas ---------- */
 const routes = [];
 /** roles: null = sin sesion; '*' = cualquiera con sesion; o lista de roles */
@@ -3280,19 +3317,137 @@ async function telegramNotices() {
       const win = steps.filter((x) => x >= left).pop(); // el aviso más cercano que ya toca
       if (win != null && !sent(c, String(win))) due.push([c, String(win)]);
     } else if (left < 0 && after > 0 && -left >= after && -left <= after + 2 && !sent(c, 'r')) due.push([c, 'r']);
+    else if (left < 0) { // v263: recuperar caducados a los 7 y a los 30 días
+      const wb = db.settings.grow.winback;
+      if (wb.on && c.status === 'expired') for (const d of [7, 30]) if (wb['d' + d] !== false && -left >= d && -left <= d + 3 && !sent(c, 'w' + d)) { due.push([c, 'w' + d]); break; }
+    }
   }
+  // v263: a los de la papelera también (siguen en el panel hasta que se borran del todo)
+  { const wb = db.settings.grow.winback;
+    if (wb.on) for (const c of db.clients) {
+      if (!c.tgChat || c.demo || c.status !== 'trash' || c.trashReason !== 'Sin renovar') continue;
+      const ago = diffDays(t, c.expires);
+      for (const d of [7, 30]) if (wb['d' + d] !== false && ago >= d && ago <= d + 3 && !sent(c, 'w' + d)) { due.push([c, 'w' + d]); break; }
+    } }
   for (const [c, k] of due.slice(0, 25)) {
     try {
-      await tg('sendMessage', k === 'r' ? rescueTg(c) : expiringTg(c));
+      await tg('sendMessage', k === 'r' ? rescueTg(c) : k[0] === 'w' ? winbackTg(c, +k.slice(1)) : expiringTg(c));
       c.tgSent = [...(c.tgSent || []), c.expires + ':' + k].slice(-12);
-      if (k !== 'r') { c.tgNoticeFor = c.expires; c.noticeFor = c.expires; }
-      addLog('aviso', c, k === 'r' ? 'Aviso de rescate enviado por Telegram (cuenta caducada)' : `Aviso de vencimiento enviado por Telegram (${k === '0' ? 'el mismo día' : k === '1' ? '1 día antes' : k + ' días antes'})`, null);
+      if (k !== 'r' && k[0] !== 'w') { c.tgNoticeFor = c.expires; c.noticeFor = c.expires; }
+      addLog('aviso', c, k[0] === 'w' ? `Mensaje para recuperarle enviado por Telegram (${k.slice(1)} días después de caducar)` : k === 'r' ? 'Aviso de rescate enviado por Telegram (cuenta caducada)' : `Aviso de vencimiento enviado por Telegram (${k === '0' ? 'el mismo día' : k === '1' ? '1 día antes' : k + ' días antes'})`, null);
     } catch (e) {
       if (/blocked|chat not found|deactivated/i.test(e.message)) { delete c.tgChat; addLog('aviso', c, 'Telegram desenlazado: el cliente bloqueó el bot', null); }
       else { console.error('Telegram:', e.message); break; }
     }
   }
   if (due.length) saveDb();
+  await surveySend();
+}
+/* ---------- v263: Crecer ---------- */
+/** Mensaje para recuperar a un cliente que no renovó (a los 7 o 30 días) */
+function winbackTg(c, d) {
+  const wb = db.settings.grow.winback, nm = botName();
+  const offer = String(wb.offer || '').trim();
+  const head = d >= 30 ? `💌 Hola ${c.panelName}, ¡hace un mes que no te vemos por ${nm}!` : `👋 Hola ${c.panelName}, te echamos de menos en ${nm}`;
+  const body = d >= 30 ? 'Seguimos añadiendo pelis y series cada semana y tu usuario te sigue esperando.' : `Tu cuenta (${c.embyName}) caducó hace unos días y ya no puedes ver nada.`;
+  const text = `${head}\n\n${body}${offer ? `\n\n🎁 ${offer}` : ''}\n\n👉 Si quieres volver, se activa al momento y lo tienes todo como lo dejaste.`;
+  if (c.status !== 'trash' && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Volver ahora', url: cpLink(c) }], [{ text: '🙋 Quiero volver, escríbeme', callback_data: 'wb:' + c.id }]] } };
+  return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🙋 Quiero volver, escríbeme', callback_data: 'wb:' + c.id }]] } };
+}
+/** Encuesta: «¿Qué tal el servicio?» unos días después del alta (solo a los dados de alta después de activarla) */
+async function surveySend() {
+  const sv = db.settings.grow.survey;
+  if (!sv.on || !sv.since) return;
+  const t = today(); let n = 0;
+  for (const c of db.clients) {
+    if (n >= 15) break;
+    if (!c.tgChat || c.demo || c.status !== 'active' || c.survey || c.surveyAsked || !c.createdAt || c.createdAt < sv.since) continue;
+    if (diffDays(t, c.createdAt) < (sv.days || 30)) continue;
+    try {
+      await tg('sendMessage', { chat_id: c.tgChat, text: `⭐ Hola ${c.panelName}, ¿qué tal te va con ${botName()}?\n\nNos ayuda mucho saberlo. Pulsa una estrella (1 = mal, 5 = genial):`,
+        reply_markup: { inline_keyboard: [[1, 2, 3, 4, 5].map((k) => ({ text: '⭐'.repeat(1) + ' ' + k, callback_data: `sv:${c.id}:${k}` }))] } });
+      c.surveyAsked = new Date().toISOString(); n++;
+      addLog('aviso', c, 'Encuesta de satisfacción enviada por Telegram', null);
+    } catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) { delete c.tgChat; } else break; }
+  }
+  if (n) saveDb();
+}
+/** Mensajes al grupo o canal de clientes (avisos de caídas). Acepta @canal, -100…, o un enlace t.me/… (con tema) */
+function growChat() {
+  const o = db.settings.grow.outage, raw = String(o.chat || '').trim();
+  let chat = raw, thread = Number(o.thread) || 0, m;
+  if ((m = raw.match(/t\.me\/c\/(\d+)(?:\/(\d+))?/))) { chat = '-100' + m[1]; if (m[2] && !thread) thread = Number(m[2]); }
+  else if ((m = raw.match(/t\.me\/([A-Za-z0-9_]{4,})(?:\/(\d+))?/))) { chat = '@' + m[1]; if (m[2] && !thread) thread = Number(m[2]); }
+  else if (/^[A-Za-z0-9_]{4,}$/.test(raw) && !/^\d+$/.test(raw)) chat = '@' + raw;
+  return { chat, thread };
+}
+async function growPost(text) {
+  const { chat, thread } = growChat();
+  if (!chat || !db.settings.notices.telegram.token) throw new Error('Falta el grupo o el bot de Telegram.');
+  await tg('sendMessage', { chat_id: chat, text, disable_web_page_preview: true, ...(thread ? { message_thread_id: thread } : {}) });
+}
+function outageText(s, up, mins) {
+  const o = db.settings.grow.outage, nm = o.name !== false ? ` «${s.name}»` : '';
+  return up
+    ? `✅ ¡Ya funciona!\n\nEl servidor${nm} vuelve a estar en marcha. Si la app se quedó pensando, ciérrala y ábrela de nuevo.\n\nGracias por la paciencia 🙏`
+    : `⚠️ Aviso de ${botName()}\n\nEl servidor${nm} tiene un problema y ahora mismo no se puede ver.\n\nYa lo sabemos y estamos en ello: no hace falta que nos escribas. Avisaremos aquí en cuanto vuelva 🛠️`;
+}
+/** Usuarios de Emby: última vez que vieron algo (para el resumen y «pagan pero no ven») */
+async function refreshSeen() {
+  for (const s of db.servers) {
+    if (s.off) continue;
+    let users; try { users = await emby(s, 'GET', '/Users'); } catch { continue; }
+    const map = new Map((users || []).map((u) => [u.Id, validDate(u.LastActivityDate)]));
+    for (const c of db.clients) if (c.serverId === s.id && map.get(c.embyId)) c.seenAt = map.get(c.embyId);
+  }
+}
+async function weeklyText() {
+  try { await refreshSeen(); } catch { /* sin datos de conexión */ }
+  const now = Date.now(), wk = 7 * 86400000, t = today();
+  const inWeek = (ts) => now - Date.parse(ts) < wk;
+  const logs = db.log.filter((l) => inWeek(l.ts));
+  const cnt = (type, f) => logs.filter((l) => l.type === type && (!f || f(l))).length;
+  const live = db.clients.filter((c) => !c.demo && c.status === 'active');
+  const money = db.orders.filter((o) => o.status === 'paid' && o.paidAt && inWeek(o.paidAt)).reduce((n, o) => n + (Number(o.amount) || 0), 0);
+  const cur = db.settings.currency || 'EUR';
+  const credits = db.ledger.filter((l) => inWeek(l.ts) && l.kind === 'credito' && l.delta > 0).reduce((n, l) => n + l.delta, 0);
+  const soon = live.filter((c) => { const d = diffDays(c.expires, t); return d >= 0 && d <= 7; }).length;
+  const sleepy = live.filter((c) => !c.seenAt || now - Date.parse(c.seenAt) > 7 * 86400000).length;
+  const back = db.clients.filter((c) => (c.tgSent || []).some((k) => /:w\d+$/.test(k) && k.split(':')[0] !== c.expires) && c.status === 'active' && logs.some((l) => l.clientId === c.id && (l.type === 'renovacion' || l.type === 'restaurada'))).length;
+  const al = db.alerts.filter((a) => a.type === 'transcode' && !a.unsure && inWeek(a.ts));
+  const bySrv = new Map(); for (const a of al) bySrv.set(a.server || '—', (bySrv.get(a.server || '—') || 0) + (a.count || 1));
+  const downs = cnt('servidor', (l) => /caído/.test(l.text));
+  const rooms = db.servers.filter((s) => srvMax(s)).map((s) => { const u = srvLoad(s), m = srvMax(s); return `   ${u >= m ? '🔴' : u / m >= 0.9 ? '🟠' : '🟢'} ${s.name}: ${u}/${m} (${Math.max(0, m - u)} libres)`; });
+  const votes = db.clients.filter((c) => c.survey && inWeek(c.survey.at));
+  const avg = votes.length ? (votes.reduce((n, c) => n + c.survey.n, 0) / votes.length).toFixed(1).replace('.', ',') : '';
+  const fmtD = (ms) => new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const lines = [
+    `📊 Tu semana en ${botName()}`, `${fmtD(now - 6 * 86400000)} – ${fmtD(now)}`, '',
+    `👥 Clientes activos: ${live.length}`,
+    `🆕 Altas: ${cnt('alta')}   🔁 Renovaciones: ${cnt('renovacion')}   🎁 Demos: ${cnt('demo')}`,
+    `👋 Se fueron sin renovar: ${cnt('papelera', (l) => /sin renovar/i.test(l.text))}${back ? `   💌 Recuperados: ${back}` : ''}`,
+    `💶 Cobrado online: ${money.toFixed(2).replace('.', ',')} ${cur === 'EUR' ? '€' : cur}${credits ? `   🪙 Créditos vendidos: ${credits}` : ''}`,
+    '', `⏳ Vencen en los próximos 7 días: ${soon}`, `😴 Pagan pero no han visto nada en 7 días: ${sleepy}`,
+    '', `🖥️ Servidores: ${downs ? `${downs} ${downs === 1 ? 'caída' : 'caídas'}` : 'sin caídas ✅'}`,
+    ...(bySrv.size ? [`🔥 Transcodes cortados: ${[...bySrv].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ')}`] : []),
+    ...(rooms.length ? ['🪑 Plazas:', ...rooms] : []),
+    ...(votes.length ? ['', `⭐ Encuesta: ${avg} de media (${votes.length} ${votes.length === 1 ? 'voto' : 'votos'})`] : []),
+  ];
+  return lines.join('\n');
+}
+async function weeklySend(force) {
+  const w = db.settings.grow.weekly, d = new Date();
+  if (!force) {
+    if (!w.on || !db.settings.notices.telegram.token) return;
+    const key = localDate(d);
+    if (d.getDay() !== (w.day ?? 1) || d.getHours() < (w.hour ?? 10) || w.last === key) return;
+    w.last = key;
+  }
+  const text = await weeklyText();
+  let sent = 0;
+  for (const u of db.users.filter((x) => x.role === 'super' && !x.disabled)) for (const ch of userChats(u)) { try { await tg('sendMessage', { chat_id: ch, text, disable_web_page_preview: true }); sent++; } catch { /* nada */ } }
+  if (!force) await lock(async () => saveDb());
+  return { sent, text };
 }
 /* ---------- Órdenes del bot para los clientes ---------- */
 const BOT_CMD = { start: 'menu', inicio: 'menu', buscar: 'buscar', busca: 'buscar', buscador: 'buscar', suscripcion: 'estado', subscripcion: 'estado', cuenta: 'estado', micuenta: 'estado', estado: 'estado', dias: 'estado',
@@ -3895,6 +4050,30 @@ async function botCallback(cq) {
     if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda'].includes(k) || !mine.length || botTooFast(chat)) return;
     if (k !== 'buscar') searchWait.delete(chat);
     return botReply(chat, k, mine);
+  }
+  if (data.startsWith('sv:')) { // v263: encuesta
+    const [, cid, n] = data.split(':'), c = db.clients.find((x) => x.id === Number(cid)), k = Number(n);
+    if (!c || String(c.tgChat) !== String(chat) || !(k >= 1 && k <= 5)) return;
+    if (c.survey) return tg('sendMessage', { chat_id: chat, text: '🙏 Ya nos diste tu opinión. ¡Gracias!' }).catch(() => {});
+    await lock(async () => { c.survey = { n: k, at: new Date().toISOString() }; addLog('aviso', c, `Encuesta: ${k} ${k === 1 ? 'estrella' : 'estrellas'}`, null); saveDb(); });
+    if (k <= 2) {
+      const ow = db.users.find((u) => u.id === c.ownerId);
+      const txt = `😟 ${c.panelName} (${c.embyName}) ha puesto ${k} ${k === 1 ? 'estrella' : 'estrellas'} en la encuesta.\n\nEscríbele pronto para saber qué le pasa, antes de que se vaya.`;
+      notifyStaff('servers', txt);
+      if (ow && ow.role !== 'super') for (const ch of userChats(ow)) tg('sendMessage', { chat_id: ch, text: txt }).catch(() => {});
+    }
+    return tg('sendMessage', { chat_id: chat, text: k >= 4 ? '🥰 ¡Muchas gracias! Nos alegra mucho que te guste.\n\n🎁 Si se lo recomiendas a un amigo, tenemos premio para los dos: /invitar' : k === 3 ? '🙏 ¡Gracias! Si hay algo que podamos mejorar, cuéntanoslo aquí mismo o en /ayuda.' : '😔 Sentimos que no vaya bien. Ya hemos avisado para que te escriban y lo arreglemos contigo.' }).catch(() => {});
+  }
+  if (data.startsWith('wb:')) { // v263: «quiero volver» desde el mensaje de recuperación
+    const c = db.clients.find((x) => x.id === Number(data.slice(3)));
+    if (!c || String(c.tgChat) !== String(chat)) return;
+    if (!c.wantsBack) {
+      await lock(async () => { c.wantsBack = new Date().toISOString(); addLog('aviso', c, 'Quiere volver (pulsó el botón del mensaje de recuperación)', null); saveDb(); });
+      const ow = db.users.find((u) => u.id === c.ownerId);
+      const txt = `🙋 ${c.panelName} (${c.embyName}) quiere volver.\n\nPulsó «Quiero volver» en el mensaje de recuperación. Escríbele y renuévale la cuenta.`;
+      for (const u of db.users.filter((x) => x.role === 'super' || (ow && x.id === ow.id))) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt }).catch(() => {});
+    }
+    return tg('sendMessage', { chat_id: chat, text: '🙌 ¡Genial! Ya hemos avisado y te escribimos enseguida para dejártela lista.' }).catch(() => {});
   }
   if (data.startsWith('mc:')) { // el cliente dice desde el recordatorio que ya ha pagado
     const o = db.orders.find((x) => x.id === data.slice(3) && x.kind === 'client' && x.manual), c = o && db.clients.find((x) => x.id === o.clientId);
@@ -5591,6 +5770,7 @@ route('POST', '/api/transcode/titles/fixed', ['super', 'admin'], ({ me, body }) 
 }));
 /** Aviso de servidor cargado: demasiadas conversiones a la vez (una vez cada 30 minutos por servidor) */
 const tcLoadAt = new Map();
+const tcUnsure = new Map(); // v262: transcodes sin detalles en espera de volver a mirar
 const tcLoop = new Map(); // v257: servidor:cliente:aparato -> momentos en que se le cortó (para ver si está en bucle)
 const tcBusy = new Set(); // servidores que ahora mismo convierten demasiado: protección automática
 function tcLoadCheck(s, sess) {
@@ -5652,6 +5832,19 @@ async function monitor() {
             const video = ti ? ti.IsVideoDirect === false : method === 'Transcode';
             const any = video || method === 'Transcode' || (!!ti && ti.IsAudioDirect === false);
             if (!(cfg.transcode.onlyVideo ? video : any)) continue;
+            // v262: Emby dice «Transcode» pero no manda ningún detalle (casi siempre algo ligero o un momento al empezar).
+            // Se espera 1 minuto y se vuelve a mirar; si sigue igual, solo se apunta en gris y no se corta.
+            if (!ti && cfg.transcode.unsure !== 'cut') {
+              const itemId = (x.NowPlayingItem || {}).Id || '', uk = `u:${s.id}:${x.Id}:${itemId}`;
+              if (!tcUnsure.has(uk)) { tcUnsure.set(uk, now); continue; }
+              if (now - tcUnsure.get(uk) < 60000) continue;
+              const nk = `n:${s.id}:${x.Id}:${itemId}`;
+              if (recent.has(nk) && now - recent.get(nk) < 6 * 3600000) continue;
+              recent.set(nk, now);
+              events.push({ type: 'transcode', c, s, unsure: true, action: 'No se cortó: Emby no explica qué convierte', device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: 'other', causeText: 'Sin detalles', detail: tcDetail(x), sid: x.Id, dev: x.DeviceId || '',
+                reason: 'Emby dice que convierte, pero no dice qué' });
+              continue;
+            }
             // Aviso de calidad: solo si el vídeo PIERDE calidad de verdad, y como mucho cada «tipEvery» minutos por aparato
             let tipped = false;
             if (!cfg.transcode.stop && cfg.transcode.tip !== false && videoInfo(x).quality.level === 'likely') {
@@ -5699,7 +5892,7 @@ async function monitor() {
                 } else tcBot(c, cause.kind === 'subs' ? 'subs' : 'cut');
               } catch (e) { action = 'No se pudo detener'; }
             } else if (tipped) action = 'Aviso de calidad en su pantalla';
-            events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: cause.kind, causeText: cause.text, detail: tcDetail(x),
+            events.push({ type: 'transcode', c, s, action, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: cause.kind, causeText: cause.text, detail: tcDetail(x), sid: x.Id, dev: x.DeviceId || '',
               reason: cause.kind !== 'other' ? cause.text : (ti && Array.isArray(ti.TranscodeReasons) && ti.TranscodeReasons.length ? ti.TranscodeReasons.join(', ') : (video ? 'Vídeo transcodificado' : 'Audio transcodificado')) });
           }
         }
@@ -5749,25 +5942,26 @@ async function monitor() {
     }
     if (recheck) setTimeout(() => { monitor().catch(() => {}); }, cfg.sessions.grace * 1000 + 300);
     const prune = now - lastPrune > 3600000;
+    if (prune) for (const [k, t] of tcUnsure) if (now - t > 3600000) tcUnsure.delete(k);
     if (events.length || prune) {
       lastPrune = now;
       await lock(async () => {
         for (const e of events) {
-          const prev = db.alerts.filter((a) => a.type === e.type && a.clientId === e.c.id && now - Date.parse(a.ts) < 86400000).reduce((n, a) => n + (a.count || 1), 0);
+          const prev = e.unsure ? 0 : db.alerts.filter((a) => a.type === e.type && a.clientId === e.c.id && !a.unsure && now - Date.parse(a.ts) < 86400000).reduce((n, a) => n + (a.count || 1), 0);
           // v252: si el mismo cliente repite en menos de 30 minutos, no se crea otra alerta: se suma a la anterior (×2, ×3…)
-          const g = db.alerts.find((a) => a.type === e.type && a.clientId === e.c.id && now - Date.parse(a.ts) < 30 * 60000);
+          const g = db.alerts.find((a) => a.type === e.type && a.clientId === e.c.id && !a.unsure === !e.unsure && now - Date.parse(a.ts) < 30 * 60000);
           if (g) {
             db.alerts = db.alerts.filter((a) => a !== g);
             if (!g.outs && /^Aparato desconectado/.test(g.action || '')) g.outs = 1;
             Object.assign(g, { count: (g.count || 1) + 1, first: g.first || g.ts, ts: new Date().toISOString(), read: false, level: prev >= 2 ? 'critica' : g.level,
-              device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, serverId: e.s.id, server: e.s.name, cause: e.cause || g.cause, detail: e.detail || g.detail });
+              device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, serverId: e.s.id, server: e.s.name, cause: e.cause || g.cause, detail: e.detail || g.detail, sid: e.sid || g.sid, dev: e.dev || g.dev });
             if (/^Aparato desconectado/.test(e.action || '')) g.outs = (g.outs || 0) + 1; // v257: que no se pierda al agruparse
             db.alerts.unshift(g);
             continue;
           }
           db.alerts.unshift({ id: newId(), ts: new Date().toISOString(), type: e.type, level: prev >= 2 ? 'critica' : 'aviso', read: false,
             clientId: e.c.id, client: e.c.panelName, emby: e.c.embyName, ownerId: e.c.ownerId, serverId: e.s.id, server: e.s.name,
-            device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, ...(e.cause ? { cause: e.cause } : {}), ...(e.detail ? { detail: e.detail } : {}) });
+            device: e.device, app: e.app, item: e.item, reason: e.reason, action: e.action, ...(e.cause ? { cause: e.cause } : {}), ...(e.detail ? { detail: e.detail } : {}), ...(e.unsure ? { unsure: true } : {}), ...(e.sid ? { sid: e.sid, dev: e.dev } : {}) });
         }
         const keep = { transcode: cfg.transcode.retention, sesiones: cfg.sessions.retention };
         const before = db.alerts.length;
@@ -5780,7 +5974,7 @@ async function monitor() {
 }
 route('GET', '/api/alerts', '*', ({ me }) => {
   const vis = visibleOwners(me);
-  return { alerts: db.alerts.filter((a) => !vis || vis.has(a.ownerId)).slice(0, 5000), config: db.settings.alerts };
+  return { alerts: db.alerts.filter((a) => !vis || vis.has(a.ownerId)).slice(0, 5000), config: isStaff(me) ? db.settings.alerts : resellerSettings().alerts };
 });
 route('PUT', '/api/alerts/config', STAFF, ({ me, body }) => lock(async () => {
   const cur = db.settings.alerts;
@@ -5798,6 +5992,7 @@ route('PUT', '/api/alerts/config', STAFF, ({ me, body }) => lock(async () => {
     if (k === 'transcode' && Array.isArray(b.strict)) cur[k].strict = b.strict.map(Number).filter((id) => db.servers.some((x) => x.id === id));
     if (k === 'transcode' && b.cleanOnUp !== undefined) cur[k].cleanOnUp = !!b.cleanOnUp;
     if (k === 'transcode' && b.loopOut !== undefined) cur[k].loopOut = !!b.loopOut;
+    if (k === 'transcode' && ['wait', 'cut'].includes(b.unsure)) cur[k].unsure = b.unsure;
     if (k === 'transcode' && b.loadLimit !== undefined) { const n = Number(b.loadLimit); if ([0, 3, 5, 8, 10, 15].includes(n)) cur[k].loadLimit = n; }
     if (k === 'transcode' && b.webGrace !== undefined) { const n = Number(b.webGrace); if ([0, 2, 5, 10, 15, 30].includes(n)) cur[k].webGrace = n; }
     if (k === 'transcode' && b.tipEvery !== undefined) { const n = Number(b.tipEvery); if (Number.isInteger(n) && n >= 5 && n <= 1440) cur[k].tipEvery = n; }
@@ -5812,6 +6007,22 @@ route('PUT', '/api/alerts/config', STAFF, ({ me, body }) => lock(async () => {
   saveDb();
   return { ok: true };
 }));
+/** v262: qué está viendo AHORA el cliente de una alerta (para cortar, mandar un mensaje o un aviso desde la propia tarjeta) */
+route('GET', '/api/alerts/:id/live', '*', async ({ me, params }) => {
+  const a = db.alerts.find((x) => x.id === Number(params.id));
+  if (!a) throw new HttpError(404, 'Esa alerta ya no existe.');
+  const c = clientFor(me, a.clientId);
+  const s = serverById(c.serverId);
+  let list;
+  try { list = await emby(s, 'GET', '/Sessions'); } catch { throw new HttpError(502, `No se pudo consultar ${s.name}.`); }
+  const sessions = (list || []).filter((x) => x.UserId === c.embyId && x.NowPlayingItem).map((x) => {
+    const it = x.NowPlayingItem, caps = sessionCaps(x), ti = x.TranscodingInfo;
+    return { serverId: s.id, id: String(x.Id), itemId: String(it.Id || ''), client: c.panelName, user: x.UserName || '', device: x.DeviceName || '', app: x.Client || '', title: sessionTitle(x),
+      same: !!(a.dev && x.DeviceId === a.dev), remote: x.SupportsRemoteControl !== false, canMsg: caps.canMsg, paused: !!(x.PlayState || {}).IsPaused,
+      converting: ti ? ti.IsVideoDirect === false ? 'video' : ti.IsAudioDirect === false ? 'audio' : '' : ((x.PlayState || {}).PlayMethod === 'Transcode' ? 'unknown' : ''), expires: c.expires || '', screens: c.screens || 0 };
+  }).sort((p, q) => q.same - p.same);
+  return { sessions, server: s.name };
+});
 route('POST', '/api/alerts/read', '*', ({ me, body }) => lock(async () => {
   const vis = visibleOwners(me);
   const ids = Array.isArray(body.ids) ? new Set(body.ids.map(Number)) : null;
@@ -6014,6 +6225,7 @@ async function watchServers() {
     if (ok) {
       if (h.down) {
         const mins = Math.max(1, Math.round((Date.now() - Date.parse(h.since)) / 60000));
+        if (h.posted) { h.posted = false; growPost(outageText(s, true, mins)).catch((e) => console.error('Aviso al grupo:', e.message)); }
         h.lastUp = new Date().toISOString(); h.lastMins = mins;
         notifyStaff('servers', `🟢 El servidor «${s.name}» vuelve a funcionar.\nEstuvo caído unos ${mins < 60 ? (mins === 1 ? '1 minuto' : mins + ' minutos') : Math.round(mins / 6) / 10 + ' horas'}.\n${whenTxt()}`);
         lock(async () => { addLog('servidor', null, `Servidor ${s.name} recuperado (caído ${mins} min)`, null); saveDb(); }).catch(() => {});
@@ -6024,6 +6236,11 @@ async function watchServers() {
     } else {
       h.fails++;
       if (h.fails === 1) h.since = new Date().toISOString();
+      // v263: si sigue caído los minutos elegidos y tiene clientes activos, se avisa en el grupo de clientes (una vez)
+      { const o = db.settings.grow.outage;
+        if (o.on && o.chat && h.down && !h.posted && h.since && Date.now() - Date.parse(h.since) >= (Number(o.delay) || 3) * 60000 && db.clients.some((c) => c.serverId === s.id && c.status === 'active')) {
+          h.posted = true; growPost(outageText(s, false)).catch((e) => { h.posted = false; console.error('Aviso al grupo:', e.message); });
+        } }
       if (h.fails === 2 && !h.down) { // dos fallos seguidos: no es un corte de un segundo
         h.down = true;
         notifyStaff('servers', `🔴 El servidor «${s.name}» no responde.\n${why}\n${whenTxt()}\n\nTus clientes de ese servidor no pueden ver nada. Te aviso cuando vuelva.`);
@@ -6033,6 +6250,46 @@ async function watchServers() {
     health.set(s.id, h);
   }
 }
+/* ---------- v263: pantalla «Crecer» ---------- */
+route('GET', '/api/grow', SUPER, () => {
+  const g = db.settings.grow, t = today(), now = Date.now();
+  const sent = (k) => db.clients.filter((c) => (c.tgSent || []).some((x) => x.endsWith(':' + k))).length;
+  const back = db.clients.filter((c) => (c.tgSent || []).some((k) => /:w\d+$/.test(k) && k.split(':')[0] !== c.expires) && c.status === 'active').length;
+  const want = db.clients.filter((c) => c.wantsBack && c.status !== 'active').map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, at: c.wantsBack, whatsapp: c.whatsapp || '', telegram: c.telegram || '' })).slice(0, 30);
+  const votes = db.clients.filter((c) => c.survey);
+  const dist = [1, 2, 3, 4, 5].map((k) => votes.filter((c) => c.survey.n === k).length);
+  const low = votes.filter((c) => c.survey.n <= 2).sort((a, b) => b.survey.at.localeCompare(a.survey.at)).slice(0, 20).map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, n: c.survey.n, at: c.survey.at, whatsapp: c.whatsapp || '', telegram: c.telegram || '' }));
+  const asked = db.clients.filter((c) => c.surveyAsked).length;
+  const tgLinked = db.clients.filter((c) => c.tgChat && !c.demo && c.status !== 'trash').length;
+  const rooms = db.servers.map((s) => ({ id: s.id, name: s.name, used: srvLoad(s), max: srvMax(s), off: !!s.off }));
+  const live = db.clients.filter((c) => !c.demo && c.status === 'active');
+  const sleepy = live.filter((c) => !c.seenAt || now - Date.parse(c.seenAt) > 7 * 86400000).length;
+  const expired = db.clients.filter((c) => !c.demo && (c.status === 'expired' || (c.status === 'trash' && c.trashReason === 'Sin renovar'))).length;
+  return { cfg: g, bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
+    tgLinked, rooms, sleepy, live: live.length, outage: growChat() };
+});
+route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
+  const g = db.settings.grow, b = body || {};
+  if (b.winback) { const w = b.winback; g.winback.on = !!w.on; g.winback.d7 = w.d7 !== false; g.winback.d30 = w.d30 !== false; if (typeof w.offer === 'string') g.winback.offer = w.offer.trim().slice(0, 300); }
+  if (b.weekly) { const w = b.weekly; g.weekly.on = !!w.on; if ([0, 1, 2, 3, 4, 5, 6].includes(Number(w.day))) g.weekly.day = Number(w.day); if (Number(w.hour) >= 8 && Number(w.hour) <= 22) g.weekly.hour = Number(w.hour); }
+  if (b.outage) { const o = b.outage; g.outage.on = !!o.on; if (typeof o.chat === 'string') g.outage.chat = o.chat.trim().slice(0, 200); g.outage.thread = Math.max(0, Math.min(1e9, Number(o.thread) || 0)); if ([1, 2, 3, 5, 10, 15].includes(Number(o.delay))) g.outage.delay = Number(o.delay); g.outage.name = o.name !== false; }
+  if (b.survey) { const v = b.survey; const was = g.survey.on; g.survey.on = !!v.on; if ([7, 15, 30, 60].includes(Number(v.days))) g.survey.days = Number(v.days); if (g.survey.on && (!was || !g.survey.since)) g.survey.since = today(); }
+  addLog('ajustes', null, 'Ajustes de «Crecer» cambiados', me);
+  saveDb();
+  return { ok: true };
+}));
+route('POST', '/api/grow/test-outage', SUPER, async ({ body }) => {
+  const prev = db.settings.grow.outage.chat;
+  if (typeof (body || {}).chat === 'string') db.settings.grow.outage.chat = body.chat.trim().slice(0, 200);
+  try { await growPost(`👋 Prueba de ${botName()}\n\nAquí avisaremos si algún servidor tiene problemas y cuando vuelva a funcionar.`); }
+  catch (e) { db.settings.grow.outage.chat = prev; throw new HttpError(400, /not found|chat not found/i.test(e.message) ? 'No encuentro ese grupo. Revisa el enlace y que el bot esté dentro.' : /not enough rights|administrator|forbidden/i.test(e.message) ? 'El bot no puede escribir ahí: hazlo administrador del grupo o canal.' : /thread/i.test(e.message) ? 'No encuentro ese tema del grupo. Revisa el enlace del tema.' : e.message); }
+  await lock(async () => saveDb());
+  return { ok: true, note: 'Mensaje de prueba enviado. Míralo en tu grupo.' };
+});
+route('POST', '/api/grow/weekly-now', SUPER, async () => {
+  const r = await weeklySend(true);
+  return { ok: true, sent: r.sent, text: r.text };
+});
 /* Plex: «Comprobar invitaciones» */
 route('POST', '/api/plex/check', '*', async ({ me }) => {
   await pxSyncAll();
@@ -7216,7 +7473,7 @@ route('POST', '/api/backup/download', SUPER, ({ me, body }) => {
     const f = path.join(BACKUP_DIR, body.name);
     if (!fs.existsSync(f)) throw new HttpError(404, 'Esa copia ya no existe.');
     json = fs.readFileSync(f, 'utf8');
-    try { const d = JSON.parse(json); openApiKeys(d.servers); json = JSON.stringify(d); } catch { /* se manda tal cual */ }
+    try { const d = JSON.parse(json); openApiKeys(d.servers); openPasswords(d.clients); json = JSON.stringify(d); } catch { /* se manda tal cual */ }
   } else json = JSON.stringify(db);
   const salt = crypto.randomBytes(16).toString('hex');
   const buf = encryptBackup(json, bkKey(pw, salt), salt);
@@ -7351,6 +7608,7 @@ route('POST', '/api/backup/restore', SUPER, ({ me, body, req }) => lock(async ()
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
   fs.writeFileSync(path.join(BACKUP_DIR, `antes-de-restaurar-${Date.now()}.json`), JSON.stringify(dbForDisk()));
   openApiKeys(data.servers);
+  openPasswords(data.clients);
   db = data; saveDb(); // se escribe ya con las API keys cifradas
   loadDb();
   sessions.clear();
@@ -10342,5 +10600,6 @@ server.listen(PORT, HOST, () => {
   setTimeout(usageLoop, 8000);
   const watchLoop = () => { (live() ? watchServers() : Promise.resolve()).catch((e) => console.error('Vigilancia de servidores:', e.message)).finally(() => setTimeout(watchLoop, Number(process.env.WATCH_MS) || 60000)); };
   setTimeout(watchLoop, 5000);
-  setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000); // mensajes que llegan al bot de Telegram
+  setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000);
+  setInterval(() => { if (live()) weeklySend(false).catch((e) => console.error('Resumen semanal:', e.message)); }, Number(process.env.WEEKLY_MS) || 10 * 60000); // mensajes que llegan al bot de Telegram
 });
