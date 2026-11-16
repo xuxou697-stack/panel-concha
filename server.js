@@ -2350,8 +2350,14 @@ function visibleOwners(me) {
   if (me.role === 'reseller') db.users.filter((u) => u.parentId === me.id).forEach((u) => ids.add(u.id));
   return ids;
 }
+/** v273: puede haber varios superadministradores (p. ej. el socio). El «dueño» es el primero que se creó:
+    solo él puede crear, cambiar o quitar a otros superadministradores, y nadie puede tocar al dueño. */
+function ownerUser() { return db.users.filter((u) => u.role === 'super').sort((a, b) => a.id - b.id)[0] || null; }
+const isOwner = (u) => !!u && u.role === 'super' && ownerUser() && ownerUser().id === u.id;
+const supers = () => db.users.filter((u) => u.role === 'super' && !u.disabled);
 function canManageUser(me, u) {
   if (u.id === me.id) return false;
+  if (u.role === 'super') return me.role === 'super' && isOwner(me) && !isOwner(u);
   if (me.role === 'super') return true;
   if (me.role === 'admin') {
     if (u.role === 'reseller' || u.role === 'sub') return true;
@@ -2461,7 +2467,7 @@ const pubUser = (u) => ({
   creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [], platforms: kindsOf(u),
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
   twoFa: !!(u.totp && u.totp.on), tgLinked: !!u.tgChat, home: u.home || '',
-  perms: permsOf(u), useCredits: u.role === 'admin' && !!u.useCredits, tech: !!u.tech, email: u.email || '', currency: u.currency || 'EUR', xtreme: u.xtreme || null,
+  perms: permsOf(u), owner: isOwner(u), useCredits: u.role === 'admin' && !!u.useCredits, tech: !!u.tech, email: u.email || '', currency: u.currency || 'EUR', xtreme: u.xtreme || null,
 });
 const CURRENCIES = ['EUR', 'USD', 'MXN', 'COP', 'ARS', 'CLP', 'PEN', 'GBP'];
 /** Datos propios de un administrador: permisos, creditos, etiqueta de tecnico, correo, moneda y enlace a otro panel */
@@ -3125,13 +3131,14 @@ async function telegramPoll() {
   if (!cfg.token || tgBusy) return;
   tgBusy = true;
   try {
-    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: 0, allowed_updates: ['message', 'callback_query'] });
+    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: 0, allowed_updates: ['message', 'callback_query', 'my_chat_member'] });
     if (!ups.length) return;
     const jobs = []; // respuestas del bot que consultan Emby: se hacen después, sin bloquear el panel
     await lock(async () => {
       for (const u of ups) {
         cfg.offset = u.update_id + 1;
         if (u.callback_query) { const cq = u.callback_query; jobs.push(() => botCallback(cq)); continue; }
+        if (u.my_chat_member) { feedSeeChat(u.my_chat_member); continue; } // v274: el bot entra (o sale) de un canal o grupo
         const msg = u.message;
         if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') continue;
         const chat = msg.chat.id, text = msg.text.trim();
@@ -3160,7 +3167,7 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
         }
         // Ha tocado «Buscar»: lo que escriba es el título que busca (solo buscar: no se apunta ninguna petición)
         const sw = searchWait.get(chat);
-        if (mine.length && !cmd && sw && Date.now() - sw < 15 * 60000 && !/^[uc]\d+_[0-9a-f]{10}$/i.test(text)) {
+        if (mine.length && botAlive(mine) && !cmd && sw && Date.now() - sw < 15 * 60000 && !/^[uc]\d+_[0-9a-f]{10}$/i.test(text)) {
           if (botTooFast(chat)) continue;
           searchWait.set(chat, Date.now());
           jobs.push(() => botSearch(chat, mine, text));
@@ -3331,7 +3338,7 @@ async function telegramNotices() {
     } }
   for (const [c, k] of due.slice(0, 25)) {
     try {
-      await tg('sendMessage', k === 'r' ? rescueTg(c) : k[0] === 'w' ? winbackTg(c, +k.slice(1)) : expiringTg(c));
+      await tg('sendMessage', k === 'r' ? rescueTg(c) : k[0] === 'w' ? await winbackTg(c, +k.slice(1)) : expiringTg(c));
       c.tgSent = [...(c.tgSent || []), c.expires + ':' + k].slice(-12);
       if (k !== 'r' && k[0] !== 'w') { c.tgNoticeFor = c.expires; c.noticeFor = c.expires; }
       addLog('aviso', c, k[0] === 'w' ? `Mensaje para recuperarle enviado por Telegram (${k.slice(1)} días después de caducar)` : k === 'r' ? 'Aviso de rescate enviado por Telegram (cuenta caducada)' : `Aviso de vencimiento enviado por Telegram (${k === '0' ? 'el mismo día' : k === '1' ? '1 día antes' : k + ' días antes'})`, null);
@@ -3345,12 +3352,62 @@ async function telegramNotices() {
 }
 /* ---------- v263: Crecer ---------- */
 /** Mensaje para recuperar a un cliente que no renovó (a los 7 o 30 días) */
-function winbackTg(c, d) {
+/** v280: lo que ha llegado al servidor de un cliente desde que caducó (solo de lo que podría ver con su cuenta).
+   Se guarda una hora por servidor para no preguntar al servidor por cada cliente. */
+const newCache = new Map();
+async function newItemsOf(s) {
+  const hit = newCache.get(s.id);
+  if (hit && Date.now() - hit.at < 3600000) return hit.items;
+  const items = [];
+  for (const lib of await feedLibs(s)) {
+    if (s.kind === 'plex') {
+      const mc = pxMC(await pxLocal(s, `/library/sections/${encodeURIComponent(lib.id)}/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=300`));
+      for (const m of [].concat(mc.Metadata || [])) {
+        const at = Number(m.addedAt) * 1000, ids = [lib.id, lib.guid];
+        if (m.type === 'movie') items.push({ t: 'm', name: m.title, year: m.year, at, ids });
+        else if (m.type === 'episode') items.push({ t: 's', name: m.grandparentTitle, key: String(m.grandparentRatingKey || m.grandparentTitle), at, ids });
+        else if (m.type === 'season') items.push({ t: 's', name: m.parentTitle, key: String(m.parentRatingKey || m.parentTitle), at, ids });
+        else if (m.type === 'show') items.push({ t: 's', name: m.title, key: String(m.ratingKey), at, ids });
+      }
+    } else {
+      const r = await emby(s, 'GET', `/Items?ParentId=${encodeURIComponent(lib.id)}&Recursive=true&IncludeItemTypes=Movie,Episode&SortBy=DateCreated&SortOrder=Descending&Limit=300&Fields=DateCreated,ProductionYear,SeriesName,SeriesId`);
+      for (const it of (r && r.Items) || []) {
+        const at = Date.parse(it.DateCreated || 0) || 0, ids = [lib.id, lib.guid];
+        if (it.Type === 'Movie') items.push({ t: 'm', name: it.Name, year: it.ProductionYear, at, ids });
+        else if (it.Type === 'Episode') items.push({ t: 's', name: it.SeriesName, key: String(it.SeriesId || it.SeriesName), at, ids });
+      }
+    }
+  }
+  newCache.set(s.id, { at: Date.now(), items });
+  return items;
+}
+async function newSince(c) {
+  try {
+    const s = db.servers.find((x) => x.id === c.serverId);
+    if (!s || s.off || s.kind === 'iptv' || !c.expires) return null;
+    const since = Date.parse(c.expires + 'T00:00:00') || 0, okLib = new Map();
+    const can = (ids) => { const k = ids.join('|'); if (!okLib.has(k)) okLib.set(k, feedCanSee(c, ids)); return okLib.get(k); };
+    const mine = (await newItemsOf(s)).filter((x) => x.at > since && x.name && can(x.ids));
+    const movies = [], series = new Map();
+    for (const x of mine.sort((a, b) => b.at - a.at)) { if (x.t === 'm') { if (!movies.some((m) => m.name === x.name)) movies.push(x); } else if (!series.has(x.key)) series.set(x.key, x); }
+    return { movies, series: [...series.values()] };
+  } catch { return null; }
+}
+function newSinceText(n) {
+  if (!n || (!n.movies.length && !n.series.length)) return '';
+  const pm = n.movies.length, ps = n.series.length;
+  const what = [pm && `${pm} ${pm === 1 ? 'peli' : 'pelis'}`, ps && `${ps} ${ps === 1 ? 'serie' : 'series'}`].filter(Boolean).join(' y ');
+  const ex = [...n.movies.slice(0, 2).map((x) => x.name), ...n.series.slice(0, 2).map((x) => x.name), ...n.movies.slice(2, 4).map((x) => x.name)].slice(0, 4);
+  const many = pm + ps > 1;
+  return `🍿 Desde que te fuiste ${many ? 'han llegado' : 'ha llegado'} ${what} ${many ? 'nuevas' : 'nueva'}${ex.length ? `, como:\n${ex.map((x) => '• ' + x).join('\n')}` : '.'}`;
+}
+async function winbackTg(c, d) {
   const wb = db.settings.grow.winback, nm = botName();
+  const fresh = newSinceText(await newSince(c));
   const offer = String(wb.offer || '').trim();
   const head = d >= 30 ? `💌 Hola ${c.panelName}, ¡hace un mes que no te vemos por ${nm}!` : `👋 Hola ${c.panelName}, te echamos de menos en ${nm}`;
   const body = d >= 30 ? 'Seguimos añadiendo pelis y series cada semana y tu usuario te sigue esperando.' : `Tu cuenta (${c.embyName}) caducó hace unos días y ya no puedes ver nada.`;
-  const text = `${head}\n\n${body}${offer ? `\n\n🎁 ${offer}` : ''}\n\n👉 Si quieres volver, se activa al momento y lo tienes todo como lo dejaste.`;
+  const text = `${head}\n\n${body}${fresh ? `\n\n${fresh}` : ''}${offer ? `\n\n🎁 ${offer}` : ''}\n\n👉 Si quieres volver, se activa al momento y lo tienes todo como lo dejaste.`;
   if (c.status !== 'trash' && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Volver ahora', url: cpLink(c) }], [{ text: '🙋 Quiero volver, escríbeme', callback_data: 'wb:' + c.id }]] } };
   return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🙋 Quiero volver, escríbeme', callback_data: 'wb:' + c.id }]] } };
 }
@@ -3772,7 +3829,7 @@ async function botWelcome(chat, c, kb) {
   if (png) { try { await tgPhoto(chat, png, cap, kb, true, 'image/png', TG_PARTY); sent = true; } catch { try { await tgPhoto(chat, png, cap, kb, true); sent = true; } catch (e) { console.error('Bot (bienvenida):', e.message); } } }
   if (!sent) await tg('sendMessage', { ...plain, message_effect_id: TG_PARTY }).catch(() => tg('sendMessage', plain)).catch(() => {});
   const list = db.clients.filter((x) => x.tgChat === chat);
-  return list.length ? botMenu(chat, list) : null;
+  return list.length ? (botAlive(list) ? botMenu(chat, list) : botExpired(chat, list)) : null;
 }
 /** Manda una foto (bytes) por Telegram */
 async function tgPhoto(chat, buf, caption, kb, html, type = 'image/png', effect) {
@@ -3799,7 +3856,11 @@ function botMenuKb(list) {
   const pay = c && !c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '💳 Renovar', url: cpLink(c) } : { text: '💳 Renovar', callback_data: 'bm:renovar' };
   const b = (t, k) => ({ text: t, callback_data: 'bm:' + k });
   return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar peli o serie', 'buscar')], [b('🟢 ¿Funciona?', 'servidor'), b('🛠️ Problemas', 'problemas')],
-    [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis aparatos', 'aparatos'), b('💶 Precios', 'precios')], [b('🎁 Invita a un amigo', 'invitar'), b('💬 Ayuda', 'ayuda')]] };
+    [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis aparatos', 'aparatos'), b('💶 Precios', 'precios')], [b('🎁 Invita a un amigo', 'invitar'), b('💬 Ayuda', 'ayuda')],
+    ...(() => { const sv = c && db.servers.find((x) => x.id === c.serverId), f = (sv && sv.feed) || {}, row = [];
+      if (f.botOn && c && !c.demo) row.push(c.feedSub ? { text: '🔕 Dejar de avisarme', callback_data: 'nv:off' } : { text: '🔔 Avisarme de novedades', callback_data: 'nv:on' });
+      if (f.on && f.invite) row.push({ text: '🍿 Canal de novedades', url: f.invite });
+      return row.length ? [row] : []; })()] };
 }
 /** Manda la tarjeta en imagen; si algo falla, el mismo texto de siempre */
 async function sendCard(chat, c, caption, kb, html) {
@@ -3973,7 +4034,37 @@ function botContact() {
   const sp = db.settings.support || {}, wa = String(sp.whatsapp || '').replace(/\D/g, ''), tgu = String(sp.telegram || '').replace(/^@/, '');
   return [wa ? `🟢 WhatsApp: https://wa.me/${wa}` : '', /^[A-Za-z0-9_]{3,40}$/.test(tgu) ? `✈️ Telegram: @${tgu}` : '', sp.email ? `✉️ ${sp.email}` : ''].filter(Boolean).join('\n');
 }
+/** v279: el bot solo funciona del todo con una cuenta activa. Caducada, en la papelera o en pausa: solo puede renovar o pagar */
+const botAlive = (list) => list.some((c) => c.status === 'active' && !c.off);
+async function botExpired(chat, list) {
+  const c = list.find((x) => !x.demo) || list[0], paused = list.some((x) => x.status === 'active' && x.off);
+  const pay = c && !c.demo && c.status !== 'trash' && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '💳 Renovar ahora', url: cpLink(c) } : { text: '💳 Cómo renovar', callback_data: 'bm:renovar' };
+  const text = paused
+    ? `⏸️ Tu cuenta está en pausa${c && c.panelName ? ', ' + String(c.panelName).split(/\s+/)[0] : ''}.\n\nPara volver a usarla y a usar el bot, solo tienes que ponerte al día con el pago. 👇`
+    : c && c.demo ? `⏳ Tu prueba de ${botName()} ha terminado.\n\n¿Te ha gustado? Contrata tu cuenta y sigue viendo todo. 👇`
+      : `⛔ Tu cuenta de ${botName()} ha caducado.\n\nPara volver a ver tus pelis y series, y usar el bot, renuévala. Se activa al momento y lo tienes todo como lo dejaste. 👇`;
+  // v280: fecha en que caducó y lo que cuesta renovar (si hay precios puestos)
+  const info = [];
+  if (c && c.expires && !paused) info.push(`📅 ${c.demo ? 'Terminó' : 'Caducó'} el ${new Date(c.expires + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`);
+  const pr = c ? expPrice(c) : '';
+  if (pr) info.push(`💶 ${pr}`);
+  const kb = [[pay], [{ text: '💶 Precios', callback_data: 'bm:precios' }]];
+  if (c && !c.demo) kb.push([{ text: '✅ Ya he pagado', callback_data: 'yp:' + c.id }]);
+  return tg('sendMessage', { chat_id: chat, text: text + (info.length ? '\n\n' + info.join('\n') : ''), reply_markup: { inline_keyboard: kb } });
+}
+/** v280: «Renovar 1 mes (1 pantalla): 10,00 €», con el precio más corto que tenga su plan */
+function expPrice(c) {
+  try {
+    const ctx = cpCtx(c), o = db.users.find((u) => u.id === c.ownerId);
+    const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {}, cur = (db.settings.currency || 'EUR').toUpperCase();
+    const sc = c.screens || 1, m = [1, 3, 6, 12].find((x) => Number(pr[`${x}-${sc}`]) >= 0.5);
+    if (!m) return '';
+    const money = Number(pr[`${m}-${sc}`]).toLocaleString('es-ES', { style: 'currency', currency: cur });
+    return `Renovar ${m === 12 ? '1 año' : m === 1 ? '1 mes' : m + ' meses'}${sc > 1 ? ` (${sc} pantallas)` : ''}: ${money}`;
+  } catch { return ''; }
+}
 async function botReply(chat, kind, list) {
+  if (list.length && !botAlive(list) && !['renovar', 'precios'].includes(kind)) return botExpired(chat, list);
   const send = (text, kb, html) => tg('sendMessage', { chat_id: chat, text, disable_web_page_preview: true, ...(html ? { parse_mode: 'HTML' } : {}), ...(kb ? { reply_markup: kb } : {}) });
   if (list.length && kind === 'menu') return botMenu(chat, list);
   if (list.length && kind === 'estado') return botAccount(chat, list);
@@ -4051,6 +4142,8 @@ async function botCallback(cq) {
   const chat = cq.message && cq.message.chat && cq.message.chat.id, data = String(cq.data || '');
   await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   if (!chat) return;
+  // v279: con la cuenta caducada o en pausa, el bot solo deja renovar o pagar
+  if (/^(dv|gd|ga|pb|pt|nv):/.test(data)) { const mine0 = db.clients.filter((c) => c.tgChat === chat); if (mine0.length && !botAlive(mine0)) { searchWait.delete(chat); return botExpired(chat, mine0); } }
   if (data.startsWith('bm:')) { // botones del menú del cliente
     const k = data.slice(3), mine = db.clients.filter((c) => c.tgChat === chat);
     if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda'].includes(k) || !mine.length || botTooFast(chat)) return;
@@ -4069,6 +4162,27 @@ async function botCallback(cq) {
       if (ow && ow.role !== 'super') for (const ch of userChats(ow)) tg('sendMessage', { chat_id: ch, text: txt }).catch(() => {});
     }
     return tg('sendMessage', { chat_id: chat, text: k >= 4 ? '🥰 ¡Muchas gracias! Nos alegra mucho que te guste.\n\n🎁 Si se lo recomiendas a un amigo, tenemos premio para los dos: /invitar' : k === 3 ? '🙏 ¡Gracias! Si hay algo que podamos mejorar, cuéntanoslo aquí mismo o en /ayuda.' : '😔 Sentimos que no vaya bien. Ya hemos avisado para que te escriban y lo arreglemos contigo.' }).catch(() => {});
+  }
+  if (data.startsWith('nv:')) { // v275: el cliente se apunta (o se borra) a las novedades por el bot
+    const on = data === 'nv:on', mine = db.clients.filter((c) => String(c.tgChat) === String(chat) && !c.demo);
+    if (!mine.length) return;
+    await lock(async () => { for (const c of mine) c.feedSub = on; addLog('aviso', mine[0], on ? 'Se apuntó a las novedades por el bot' : 'Se borró de las novedades del bot', null); saveDb(); });
+    const sv = db.servers.find((x) => x.id === mine[0].serverId), f = (sv && sv.feed) || {};
+    return tg('sendMessage', { chat_id: chat, text: on ? `🔔 ¡Hecho! Te avisaré de las pelis y series nuevas${f.botMode === 'now' ? ' en cuanto lleguen' : ` en un resumen cada día a las ${f.botHour ?? 20}:00`}.\n\nSi algún día no quieres, toca «🔕 Dejar de avisarme» en el menú.` : '🔕 Vale, ya no te avisaré de las novedades.',
+      reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {});
+  }
+  if (data.startsWith('yp:')) { // v280: «Ya he pagado» desde la pantalla de cuenta caducada
+    const c = db.clients.find((x) => x.id === Number(data.slice(3)));
+    if (!c || String(c.tgChat) !== String(chat)) return;
+    if (c.status === 'active' && !c.off) return tg('sendMessage', { chat_id: chat, text: '✅ ¡Tu cuenta ya está activa! Toca /menu para usar el bot.' }).catch(() => {});
+    if (c.paidClaim !== today()) {
+      await lock(async () => { c.paidClaim = today(); addLog('cobro', c, `${c.panelName} dice por el bot que ya ha pagado (cuenta caducada). Compruébalo y renuévale`, null); saveDb(); });
+      const ow = db.users.find((u) => u.id === c.ownerId), s = db.servers.find((x) => x.id === c.serverId);
+      const txt = `💶 ${c.panelName} (${c.embyName}) dice que ya ha pagado.\n\nLo ha pulsado en el bot con la cuenta caducada desde el ${new Date(c.expires + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}${s ? ` · ${s.name}` : ''}.\nCompruébalo y, si está bien, renuévale la cuenta.`;
+      const to = db.users.filter((x) => !x.disabled && (x.role === 'super' || (ow && x.id === ow.id && VEND_ROLES.includes(ow.role))));
+      for (const u of to) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt }).catch(() => {});
+    }
+    return tg('sendMessage', { chat_id: chat, text: '🙌 ¡Gracias! Ya lo hemos avisado. Lo comprobamos y te activamos la cuenta enseguida. Te avisamos por aquí.' }).catch(() => {});
   }
   if (data.startsWith('wb:')) { // v263: «quiero volver» desde el mensaje de recuperación
     const c = db.clients.find((x) => x.id === Number(data.slice(3)));
@@ -4093,7 +4207,7 @@ async function botCallback(cq) {
   }
   if (data.startsWith('gx:')) { // gasto de hoy: quién lo paga y cómo se apunta en Socios
     const [, eid, mid, how] = data.split(':'); if (!how) return;
-    const sup = db.users.find((u) => u.role === 'super'); if (!sup || !userChats(sup).map(String).includes(String(chat))) return;
+    const sup = supers().find((u) => userChats(u).map(String).includes(String(chat))); if (!sup) return;
     const e = expList().find((x) => x.id === Number(eid)); if (!e) return tg('sendMessage', { chat_id: chat, text: 'Ese gasto ya no existe.' }).catch(() => {});
     if (e.done || (e.askMsgs || []).length === 0 && diffDays(e.due, today()) > 0) return tg('sendMessage', { chat_id: chat, text: 'Ese pago ya estaba apuntado ✅' }).catch(() => {});
     let r;
@@ -4104,7 +4218,7 @@ Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como
   }
   if (data.startsWith('sk:')) { // «¿Quién lo ha cobrado?» de Socios
     const [, eid, mid] = data.split(':'); if (!mid) return;
-    const sup = db.users.find((u) => u.role === 'super'); if (!sup || !userChats(sup).map(String).includes(String(chat)) || !socOn()) return;
+    const sup = supers().find((u) => userChats(u).map(String).includes(String(chat))); if (!sup || !socOn()) return;
     const x = socCfg().entries.find((e) => e.id === eid); if (!x || !socMember(mid)) return tg('sendMessage', { chat_id: chat, text: 'Ese cobro ya no está en Socios.' }).catch(() => {});
     const before = x.ask ? '' : x.who;
     await lock(async () => { socSetWho(x, mid, 'Telegram'); saveDb(); });
@@ -5378,7 +5492,7 @@ route('POST', '/api/run', STAFF, async () => { await lock(lifecycle); await lock
 /* Usuarios del panel */
 route('POST', '/api/users', ['super', 'admin', 'reseller'], ({ me, body }) => lock(async () => {
   const role = me.role === 'reseller' ? 'sub' : body.role;
-  const allowed = me.role === 'super' ? ['admin', 'reseller', 'sub']
+  const allowed = me.role === 'super' ? [...(isOwner(me) ? ['super'] : []), 'admin', 'reseller', 'sub']
     : me.role === 'admin' ? [...(can(me, 'resellers') ? ['reseller', 'sub'] : []), ...(can(me, 'admins') ? ['admin'] : [])] : ['sub'];
   if (!allowed.includes(role)) throw new HttpError(403, 'No puedes crear usuarios de ese nivel.');
   const username = readUsername(body.username);
@@ -5466,6 +5580,9 @@ route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, bo
     if (parent.role !== 'reseller') throw new HttpError(400, 'Un subreseller solo puede depender de un reseller.');
     u.parentId = parent.id;
   }
+  // v273: el dueño puede subir a un administrador a superadministrador (mismo poder que él) o bajarlo
+  if (isOwner(me) && body.role === 'super' && u.role === 'admin') { u.role = 'super'; delete u.perms; delete u.useCredits; dropSessions(u.id); addLog('usuario', null, `${u.name} (${u.username}) ahora es superadministrador`, me); }
+  else if (isOwner(me) && body.role === 'admin' && u.role === 'super' && !isOwner(u)) { u.role = 'admin'; u.perms = Object.fromEntries(PERMS.map((k) => [k, true])); dropSessions(u.id); addLog('usuario', null, `${u.name} (${u.username}) vuelve a ser administrador`, me); }
   readVendorOptions(me, body, u);
   const before = u.role === 'admin' ? JSON.stringify([permsOf(u), !!u.useCredits]) : '';
   readAdminOptions(me, body, u);
@@ -6256,6 +6373,371 @@ async function watchServers() {
     health.set(s.id, h);
   }
 }
+
+/* ---------- v274: Canal de contenidos: cada servidor publica en su canal de Telegram lo que se añade (pelis, series, capítulos) ---------- */
+/** Canales y grupos donde han hecho administrador al bot (para elegirlos en el asistente sin copiar nada) */
+function feedSeeChat(m) {
+  const ch = m.chat || {}, st = (m.new_chat_member || {}).status;
+  if (!['channel', 'supergroup', 'group'].includes(ch.type)) return;
+  if (!Array.isArray(db.feedChats)) db.feedChats = [];
+  db.feedChats = db.feedChats.filter((x) => String(x.id) !== String(ch.id));
+  if (st === 'administrator') db.feedChats.unshift({ id: ch.id, title: ch.title || '', type: ch.type, user: ch.username || '', canPost: ch.type !== 'channel' || (m.new_chat_member || {}).can_post_messages !== false, at: new Date().toISOString() });
+  db.feedChats = db.feedChats.slice(0, 30);
+  saveDb();
+}
+function feedOf(s) { if (!s.feed) s.feed = { on: false, chat: '', title: '', since: '', sent: [], posts: 0, lastPost: '', error: '' }; return s.feed; }
+/** Bibliotecas del servidor para el canal (id de carpeta para buscar dentro, y su nombre) */
+async function feedLibs(s) {
+  const raw = await emby(s, 'GET', '/Library/VirtualFolders');
+  const list = Array.isArray(raw) ? raw : (raw && raw.Items) || [];
+  return list.filter((f) => !/^(music|livetv|playlists|books|photos)$/i.test(f.CollectionType || '')).map((f) => ({ id: String(f.ItemId || f.Id || ''), guid: String(f.Guid || f.ItemId || f.Id || ''), name: f.Name || 'Biblioteca', type: f.CollectionType || '' })).filter((f) => f.id);
+}
+/** Lo nuevo de un servidor desde «since» (pelis y capítulos; los capítulos se juntan por serie). Solo de las bibliotecas elegidas */
+async function feedNew(s, f) {
+  const since = Date.parse(f.since || 0) || 0, settle = Date.now() - 10 * 60000, sent = new Set(f.sent || []), out = [];
+  const libs = (await feedLibs(s)).filter((l) => !(f.libs || []).length || f.libs.map(String).includes(l.id));
+  const seen = new Set();
+  for (const lib of libs) {
+    if (s.kind === 'plex') {
+      const mc = pxMC(await pxLocal(s, `/library/sections/${encodeURIComponent(lib.id)}/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=40`));
+      for (const m of [].concat(mc.Metadata || [])) {
+        const at = Number(m.addedAt) * 1000, id = String(m.ratingKey);
+        if (!(at > since && at < settle) || sent.has(id) || seen.has(id)) continue; seen.add(id);
+        const people = (k) => [].concat(m[k] || []).map((x) => x.tag).filter(Boolean);
+        if (m.type === 'movie') out.push({ id, type: 'Movie', lib: lib.name, libIds: [lib.id, lib.guid], name: m.title, year: m.year, overview: m.summary, rating: m.audienceRating || m.rating, genres: people('Genre'), mins: m.duration ? Math.round(m.duration / 60000) : 0, studio: m.studio || '', director: people('Director'), cast: people('Role'), poster: id, at });
+        else if (m.type === 'episode') out.push({ id, type: 'Episode', lib: lib.name, libIds: [lib.id, lib.guid], name: m.title, series: m.grandparentTitle, seriesId: String(m.grandparentRatingKey), season: m.parentIndex, ep: m.index, poster: String(m.grandparentRatingKey), at });
+        else if (m.type === 'season') out.push({ id, type: 'Episode', lib: lib.name, libIds: [lib.id, lib.guid], name: '', series: m.parentTitle, seriesId: String(m.parentRatingKey), season: m.index, ep: null, count: Number(m.leafCount) || 0, poster: String(m.parentRatingKey), at });
+      }
+    } else {
+      const r = await emby(s, 'GET', `/Items?ParentId=${encodeURIComponent(lib.id)}&Recursive=true&IncludeItemTypes=Movie,Episode&SortBy=DateCreated&SortOrder=Descending&Limit=40&Fields=DateCreated,Overview,ProductionYear,Genres,CommunityRating,RunTimeTicks,Studios,People,SeriesName,SeriesId,ParentIndexNumber,IndexNumber&EnableImages=false`);
+      for (const it of (r && r.Items) || []) {
+        const at = Date.parse(it.DateCreated || 0) || 0, id = String(it.Id);
+        if (!(at > since && at < settle) || sent.has(id) || seen.has(id)) continue; seen.add(id);
+        const ppl = (t) => (it.People || []).filter((x) => x.Type === t).map((x) => x.Name);
+        if (it.Type === 'Movie') out.push({ id, type: 'Movie', lib: lib.name, libIds: [lib.id, lib.guid], name: it.Name, year: it.ProductionYear, overview: it.Overview, rating: it.CommunityRating, genres: it.Genres || [], mins: it.RunTimeTicks ? Math.round(it.RunTimeTicks / 6e8) : 0, studio: ((it.Studios || [])[0] || {}).Name || '', director: ppl('Director'), cast: ppl('Actor'), poster: id, at });
+        else if (it.Type === 'Episode') out.push({ id, type: 'Episode', lib: lib.name, libIds: [lib.id, lib.guid], name: it.Name, series: it.SeriesName, seriesId: String(it.SeriesId || ''), season: it.ParentIndexNumber, ep: it.IndexNumber, poster: String(it.SeriesId || it.Id), at });
+      }
+    }
+  }
+  // Juntar capítulos de la misma serie en un solo mensaje
+  const posts = [], bySeries = new Map();
+  for (const x of out.sort((a, b) => a.at - b.at)) {
+    if (x.type === 'Movie') posts.push({ kind: 'movie', items: [x], poster: x.poster });
+    else { const k = x.seriesId || x.series; if (!bySeries.has(k)) { const p = { kind: 'series', items: [], poster: x.poster }; bySeries.set(k, p); posts.push(p); } bySeries.get(k).items.push(x); }
+  }
+  return posts;
+}
+/** Datos que salen en cada publicación y su orden (como los elija el dueño del canal) */
+const FEED_FIELDS = [['poster', 'Carátula'], ['library', 'Biblioteca'], ['year', 'Año'], ['rating', 'Valoración'], ['genre', 'Género'], ['runtime', 'Duración'], ['studio', 'Estudio'], ['director', 'Director'], ['cast', 'Reparto'], ['overview', 'Sinopsis']];
+const FEED_DEF_ON = ['poster', 'library', 'year', 'rating', 'genre', 'runtime', 'overview'];
+function feedFields(f) {
+  const keys = FEED_FIELDS.map((x) => x[0]), saved = Array.isArray(f.fields) ? f.fields.filter((x) => keys.includes(x.k)) : [];
+  for (const k of keys) if (!saved.some((x) => x.k === k)) saved.push({ k, on: FEED_DEF_ON.includes(k) });
+  return saved;
+}
+const epTag = (x) => (x.season != null ? `T${x.season}` : '') + (x.ep != null ? `E${String(x.ep).padStart(2, '0')}` : '');
+function feedCaption(p, f = {}) {
+  const fields = feedFields(f), on = (k) => (fields.find((x) => x.k === k) || {}).on;
+  const head = String(f.header || '').trim(), foot = f.footer != null ? String(f.footer) : `🍿 ${botName()}`;
+  const lines = [];
+  if (head) lines.push(head);
+  if (p.kind === 'movie') {
+    const m = p.items[0];
+    lines.push('🎬 Una nueva película se ha añadido', '', `🎞️ ${m.name}`);
+    const row = {
+      library: () => m.lib && `📚 Biblioteca: ${m.lib}`, year: () => m.year && `📅 Año: ${m.year}`,
+      rating: () => m.rating && `⭐ Valoración: ${Number(m.rating).toFixed(1).replace('.', ',')}`, genre: () => (m.genres || []).length && `🎭 Género: ${m.genres.slice(0, 3).join(', ')}`,
+      runtime: () => m.mins && `⏱️ Duración: ${m.mins} minutos`, studio: () => m.studio && `🏢 Estudio: ${m.studio}`,
+      director: () => (m.director || []).length && `🎬 Director: ${m.director.slice(0, 2).join(', ')}`, cast: () => (m.cast || []).length && `👥 Reparto: ${m.cast.slice(0, 4).join(', ')}`,
+      overview: () => { const ov = String(m.overview || '').replace(/\s+/g, ' ').trim(); return ov && `📝 Sinopsis: ${ov.length > 380 ? ov.slice(0, 377).replace(/\s+\S*$/, '') + '…' : ov}`; },
+    };
+    for (const x of fields) if (x.on && row[x.k]) { const v = row[x.k](); if (v) lines.push(v); }
+  } else {
+    const it = p.items, s0 = it[0], n = it.reduce((k, x) => k + (x.count || 1), 0);
+    const tags = it.filter((x) => x.ep != null).map(epTag);
+    lines.push(n === 1 ? '📺 Nuevo capítulo' : `📺 ${n} capítulos nuevos`, '', `🎞️ ${s0.series}`);
+    if (n === 1 && s0.ep != null) lines.push(`▶️ ${epTag(s0)}${s0.name ? ' · ' + s0.name : ''}`);
+    else if (tags.length) lines.push(`▶️ ${tags.length > 1 ? tags[0] + ' – ' + tags[tags.length - 1] : tags[0]}`);
+    if (on('library') && s0.lib) lines.push(`📚 Biblioteca: ${s0.lib}`);
+  }
+  if (foot) lines.push('', foot);
+  return lines.join('\n');
+}
+function feedTarget(f) {
+  const raw = String(f.chat || '').trim(); let m;
+  if (/^-?\d+$/.test(raw)) return { chat: raw, thread: Number(f.thread) || 0 };
+  if ((m = raw.match(/t\.me\/c\/(\d+)(?:\/(\d+))?/))) return { chat: '-100' + m[1], thread: Number(m[2]) || 0 };
+  if ((m = raw.match(/t\.me\/([A-Za-z0-9_]{4,})(?:\/(\d+))?/))) return { chat: '@' + m[1], thread: Number(m[2]) || 0 };
+  if ((m = raw.match(/^@?([A-Za-z0-9_]{4,})$/))) return { chat: '@' + m[1], thread: 0 };
+  return { chat: '', thread: 0 };
+}
+async function feedSend(s, f, caption, poster) {
+  const { chat, thread } = feedTarget(f);
+  if (!chat) throw new Error('Falta el canal.');
+  const pic = poster ? await posterBytes(s, poster).catch(() => null) : null;
+  if (pic) {
+    const cfg = db.settings.notices.telegram, form = new FormData();
+    form.append('chat_id', chat); if (thread) form.append('message_thread_id', String(thread));
+    form.append('caption', caption.slice(0, 1024));
+    form.append('photo', new Blob([pic.buf], { type: pic.type }), 'caratula.jpg');
+    const res = await fetch(`${TG_API}/bot${cfg.token}/sendPhoto`, { method: 'POST', body: form, signal: AbortSignal.timeout(30000) });
+    const j = await res.json().catch(() => ({}));
+    if (!j.ok) throw new Error(j.description || `Telegram ${res.status}`);
+    return;
+  }
+  await tg('sendMessage', { chat_id: chat, text: caption, disable_web_page_preview: true, ...(thread ? { message_thread_id: thread } : {}) });
+}
+let feedBusy = false;
+/** v275: ¿puede ver este cliente algo de esa biblioteca? (solo se le avisa de lo que tiene en su cuenta) */
+function feedCanSee(c, ids) {
+  let acc; try { acc = accessOf(c); } catch { return false; }
+  return !!acc && (acc.all || (acc.folders || []).map(String).some((f) => ids.includes(f)));
+}
+const feedSubs = (s) => db.clients.filter((c) => c.serverId === s.id && c.tgChat && c.feedSub && !c.demo && c.status === 'active');
+/** Línea corta para el resumen del día */
+function feedLine(p) {
+  if (p.kind === 'movie') { const m = p.items[0]; return `• ${m.name}${m.year ? ` (${m.year})` : ''}`; }
+  const n = p.items.reduce((k, x) => k + (x.count || 1), 0), s0 = p.items[0];
+  return `• ${s0.series} · ${n === 1 && s0.ep != null ? epTag(s0) : n + ' capítulos nuevos'}`;
+}
+async function feedBotNow(s, f, p) {
+  const ids = p.items.flatMap((x) => x.libIds || []), poster = feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null;
+  const pic = poster ? await posterBytes(s, poster).catch(() => null) : null, cap = feedCaption(p, f);
+  for (const c of feedSubs(s)) {
+    if (!feedCanSee(c, ids)) continue;
+    try { if (pic) await tgPhoto(c.tgChat, pic.buf, cap, null, false, pic.type); else await tg('sendMessage', { chat_id: c.tgChat, text: cap, disable_web_page_preview: true }); }
+    catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) c.feedSub = false; }
+    await new Promise((r) => setTimeout(r, 60));
+  }
+}
+async function feedBotDigest(s, f) {
+  const list = f.digest || []; if (!list.length) return;
+  const nm = botName(), inv = f.invite;
+  for (const c of feedSubs(s)) {
+    const mine = list.filter((x) => feedCanSee(c, x.ids));
+    if (!mine.length) continue;
+    const mv = mine.filter((x) => x.kind === 'movie').map((x) => x.line), sr = mine.filter((x) => x.kind === 'series').map((x) => x.line);
+    const text = [`🍿 Novedades de hoy en ${nm}`, '', ...(mv.length ? ['🎬 Películas', ...mv.slice(0, 25), ''] : []), ...(sr.length ? ['📺 Series', ...sr.slice(0, 25), ''] : []), '¡Ya las tienes en tu cuenta! 🎉'].join('\n');
+    try { await tg('sendMessage', { chat_id: c.tgChat, text: text.slice(0, 4000), disable_web_page_preview: true, ...(inv ? { reply_markup: { inline_keyboard: [[{ text: '🍿 Ver el canal de novedades', url: inv }]] } } : {}) }); }
+    catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) c.feedSub = false; }
+    await new Promise((r) => setTimeout(r, 60));
+  }
+}
+/** v280: lo más visto de los últimos 7 días en un servidor (personas distintas que lo vieron) */
+function feedTop(s, n = 5) {
+  const days = (db.usage && db.usage.days) || {}, agg = new Map();
+  for (let i = 0; i < 7; i++) {
+    const dd = days[localDate(new Date(Date.now() - i * 86400000))]; if (!dd) continue;
+    for (const [k, t] of Object.entries(dd.titles || {})) {
+      if (t.k !== 'pelicula' && t.k !== 'serie') continue;
+      const v = t.sv ? Number(t.sv[s.id]) || 0 : (t.s === s.id ? t.n : 0);
+      if (!v) continue;
+      const a = agg.get(k) || { t: t.t, k: t.k, y: t.y, p: (t.ps && t.ps[s.id]) || t.p, n: 0 };
+      a.n += v; agg.set(k, a);
+    }
+  }
+  return [...agg.values()].sort((a, b) => b.n - a.n).slice(0, n);
+}
+function feedTopText(top, f = {}) {
+  const med = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'], head = String(f.header || '').trim();
+  return [...(head ? [head] : []), `🔥 Lo más visto de la semana en ${botName()}`, '',
+    ...top.map((x, i) => `${med[i]} ${x.t}${x.y && x.k === 'pelicula' ? ` (${x.y})` : ''} ${x.k === 'serie' ? '📺' : '🎬'}`),
+    '', '¿Ya las has visto? 🍿'].join('\n');
+}
+async function feedTopSend(s, f, force) {
+  const top = feedTop(s);
+  if (top.length < 3 && !force) return false; // con menos de 3 no merece la pena
+  if (!top.length) throw new Error('Todavía no hay datos de lo que se ha visto esta semana en este servidor.');
+  await feedSend(s, f, feedTopText(top, f), top[0].p || null);
+  return true;
+}
+async function feedTick() {
+  if (feedBusy || !db.settings.notices.telegram.token) return;
+  feedBusy = true;
+  try {
+    for (const s of db.servers) {
+      const f = s.feed; if (!f || s.off || s.kind === 'iptv') continue;
+      const toChannel = f.on && f.chat, toBot = !!f.botOn, vend = feedVendors(s);
+      if (!toChannel && !toBot && !vend.length) continue;
+      if (!f.since) f.since = new Date().toISOString();
+      let posts;
+      try { posts = await feedNew(s, f); } catch (e) { f.error = `No se pudo mirar lo nuevo: ${e.message}`; continue; }
+      let n = 0;
+      for (const p of posts) {
+        if (n >= 8) break; // el resto, en la siguiente vuelta
+        if (toChannel) {
+          try { await feedSend(s, f, feedCaption(p, f), feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null); f.error = ''; f.posts = (f.posts || 0) + 1; f.lastPost = new Date().toISOString(); }
+          catch (e) { f.error = /not found|kicked|rights|forbidden|administrator/i.test(e.message) ? 'El bot no puede publicar en el canal: revisa que siga siendo administrador.' : e.message; break; }
+        }
+        if (toBot) {
+          if (f.botMode === 'now') { await feedBotNow(s, f, p); f.botSent = (f.botSent || 0) + 1; }
+          else { f.digest = [...(f.digest || []), { kind: p.kind, line: feedLine(p), ids: p.items.flatMap((x) => x.libIds || []) }].slice(-200); }
+        }
+        for (const v of vend) await feedVendorPost(s, f, v, p);
+        n++;
+        f.sent = [...p.items.map((x) => x.id), ...(f.sent || [])].slice(0, 600);
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+      // v280: domingo por la tarde, «Lo más visto de la semana» en el canal
+      if (toChannel && f.topOn !== false) {
+        const d = new Date(), day = localDate(d);
+        if ((d.getDay() === 0 || process.env.TOP_ANYDAY) && d.getHours() >= (process.env.TOP_ANYDAY ? 0 : 20) && f.topDay !== day) {
+          f.topDay = day;
+          try { if (await feedTopSend(s, f)) { f.posts = (f.posts || 0) + 1; f.lastPost = new Date().toISOString(); } } catch (e) { console.error('Lo más visto:', e.message); }
+        }
+      }
+      // Resumen del día por el bot, a la hora elegida
+      if (toBot && f.botMode !== 'now') {
+        const d = new Date(), day = localDate(d);
+        if (d.getHours() >= (f.botHour ?? 20) && f.digestDay !== day) { if ((f.digest || []).length) { await feedBotDigest(s, f); f.botSent = (f.botSent || 0) + 1; } f.digest = []; f.digestDay = day; }
+      }
+    }
+    await feedVendorDigests();
+    await lock(async () => saveDb());
+  } finally { feedBusy = false; }
+}
+/* v276: novedades para los vendedores: en su Telegram (para reenviar) o en su propio canal, con su cabecera y su nombre.
+   Solo de los servidores donde tienen clientes activos. El dueño lo puede apagar para todos. */
+const VEND_ROLES = ['reseller', 'sub'];
+function vfeedOf(u) { if (!u.feed) u.feed = { chan: '', chanTitle: '', header: '', footer: '', on: false, tg: false, tgMode: 'day', tgHour: 20, digest: [], digestDay: '', error: '', posts: 0 }; return u.feed; }
+const vendServers = (u) => db.servers.filter((s) => s.kind !== 'iptv' && !s.off && db.clients.some((c) => c.ownerId === u.id && c.serverId === s.id && c.status === 'active' && !c.demo));
+function feedVendors(s) {
+  if (db.settings.feedVend === false) return [];
+  return db.users.filter((u) => VEND_ROLES.includes(u.role) && !u.disabled && u.feed && ((u.feed.on && u.feed.chan) || u.feed.tg)
+    && db.clients.some((c) => c.ownerId === u.id && c.serverId === s.id && c.status === 'active' && !c.demo));
+}
+async function feedVendorPost(s, f, v, p) {
+  const vf = v.feed, poster = feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null;
+  const cap = feedCaption(p, { header: vf.header, fields: f.fields, footer: vf.footer || '' });
+  if (vf.on && vf.chan) {
+    try { await feedSend(s, { chat: vf.chan }, cap, poster); vf.error = ''; vf.posts = (vf.posts || 0) + 1; vf.lastPost = new Date().toISOString(); }
+    catch (e) { vf.error = /not found|kicked|rights|forbidden|administrator/i.test(e.message) ? 'El bot no puede publicar en tu canal: revisa que siga siendo administrador.' : e.message; }
+  }
+  if (vf.tg) {
+    if (vf.tgMode === 'now') {
+      const pic = poster ? await posterBytes(s, poster).catch(() => null) : null;
+      for (const ch of userChats(v)) { try { if (pic) await tgPhoto(ch, pic.buf, cap, null, false, pic.type); else await tg('sendMessage', { chat_id: ch, text: cap, disable_web_page_preview: true }); } catch { /* sin chat */ } }
+    } else vf.digest = [...(vf.digest || []), { kind: p.kind, line: feedLine(p), srv: s.name }].slice(-200);
+  }
+}
+async function feedVendorDigests() {
+  const d = new Date(), day = localDate(d);
+  for (const v of db.users.filter((u) => VEND_ROLES.includes(u.role) && !u.disabled && u.feed && u.feed.tg && u.feed.tgMode !== 'now')) {
+    const vf = v.feed;
+    if (d.getHours() < (vf.tgHour ?? 20) || vf.digestDay === day) continue;
+    const list = vf.digest || [];
+    if (list.length) {
+      const mv = list.filter((x) => x.kind === 'movie').map((x) => x.line), sr = list.filter((x) => x.kind === 'series').map((x) => x.line);
+      const text = [`🍿 Novedades de hoy${vf.header ? ' · ' + vf.header : ''}`, '', ...(mv.length ? ['🎬 Películas', ...mv.slice(0, 30), ''] : []), ...(sr.length ? ['📺 Series', ...sr.slice(0, 30), ''] : []), 'Puedes reenviar este mensaje a tus clientes 👍'].join('\n');
+      for (const ch of userChats(v)) { try { await tg('sendMessage', { chat_id: ch, text: text.slice(0, 4000), disable_web_page_preview: true }); } catch { /* sin chat */ } }
+    }
+    vf.digest = []; vf.digestDay = day;
+  }
+}
+route('GET', '/api/my-feed', VEND_ROLES, ({ me }) => {
+  if (db.settings.feedVend === false) throw new HttpError(403, 'Tu administrador no tiene activadas las novedades para vendedores.');
+  const f = vfeedOf(me);
+  return { ...f, digest: undefined, bot: db.settings.notices.telegram.bot || '', hasBot: !!db.settings.notices.telegram.token, myTg: userChats(me).length > 0, servers: vendServers(me).map((s) => s.name) };
+});
+route('PUT', '/api/my-feed', VEND_ROLES, ({ me, body }) => lock(async () => {
+  if (db.settings.feedVend === false) throw new HttpError(403, 'Tu administrador no tiene activadas las novedades para vendedores.');
+  const f = vfeedOf(me), b = body || {};
+  if (typeof b.chan === 'string') { const v = b.chan.trim().slice(0, 200); if (v && !feedTarget({ chat: v }).chat) throw new HttpError(400, 'Pega el enlace del canal (https://t.me/…) o su @usuario.'); f.chan = v; f.chanTitle = String(b.chanTitle || v).slice(0, 80); }
+  if (typeof b.header === 'string') f.header = b.header.trim().slice(0, 80);
+  if (typeof b.footer === 'string') f.footer = b.footer.trim().slice(0, 80);
+  if (b.on !== undefined) { f.on = !!b.on; if (f.on && !f.chan) throw new HttpError(400, 'Pon primero tu canal.'); }
+  if (b.tg !== undefined) { f.tg = !!b.tg; if (f.tg && !userChats(me).length) throw new HttpError(400, 'Primero enlaza tu Telegram en Mi cuenta para poder recibirlas.'); }
+  if (['now', 'day'].includes(b.tgMode)) f.tgMode = b.tgMode;
+  if (Number(b.tgHour) >= 8 && Number(b.tgHour) <= 23) f.tgHour = Number(b.tgHour);
+  for (const s of vendServers(me)) { const sf = feedOf(s); if (!sf.since) sf.since = new Date().toISOString(); }
+  saveDb();
+  return { ok: true };
+}));
+route('POST', '/api/my-feed/test', VEND_ROLES, async ({ me, body }) => {
+  const b = body || {}, f = vfeedOf(me), chan = typeof b.chan === 'string' ? b.chan.trim() : f.chan;
+  if (!chan) throw new HttpError(400, 'Pega primero el enlace o @usuario de tu canal.');
+  const s = vendServers(me)[0];
+  let p = null;
+  if (s) { try { const posts = await feedNew(s, { ...(s.feed || {}), since: new Date(Date.now() - 60 * 86400000).toISOString(), sent: [] }); p = posts.filter((x) => x.kind === 'movie').pop() || posts[posts.length - 1] || null; } catch { /* nada */ } }
+  const sf = (s && s.feed) || {};
+  try {
+    if (p) await feedSend(s, { chat: chan }, '🧪 Prueba de tu canal\n\n' + feedCaption(p, { header: b.header ?? f.header, fields: sf.fields, footer: b.footer ?? f.footer ?? '' }), feedFields(sf).find((x) => x.k === 'poster').on ? p.poster : null);
+    else await feedSend(s || {}, { chat: chan }, '🧪 Prueba de tu canal de novedades\n\nAquí saldrán las pelis y series nuevas.', null);
+  } catch (e) { throw new HttpError(400, /not found/i.test(e.message) ? 'No encuentro ese canal. Revisa el enlace y que el bot sea administrador.' : /rights|administrator|forbidden|not enough/i.test(e.message) ? 'El bot no puede publicar: hazlo administrador con permiso para publicar.' : e.message); }
+  return { ok: true, note: 'Prueba publicada: mírala en tu canal.' };
+});
+route('PUT', '/api/feed-vendors', SUPER, ({ me, body }) => lock(async () => { db.settings.feedVend = !!(body || {}).on; addLog('ajustes', null, `Novedades para vendedores: ${db.settings.feedVend ? 'activadas' : 'desactivadas'}`, me); saveDb(); return { ok: true }; }));
+route('GET', '/api/feed', STAFF, ({ me }) => {
+  needPerm(me, 'servers');
+  return { feedVend: db.settings.feedVend !== false, vendUsing: db.users.filter((u) => VEND_ROLES.includes(u.role) && u.feed && ((u.feed.on && u.feed.chan) || u.feed.tg)).length, bot: db.settings.notices.telegram.bot || '', hasBot: !!db.settings.notices.telegram.token, chats: (db.feedChats || []).slice(0, 15),
+    fieldNames: FEED_FIELDS, servers: db.servers.map((s) => { const f = s.feed || {}; return { id: s.id, name: s.name, kind: s.kind || 'emby', on: !!f.on, chat: f.chat || '', title: f.title || '', posts: f.posts || 0, lastPost: f.lastPost || '', error: f.error || '', since: f.since || '', libs: f.libs || [], header: f.header || '', fields: feedFields(f), invite: f.invite || '', topOn: f.topOn !== false, top: feedTop(s).map((x) => ({ t: x.t, k: x.k, n: x.n })), botOn: !!f.botOn, botMode: f.botMode || 'day', botHour: f.botHour ?? 20, subs: feedSubs(s).length, linked: db.clients.filter((c) => c.serverId === s.id && c.tgChat && !c.demo && c.status === 'active').length, botSent: f.botSent || 0 }; }) };
+});
+route('PUT', '/api/feed/:id', STAFF, ({ me, params, body }) => lock(async () => {
+  needPerm(me, 'servers');
+  const s = serverById(params.id), f = feedOf(s), b = body || {};
+  if (s.kind === 'iptv') throw new HttpError(400, 'En IPTV no hay pelis ni series nuevas que avisar.');
+  if (typeof b.chat === 'string') { f.chat = b.chat.trim().slice(0, 200); f.title = String(b.title || '').slice(0, 80); }
+  if (Array.isArray(b.libs)) f.libs = b.libs.map(String).slice(0, 100);
+  if (typeof b.header === 'string') f.header = b.header.trim().slice(0, 80);
+  if (Array.isArray(b.fields)) { const keys = FEED_FIELDS.map((x) => x[0]); f.fields = b.fields.filter((x) => x && keys.includes(x.k)).map((x) => ({ k: x.k, on: !!x.on })); }
+  if (typeof b.invite === 'string') { const v = b.invite.trim().slice(0, 200); if (v && !/^https:\/\/t\.me\//i.test(v)) throw new HttpError(400, 'El enlace de invitación tiene que empezar por https://t.me/'); f.invite = v; }
+  if (b.unlink === true) { f.on = false; f.chat = ''; f.title = ''; }
+  if (b.botOn !== undefined) { const was = f.botOn; f.botOn = !!b.botOn; if (f.botOn && !was && !f.on) { f.since = new Date().toISOString(); f.digest = []; } }
+  if (['now', 'day'].includes(b.botMode)) f.botMode = b.botMode;
+  if (b.topOn !== undefined) f.topOn = !!b.topOn;
+  if (Number(b.botHour) >= 8 && Number(b.botHour) <= 23) f.botHour = Number(b.botHour);
+  if (b.on !== undefined) {
+    const was = f.on; f.on = !!b.on;
+    if (f.on && !f.chat) throw new HttpError(400, 'Elige primero el canal.');
+    if (f.on && !was) { if (!f.botOn) f.since = new Date().toISOString(); f.error = ''; } // empieza desde ahora: no publica todo lo antiguo de golpe
+  }
+  addLog('servidor', null, `Canal de contenidos de ${s.name}: ${f.on ? 'publicando en ' + (f.title || f.chat) : 'canal apagado'}${f.botOn ? ' · también por el bot' : ''}`, me);
+  saveDb();
+  return { ok: true };
+}));
+/** v275: invitar (una vez por semana como mucho) a los clientes de un servidor a apuntarse a las novedades por el bot */
+route('POST', '/api/feed/:id/invite-bot', STAFF, async ({ me, params }) => {
+  needPerm(me, 'servers');
+  const s = serverById(params.id), f = feedOf(s);
+  if (!f.botOn) throw new HttpError(400, 'Enciende primero «Por el bot».');
+  if (f.invAt && Date.now() - Date.parse(f.invAt) < 7 * 86400000) throw new HttpError(400, `Ya les invitaste el ${new Date(f.invAt).toLocaleDateString('es-ES')}. Para no molestar, se puede una vez por semana.`);
+  const list = db.clients.filter((c) => c.serverId === s.id && c.tgChat && !c.feedSub && !c.demo && c.status === 'active');
+  const chats = [...new Set(list.map((c) => String(c.tgChat)))];
+  let ok = 0;
+  for (const ch of chats) {
+    try { await tg('sendMessage', { chat_id: ch, text: `🍿 ¡Novedad en ${botName()}!\n\n¿Quieres que te avise cuando lleguen pelis y series nuevas?${f.botMode === 'now' ? ' Te llegarán en cuanto estén.' : ` Te mando un resumen cada día a las ${f.botHour ?? 20}:00.`}\n\nSolo de lo que puedes ver en tu cuenta, y lo puedes quitar cuando quieras.`,
+      reply_markup: { inline_keyboard: [[{ text: '🔔 Sí, avísame', callback_data: 'nv:on' }]] } }); ok++; }
+    catch { /* bloqueado o sin chat */ }
+    await new Promise((r) => setTimeout(r, 60));
+  }
+  await lock(async () => { f.invAt = new Date().toISOString(); addLog('servidor', null, `Invitación a las novedades por el bot de ${s.name}: ${ok} clientes`, me); saveDb(); });
+  return { ok: true, note: `📨 Invitación enviada a ${ok} ${ok === 1 ? 'cliente' : 'clientes'}.` };
+});
+route('GET', '/api/feed/:id/libs', STAFF, async ({ me, params }) => { needPerm(me, 'servers'); try { return { libs: await feedLibs(serverById(params.id)) }; } catch (e) { throw new HttpError(502, `No se pudo leer las bibliotecas: ${e.message}`); } });
+route('POST', '/api/feed/:id/preview', STAFF, ({ me, body }) => { needPerm(me, 'servers'); const b = body || {};
+  const demo = { kind: 'movie', items: [{ name: 'Dune: Parte dos', lib: 'Películas', year: 2024, rating: 8.4, genres: ['Ciencia ficción', 'Aventura'], mins: 166, studio: 'Legendary Pictures', director: ['Denis Villeneuve'], cast: ['Timothée Chalamet', 'Zendaya', 'Rebecca Ferguson'], overview: 'Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia.' }] };
+  return { text: feedCaption(demo, { header: String(b.header || ''), fields: Array.isArray(b.fields) ? b.fields : [] }) }; });
+route('POST', '/api/feed/:id/test', STAFF, async ({ me, params, body }) => {
+  needPerm(me, 'servers');
+  const s = serverById(params.id), f = { ...(s.feed || {}), ...(typeof (body || {}).chat === 'string' ? { chat: body.chat } : {}) };
+  // La prueba usa lo último que se añadió al servidor, para que se vea cómo queda de verdad
+  let p = null;
+  try { const posts = await feedNew(s, { ...f, since: new Date(Date.now() - 60 * 86400000).toISOString(), sent: [] }); p = posts.filter((x) => x.kind === 'movie').pop() || posts[posts.length - 1] || null; } catch { /* sin contenido: texto de prueba */ }
+  try {
+    if (p) await feedSend(s, f, '🧪 Prueba del canal\n\n' + feedCaption(p, f), feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null);
+    else await feedSend(s, f, `🧪 Prueba del canal de contenidos de ${botName()}\n\nAquí saldrán las pelis y series que se añadan.`, null);
+  } catch (e) { throw new HttpError(400, /not found/i.test(e.message) ? 'No encuentro ese canal. Revisa que el bot esté dentro como administrador.' : /rights|administrator|forbidden|not enough/i.test(e.message) ? 'El bot no puede publicar: hazlo administrador con permiso para publicar.' : e.message); }
+  return { ok: true, note: 'Prueba publicada: mírala en el canal.' };
+});
+/** v280: publicar ahora «Lo más visto de la semana» (para probar cómo queda) */
+route('POST', '/api/feed/:id/top', STAFF, async ({ me, params }) => {
+  needPerm(me, 'servers');
+  const s = serverById(params.id), f = s.feed || {};
+  if (!f.chat) throw new HttpError(400, 'Este servidor no tiene canal todavía.');
+  try { await feedTopSend(s, f, true); } catch (e) { throw new HttpError(400, /not found/i.test(e.message) ? 'No encuentro ese canal. Revisa que el bot esté dentro como administrador.' : e.message); }
+  await lock(async () => { f.posts = (f.posts || 0) + 1; f.lastPost = new Date().toISOString(); addLog('servidor', null, `«Lo más visto de la semana» publicado a mano en el canal de ${s.name}`, me); saveDb(); });
+  return { ok: true, note: 'Publicado: míralo en el canal.' };
+});
 /* ---------- v263: pantalla «Crecer» ---------- */
 route('GET', '/api/grow', SUPER, () => {
   const g = db.settings.grow, t = today(), now = Date.now();
@@ -6365,7 +6847,7 @@ async function recordUsage() {
         const title = String((it.Type === 'Episode' ? it.SeriesName : it.Name) || 'Sin título').slice(0, 120);
         const key = kind + '|' + title;
         const tt = day.titles[key] || (Object.keys(day.titles).length < 400 ? (day.titles[key] = { t: title, k: kind, m: 0, n: 0, y: it.ProductionYear || '', p: it.SeriesId || it.Id || '', s: s.id }) : null);
-        if (tt) { tt.m += mins; const vk = key + '|' + s.id + '|' + x.UserId; if (!seenToday.keys.has(vk)) { seenToday.keys.add(vk); tt.n++; } }
+        if (tt) { tt.m += mins; const vk = key + '|' + s.id + '|' + x.UserId; if (!seenToday.keys.has(vk)) { seenToday.keys.add(vk); tt.n++; tt.sv = tt.sv || {}; tt.sv[s.id] = (tt.sv[s.id] || 0) + 1; if (!tt.ps) tt.ps = {}; tt.ps[s.id] = it.SeriesId || it.Id || ''; } }
         day.m += mins; day.hours[hour] += mins;
         day.servers[s.id] = (day.servers[s.id] || 0) + mins;
         const c = byEmby.get(x.UserId);
@@ -7321,7 +7803,6 @@ async function cpRoute(req, res, pathname) {
   return cpPage(res, 200, 'Mi cuenta', `<h1>Hola, ${H(c.panelName)} 👋</h1><p class="sub">${state}</p>${flash}${card}${renew}${tgBox}${app}${guide}${help}`);
 }
 /* Cobro a clientes de cada reseller o subreseller: sus precios y su propio Stripe */
-const VEND_ROLES = ['reseller', 'sub'];
 const myCp = (me) => (me.clientPay = { on: false, desc: 'Suscripción', prices: {}, key: '', whsec: '', ...(me.clientPay || {}) });
 route('GET', '/api/my-client-pay', VEND_ROLES, ({ me, req }) => {
   const v = myCp(me);
@@ -8772,7 +9253,7 @@ function socAccount(me, c, months, screens, body, what) {
 }
 /** «¿Quién lo ha cobrado?» por Telegram a los chats del superadministrador (el primero que pulse, gana; se puede cambiar luego) */
 async function socAskTg(x) {
-  const sup = db.users.find((u) => u.role === 'super'); if (!sup) return;
+  const sup = ownerUser(), allSup = supers(); if (!sup) return;
   const d = socCfg(), text = `💶 ¿Quién lo ha cobrado?
 
 ${x.desc}
@@ -8781,7 +9262,7 @@ Importe: ${money2(x.amount)}
 Toca tu nombre y se apunta en Socios 👇`;
   const kb = { inline_keyboard: [d.members.map((m) => ({ text: `🙋 ${m.name}`, callback_data: `sk:${x.id}:${m.id}` }))] };
   const msgs = [];
-  for (const chat of userChats(sup)) { try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch (e) { /* sin Telegram: se pregunta en el panel */ } }
+  for (const chat of [...new Set(allSup.flatMap(userChats).map(String))]) { try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch (e) { /* sin Telegram: se pregunta en el panel */ } }
   if (msgs.length) { x.askMsgs = msgs; lock(async () => saveDb()).catch(() => {}); }
 }
 /** Dice quién cobró un movimiento (desde el panel o desde Telegram) */
@@ -9114,12 +9595,12 @@ route('POST', '/api/expenses/:id/pay', SUPER, ({ me, params, body }) => lock(asy
 }));
 /** «Hoy toca pagar X: ¿quién lo paga y cómo?» por Telegram, con botones (solo con Socios encendido) */
 async function expAskTg(e) {
-  const sup = db.users.find((u) => u.role === 'super'); if (!sup || !socOn()) return;
+  const sup = ownerUser(), allSup = supers(); if (!sup || !socOn()) return;
   const ms = socCfg().members, late = diffDays(e.due, today()) < 0;
   const text = `🧾 ${late ? 'Sin pagar todavía' : 'Hoy toca pagar'}: ${e.name}\nImporte: ${money2(e.amount)}${late ? `\nEra el ${e.due.split('-').reverse().join('/')}` : ''}\n\n¿Quién lo paga y cómo se apunta en Socios? 👇`;
   const kb = { inline_keyboard: [ms.map((m) => ({ text: `💶 ${m.name} · a medias`, callback_data: `gx:${e.id}:${m.id}:h` })), ms.map((m) => ({ text: `👤 ${m.name} · solo suyo`, callback_data: `gx:${e.id}:${m.id}:s` })), [{ text: `🤝 Pagado entre ${ms.length === 2 ? 'los dos' : 'todos'} (cada uno su parte)`, callback_data: `gx:${e.id}:*:h` }], [{ text: '✅ Pagado, sin apuntar en Socios', callback_data: `gx:${e.id}:-:n` }]] };
   const msgs = [];
-  for (const chat of userChats(sup)) { try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch { /* sin Telegram */ } }
+  for (const chat of [...new Set(allSup.flatMap(userChats).map(String))]) { try { const r = await tg('sendMessage', { chat_id: chat, text, reply_markup: kb }); if (r && r.message_id) msgs.push({ chat, mid: r.message_id }); } catch { /* sin Telegram */ } }
   if (msgs.length) { e.askMsgs = msgs; lock(async () => saveDb()).catch(() => {}); }
 }
 route('POST', '/api/expenses/:id/unpay', SUPER, ({ me, params }) => lock(async () => {
@@ -9365,7 +9846,7 @@ route('GET', '/api/bot/announce', SUPER, () => ({ job: botAnnJob, linked: new Se
 route('POST', '/api/bot/announce', SUPER, ({ me }) => {
   if (botAnnJob && !botAnnJob.finished) throw new HttpError(409, 'Ya se está enviando. Espera a que termine.');
   if (!db.settings.notices.telegram.token) throw new HttpError(400, 'Primero conecta el bot de Telegram.');
-  const chats = [...new Set(db.clients.filter((c) => c.tgChat && c.status !== 'trash').map((c) => c.tgChat))];
+  const chats = [...new Set(db.clients.filter((c) => c.tgChat && c.status === 'active' && !c.off).map((c) => c.tgChat))]; // v279: solo a los que tienen la cuenta activa
   if (!chats.length) throw new HttpError(400, 'Ningún cliente tiene el bot enlazado todavía.');
   const job = (botAnnJob = { total: chats.length, done: 0, ok: 0, failed: 0, finished: false, at: new Date().toISOString() });
   addLog('aviso', null, `Tarjeta nueva del bot enviada a ${chats.length} ${chats.length === 1 ? 'cliente' : 'clientes'}`, me);
@@ -10610,5 +11091,6 @@ server.listen(PORT, HOST, () => {
   const watchLoop = () => { (live() ? watchServers() : Promise.resolve()).catch((e) => console.error('Vigilancia de servidores:', e.message)).finally(() => setTimeout(watchLoop, Number(process.env.WATCH_MS) || 60000)); };
   setTimeout(watchLoop, 5000);
   setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000);
-  setInterval(() => { if (live()) weeklySend(false).catch((e) => console.error('Resumen semanal:', e.message)); }, Number(process.env.WEEKLY_MS) || 10 * 60000); // mensajes que llegan al bot de Telegram
+  setInterval(() => { if (live()) weeklySend(false).catch((e) => console.error('Resumen semanal:', e.message)); }, Number(process.env.WEEKLY_MS) || 10 * 60000);
+  setInterval(() => { if (live()) feedTick().catch((e) => console.error('Canal de contenidos:', e.message)); }, Number(process.env.FEED_MS) || 10 * 60000); // mensajes que llegan al bot de Telegram
 });

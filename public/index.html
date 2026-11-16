@@ -311,13 +311,16 @@ table.prices input{width:92px;background:var(--bg);border:1px solid var(--line);
 .nav .grp{font-weight:600;color:var(--text);margin-top:6px}
 .nav .grp .chev{width:15px;height:15px;transition:transform .15s ease;color:var(--muted)}
 .nav .grp[aria-expanded="true"] .chev{transform:rotate(180deg)}
-.nav .sub{display:flex;flex-direction:column;gap:1px;margin:0 0 4px 18px;padding-left:8px;border-left:1px solid var(--line)}
-.nav .sub button{padding:6px 10px;font-size:14px}
+.nav .nsec{display:block;margin:7px 0 1px 10px;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);opacity:.75}
+.nav .sub>.nsec:first-child{margin-top:2px}
+.nav .sub{display:flex;flex-direction:column;gap:1px;margin:0 0 4px 16px;padding-left:6px;border-left:1px solid var(--line)}
+.nav .sub button{padding:6px 9px;font-size:13.5px}
 .nav .n.hot{background:var(--bad);color:#fff}
 /* Menu: un color para cada apartado, para distinguirlos de un vistazo */
 .nav .g-cli{--gc:#5aa9f0}.nav .g-demo{--gc:#f0b545}.nav .g-emby{--gc:#a9a6ff}.nav .g-mon{--gc:#3fd0b5}
 .nav .g-al{--gc:#f0725f}.nav .g-ven{--gc:#ec86b4}.nav .g-pan{--gc:#8fd36a}.nav .g-aj{--gc:#9fb4bf}
 .nav .g-msg{--gc:#c58cf2}.nav .g-din{--gc:#8fd36a}.nav .g-cta{--gc:#7cc4e8}.nav .g-sys{--gc:#9fb4bf}
+.nav .g-bot{--gc:#38b6f0}:root[data-theme="light"] .nav .g-bot{--gc:#1677b0}
 :root[data-theme="light"] .nav .g-cli{--gc:#1f6fc0}:root[data-theme="light"] .nav .g-demo{--gc:#a8650a}:root[data-theme="light"] .nav .g-emby{--gc:#5b54c9}:root[data-theme="light"] .nav .g-mon{--gc:#0f7f6a}
 :root[data-theme="light"] .nav .g-al{--gc:#c23d29}:root[data-theme="light"] .nav .g-ven{--gc:#b23a72}:root[data-theme="light"] .nav .g-pan{--gc:#3f7d1d}:root[data-theme="light"] .nav .g-aj{--gc:#58717d}
 :root[data-theme="light"] .nav .g-msg{--gc:#8a3fc0}:root[data-theme="light"] .nav .g-din{--gc:#3f7d1d}:root[data-theme="light"] .nav .g-cta{--gc:#1d6f99}:root[data-theme="light"] .nav .g-sys{--gc:#58717d}
@@ -2719,6 +2722,65 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 .calv .combo-btn{min-height:38px;padding:7px 12px;font-size:14px;border-radius:12px}
 .calv-note{margin:8px 0 10px;font-size:13.5px;color:var(--muted)}.calv-note b{color:var(--text)}
 .linkb{border:0;background:none;color:var(--brand);font:inherit;font-weight:700;cursor:pointer;padding:0 4px}
+.supbox{border:1px solid color-mix(in srgb,#eab308 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,#eab308 10%,var(--surface)),var(--surface));border-radius:18px;padding:14px 16px;margin:0 0 16px}
+.supbox-h h3{margin:0;font-size:16px}.supbox-h p{margin:3px 0 12px}
+.tag.gold{background:color-mix(in srgb,#eab308 20%,transparent);color:#fcd34d;border-color:color-mix(in srgb,#eab308 45%,transparent)}
+.btn.sup-b{border-color:color-mix(in srgb,#eab308 55%,var(--line));color:#fcd34d}
+.supnote{margin:-6px 0 14px;padding:10px 12px;border-radius:12px;font-size:13.5px;background:color-mix(in srgb,#eab308 12%,var(--raised));border:1px solid color-mix(in srgb,#eab308 40%,var(--line))}
+.fd-how{font-size:13.5px;line-height:1.5;padding:12px 14px;border-radius:14px;margin:0 0 14px;background:color-mix(in srgb,#2aa3e6 10%,var(--surface));border:1px solid color-mix(in srgb,#2aa3e6 35%,var(--line))}
+.fd-how i{font-style:normal;font-weight:600}
+.fd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.fd-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.fd-card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--k)}
+.fd-h{display:flex;align-items:center;gap:10px}.fd-h>div{flex:1;min-width:0}.fd-h h3{margin:0;font-size:16px}
+.fd-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:color-mix(in srgb,var(--k) 22%,transparent)}
+.fd-k{font-size:11.5px;font-weight:700;color:var(--k)}
+.fd-st{font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--raised);color:var(--muted)}
+.fd-card.on .fd-st{background:#22c55e;color:#fff}.fd-card.err .fd-st{background:#ef4444;color:#fff}.fd-card.new .fd-st{background:#2aa3e6;color:#fff}
+.fd-ch{font-size:14px;padding:9px 11px;border-radius:12px;background:var(--raised)}.fd-ch small{display:block;color:var(--muted);font-size:12px}
+.fd-kp{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fd-kp div{background:var(--raised);border-radius:12px;padding:8px 10px}.fd-kp b{display:block;font-size:16px}.fd-kp span{font-size:11.5px;color:var(--muted)}
+.fd-err{margin:0;font-size:13px;color:#fca5a5}
+.fd-btns{display:flex;gap:8px;flex-wrap:wrap}
+.fd-steps{margin:0 0 12px;padding:0;list-style:none;counter-reset:st;display:flex;flex-direction:column;gap:10px}
+.fd-steps li{counter-increment:st;display:grid;grid-template-columns:30px 1fr;gap:2px 10px}
+.fd-steps li::before{content:counter(st);grid-row:span 2;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,#2aa3e6,#6366f1)}
+.fd-steps b{font-size:14.5px}.fd-steps span{font-size:13px;color:var(--muted);line-height:1.45}.fd-steps i{font-style:normal;color:var(--text);font-weight:600}
+.fd-pick{display:flex;flex-direction:column;gap:7px;padding:10px;border-radius:14px;background:var(--raised);margin-bottom:10px}
+.fd-opt{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-radius:11px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.fd-opt input{margin-top:3px}.fd-opt b{display:block;font-size:14px}.fd-opt small{font-size:12px;color:var(--muted)}
+.fd-opt:has(input:checked){border-color:#2aa3e6;box-shadow:0 0 0 1px #2aa3e6}
+.fd-man summary{cursor:pointer;font-size:13px;color:var(--muted)}.fd-man input{margin-top:8px;width:100%}
+.fd-cfg{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}@media(max-width:700px){.fd-cfg{grid-template-columns:1fr}}
+.fd-col h4{margin:14px 0 6px;font-size:14px}.fd-col h4:first-child{margin-top:0}.fd-col input[name=header],.fd-col input[name=invite]{width:100%}
+.fd-libs{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 10px;border-radius:12px;background:var(--raised)}
+.fd-fl{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.fd-fr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px 6px 10px;border-radius:10px;background:var(--raised);border:1px solid var(--line)}
+.fd-fr label{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.fd-ar{display:flex;gap:4px}.fd-ar button{width:30px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer;font-size:15px}
+.fd-prev{border-radius:14px;overflow:hidden;background:color-mix(in srgb,#2aa3e6 12%,var(--surface));border:1px solid var(--line)}
+.fd-pimg{height:150px;display:grid;place-items:center;color:var(--muted);font-size:13px;background:repeating-linear-gradient(45deg,var(--raised) 0 10px,var(--surface) 10px 20px)}
+.fd-prev pre{margin:0;padding:12px;white-space:pre-wrap;font:inherit;font-size:13px;line-height:1.5}
+#dlg.wide{width:min(900px,96vw);max-width:96vw}
+.fd-bot{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;border:1px dashed var(--line)}
+.fd-bot.on{border-style:solid;border-color:color-mix(in srgb,#2aa3e6 50%,var(--line));background:color-mix(in srgb,#2aa3e6 10%,var(--surface))}
+.fd-top.on{border-color:color-mix(in srgb,#f97316 50%,var(--line));background:color-mix(in srgb,#f97316 10%,var(--surface))}
+.fd-topl{list-style:none;margin:10px 0;padding:0;display:grid;gap:6px}.fd-topl li{display:flex;gap:10px;align-items:center;padding:8px 11px;border-radius:11px;background:var(--surface2,color-mix(in srgb,var(--text) 5%,transparent))}.fd-topl li b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fd-topl li small{color:var(--muted);white-space:nowrap}
+.fd-bot-t{flex:1;min-width:0}.fd-bot-t b{display:block;font-size:13.5px}.fd-bot-t span{font-size:12px;color:var(--muted)}
+.fd-vend{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;margin:0 0 12px;border:1px solid color-mix(in srgb,#a855f7 40%,var(--line));background:color-mix(in srgb,#a855f7 9%,var(--surface))}
+.bt-st{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;margin:0 0 14px;border:1px solid var(--line);background:var(--surface)}
+.bt-st>div{flex:1;min-width:0}.bt-st b{display:block;font-size:15px}.bt-st span{font-size:13px;color:var(--muted)}
+.bt-dot{flex:none;width:12px;height:12px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 5px rgba(239,68,68,.18)}
+.bt-st.on{border-color:color-mix(in srgb,#2aa3e6 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,#2aa3e6 14%,var(--surface)),var(--surface))}.bt-st.on .bt-dot{background:#22c55e;box-shadow:0 0 0 5px rgba(34,197,94,.2)}
+.bt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.bt-t{position:relative;text-align:left;font:inherit;color:var(--text);cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:16px;border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--c) 16%,var(--surface)),var(--surface));transition:transform .15s}
+.bt-t:hover{transform:translateY(-2px)}.bt-e{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:21px;margin-bottom:4px;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 55%,#000))}
+.bt-t b{font-size:15px}.bt-t span:not(.bt-e){font-size:12.5px;color:var(--muted);line-height:1.35}
+.bt-sec{margin:0 0 18px}.bt-sh{display:flex;gap:10px;align-items:center;margin:0 0 10px}.bt-sh>span{font-size:22px}.bt-sh h3{margin:0;font-size:16.5px}.bt-sh p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.bt-sec.c .bt-sh h3{color:#fbbf24}.bt-sec.v .bt-sh h3{color:#c084fc}.bt-sec.y .bt-sh h3{color:#7dd3fc}
+.bt-n{font-style:normal;font-size:11.5px;padding:1px 8px;border-radius:99px;background:var(--c);color:#fff;margin-left:4px;vertical-align:2px}
+.aud{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;margin:0 4px 4px 0;vertical-align:1px}
+.aud.c{background:color-mix(in srgb,#f59e0b 20%,transparent);color:#fcd34d}.aud.v{background:color-mix(in srgb,#a855f7 22%,transparent);color:#d8b4fe}.aud.y{background:color-mix(in srgb,#2aa3e6 22%,transparent);color:#7dd3fc}
+.bt-aud{margin:-4px 0 14px;font-size:13.5px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -2982,9 +3044,13 @@ function navGroups() {
     { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off, hide: 'cuentas|all' },
     { v: 'calendario', t: 'Calendario', i: 'calendar' },
     { v: 'compartidas', t: 'Compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true }];
-  if (staff() && !pays()) cli.push({ v: 'fechas', t: 'Ajustar fechas', i: 'calendar' });
-  if (staff() && canDo('reports')) cli.push({ v: 'auditoria', t: 'Auditoría', i: 'check' });
   cli.push({ v: 'movimientos', t: 'Movimientos', i: 'history' }, { v: 'papelera', t: 'Papelera', i: 'trash', n: trash().length });
+  // v281: herramientas, al final y separadas
+  const tools = [
+    ...(staff() && !pays() ? [{ v: 'fechas', t: 'Ajustar fechas', i: 'calendar' }] : []),
+    ...(staff() && canDo('reports') ? [{ v: 'auditoria', t: 'Auditoría', i: 'check' }] : []),
+    ...(staff() && !noCli() && !me().useCredits ? [{ v: 'importar', t: 'Importar', i: 'download' }] : [])];
+  if (tools.length) { tools[0].sec = 'Herramientas'; cli.push(...tools); }
   // 🖥️ Servidores
   const srv = [];
   if (canDo('viewServers')) srv.push({ v: 'servidores', t: 'Servidores', i: 'server' }, { v: 'estado', t: 'Estado del servidor', i: 'chart' });
@@ -2993,34 +3059,46 @@ function navGroups() {
   // 💬 Mensajes
   const msg = [
     { v: 'mensajecli', t: 'A los clientes', i: 'send' },
-    { v: 'avisos', t: 'Avisos al caducar', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length },
     ...(isPlexTab() ? [] : [{ v: 'avisotv', t: 'Aviso en la tele', i: 'tv' }]),
-    { v: 'plantillas', t: sys ? 'Plantillas' : 'Mis mensajes', i: 'msg' }];
+    { v: 'plantillas', t: sys ? 'Plantillas' : 'Mis mensajes', i: 'msg' },
+    ];
+  // v278: 🤖 Bot: todo lo del bot de Telegram, solo aquí. Nombres claros: qué le llega a quién
+  const bot = [{ v: 'bot', t: 'Inicio del bot', i: 'grid' },
+    { v: 'avisos', sec: 'Para tus clientes', t: 'Avisos al caducar', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length },
+    ...(isSuper() ? [{ v: 'botauto', t: 'Automáticos', i: 'send' }] : []),
+    { v: 'seguimiento', t: 'Seguimiento demos', i: 'timer', n: S.d.followPending || 0, hot: true },
+    ...(canDo('servers') ? [{ v: 'canales', t: 'Canal de novedades', i: 'tv' }] : []),
+    ...(['reseller', 'sub'].includes(me().role) && S.d.settings.feedVend !== false ? [{ v: 'misnov', sec: 'Para ti', t: 'Mis novedades', i: 'tv' }] : []),
+    ...(sys ? [{ v: 'botcfg', sec: 'Ajustes', t: 'Conexión del bot', i: 'sliders' }] : [])];
   let g = [
     { k: 'ini', items: [{ v: 'resumen', t: 'Resumen', i: 'grid' }, ...(isSuper() ? [{ v: 'crecer', t: 'Crecer', i: 'chart' }] : [])] },
     { k: 'cli', t: 'Clientes', i: 'users', items: cli },
     { k: 'demo', t: 'Demos', i: 'timer', items: [
       { v: 'demonueva', t: 'Nueva', i: 'plus' }, { v: 'cuentas', f: 'demo', t: 'Activas', i: 'play', n: cnt.demo },
-      { v: 'demosvencidas', t: 'Papelera', i: 'trash', n: trash().filter((c) => c.demo).length }, { v: 'seguimiento', t: 'Seguimiento', i: 'send', n: S.d.followPending || 0, hot: true }] },
+      { v: 'demosvencidas', t: 'Papelera', i: 'trash', n: trash().filter((c) => c.demo).length }] },
     { k: 'mon', t: 'En directo', i: 'radio', items: [
       { v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'altrans', t: 'Transcode', i: 'bolt', hide: 'alhist|' }, { v: 'alses', t: 'Pantallas de más', i: 'screen', hide: 'alhist|' },
       { v: 'alhist', t: 'Alertas', i: 'history', n: S.d.alertsUnread, hot: true }, { v: 'inactivos', t: 'Inactivos', i: 'pause' },
       ...(staff() && canDo('reports') ? [{ v: 'uso', t: 'Uso y consumo', i: 'chart' }] : [])] },
     { k: 'msg', t: 'Mensajes', i: 'msg', items: msg },
+    { k: 'bot', t: 'Bot', i: 'send', items: bot },
   ];
   // Un administrador sin permiso de clientes se queda con su resumen, sus servidores y las plantillas
   if (noCli()) { g = g.filter((x) => x.k === 'ini'); if (sys) srv.push({ v: 'plantillas', t: 'Plantillas de mensajes', i: 'msg' }); }
   // 💶 Dinero
   const din = [
+    ...(!noCli() ? [{ v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid }] : []),
     ...(staff() && canDo('reports') ? [{ v: 'ingresos', t: 'Ingresos', i: 'chart' }] : []),
     ...(isSuper() ? [{ v: 'gastos', t: 'Gastos', i: 'calendar', n: S.d.expDue || 0, hot: true }] : []),
     ...(isSuper() ? [{ v: 'socios', t: 'Socios', i: 'users' }] : []),
-    ...(isSuper() || (['reseller', 'sub'].includes(me().role) && S.d.settings.clientPay && S.d.settings.clientPay.vendors) ? [{ v: 'cobrocli', t: 'Cobro a clientes', i: 'wallet' }] : []),
-    ...(!noCli() ? [{ v: 'cobros', t: 'Cobros pendientes', i: 'wallet', n: unpaid }] : []),
     ...(isSuper() || (me().role === 'admin' && canDo('credits')) || me().role === 'reseller' ? [{ v: 'cobrosven', t: 'Deudas del equipo', i: 'users', n: S.d.users.filter((x) => x.debt > 0).length, hot: true }] : []),
-    { v: 'creditos', t: 'Créditos', i: 'coins' },
+    { v: 'creditos', t: 'Créditos', i: 'coins' }];
+  // v281: lo que se configura una vez, abajo
+  const dinCfg = [
     ...(sys ? [{ v: 'ajustes', t: 'Precios y paquetes', i: 'coins' }] : []),
-    ...(isSuper() ? [{ v: 'pagos', t: 'Pagos online', i: 'wallet' }] : [])];
+    ...(isSuper() || (['reseller', 'sub'].includes(me().role) && S.d.settings.clientPay && S.d.settings.clientPay.vendors) ? [{ v: 'cobrocli', t: 'Cobro a clientes', i: 'wallet' }] : []),
+    ...(isSuper() ? [{ v: 'pagos', t: 'Cobro a vendedores', i: 'wallet' }] : [])];
+  if (dinCfg.length) { dinCfg[0].sec = 'Ajustes'; din.push(...dinCfg); }
   g.push({ k: 'din', t: 'Dinero', i: 'wallet', items: din });
   // 🧑‍💼 Equipo
   const venOk = me().role === 'admin' ? canDo('resellers') || canDo('credits') : me().role !== 'sub';
@@ -3040,11 +3118,10 @@ function navGroups() {
     ...(staff() || me().role === 'reseller' ? [{ v: 'accesos', t: 'Mis accesos', i: 'lock' }] : [])];
   // ⚙️ Sistema
   const sy = [
-    ...(sys ? [{ v: 'notifs', t: 'Notificaciones', i: 'bell' }, { v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'tiempos', t: 'Tiempos', i: 'clock' }] : []),
+    ...(sys ? [{ v: 'apariencia', t: 'Apariencia', i: 'sun' }, { v: 'notifs', t: 'Notificaciones', i: 'bell' }, { v: 'tiempos', t: 'Tiempos', i: 'clock' }] : []),
     ...(isSuper() ? [{ v: 'copias', t: 'Copias seguridad', i: 'download' }] : []),
     ...(sys ? [{ v: 'retencion', t: 'Retención', i: 'box' }] : []),
     ...(S.d.licMaster ? [{ v: 'licencias', t: 'Licencias', i: 'key', n: S.d.licDue || 0, hot: true }] : []),
-    ...(staff() && !noCli() && !me().useCredits ? [{ v: 'importar', t: 'Importar', i: 'download' }] : []),
     ...(staff() && canDo('reports') ? [{ v: 'logs', t: 'Logs de actividad', i: 'signal' }] : [])];
   const appItem = isSuper() || appHas() ? [{ v: 'appcli', t: 'App de clientes', i: 'screen' }] : [];
   if (sy.length) sy.splice(sys ? 3 : 0, 0, ...appItem); else cta.push(...appItem); // sin «Sistema», la app va en Mi cuenta
@@ -3089,6 +3166,7 @@ const priceOf = (m, s, k) => { const r = priceTab(k)[m] || {}; return r[s] !== u
 function canManage(u) {
   const m = me();
   if (u.id === m.id) return false;
+  if (u.role === 'super') return m.role === 'super' && !!m.owner && !u.owner; // v273: solo el dueño gestiona a otros superadministradores
   if (m.role === 'super') return true;
   if (m.role === 'admin') {
     if (u.role === 'reseller' || u.role === 'sub') return true;
@@ -3442,6 +3520,7 @@ function render() {
   const flat = items;
   const item = (x) => {
     if (x.hide) return '';
+    if (x.sec) return `<span class="nsec">${x.sec}</span>` + item({ ...x, sec: '' });
     const cur = hereOf(x) || flat.some((h) => h.hide === `${x.v}|${x.f || ''}` && hereOf(h));
     return `<button type="button" data-view="${x.v}"${x.f ? ` data-filter="${x.f}"` : ''}${cur ? ' aria-current="page"' : ''}>${ic(x.i)}<span class="t">${x.t}</span>${x.n ? `<span class="n${x.hot ? ' hot' : ''}">${x.n}</span>` : ''}</button>`;
   };
@@ -3460,7 +3539,7 @@ function render() {
   if (d.salesEmail !== undefined) SALES = d.salesEmail || '';
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
-  const fn = { hoy: vHoy, resumen: vResumen, crecer: vCrecer, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
+  const fn = { hoy: vHoy, resumen: vResumen, crecer: () => vCrecer('crecer'), botauto: () => vCrecer('bot'), canales: vCanales, misnov: vMisNov, bot: vBot, botcfg: vBotCfg, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), equipodel: vEquipoDel, stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   $('#main').dataset.v = S.view; // para dar a cada pantalla su toque de color
   document.body.classList.toggle('tech1', techOnly());
@@ -4127,8 +4206,8 @@ function fzTilesHtml(d, cnt) {
   const row = (cls, emo, txt, btn, attrs) => `<button type="button" class="fzt-r ${cls}" ${attrs}><span class="fzt-e">${emo}</span><span class="fzt-x">${txt}</span><span class="fzt-b">${btn}</span></button>`;
   if (hoy) rows.push(row('red', '⚠️', `<b>${hoy}</b> ${hoy === 1 ? 'cuenta caduca' : 'cuentas caducan'} <b>hoy</b>`, 'Renovar', 'data-act="goto" data-filter="soon"'));
   if (ayer) rows.push(row('ora', '⛔', `<b>${ayer}</b> ${ayer === 1 ? 'caducó ayer y no ha renovado' : 'caducaron ayer y no han renovado'}`, 'Escribir', 'data-act="goto" data-filter="expired"'));
-  if (isSuper() && gb.want) rows.push(row('pink', '🙋', `<b>${gb.want}</b> ${gb.want === 1 ? 'cliente quiere volver' : 'clientes quieren volver'}`, 'Ver', 'data-view="crecer"'));
-  if (isSuper() && gb.low) rows.push(row('pink', '😟', `<b>${gb.low}</b> ${gb.low === 1 ? 'cliente no está contento' : 'clientes no están contentos'}`, 'Ver', 'data-view="crecer"'));
+  if (isSuper() && gb.want) rows.push(row('pink', '🙋', `<b>${gb.want}</b> ${gb.want === 1 ? 'cliente quiere volver' : 'clientes quieren volver'}`, 'Ver', 'data-view="botauto"'));
+  if (isSuper() && gb.low) rows.push(row('pink', '😟', `<b>${gb.low}</b> ${gb.low === 1 ? 'cliente no está contento' : 'clientes no están contentos'}`, 'Ver', 'data-view="botauto"'));
   if (!rows.length) return '<div class="fzt ok"><span>✅</span> Todo al día: hoy no hay nada urgente</div>';
   return `<div class="fzt"><div class="fzt-h">Para hoy</div>${rows.join('')}</div>`;
 }
@@ -4521,9 +4600,9 @@ function noticeRows() {
 }
 function vAvisos() {
   const nt = S.d.settings.notices, rows = noticeRows(), tgOn = nt.telegram.on && nt.telegram.bot;
-  const sub = `Cuentas que vencen en ${plural(nt.chat.days, 'día', 'días')} o menos. ${tgOn ? 'A quien tiene Telegram enlazado el aviso le llega solo.' : 'El aviso por Telegram está apagado.'} Por WhatsApp se envía desde aquí con un toque.`;
-  if (!rows.length) return head('Avisos de vencimiento', sub) + '<div class="panel"><div class="empty">Ninguna cuenta vence en ese plazo. No hay avisos que enviar.</div></div>';
-  return head('Avisos de vencimiento', sub) + `<div class="panel"><table class="cards"><thead><tr><th>Cuenta</th><th>Vence</th><th>Aviso</th><th class="r">Enviar</th></tr></thead><tbody>${rows.map((c) => {
+  const sub = `👥 Para tus clientes. Cuentas que vencen en ${plural(nt.chat.days, 'día', 'días')} o menos. ${tgOn ? 'A quien tiene Telegram enlazado el aviso le llega solo.' : 'El aviso por Telegram está apagado.'} Por WhatsApp se envía desde aquí con un toque.`;
+  if (!rows.length) return head('Avisos de caducidad', sub) + '<div class="panel"><div class="empty">Ninguna cuenta vence en ese plazo. No hay avisos que enviar.</div></div>';
+  return head('Avisos de caducidad', sub) + `<div class="panel"><table class="cards"><thead><tr><th>Cuenta</th><th>Vence</th><th>Aviso</th><th class="r">Enviar</th></tr></thead><tbody>${rows.map((c) => {
     const done = c.noticeFor === c.expires, wa = waNum(c.whatsapp);
     const text = encodeURIComponent(fillTpl('expiring', c, ''));
     const tgUser = (c.telegram || '').replace(/^@/, '');
@@ -5484,17 +5563,20 @@ function dBroadcast() {
 
 /* ---------- Monitor: control de inactivos ---------- */
 /* ---------- v263: «Crecer»: recuperar caducados, resumen semanal, avisos de caídas, encuesta, plazas y clientes que no ven ---------- */
-function loadGrow() { S.grow = { busy: true }; api('GET', '/api/grow').then((r) => { S.grow = { ...r, at: Date.now() }; if (S.view === 'crecer') render(); }, (e) => { S.grow = { error: e.message }; if (S.view === 'crecer') render(); }); }
-function vCrecer() {
-  const sub = 'Herramientas automáticas para no perder clientes y ahorrarte mensajes. Enciende las que quieras.';
+function loadGrow() { S.grow = { busy: true }; api('GET', '/api/grow').then((r) => { S.grow = { ...r, at: Date.now() }; if (S.view === 'crecer' || S.view === 'botauto') render(); }, (e) => { S.grow = { error: e.message }; if (S.view === 'crecer' || S.view === 'botauto') render(); }); }
+function vCrecer(mode = 'crecer') {
+  // v278: «Crecer» (para ti: resumen semanal, plazas, quién no ve) y «Mensajes automáticos» del Bot (para tus clientes)
+  const isBot = mode === 'bot', TT = isBot ? 'Mensajes automáticos' : 'Crecer';
+  const sub = isBot ? 'Mensajes que el bot manda solo a tus clientes para no perderlos. Enciende los que quieras.' : 'Lo que te ayuda a ver cómo va el negocio y a tener sitio para clientes nuevos.';
+  const show = (k) => (isBot ? ['winback', 'survey', 'outage'] : ['weekly']).includes(k);
   const g = S.grow;
-  if (!g || (g.at && Date.now() - g.at > 20000)) { loadGrow(); return head('Crecer', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
-  if (g.busy) return head('Crecer', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
-  if (g.error) return head('Crecer', sub) + `<p class="err">${esc(g.error)}</p>`;
+  if (!g || (g.at && Date.now() - g.at > 20000)) { loadGrow(); return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
+  if (g.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (g.error) return head(TT, sub) + `<p class="err">${esc(g.error)}</p>`;
   const c = g.cfg, sw = (name, on, title) => `<label class="gr-sw"><input type="checkbox" name="${name}"${on ? ' checked' : ''}><span class="sw"></span><b>${title}</b></label>`;
   const noBot = g.bot ? '' : '<p class="gr-warn">⚠️ Primero conecta tu bot de Telegram en <b>Mensajes › Avisos al caducar</b>.</p>';
   const contact = (x) => { const w = waNum(x.whatsapp), t = String(x.telegram || '').replace(/^@/, ''); return `${w ? `<a class="alc-b wa" href="https://wa.me/${w}" target="_blank" rel="noopener">${ic('msg')}WhatsApp</a>` : ''}${/^[A-Za-z0-9_]{3,40}$/.test(t) ? `<a class="alc-b tg" href="https://t.me/${t}" target="_blank" rel="noopener">${ic('send')}Telegram</a>` : ''}<button type="button" class="alc-b" data-act="edit" data-id="${x.id}">${ic('user')}Ficha</button>`; };
-  const card = (k, cls, icon, title, desc, on, inner) => `<form class="gr-card ${cls}${on ? ' on' : ''}" data-grow="${k}" onsubmit="return false">
+  const card = (k, cls, icon, title, desc, on, inner) => !show(k) ? '' : `<form class="gr-card ${cls}${on ? ' on' : ''}" data-grow="${k}" onsubmit="return false">
       <div class="gr-h"><span class="gr-i">${icon}</span><div><h3>${title}</h3><p>${desc}</p></div><span class="gr-st">${on ? 'Encendido' : 'Apagado'}</span></div>
       <div class="gr-b">${inner}</div></form>`;
   const save = (k) => `<button type="button" class="btn primary gr-save" data-act="grow-save" data-k="${k}">Guardar</button>`;
@@ -5507,8 +5589,8 @@ function vCrecer() {
   const roomRow = (s) => { const pct = s.max ? Math.min(100, Math.round(s.used / s.max * 100)) : 0, col = !s.max ? '#64748b' : pct >= 100 ? '#ef4444' : pct >= 90 ? '#f97316' : pct >= 70 ? '#eab308' : '#22c55e';
     return `<div class="gr-room"><div class="gr-room-t"><b>🖥️ ${esc(s.name)}</b><span>${s.max ? `<b style="color:${col}">${Math.max(0, s.max - s.used)}</b> libres · ${s.used}/${s.max}` : `${s.used} clientes · <i>sin límite</i>`}</span><button type="button" class="btn sm ghost" data-act="sv-max" data-id="${s.id}">${s.max ? 'Cambiar' : 'Poner límite'}</button></div>
       <div class="gr-bar"><i style="width:${s.max ? pct : 0}%;background:${col}"></i></div></div>`; };
-  return head('Crecer', sub) + `<div class="gr-grid">
-    ${card('winback', 'c1', '💌', 'Recuperar clientes caducados', 'Si alguien no renueva, el bot le escribe a los 7 y a los 30 días con tu oferta y un botón para volver.', wb.on, `${noBot}
+  return head(TT, sub) + `<div class="gr-grid">
+    ${card('winback', 'c1', '💌', 'Recuperar clientes caducados', '<span class="aud c">👥 Le llega a tus clientes</span> Si alguien no renueva, el bot le escribe a los 7 y a los 30 días con tu oferta y un botón para volver.', wb.on, `${noBot}
       ${sw('on', wb.on, 'Enviar mensajes para recuperarles')}
       <div class="gr-chips"><span>Cuándo:</span><label class="gr-chip"><input type="checkbox" name="d7"${wb.d7 !== false ? ' checked' : ''}><span>A los 7 días</span></label><label class="gr-chip"><input type="checkbox" name="d30"${wb.d30 !== false ? ' checked' : ''}><span>A los 30 días</span></label></div>
       <label class="f">Tu oferta <span class="muted">(opcional)</span><input name="offer" maxlength="300" value="${esc(wb.offer || '')}" placeholder="${offerEx}"></label>
@@ -5517,11 +5599,11 @@ function vCrecer() {
       ${g.winback.want.length ? `<div class="gr-list"><h4>🙋 Quieren volver: escríbeles</h4>${g.winback.want.map((x) => `<div class="gr-li"><div><b>${esc(x.name)}</b><small>@${esc(x.emby)} · ${fmtTs(x.at, true)}</small></div><div class="gr-li-a">${contact(x)}</div></div>`).join('')}</div>` : ''}
       <p class="gr-note">ℹ️ Solo llega a quien tiene el bot enlazado (${g.tgLinked} clientes). Sigue funcionando también el aviso de «rescate» a los pocos días de caducar.</p>
       ${save('winback')}`)}
-    ${card('weekly', 'c2', '📊', 'Resumen semanal', 'Cada semana te llega por Telegram cómo va el negocio: altas, renovaciones, bajas, dinero, caídas y plazas.', wk.on, `
+    ${card('weekly', 'c2', '📊', 'Resumen semanal', '<span class="aud y">🙋 Solo te llega a ti</span> Cada semana te llega por Telegram cómo va el negocio: altas, renovaciones, bajas, dinero, caídas y plazas.', wk.on, `
       ${sw('on', wk.on, 'Mandarme el resumen')}
       <div class="row2"><label class="f">Día<select name="day">${options(days.map((d, i) => [i, d]), wk.day ?? 1)}</select></label><label class="f">Hora<select name="hour">${options([8, 9, 10, 11, 12, 13, 16, 18, 20, 21, 22].map((x) => [x, x + ':00']), wk.hour ?? 10)}</select></label></div>
       <div class="gr-btns">${save('weekly')}<button type="button" class="btn" data-act="grow-weekly">📨 Mandármelo ahora</button></div>`)}
-    ${card('outage', 'c3', '📢', 'Avisar a los clientes si se cae un servidor', 'Si un servidor se cae, el bot lo publica en tu grupo o canal de clientes y avisa cuando vuelve. Te ahorras los «no me va».', ou.on, `${noBot}
+    ${card('outage', 'c3', '📢', 'Avisar a los clientes si se cae un servidor', '<span class="aud c">👥 Le llega a tu grupo de clientes</span> Si un servidor se cae, el bot lo publica en tu grupo o canal de clientes y avisa cuando vuelve. Te ahorras los «no me va».', ou.on, `${noBot}
       ${sw('on', ou.on, 'Publicar las caídas en el grupo')}
       <label class="f">Grupo o canal de clientes<input name="chat" maxlength="200" value="${esc(ou.chat || '')}" placeholder="https://t.me/tugrupo/123  ·  @tucanal"><small class="muted">Pega el enlace del grupo, del canal o del <b>tema</b> donde quieres el aviso (en el tema: mantén pulsado un mensaje › Copiar enlace).</small></label>
       <div class="row2"><label class="f">Esperar antes de avisar<select name="delay">${options([[1, '1 minuto'], [2, '2 minutos'], [3, '3 minutos (recomendado)'], [5, '5 minutos'], [10, '10 minutos'], [15, '15 minutos']], ou.delay || 3)}</select></label>
@@ -5529,18 +5611,209 @@ function vCrecer() {
       <ol class="gr-steps"><li>Añade tu bot al grupo o canal.</li><li>Hazlo <b>administrador</b> (para que pueda escribir).</li><li>Pega aquí el enlace y pulsa <b>Probar</b>.</li></ol>
       <div class="gr-prev two"><div><small>Cuando se cae:</small><pre>⚠️ El servidor${ou.name !== false ? ' «Server-236»' : ''} tiene un problema y ahora mismo no se puede ver.\n\nYa lo sabemos y estamos en ello: no hace falta que nos escribas.</pre></div><div><small>Cuando vuelve:</small><pre>✅ ¡Ya funciona!\n\nSi la app se quedó pensando, ciérrala y ábrela de nuevo.</pre></div></div>
       <div class="gr-btns">${save('outage')}<button type="button" class="btn" data-act="grow-test">🧪 Probar</button></div>`)}
-    ${card('survey', 'c4', '⭐', 'Encuesta «¿Qué tal el servicio?»', 'Unos días después del alta, el bot le pide de 1 a 5 estrellas. Si pone 1 o 2, te avisa al momento para que le escribas.', sv.on, `${noBot}
+    ${card('survey', 'c4', '⭐', 'Encuesta «¿Qué tal el servicio?»', '<span class="aud c">👥 Le llega a tus clientes nuevos</span> Unos días después del alta, el bot le pide de 1 a 5 estrellas. Si pone 1 o 2, te avisa al momento para que le escribas.', sv.on, `${noBot}
       ${sw('on', sv.on, 'Preguntar a los clientes nuevos')}
       <label class="f">Cuándo preguntar<select name="days">${options([[7, 'A la semana del alta'], [15, 'A los 15 días'], [30, 'Al mes (recomendado)'], [60, 'A los 2 meses']], sv.days || 30)}</select><small class="muted">Solo a los que se den de alta desde que la enciendes${sv.since ? ` (${fmt(sv.since)})` : ''}: no se manda de golpe a todos tus clientes.</small></label>
       ${totV ? `<div class="gr-score"><div class="gr-avg"><b>${g.survey.avg.toFixed(1).replace('.', ',')}</b><span class="gr-stars">${stars(g.survey.avg)}</span><small>${plural(totV, 'voto', 'votos')} de ${g.survey.asked} preguntados</small></div>
         <div class="gr-dist">${[5, 4, 3, 2, 1].map((k) => `<div><span>${k}★</span><i><em style="width:${Math.round(g.survey.dist[k - 1] / maxD * 100)}%;background:${k >= 4 ? '#22c55e' : k === 3 ? '#eab308' : '#ef4444'}"></em></i><b>${g.survey.dist[k - 1]}</b></div>`).join('')}</div></div>` : `<p class="gr-note">Todavía no hay votos.${g.survey.asked ? ` Preguntados: ${g.survey.asked}.` : ''}</p>`}
       ${g.survey.low.length ? `<div class="gr-list bad"><h4>😟 No están contentos: escríbeles</h4>${g.survey.low.map((x) => `<div class="gr-li"><div><b>${esc(x.name)} <span class="gr-low">${'★'.repeat(x.n)}</span></b><small>@${esc(x.emby)} · ${fmtTs(x.at, true)}</small></div><div class="gr-li-a">${contact(x)}</div></div>`).join('')}</div>` : ''}
       ${save('survey')}`)}
-    <div class="gr-card c5 on"><div class="gr-h"><span class="gr-i">🪑</span><div><h3>Plazas por servidor</h3><p>Pon un máximo de clientes en cada servidor y mira cuántas plazas te quedan. Al crear un cliente, el panel elige el más libre.</p></div></div>
+    ${isBot ? '' : `    <div class="gr-card c5 on"><div class="gr-h"><span class="gr-i">🪑</span><div><h3>Plazas por servidor</h3><p>Pon un máximo de clientes en cada servidor y mira cuántas plazas te quedan. Al crear un cliente, el panel elige el más libre.</p></div></div>
       <div class="gr-b">${g.rooms.length ? g.rooms.map(roomRow).join('') : '<p class="gr-note">Aún no tienes servidores.</p>'}</div></div>
     <div class="gr-card c6 on"><div class="gr-h"><span class="gr-i">😴</span><div><h3>Pagan pero no ven nada</h3><p>Clientes activos que llevan 7 días o más sin ver nada. Son los que menos renuevan: buen momento para escribirles.</p></div></div>
-      <div class="gr-b"><div class="gr-big"><b>${g.sleepy}</b><span>de ${g.live} clientes activos</span></div><button type="button" class="btn primary" data-act="go" data-v="inactivos">Ver la lista y escribirles</button></div></div>
+      <div class="gr-b"><div class="gr-big"><b>${g.sleepy}</b><span>de ${g.live} clientes activos</span></div><button type="button" class="btn primary" data-act="go" data-v="inactivos">Ver la lista y escribirles</button></div></div>`}
   </div>`;
+}
+/* v277: 🤖 Inicio del bot: el estado del bot y todo lo que hace, en una sola pantalla */
+function vBotCfg() { return head('Conexión del bot', 'El token del bot, cuándo avisa a tus clientes, su imagen y su nombre.') + `<p class="bt-aud"><span class="aud y">🙋 Solo para ti</span> Aquí se conecta el bot y se elige cuándo avisa. Lo que reciben tus clientes lo ves en <b>Avisos de caducidad</b> y <b>Mensajes automáticos</b>.</p>` + ajSections().notices; }
+function vBot() {
+  const d = S.d, nt = d.settings.notices.telegram, on = !!(nt && nt.bot), x = tgStats(d, d.today, addDays(d.today, -1));
+  const sup = isSuper(), sys = canDo('system'), ven = ['reseller', 'sub'].includes(me().role), staffy = staff();
+  const tile = (col, emo, title, txt, attrs, n) => `<button type="button" class="bt-t" style="--c:${col}" ${attrs}><span class="bt-e">${emo}</span><b>${title}${n ? ` <em class="bt-n">${n}</em>` : ''}</b><span>${txt}</span></button>`;
+  const sec = (cls, emo, title, txt, tiles) => tiles.length ? `<section class="bt-sec ${cls}"><div class="bt-sh"><span>${emo}</span><div><h3>${title}</h3><p>${txt}</p></div></div><div class="bt-grid">${tiles.join('')}</div></section>` : '';
+  const pend = noticeRows().filter((c) => c.noticeFor !== c.expires).length;
+  const cli = [
+    tile('#f59e0b', '⏰', 'Avisos de caducidad', 'Antes de que venza su cuenta, el bot le avisa solo con un botón para renovar.', 'data-view="avisos"', pend),
+    ...(sup ? [tile('#ec4899', '💌', 'Mensajes automáticos', 'Recuperar a los que no renuevan, encuesta de 1 a 5 estrellas y aviso si se cae un servidor.', 'data-view="botauto"')] : []),
+    tile('#8b5cf6', '🎁', 'Seguimiento de demos', 'Mensajes a los que probaron una demo y no compraron.', 'data-view="seguimiento"', d.followPending || 0),
+    ...(canDo('servers') ? [tile('#22c55e', '📺', 'Canal de novedades', 'Cada servidor publica las pelis y series nuevas en su canal. Y cada cliente puede pedir que se las mande el bot.', 'data-view="canales"')] : []),
+  ];
+  const vend = staffy && canDo('servers') ? [tile('#a855f7', '🧑‍💼', 'Novedades para vendedores', 'Tus vendedores pueden recibir lo nuevo en su Telegram o tener su propio canal con su nombre. Se activa en Canal de novedades.', 'data-view="canales"')]
+    : ven && d.settings.feedVend !== false ? [tile('#22c55e', '📺', 'Mis novedades', 'Recibe las pelis y series nuevas en tu Telegram para reenviarlas, o ten tu propio canal con tu nombre.', 'data-view="misnov"')] : [];
+  const mine = [
+    tile('#2aa3e6', '👥', 'Quién tiene el bot', `${plural(x.linked.length, 'cliente lo tiene', 'clientes lo tienen')} enlazado (${x.pct} %). Hoy, ${x.today.length} ${x.today.length === 1 ? 'nuevo' : 'nuevos'}.`, 'data-act="tg-stats"'),
+    ...(sys ? [tile('#94a3b8', '⚙️', 'Conexión del bot', 'El token, la imagen y el nombre del bot, el regalo por activarlo y los días de los avisos.', 'data-view="botcfg"')] : []),
+  ];
+  return head('Bot de Telegram', 'Todo lo que hace tu bot, ordenado por a quién le llega.') +
+    `<div class="bt-st ${on ? 'on' : 'off'}"><span class="bt-dot"></span><div><b>${on ? `Conectado como @${esc(nt.bot)}` : 'El bot no está conectado'}</b><span>${on ? `${plural(x.linked.length, 'cliente lo tiene', 'clientes lo tienen')} enlazado · ${x.pct} % de tus cuentas` : sys ? 'Conéctalo en «Conexión del bot»: se crea gratis con @BotFather.' : 'Pídeselo a tu administrador.'}</span></div>${on ? `<a class="btn sm" href="https://t.me/${esc(nt.bot)}" target="_blank" rel="noopener">Abrir el bot</a>` : sys ? '<button class="btn sm primary" data-view="botcfg">Conectar</button>' : ''}</div>` +
+    sec('c', '👥', ven ? 'Para tus clientes' : 'Para tus clientes', 'Lo que el bot les manda a ellos, en su chat de Telegram.', cli) +
+    sec('v', '🧑‍💼', ven ? 'Para ti como vendedor' : 'Para tus vendedores', ven ? 'Lo nuevo de tus servidores, para pasárselo a tus clientes.' : 'Lo que tus resellers pueden recibir para sus clientes.', vend) +
+    sec('y', '🙋', 'Para ti', 'Cómo va el bot y cómo está conectado.', mine);
+}
+/* v276: «Mis novedades» del vendedor: en su Telegram (para reenviar) o en su propio canal con su nombre */
+function vMisNov() {
+  const sub = '🧑‍💼 Para ti como vendedor: recibe las pelis y series nuevas de tus servidores para pasárselas a tus clientes.';
+  const f = S.mynov;
+  if (!f || (f.at && Date.now() - f.at > 20000)) { if (!f || !f.busy) { S.mynov = { busy: true }; api('GET', '/api/my-feed').then((r) => { S.mynov = { ...r, at: Date.now() }; if (S.view === 'misnov') render(); }, (e) => { S.mynov = { error: e.message }; if (S.view === 'misnov') render(); }); } return head('Mis novedades', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
+  if (f.busy) return head('Mis novedades', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (f.error) return head('Mis novedades', sub) + `<p class="err">${esc(f.error)}</p>`;
+  if (!f.hasBot) return head('Mis novedades', sub) + '<div class="panel"><div class="empty">Tu administrador todavía no tiene el bot de Telegram conectado.</div></div>';
+  const srv = f.servers.length ? f.servers.map((n) => `<span class="alc-tag">🖥️ ${esc(n)}</span>`).join(' ') : '<span class="muted small">Cuando tengas clientes activos, aquí salen sus servidores.</span>';
+  const bot = f.bot ? '@' + f.bot : 'el bot';
+  return head('Mis novedades', sub) + `<p class="muted small" style="margin:-4px 0 12px">De estos servidores: ${srv}</p><div class="gr-grid">
+    <form class="gr-card c2${f.tg ? ' on' : ''}" data-mn="tg" onsubmit="return false"><div class="gr-h"><span class="gr-i">📲</span><div><h3>En mi Telegram</h3><p>Te llegan a tu chat con ${esc(bot)}. Las reenvías a tus clientes o a tus grupos con un toque.</p></div><span class="gr-st">${f.tg ? 'Encendido' : 'Apagado'}</span></div>
+      <div class="gr-b">${f.myTg ? '' : '<p class="gr-warn">⚠️ Primero enlaza tu Telegram en <b>Mi cuenta</b>.</p>'}
+        <label class="gr-sw"><input type="checkbox" name="tg"${f.tg ? ' checked' : ''}><span class="sw"></span><b>Recibir las novedades</b></label>
+        <div class="row2"><label class="f">Cuándo<select name="tgMode">${options([['day', 'Un resumen al día'], ['now', 'Al momento, una a una']], f.tgMode || 'day')}</select></label>
+          <label class="f">Hora del resumen<select name="tgHour">${options([9, 10, 12, 14, 16, 18, 19, 20, 21, 22].map((x) => [x, x + ':00']), f.tgHour ?? 20)}</select></label></div>
+        <button type="button" class="btn primary gr-save" data-act="mn-save" data-k="tg">Guardar</button></div></form>
+    <form class="gr-card c4${f.on ? ' on' : ''}" data-mn="chan" onsubmit="return false"><div class="gr-h"><span class="gr-i">📣</span><div><h3>Mi propio canal</h3><p>Tu canal de Telegram publica solo lo nuevo, con tu cabecera y tu nombre. Se lo pasas a tus clientes.</p></div><span class="gr-st">${f.on ? 'Publicando' : 'Apagado'}</span></div>
+      <div class="gr-b">
+        <ol class="fd-steps"><li><b>Crea tu canal en Telegram</b><span>✏️ › Nuevo canal. Ponle tu nombre, por ejemplo «Novedades de ${esc(me().name)}».</span></li>
+          <li><b>Haz administrador a ${esc(bot)}</b><span>Canal › Administradores › Añadir administrador › busca ${esc(bot)} › con <i>Publicar mensajes</i>.</span></li>
+          <li><b>Pega aquí su enlace o @usuario</b><span>Y pulsa <i>Probar</i>: publicará una peli de ejemplo.</span></li></ol>
+        <label class="f">Enlace o @usuario del canal<input name="chan" maxlength="200" value="${esc(f.chan || '')}" placeholder="https://t.me/minovedades  ·  @minovedades"></label>
+        <div class="row2"><label class="f">Cabecera<input name="header" maxlength="80" value="${esc(f.header || '')}" placeholder="— Novedades —"></label><label class="f">Firma al final<input name="footer" maxlength="80" value="${esc(f.footer || '')}" placeholder="🍿 ${esc(me().name)}"></label></div>
+        <label class="gr-sw"><input type="checkbox" name="on"${f.on ? ' checked' : ''}><span class="sw"></span><b>Publicar en mi canal</b></label>
+        ${f.on ? `<div class="fd-kp"><div><b>${f.posts || 0}</b><span>publicaciones</span></div><div><b>${f.lastPost ? fmtTs(f.lastPost, true) : '—'}</b><span>última</span></div></div>` : ''}
+        ${f.error ? `<p class="fd-err">⚠️ ${esc(f.error)}</p>` : ''}
+        <div class="gr-btns"><button type="button" class="btn primary gr-save" data-act="mn-save" data-k="chan">Guardar</button><button type="button" class="btn" data-act="mn-test">🧪 Probar</button></div></div></form>
+  </div>`;
+}
+/* ---------- v274: Canal de contenidos (un canal de Telegram por servidor que publica solo lo nuevo) ---------- */
+function loadFeed() { S.feed = { busy: true }; api('GET', '/api/feed').then((r) => { S.feed = { ...r, at: Date.now() }; if (S.view === 'canales') render(); }, (e) => { S.feed = { error: e.message }; if (S.view === 'canales') render(); }); }
+document.addEventListener('change', (e) => { if (e.target && e.target.id === 'fdVend') api('PUT', '/api/feed-vendors', { on: e.target.checked }).then(() => { toast(e.target.checked ? '✅ Los vendedores ya pueden recibir las novedades' : 'Novedades para vendedores apagadas'); loadFeed(); }, (er) => toast(er.message, true)); });
+function vCanales() {
+  const sub = '👥 Para tus clientes: cada servidor publica en su canal de Telegram las pelis y series que se van añadiendo. Se crea en 3 pasos y luego funciona solo.';
+  const f = S.feed;
+  if (!f || (f.at && Date.now() - f.at > 20000)) { if (!f || !f.busy) loadFeed(); return head('Canal de novedades', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
+  if (f.busy) return head('Canal de novedades', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (f.error) return head('Canal de novedades', sub) + `<p class="err">${esc(f.error)}</p>`;
+  if (!f.hasBot) return head('Canal de novedades', sub) + '<div class="panel"><div class="empty">Primero conecta tu bot de Telegram en <b>Mensajes › Avisos al caducar</b>. Es el que publicará en los canales.</div></div>';
+  const KIND = { emby: ['Emby', '#52b54b'], jellyfin: ['Jellyfin', '#aa5cc3'], plex: ['Plex', '#e5a00d'], iptv: ['IPTV', '#38bdf8'] };
+  const card = (s) => {
+    const k = KIND[s.kind] || KIND.emby, iptv = s.kind === 'iptv';
+    const st = iptv ? ['off', 'No disponible en IPTV'] : s.on ? (s.error ? ['err', 'Con problemas'] : ['on', 'Publicando']) : s.chat ? ['off', 'Apagado'] : ['new', 'Sin canal'];
+    return `<article class="fd-card ${st[0]}" style="--k:${k[1]}">
+      <div class="fd-h"><span class="fd-ic">📺</span><div><h3>${esc(s.name)}</h3><span class="fd-k">${k[0]}</span></div><span class="fd-st">${st[1]}</span></div>
+      ${iptv ? '<p class="muted small" style="margin:0">En IPTV no hay pelis ni series nuevas que avisar.</p>' : `
+      ${s.chat ? `<div class="fd-ch">📣 <b>${esc(s.title || s.chat)}</b>${s.title && s.chat !== s.title ? `<small>${esc(s.chat)}</small>` : ''}</div>` : '<p class="muted small" style="margin:0">Todavía no tiene canal. Pulsa «Crear su canal» y sigue los pasos.</p>'}
+      ${s.on ? `<div class="fd-kp"><div><b>${s.posts}</b><span>publicaciones</span></div><div><b>${s.lastPost ? fmtTs(s.lastPost, true) : '—'}</b><span>última</span></div></div>` : ''}
+      ${s.error ? `<p class="fd-err">⚠️ ${esc(s.error)}</p>` : ''}
+      <div class="fd-bot${s.botOn ? ' on' : ''}"><div class="fd-bot-t"><b>🤖 Por el bot a cada cliente</b><span>${s.botOn ? `${s.botMode === 'now' ? 'Al momento' : `Resumen diario a las ${s.botHour}:00`} · <b>${s.subs}</b> de ${s.linked} apuntados` : 'Apagado'}</span></div><button type="button" class="btn sm" data-act="fd-bot" data-id="${s.id}">${s.botOn ? 'Cambiar' : 'Activar'}</button></div>
+      ${s.chat ? `<div class="fd-bot fd-top${s.topOn ? ' on' : ''}"><div class="fd-bot-t"><b>🔥 Lo más visto de la semana</b><span>${s.topOn ? 'Cada domingo a las 20:00' : 'Apagado'}</span></div><button type="button" class="btn sm" data-act="fd-top" data-id="${s.id}">${s.topOn ? 'Ver' : 'Activar'}</button></div>` : ''}
+      <div class="fd-btns">${s.chat ? `<button type="button" class="btn ${s.on ? '' : 'primary'}" data-act="fd-on" data-id="${s.id}" data-on="${s.on ? 0 : 1}">${s.on ? '⏸ Apagar' : '▶️ Encender'}</button><button type="button" class="btn" data-act="fd-test" data-id="${s.id}">🧪 Probar</button><button type="button" class="btn" data-act="fd-cfg" data-id="${s.id}">⚙️ Ajustes</button><button type="button" class="btn ghost" data-act="fd-wiz" data-id="${s.id}">Cambiar canal</button>` : `<button type="button" class="btn primary" data-act="fd-wiz" data-id="${s.id}">✨ Crear su canal</button>`}</div>`}
+    </article>`;
+  };
+  const vendBox = isSuper() ? `<div class="fd-vend"><label class="gr-sw" style="--g:#a855f7"><input type="checkbox" id="fdVend"${f.feedVend ? ' checked' : ''}><span class="sw"></span><b>Vendedores: pueden recibir las novedades</b></label><span class="muted small">En su panel les sale «Mis novedades»: las reciben en su Telegram para reenviarlas, o en su propio canal con su nombre. Solo de los servidores donde tienen clientes.${f.vendUsing ? ` Ahora lo usan <b>${f.vendUsing}</b>.` : ''}</span></div>` : '';
+  return head('Canal de novedades', sub) + vendBox + `<div class="fd-how"><b>Cómo funciona:</b> cuando se añade algo al servidor, el bot lo publica en su canal con la carátula: <i>🎬 Nueva película</i>, <i>📺 Nuevo capítulo</i> o <i>📺 3 capítulos nuevos</i> (los de la misma serie van juntos). Empieza desde que lo enciendes: no publica lo antiguo.</div>
+    <div class="fd-grid">${f.servers.map(card).join('')}</div>`;
+}
+/** Novedades por el bot: cada cliente que se apunta recibe lo nuevo que puede ver en su cuenta */
+function dFeedBot(id) {
+  const s = S.feed.servers.find((x) => x.id === id); if (!s) return;
+  openDlg({ title: `🤖 Novedades por el bot · ${s.name}`, submit: 'Guardar',
+    body: `<p class="supnote" style="--x:1">Además del canal, cada cliente puede recibir las novedades <b>en su chat con el bot</b>, y solo de lo que puede ver en su cuenta. Solo les llega a los que lo piden con el botón <b>«🔔 Avisarme de novedades»</b> del menú del bot.</p>
+      <label class="gr-sw" style="--g:#2aa3e6"><input type="checkbox" name="on"${s.botOn ? ' checked' : ''}><span class="sw"></span><b>Enviar novedades por el bot</b></label>
+      <div class="row2" style="margin-top:12px"><label class="f">Cuándo<select name="mode">${options([['day', 'Un resumen al día (recomendado)'], ['now', 'Al momento, una a una']], s.botMode)}</select></label>
+        <label class="f">Hora del resumen<select name="hour">${options([9, 10, 12, 14, 16, 18, 19, 20, 21, 22].map((x) => [x, x + ':00']), s.botHour)}</select></label></div>
+      <div class="fd-kp" style="margin:4px 0 12px"><div><b>${s.subs}</b><span>apuntados</span></div><div><b>${s.linked}</b><span>tienen el bot</span></div></div>
+      ${s.botOn ? `<button type="button" class="btn" data-act="fd-invbot" data-id="${s.id}">📨 Invitar a mis clientes a apuntarse</button><p class="muted small" style="margin:6px 0 0">Les manda un mensaje con el botón «🔔 Sí, avísame». Como mucho una vez por semana.</p>` : '<p class="muted small" style="margin:0">Cuando lo enciendas podrás invitar a tus clientes a apuntarse.</p>'}`,
+    onSubmit: async (fd) => {
+      await api('PUT', `/api/feed/${id}`, { botOn: fd.get('on') === 'on', botMode: fd.get('mode'), botHour: +fd.get('hour') });
+      loadFeed();
+      return fd.get('on') === 'on' ? '🤖 Novedades por el bot encendidas' : 'Novedades por el bot apagadas';
+    } });
+}
+/** v280: «Lo más visto de la semana»: cada domingo en el canal, con los 5 títulos que más personas han visto */
+function dFeedTop(id) {
+  const s = S.feed.servers.find((x) => x.id === id); if (!s) return;
+  const med = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'], top = s.top || [];
+  openDlg({ title: `🔥 Lo más visto · ${s.name}`, submit: 'Guardar',
+    body: `<p class="supnote" style="--x:1">Cada <b>domingo a las 20:00</b> el bot publica en el canal los 5 títulos que más personas han visto esa semana en este servidor, con la carátula del primero. Si hay menos de 3, ese domingo no se publica.</p>
+      <label class="gr-sw" style="--g:#f97316"><input type="checkbox" name="on"${s.topOn ? ' checked' : ''}><span class="sw"></span><b>Publicar lo más visto cada domingo</b></label>
+      <h4 style="margin:14px 0 0">Así va esta semana</h4>
+      ${top.length ? `<ol class="fd-topl">${top.map((x, i) => `<li><span>${med[i]}</span><b>${esc(x.t)}</b><small>${x.k === 'serie' ? '📺' : '🎬'} ${plural(x.n, 'persona', 'personas')}</small></li>`).join('')}</ol>
+      <button type="button" class="btn" data-act="fd-topnow" data-id="${s.id}">📣 Publicarlo ahora en el canal</button>` : '<p class="muted small">Todavía no hay datos de lo que se ha visto esta semana. Se van apuntando solos cada minuto.</p>'}`,
+    onSubmit: async (fd) => {
+      await api('PUT', `/api/feed/${id}`, { topOn: fd.get('on') === 'on' });
+      loadFeed();
+      return fd.get('on') === 'on' ? '🔥 Lo más visto: encendido' : 'Lo más visto: apagado';
+    } });
+}
+/** Ajustes del canal: bibliotecas, cabecera, qué datos salen y en qué orden (con vista previa), y enlace de invitación */
+async function dFeedCfg(id) {
+  const f = S.feed, s = f.servers.find((x) => x.id === id); if (!s) return;
+  let libs = [];
+  try { libs = (await api('GET', `/api/feed/${id}/libs`)).libs || []; } catch (e) { toast(e.message, true); }
+  const names = Object.fromEntries(f.fieldNames || []), all = !(s.libs || []).length;
+  const fieldRow = (x) => `<li class="fd-fr" data-k="${x.k}"><label><input type="checkbox" name="fld_${x.k}"${x.on ? ' checked' : ''}><span>${esc(names[x.k] || x.k)}</span></label><span class="fd-ar"><button type="button" data-mv="-1" aria-label="Subir">↑</button><button type="button" data-mv="1" aria-label="Bajar">↓</button></span></li>`;
+  openDlg({ title: `Ajustes del canal · ${s.name}`, submit: 'Guardar ajustes', wide: true,
+    body: `<div class="fd-cfg">
+      <div class="fd-col">
+        <h4>📚 Bibliotecas de origen</h4>
+        <div class="fd-libs">${libs.length ? `<label class="check"><input type="checkbox" name="alllibs"${all ? ' checked' : ''}> <b>Todas</b></label>` + libs.map((l) => `<label class="check"><input type="checkbox" name="lib" value="${esc(l.id)}"${all || s.libs.includes(l.id) ? ' checked' : ''}> ${esc(l.name)}</label>`).join('') : '<p class="muted small">No he podido leer las bibliotecas.</p>'}</div>
+        <h4>🏷️ Cabecera de marca</h4>
+        <input name="header" maxlength="80" value="${esc(s.header)}" placeholder="— Novedades ${esc(BRAND.name)} —"><small class="muted">Opcional. Si la dejas vacía no sale.</small>
+        <h4>🧩 Datos de cada publicación</h4>
+        <small class="muted">Marca los que quieres y ordénalos con las flechas. Si a un título le falta un dato, esa línea no sale.</small>
+        <ol class="fd-fl">${s.fields.map(fieldRow).join('')}</ol>
+        <h4>🔗 Enlace de invitación del canal</h4>
+        <input name="invite" maxlength="200" value="${esc(s.invite)}" placeholder="https://t.me/+AbCdEf…"><small class="muted">En Telegram: el canal › Administradores › Enlaces de invitación. Con él, los clientes de este servidor ven en el bot el botón «🍿 Canal de novedades».</small>
+      </div>
+      <div class="fd-col"><h4>👀 Así se verá</h4><div class="fd-prev"><div class="fd-pimg" id="fdPimg">Carátula</div><pre id="fdPrev">…</pre></div>
+        <button type="button" class="btn sm ghost bad" id="fdUnlink" style="margin-top:12px">Desvincular canal</button></div>
+    </div>`,
+    onOpen: () => {
+      const fm = dlgForm, list = fm.querySelector('.fd-fl');
+      const read = () => [...list.children].map((li) => ({ k: li.dataset.k, on: fm.elements['fld_' + li.dataset.k].checked }));
+      let tmr;
+      const prev = () => { clearTimeout(tmr); tmr = setTimeout(async () => {
+        const fields = read(); $('#fdPimg').hidden = !fields.find((x) => x.k === 'poster').on;
+        try { $('#fdPrev').textContent = (await api('POST', `/api/feed/${id}/preview`, { header: fm.elements.header.value, fields })).text; } catch { /* nada */ }
+      }, 200); };
+      list.addEventListener('click', (e) => { const b = e.target.closest('[data-mv]'); if (!b) return; const li = b.closest('li'), d = +b.dataset.mv;
+        if (d < 0 && li.previousElementSibling) list.insertBefore(li, li.previousElementSibling); else if (d > 0 && li.nextElementSibling) list.insertBefore(li.nextElementSibling, li); prev(); });
+      fm.addEventListener('input', prev); fm.addEventListener('change', (e) => {
+        if (e.target.name === 'alllibs') fm.querySelectorAll('input[name=lib]').forEach((x) => { x.checked = e.target.checked; });
+        else if (e.target.name === 'lib' && fm.elements.alllibs) fm.elements.alllibs.checked = [...fm.querySelectorAll('input[name=lib]')].every((x) => x.checked);
+      });
+      $('#fdUnlink').onclick = () => { dlg.close(); dConfirm('¿Desvincular el canal?', `El bot dejará de publicar en el canal de ${esc(s.name)}. El canal no se borra de Telegram.`, 'Sí, desvincular', () => api('PUT', `/api/feed/${id}`, { unlink: true }).then(loadFeed), 'Canal desvinculado'); };
+      prev();
+    },
+    onSubmit: async (fd) => {
+      const fm = dlgForm, boxes = [...fm.querySelectorAll('input[name=lib]')], picked = boxes.filter((x) => x.checked).map((x) => x.value);
+      if (boxes.length && !picked.length) throw new Error('Elige al menos una biblioteca.');
+      const fields = [...fm.querySelectorAll('.fd-fl li')].map((li) => ({ k: li.dataset.k, on: fm.elements['fld_' + li.dataset.k].checked }));
+      await api('PUT', `/api/feed/${id}`, { libs: picked.length === boxes.length ? [] : picked, header: fd.get('header') || '', fields, invite: fd.get('invite') || '' });
+      loadFeed();
+      return '✅ Ajustes del canal guardados';
+    } });
+}
+/** Asistente paso a paso para crear el canal de un servidor */
+function dFeedWiz(id) {
+  const f = S.feed, s = f.servers.find((x) => x.id === id); if (!s) return;
+  const bot = f.bot ? '@' + f.bot : 'tu bot';
+  const chats = (f.chats || []).filter((c) => c.type === 'channel' || c.type === 'supergroup');
+  openDlg({ title: `Canal de contenidos de ${s.name}`, submit: 'Guardar y probar',
+    body: `<ol class="fd-steps">
+      <li><b>Crea el canal en Telegram</b><span>Pulsa ✏️ › <i>Nuevo canal</i>. Ponle un nombre, por ejemplo «${esc(s.name)} · Novedades», y una foto si quieres. Puede ser público o privado.</span></li>
+      <li><b>Añade el bot como administrador</b><span>Dentro del canal: nombre del canal › <i>Administradores</i> › <i>Añadir administrador</i> › busca <b>${esc(bot)}</b> › deja activado <i>Publicar mensajes</i> › Guardar.</span></li>
+      <li><b>Elige el canal aquí</b><span>Cuando hagas al bot administrador, el canal aparece solo aquí abajo. ${chats.length ? '' : 'Si aún no sale, pulsa «Buscar de nuevo» después de añadirlo.'}</span></li>
+    </ol>
+    <div class="fd-pick">${chats.length ? chats.map((c, i) => `<label class="fd-opt"><input type="radio" name="pick" value="${i}"${String(c.id) === String(s.chat) || (!s.chat && i === 0) ? ' checked' : ''}><span><b>${c.type === 'channel' ? '📣' : '👥'} ${esc(c.title || 'Sin nombre')}</b><small>${c.user ? '@' + esc(c.user) + ' · ' : ''}${c.type === 'channel' ? 'canal' : 'grupo'} · el bot entró ${fmtTs(c.at, true)}${c.canPost ? '' : ' · ⚠️ sin permiso para publicar'}</small></span></label>`).join('') : '<p class="muted small" style="margin:0">Todavía no he visto al bot en ningún canal.</p>'}
+      <button type="button" class="btn sm ghost" data-act="fd-rescan" data-id="${s.id}">🔄 Buscar de nuevo</button></div>
+    <details class="fd-man"><summary>O pega el enlace o @usuario del canal</summary><input name="manual" placeholder="https://t.me/minovedades  ·  @minovedades" value="${!chats.some((c) => String(c.id) === String(s.chat)) ? esc(s.chat) : ''}"></details>`,
+    onSubmit: async (fd) => {
+      const man = String(fd.get('manual') || '').trim(), pick = fd.get('pick');
+      const c = !man && pick != null ? chats[+pick] : null;
+      const chat = man || (c ? String(c.id) : '');
+      if (!chat) throw new Error('Elige el canal de la lista o pega su enlace.');
+      await api('POST', `/api/feed/${s.id}/test`, { chat });
+      await api('PUT', `/api/feed/${s.id}`, { chat, title: c ? c.title : man, on: true });
+      loadFeed();
+      return '✅ Canal listo: te he publicado una prueba y ya está encendido';
+    } });
 }
 function vInactivos() {
   const sub = 'Clientes con cuenta activa que llevan días sin ver nada. Útil para avisarles o decidir si renuevas.';
@@ -5705,7 +5978,9 @@ const QS_KEYS = {
   resumen: 'inicio dashboard principal portada', nuevo: 'crear cuenta alta nueva cliente añadir', demonueva: 'demo prueba test gratis crear',
   cobros: 'pagos pendiente cobrar deuda dinero', avisos: 'avisos vencimiento whatsapp recordatorio caduca', auditoria: 'auditoria comprobar comparar comparacion emby diferencias revisar sobran sin eliminar servidor usuarios',
   movimientos: 'historial registro cambios', papelera: 'borrados eliminados baja desactivados', demosvencidas: 'papelera demos terminadas caducadas vencidas', movdemos: 'historial demos',
-  servidores: 'servidor emby api key bibliotecas paquetes basico 4k conectar', plantillas: 'mensajes plantillas textos whatsapp', calendario: 'fechas calendario vencimientos',
+  servidores: 'servidor emby api key bibliotecas paquetes basico 4k conectar',
+  canales: 'canal contenidos telegram novedades peliculas series nuevas publicar',
+  bot: 'bot telegram clientes enlazados avisos novedades', botcfg: 'bot telegram token botfather bienvenida conectar', plantillas: 'mensajes plantillas textos whatsapp', calendario: 'fechas calendario vencimientos',
   directo: 'en directo viendo ahora reproduciendo', monitor: 'monitor sesiones reproducciones viendo transcode detener caratulas mensaje pantalla', inactivos: 'inactivos no ven sin conexion ultima conexion',
   uso: 'estadisticas lo mas visto horas punta peliculas series', altrans: 'transcode alertas conversion', alses: 'sesiones excedidas pantallas compartir cuenta limite', alhist: 'historial alertas',
   equipo: 'vendedores resellers subresellers revendedores', equipooff: 'vendedores desactivados bloqueados', equipodel: 'eliminados papelera vendedores borrados restaurar administradores', stats: 'estadisticas ventas vendedores ranking', venajustes: 'ajustes vendedores',
@@ -5748,7 +6023,7 @@ const QS_SET = [
   ['Reiniciar Emby o el VPS', 'estado', 'reiniciar reboot restart emby vps apagar programar', ''],
   ['Rescate automático de Emby', 'estado', 'rescate automatico colgado emby reinicio solo', 'Rescate'],
   ['Instalar el agente del servidor', 'estado', 'agente instalar orden vps monitorizar', ''],
-  ['Pagos online (Stripe / cripto)', 'pagos', 'stripe nowpayments tarjeta cripto bitcoin pasarela', ''],
+  ['Cobro a vendedores (Stripe / cripto)', 'pagos', 'stripe nowpayments tarjeta cripto bitcoin pasarela', ''],
   ['Contacto para renovar licencias', 'licencias', 'contacto renovar licencia alquiler', 'contacto'],
   ['Retención de datos', 'retencion', 'retencion borrar antiguos limpiar registros', ''],
 ];
@@ -5885,14 +6160,14 @@ async function payReturn() {
 function vPagos() {
   const sub = 'Tus vendedores compran créditos desde el panel y se les suman solos al pagar.';
   const p = S.pay;
-  if (!p) return head('Pagos online', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
-  if (p.error) return head('Pagos online', sub) + `<p class="err">${esc(p.error)}</p>`;
+  if (!p) return head('Cobro a vendedores', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (p.error) return head('Cobro a vendedores', sub) + `<p class="err">${esc(p.error)}</p>`;
   const c = p.cfg, base = (S.d.settings.brand.url || location.origin).replace(/\/+$/, '');
   const copy = (txt) => `<div class="cpy"><code>${esc(txt)}</code><button type="button" class="btn sm" data-act="copy-txt" data-t="${esc(txt)}">${ic('copy')}Copiar</button></div>`;
   const paid = p.all.filter((o) => o.status === 'paid'), ym = new Date().toISOString().slice(0, 7), month = paid.filter((o) => o.paidAt && o.paidAt.slice(0, 7) === ym);
   const sum = (l) => l.reduce((n, o) => n + o.amount, 0);
   const tiles = [[money(sum(month), p.currency), 'cobrado online este mes', '#19c37d', 'wallet'], [month.length, 'compras este mes', '#3fa9f5', 'coins'], [p.all.filter((o) => o.status === 'pending').length, 'pagos sin terminar', '#f5a524', 'clock']];
-  return head('Pagos online', sub) + `
+  return head('Cobro a vendedores', sub) + `
     <div class="warnbox" style="margin-bottom:14px"><b>Antes de activarlo:</b> <span class="small">Stripe y otras pasarelas revisan a qué se dedica cada negocio y pueden cerrar la cuenta o retener el dinero si creen que no cumple sus normas. Lee sus condiciones. Las claves se guardan solo en tu servidor y nunca se enseñan en el panel.</span></div>
     <div class="ktiles">${tiles.map(([n, l, col, i]) => `<div class="ktile" style="--c:${col}">${ic(i)}<b>${n}</b><span>${l}</span></div>`).join('')}</div>
     <div class="secgrid">
@@ -6142,6 +6417,7 @@ function adminCard(u) {
       ${ib('adm-link', 'link', u.xtreme ? 'Panel Xtreme vinculado' : 'Vincular a panel Xtreme', u.xtreme ? 'on' : '')}
       ${ib('user-edit', 'edit', 'Editar')}
       ${ib('adm-perms', 'shield', 'Gestionar permisos')}
+      ${me().owner && !u.disabled ? `<button class="btn sm sup-b" data-act="adm-promote" data-id="${u.id}">⭐ Hacer superadmin</button>` : ''}
       ${u.disabled ? `<button class="btn sm" data-act="adm-on" data-id="${u.id}">${ic('play')}Activar</button>` + ib('user-del', 'trash', 'Borrar para siempre', 'bad') : ib('adm-off', 'power', 'Desactivar (por ejemplo, si no paga)', 'bad')}
       <span class="sp"></span>
       ${ib('user-more', 'more', 'Más opciones', 'plain')}
@@ -6154,17 +6430,29 @@ function vAdmins() {
   const list = all.filter((u) => !!u.disabled === off && (!q || (u.name + ' ' + u.username + ' ' + u.email).toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name));
   const nOff = all.filter((u) => u.disabled).length;
   const tab = (k, t, n) => `<button role="tab" data-act="adm-tab" data-k="${k}" aria-selected="${(k === 'off') === off}">${t} (${n})</button>`;
-  return head('Gestión de Administradores', 'Gestiona tus administradores y sub-admins: qué puede hacer cada uno y si gasta créditos.', `<button class="btn primary" data-act="adm-new">${ic('userplus')}Crear Sub-Admin</button>`) +
+  // v273: superadministradores (socios): mismo poder que el dueño. Solo el dueño los ve aquí y los gestiona
+  const sups = S.d.users.filter((u) => u.role === 'super' && u.id !== me().id);
+  const supCard = (u) => `<article class="acard sup${u.disabled ? ' off' : ''}"><div class="atop"><div><div class="aname">${esc(u.name)}${u.owner ? ' <span class="tag gold">👑 Dueño</span>' : ''}</div><div class="muted small">@${esc(u.username)}</div></div>
+      <div class="abadges"><span class="tag gold">⭐ Superadministrador</span><span class="tag ${u.disabled ? 'offk' : 'okk'}">${u.disabled ? 'Desactivado' : 'Activo'}</span></div></div>
+      <p class="muted small" style="margin:6px 0 0">Tiene las mismas opciones que tú. No puede cambiar tu cuenta ni crear otros superadministradores.</p>
+      ${lastAccessHtml(u, 'pad')}
+      ${canManage(u) ? `<div class="abar"><button type="button" class="ib" data-act="user-edit" data-id="${u.id}" title="Editar" aria-label="Editar: ${esc(u.name)}">${ic('edit')}</button>
+        <button class="btn sm" data-act="adm-demote" data-id="${u.id}">Pasar a administrador</button>
+        ${u.disabled ? `<button class="btn sm" data-act="adm-on" data-id="${u.id}">${ic('play')}Activar</button>` : `<button type="button" class="ib bad" data-act="adm-off" data-id="${u.id}" title="Desactivar" aria-label="Desactivar: ${esc(u.name)}">${ic('power')}</button>`}</div>` : ''}</article>`;
+  const supBox = me().role === 'super' && (sups.length || me().owner) ? `<section class="supbox"><div class="supbox-h"><h3>⭐ Superadministradores</h3><p class="muted small">${me().owner ? 'Para tu socio: ve y hace lo mismo que tú, cada uno con su usuario y su contraseña.' : 'Los que tienen las mismas opciones que tú.'}</p></div>
+      ${sups.length ? `<div class="vcards">${sups.map(supCard).join('')}</div>` : '<p class="muted small" style="margin:0">Todavía no hay otro superadministrador.</p>'}</section>` : '';
+  return head('Gestión de Administradores', 'Gestiona tus administradores y sub-admins: qué puede hacer cada uno y si gasta créditos.', `${me().owner ? '<button class="btn sup-b" data-act="sup-new">⭐ Nuevo superadministrador</button>' : ''}<button class="btn primary" data-act="adm-new">${ic('userplus')}Crear Sub-Admin</button>`) + supBox +
     `<div class="tabs" role="tablist">${tab('on', 'Activos', all.length - nOff)}${tab('off', 'Desactivados', nOff)}</div>
     <div class="tools"><input type="search" id="admq" placeholder="Buscar por email o nombre…" value="${esc(S.admQ || '')}" aria-label="Buscar administradores"></div>` +
     (list.length ? `<div class="vcards">${list.map(adminCard).join('')}</div>`
       : `<div class="panel"><div class="empty">${q ? 'Ningún administrador coincide con la búsqueda.' : off ? 'No hay administradores eliminados.' : 'Todavía no hay administradores. Pulsa «Crear Sub-Admin» para añadir el primero.'}</div></div>`);
 }
 /** Crear un administrador o editar sus datos */
-function dAdmin(u) {
+function dAdmin(u, role = 'admin') {
+  const sup = !u && role === 'super';
   openDlg({
-    title: u ? 'Editar Administrador' : 'Crear Sub-Admin', submit: u ? 'Guardar cambios' : 'Crear administrador',
-    body: `<p class="muted small" style="margin:-8px 0 14px">${u ? `Modifica los datos de ${esc(u.name)}. Entra al panel como ${esc(u.username)}.` : 'Nace con los permisos habituales (clientes, vendedores, créditos y reportes). Después los ajustas con el botón del escudo.'}</p>
+    title: sup ? '⭐ Nuevo superadministrador' : u ? 'Editar Administrador' : 'Crear Sub-Admin', submit: sup ? 'Crear superadministrador' : u ? 'Guardar cambios' : 'Crear administrador',
+    body: `${sup ? '<p class="supnote">⭐ Tendrá <b>las mismas opciones que tú</b>: todo el panel, Crecer, Socios, licencias y ajustes. No podrá cambiar ni quitar tu cuenta. Cada uno entra con su usuario y su contraseña, y en el Historial se ve quién hizo cada cosa.</p>' : ''}<p class="muted small" style="margin:-8px 0 14px"${sup ? ' hidden' : ''}>${u ? `Modifica los datos de ${esc(u.name)}. Entra al panel como ${esc(u.username)}.` : 'Nace con los permisos habituales (clientes, vendedores, créditos y reportes). Después los ajustas con el botón del escudo.'}</p>
       <label class="f">Nombre completo<input name="name" required maxlength="60" autocomplete="off" value="${esc(u ? u.name : '')}"></label>
       <label class="f">Email<input type="email" name="email" maxlength="120" autocomplete="off" value="${esc(u ? u.email : '')}" placeholder="nombre@correo.com"></label>
       ${u ? '' : '<label class="f">Usuario para entrar<input name="username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._\\-]+" autocomplete="off" autocapitalize="none" placeholder="lucas"></label>'}
@@ -6179,9 +6467,9 @@ function dAdmin(u) {
       const body = { name: fd.get('name'), email: fd.get('email'), creditPrice: +(fd.get('creditPrice') || 0), currency: fd.get('currency'), useCredits: fd.get('useCredits') === 'on' };
       if (fd.get('password')) body.password = fd.get('password');
       if (u) await api('PUT', `/api/users/${u.id}`, body);
-      else await api('POST', '/api/users', { ...body, username: fd.get('username'), role: 'admin' });
+      else await api('POST', '/api/users', { ...body, username: fd.get('username'), role: sup ? 'super' : 'admin' });
       S.admPass = body.password ? { user: u ? u.username : String(fd.get('username')).trim().toLowerCase(), pw: body.password } : null;
-      return u ? 'Administrador guardado' : 'Administrador creado';
+      return sup ? '⭐ Superadministrador creado' : u ? 'Administrador guardado' : 'Administrador creado';
     },
     // con la contraseña recien puesta se puede dar el mensaje completo
     after: () => { const k = S.admPass; S.admPass = null; const made = k && S.d.users.find((x) => x.username === k.user); if (made) dVendorMsg(made, k.pw); },
@@ -7068,7 +7356,8 @@ function vNotifs() {
     ${row(al.transcode.on, 'Control de transcodificación', al.transcode.on ? 'Encendido' + (al.transcode.stop ? ': detiene la reproducción' : ': solo avisa') : 'Apagado', 'altrans')}
     ${row(al.sessions.on, 'Sesiones excedidas', al.sessions.on ? 'Encendido' + (al.sessions.stop ? ': detiene la reproducción' : ': solo avisa') : 'Apagado', 'tiempos')}
     <div class="k">${ic('msg')}<div>Plantillas de mensajes<small>Los textos que copias o envías a clientes y vendedores</small></div><button class="btn sm" data-view="plantillas">Editar</button></div>
-  </div></div></section>` + ajSections().notices;
+    <div class="k">${ic('send')}<div>Bot de Telegram y avisos de caducidad<small>Ahora están todos juntos en el apartado 🤖 Bot del menú</small></div><button class="btn sm" data-view="bot">Ir al Bot</button></div>
+  </div></div></section>`;
 }
 /* ---------- Ajustes: Importar ---------- */
 const IMP_COLS = { username: ['username', 'user', 'usuario', 'login', 'cuenta', 'emby', 'nombre_de_usuario', 'user_name', 'usuario_emby', 'usuario_de_emby', 'emby_user', 'emby_username', 'username_emby', 'user_emby', 'emby_name'], password: ['password', 'pass', 'contrasena', 'clave', 'pwd'], server: ['server', 'servidor', 'host', 'url', 'server_url'],
@@ -7621,8 +7910,8 @@ function vCobroCli() {
   const c = d.cfg, pr = c.prices || {}, cur = S.d.settings.currency || 'EUR';
   const money = (n) => Number(n).toLocaleString('es-ES', { style: 'currency', currency: cur });
   const hasMan = ['bizum', 'paypal', 'revolut'].some((k) => (c.manual || {})[k]) || !!(d.pp && d.pp.on);
-  const warn = !d.stripe.on ? (hasMan ? '' : `<div class="ap-card" style="border-color:#f59e0b"><b>⚠️ Activa Stripe o pon Bizum, PayPal o Revolut</b><p class="muted small" style="margin:4px 0 8px">Para la tarjeta se usa tu Stripe de Ajustes › Pagos online. Si no lo usas, rellena más abajo tu Bizum, PayPal o Revolut.</p><button type="button" class="btn" data-view="pagos">Ir a Pagos online</button></div>`)
-    : !d.stripe.wh ? `<div class="ap-card" style="border-color:#f59e0b"><b>💡 Recomendado: el webhook de Stripe</b><p class="muted small" style="margin:4px 0 0">Sin él también funciona (se comprueba cuando el cliente vuelve de pagar), pero con el webhook la renovación es segura aunque el cliente cierre la página. Se pone en Ajustes › Pagos online.</p></div>` : '';
+  const warn = !d.stripe.on ? (hasMan ? '' : `<div class="ap-card" style="border-color:#f59e0b"><b>⚠️ Activa Stripe o pon Bizum, PayPal o Revolut</b><p class="muted small" style="margin:4px 0 8px">Para la tarjeta se usa tu Stripe de Dinero › Cobro a vendedores. Si no lo usas, rellena más abajo tu Bizum, PayPal o Revolut.</p><button type="button" class="btn" data-view="pagos">Ir a Cobro a vendedores</button></div>`)
+    : !d.stripe.wh ? `<div class="ap-card" style="border-color:#f59e0b"><b>💡 Recomendado: el webhook de Stripe</b><p class="muted small" style="margin:4px 0 0">Sin él también funciona (se comprueba cuando el cliente vuelve de pagar), pero con el webhook la renovación es segura aunque el cliente cierre la página. Se pone en Dinero › Cobro a vendedores.</p></div>` : '';
   const pub = `<section class="ap-card ap-pub${c.on ? ' on' : ''}"><div class="ap-pubrow"><div><b>${c.on ? '✅ Cobro a clientes activado' : '⏸️ Cobro a clientes apagado'}</b><small>${c.on ? 'Los avisos de caducidad por Telegram llevan el botón «💳 Pagar y renovar».' : 'Prepara los precios y actívalo cuando quieras.'}</small></div><button type="button" class="ap-big${c.on ? ' on' : ''}" data-act="cp-on" aria-pressed="${!!c.on}"><i></i></button></div></section>`;
   const table = cpTable(pr, c.desc, 'Son tus precios. Tus resellers y subresellers, si se lo activas, ponen los suyos aparte.');
   const subs = `<section class="ap-card ap-pub${c.subs ? ' on' : ''}"><div class="ap-pubrow"><div><b>🔁 Renovación automática: ${c.subs ? 'ofrecida' : 'no ofrecida'}</b><small>${c.subs ? 'En la página de pago sale la casilla «Renovar automáticamente»: Stripe le cobra solo cada periodo y la cuenta se renueva sola. El cliente la cancela cuando quiera desde su enlace.' : 'Actívala para que tus clientes puedan dejar el pago automático. Recomendado: añade en tu webhook de Stripe los eventos invoice.paid y customer.subscription.deleted.'}</small></div><button type="button" class="ap-big${c.subs ? ' on' : ''}" data-act="cp-subs" aria-pressed="${!!c.subs}"><i></i></button></div></section>`;
@@ -7810,6 +8099,15 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 281, d: '2026-11-16', team: ['🧭 Menú más ordenado: en Bot verás «Para tus clientes» y «Para ti», y en Dinero lo del día a día va arriba'], items: ['🧭 Menú ordenado: dentro de cada apartado sale primero lo que usas cada día y abajo, con un pequeño título, lo que se configura una vez', '👥 Clientes: «Ajustar fechas», «Auditoría» e «Importar» van juntos al final, en «Herramientas» (Importar estaba en Sistema)', '🤖 Bot: separado en «Para tus clientes» y «Ajustes»', '💶 Dinero: arriba Cobros pendientes, Ingresos, Gastos…; abajo, en «Ajustes», Precios y paquetes, Cobro a clientes y Cobro a vendedores (antes «Pagos online»)'] },
+  { v: 280, d: '2026-11-16', team: ['✅ Si un cliente tuyo con la cuenta caducada pulsa «Ya he pagado» en el bot, te llega un aviso a tu Telegram para que lo compruebes y le renueves', '🍿 Los mensajes para recuperar caducados (a los 7 y 30 días) dicen cuántas pelis y series nuevas han llegado desde que se fue'], items: ['🍿 Recuperar caducados: el mensaje de los 7 y 30 días dice «Desde que te fuiste han llegado X pelis y Y series nuevas», con algunos títulos (solo de lo que podría ver en su cuenta)', '📅 Pantalla de cuenta caducada en el bot: ahora pone el día que caducó y lo que cuesta renovar («Renovar 1 mes: 10 €»)', '✅ Nuevo botón «Ya he pagado» en esa pantalla: te avisa por Telegram (y al vendedor, si es suyo) para que lo compruebes. Como mucho un aviso al día por cliente', '🔥 Canal de novedades: cada domingo a las 20:00 publica «Lo más visto de la semana» con los 5 títulos que más personas han visto en ese servidor. Se puede apagar o publicar al momento'] },
+  { v: 279, d: '2026-11-16', team: ['⛔ Si la cuenta de un cliente caduca o está en pausa, su bot solo le deja renovar o pagar: ni menú, ni buscador, ni novedades'], items: ['⛔ Cuenta caducada, en la papelera o en pausa: el bot del cliente se queda solo con «Renovar ahora» y «Precios». No puede buscar, ver guías, ni recibir novedades ni encuestas. Al renovar, vuelve todo solo'] },
+  { v: 278, d: '2026-11-16', team: ['🤖 El apartado Bot está ordenado por a quién le llega: «Para tus clientes» y «Para ti como vendedor»'], items: ['🤖 Lo del bot ya solo está en el apartado Bot, sin repetirse en otros menús. Seguimiento de demos y los mensajes automáticos (recuperar caducados, encuesta, aviso de caídas) se han movido aquí', '🏷️ Todo dice a quién le llega: 👥 para tus clientes, 🧑‍💼 para tus vendedores, 🙋 solo para ti. Crecer se queda con lo tuyo: resumen semanal, plazas y quién no ve'] },
+  { v: 277, d: '2026-11-16', team: ['🤖 Nuevo apartado «Bot» en el menú: todo lo del bot de Telegram junto (clientes con el bot, avisos al caducar y tus novedades)'], items: ['🤖 Nuevo apartado «Bot» en el menú de la izquierda: Inicio del bot (estado y accesos a todo), Avisos al caducar, Canal de contenidos y Conexión y ajustes. Lo de siempre sigue funcionando igual, solo está mejor ordenado'] },
+  { v: 276, d: '2026-11-16', team: ['📺 Nuevo: «Mis novedades» (en Mensajes). Recibe en tu Telegram las pelis y series nuevas de tus servidores para reenviarlas a tus clientes, o ten tu propio canal con tu nombre'], items: ['📺 Vendedores: en «Mis novedades» reciben las pelis y series nuevas en su Telegram (para reenviarlas) o en su propio canal con su cabecera y su firma. Solo de los servidores donde tienen clientes. Lo enciendes o apagas en Canal de contenidos'] },
+  { v: 275, d: '2026-11-16', items: ['🤖 Novedades también por el bot: cada cliente que lo pide recibe en su chat las pelis y series nuevas (solo las que puede ver en su cuenta), al momento o en un resumen al día', '🔔 En el menú del bot sale «Avisarme de novedades» / «Dejar de avisarme», y puedes invitar a tus clientes a apuntarse con un botón'] },
+  { v: 274, d: '2026-11-16', items: ['⚙️ Ajustes de cada canal: elige las bibliotecas, una cabecera con tu marca, qué datos salen (carátula, año, nota, género, duración, estudio, director, reparto, sinopsis) y en qué orden, con vista previa', '🍿 Con el enlace de invitación, los clientes de ese servidor ven en el bot el botón «Canal de novedades»', '📺 Nuevo: Canal de contenidos (en Servidores). Cada servidor publica en su propio canal de Telegram las pelis y capítulos nuevos, con carátula. Un asistente de 3 pasos te guía y el canal aparece solo al hacer administrador al bot', '🎬 Películas con año, nota, géneros y sinopsis; los capítulos de la misma serie se juntan en un solo mensaje'] },
+  { v: 273, d: '2026-11-16', items: ['⭐ Puede haber más de un superadministrador: tu socio puede tener las mismas opciones que tú, cada uno con su usuario. Se crea en Administradores › «Nuevo superadministrador» o con «Hacer superadmin» en un administrador', '👑 Tu cuenta es la del dueño: nadie más puede cambiarla ni quitarla, ni crear otros superadministradores'] },
   { v: 272, d: '2026-11-16', items: ['🌐 Revisado que todo lo nuevo vale para Emby, Jellyfin, Plex e IPTV: los textos de las alertas y los avisos a clientes dicen el nombre de su app, y en Plex (que no dice cuándo vio algo por última vez) ya no se cuentan como «pagan pero no ven»'] },
   { v: 271, d: '2026-11-16', team: ['👤 Calendario: elige un vendedor (arriba a la derecha) y ves solo lo que le caduca'], items: ['👤 Calendario: selector pequeño de vendedor, con buscador y cuántas le caducan este mes. Es el mismo filtro que en Clientes', '🖥️ «En directo» vuelve a enseñar cuántos están viendo en cada servidor'] },
   { v: 270, d: '2026-11-15', items: ['🧹 Resumen: quitado el recuadro morado «Protege tu cuenta». La verificación en dos pasos sigue en Mi cuenta › Seguridad'] },
@@ -9231,8 +9529,8 @@ function vGuia() {
 /* ---------- Diálogos ---------- */
 const dlg = $('#dlg'), dlgForm = $('#dlgForm');
 dlg.addEventListener('close', navDlgClosed);
-function openDlg({ title, body, submit, danger, onSubmit, onOpen, after }) {
-  dlgForm.onchange = null;
+function openDlg({ title, body, submit, danger, onSubmit, onOpen, after, wide }) {
+  dlgForm.onchange = null; dlg.classList.toggle('wide', !!wide); // v274: ventana ancha si hace falta
   dlgForm.innerHTML = `<h2>${esc(title)}</h2>${body}<p class="derr" hidden></p>
     <div class="dfoot"><button type="button" class="btn ghost" data-act="close">Cancelar</button>${submit === null ? '' : `<button type="submit" class="btn ${danger ? 'danger' : 'primary'}">${esc(submit)}</button>`}</div>`;
   dlgForm.onsubmit = async (e) => {
@@ -10604,6 +10902,20 @@ document.addEventListener('click', (e) => {
   if (a === 'qs-go') { qsGo(+el.dataset.i); return; }
   if (a === 'mon-all') { dBroadcast(); return; }
   if (a === 'go') { S.view = el.dataset.v; render(); window.scrollTo(0, 0); return; }
+  if (a === 'fd-wiz') { dFeedWiz(+el.dataset.id); return; }
+  if (a === 'fd-cfg') { dFeedCfg(+el.dataset.id); return; }
+  if (a === 'mn-save') { const fm = el.closest('form'), fd = new FormData(fm), k = el.dataset.k;
+    const body = k === 'tg' ? { tg: fd.get('tg') === 'on', tgMode: fd.get('tgMode'), tgHour: +fd.get('tgHour') } : { chan: fd.get('chan') || '', header: fd.get('header') || '', footer: fd.get('footer') || '', on: fd.get('on') === 'on' };
+    el.disabled = true; api('PUT', '/api/my-feed', body).then(() => { toast('✅ Guardado'); S.mynov = null; render(); }, (e) => { toast(e.message, true); el.disabled = false; }); return; }
+  if (a === 'mn-test') { const fd = new FormData(el.closest('form')); el.disabled = true;
+    api('POST', '/api/my-feed/test', { chan: fd.get('chan') || '', header: fd.get('header') || '', footer: fd.get('footer') || '' }).then((r) => toast(r.note), (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'fd-bot') { dFeedBot(+el.dataset.id); return; }
+  if (a === 'fd-top') { dFeedTop(+el.dataset.id); return; }
+  if (a === 'fd-invbot') { el.disabled = true; api('POST', `/api/feed/${el.dataset.id}/invite-bot`, {}).then((r) => { toast(r.note); dlg.close(); loadFeed(); }, (e) => { toast(e.message, true); el.disabled = false; }); return; }
+  if (a === 'fd-rescan') { const id = +el.dataset.id; dlg.close(); api('GET', '/api/feed').then((r) => { S.feed = { ...r, at: Date.now() }; dFeedWiz(id); }); return; }
+  if (a === 'fd-on') { el.disabled = true; api('PUT', `/api/feed/${el.dataset.id}`, { on: el.dataset.on === '1' }).then(() => { toast(el.dataset.on === '1' ? '▶️ Encendido: publicará lo nuevo desde ahora' : '⏸ Apagado'); loadFeed(); }, (e) => { toast(e.message, true); el.disabled = false; }); return; }
+  if (a === 'fd-topnow') { el.disabled = true; api('POST', `/api/feed/${el.dataset.id}/top`, {}).then((r) => { toast(r.note); loadFeed(); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'fd-test') { el.disabled = true; api('POST', `/api/feed/${el.dataset.id}/test`, {}).then((r) => toast(r.note), (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
   if (a === 'grow-save') {
     const f = el.closest('form'), k = el.dataset.k, fd = new FormData(f), on = fd.get('on') === 'on';
     const body = k === 'winback' ? { winback: { on, d7: fd.get('d7') === 'on', d30: fd.get('d30') === 'on', offer: fd.get('offer') || '' } }
@@ -11063,7 +11375,7 @@ document.addEventListener('click', (e) => {
     case 'server-test': if (srv) api('GET', `/api/servers/${srv.id}/test`).then((r) => toast(`Conectado a ${r.name} (Emby ${r.version})`)).catch((x) => toast(x.message, true)); break;
     case 'server-del': if (srv) dConfirm(`Quitar ${srv.name}`, 'El servidor se quita del panel. En Emby no se toca nada.', 'Quitar servidor', () => api('DELETE', `/api/servers/${srv.id}`), 'Servidor quitado'); break;
     case 'user-new': if (dlg.open) dlg.close(); S.vendorId = 0; S.view = 'vendedor'; render(); window.scrollTo(0, 0); break;
-    case 'user-edit': if (usr && usr.role === 'admin') dAdmin(usr); else if (usr) { if (dlg.open) dlg.close(); S.vendorId = usr.id; S.view = 'vendedor'; render(); window.scrollTo(0, 0); } break;
+    case 'user-edit': if (usr && usr.role === 'admin') dAdmin(usr); else if (usr && usr.role === 'super') dUser(usr); else if (usr) { if (dlg.open) dlg.close(); S.vendorId = usr.id; S.view = 'vendedor'; render(); window.scrollTo(0, 0); } break;
     case 'user-info': if (usr) dVendorMsg(usr, ''); break;
     case 'user-pass': if (usr) dUserPass(usr); break;
     case 'user-2fa': if (usr) dConfirm(`Quitar la verificación a ${usr.name}`, 'Podrá entrar solo con su contraseña y se cerrarán sus sesiones. Pídele que la vuelva a activar en Ajustes › Seguridad.', 'Quitar verificación', () => api('POST', `/api/users/${usr.id}/reset2fa`, {}), 'Verificación quitada'); break;
@@ -11095,6 +11407,9 @@ document.addEventListener('click', (e) => {
     }
     case 'imp-skiprest': for (const x of Object.values(S.imp.map || {}).flat()) if (!x.to) { x.to = 'skip'; x.how = ''; } S.imp.results = null; S.imp.dry = null; render(); break;
     case 'adm-new': dAdmin(null); break;
+    case 'sup-new': dAdmin(null, 'super'); break;
+    case 'adm-promote': if (usr) dConfirm(`¿Hacer superadministrador a ${usr.name}?`, `Tendrá <b>las mismas opciones que tú</b>: todo el panel, Crecer, Socios, licencias y ajustes. Lo único que no podrá es cambiar ni quitar tu cuenta, ni crear otros superadministradores.`, 'Sí, hacerlo superadministrador', () => api('PUT', `/api/users/${usr.id}`, { role: 'super' }).then(reload), '⭐ Ya es superadministrador'); break;
+    case 'adm-demote': if (usr) dConfirm(`¿Pasar a ${usr.name} a administrador?`, 'Dejará de ver Crecer, Socios, licencias y tus ajustes. Seguirá como administrador con todos los permisos, y luego se los puedes ajustar.', 'Sí, pasarlo a administrador', () => api('PUT', `/api/users/${usr.id}`, { role: 'admin' }).then(reload), 'Ahora es administrador'); break;
     case 'adm-perms': if (usr) dPerms(usr); break;
     case 'adm-link': if (usr) dXtreme(usr); break;
     case 'adm-unlink': if (usr) { dlg.close(); act(() => api('PUT', `/api/users/${usr.id}`, { xtreme: null }), 'Panel desvinculado'); } break;
