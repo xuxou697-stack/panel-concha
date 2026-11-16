@@ -2704,6 +2704,21 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
   .fztg::after{content:"";grid-column:1/-1;display:block;height:6px;border-radius:9px;background:linear-gradient(90deg,#2aa1de var(--tgp,0%),var(--raised) var(--tgp,0%))}
   .sec-h{flex-direction:column;align-items:flex-start;gap:2px}
 }
+/* v269 */
+.fz-hero.sm .fz-note{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}.fz-nt{min-width:0;line-height:1.35}
+.fz-rec{white-space:nowrap}
+@media (max-width:420px){.fz-hero.sm .fz-note{grid-template-columns:1fr}.fz-rec{justify-self:start;margin-left:0}}
+.fzt{display:flex;flex-direction:column;gap:7px;margin:0 0 14px}
+.fzt-h{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 2px}
+.fzt-r{display:flex;align-items:center;gap:11px;width:100%;text-align:left;font:inherit;color:var(--text);cursor:pointer;padding:11px 12px;border-radius:14px;border:1px solid color-mix(in srgb,var(--rc) 40%,var(--line));background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 18%,var(--surface)),var(--surface))}
+.fzt-r.red{--rc:#f43f5e}.fzt-r.ora{--rc:#f97316}.fzt-r.pink{--rc:#d946ef}
+.fzt-e{font-size:20px;flex:none}.fzt-x{flex:1;min-width:0;font-size:14.5px;line-height:1.3}.fzt-x b{color:var(--rc)}
+.fzt-b i,.fz-rec i{font-style:normal;font-size:17px;line-height:1}.fzt-b{flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;font-size:13px;font-weight:800;color:#fff;background:var(--rc);padding:6px 10px;border-radius:10px}.fzt-b .ic{width:14px;height:14px}
+.fzt.ok{flex-direction:row;align-items:center;gap:9px;padding:11px 14px;border-radius:14px;font-size:14px;font-weight:600;color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--ok) 35%,var(--line))}
+.calh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.calh h2{margin:0}
+.calv .combo-btn{min-height:38px;padding:7px 12px;font-size:14px;border-radius:12px}
+.calv-note{margin:8px 0 10px;font-size:13.5px;color:var(--muted)}.calv-note b{color:var(--text)}
+.linkb{border:0;background:none;color:var(--brand);font:inherit;font-weight:700;cursor:pointer;padding:0 4px}
 </style>
 </head>
 <body>
@@ -3916,7 +3931,7 @@ function vResumen() {
   // Estados de las cuentas, cada uno lleva a su lista
   const sc = (k, n, label, hint, icon) => `<button type="button" class="sc sc-${k}" data-act="goto" data-filter="${k}"><span class="sc-i">${ic(icon)}</span><b>${n}</b><span class="sc-l">${label}</span><small>${hint}</small></button>`;
   let secHide = false; try { secHide = localStorage.getItem('concha_sectip_off') === '1'; } catch (e) {}
-  const secTip = isSuper() && !d.me.twoFa && !secHide && !d.demoMode ? `<div class="sectip">${ic('shield')}<div><b>Protege tu cuenta de superadministrador</b><span>Activa la verificación en dos pasos: aunque te roben la contraseña, nadie podrá entrar sin tu móvil.</span></div><button class="btn primary sm" data-view="seguridad">Activar</button><button type="button" class="sectip-x" data-act="sectip-off" aria-label="No volver a mostrar" title="No volver a mostrar">×</button></div>` : '';
+  /* v270: quitado del Resumen (la verificación sigue en Mi cuenta › Seguridad) */ const secTip = false && isSuper() && !d.me.twoFa && !secHide && !d.demoMode ? `<div class="sectip">${ic('shield')}<div><b>Protege tu cuenta de superadministrador</b><span>Activa la verificación en dos pasos: aunque te roben la contraseña, nadie podrá entrar sin tu móvil.</span></div><button class="btn primary sm" data-view="seguridad">Activar</button><button type="button" class="sectip-x" data-act="sectip-off" aria-label="No volver a mostrar" title="No volver a mostrar">×</button></div>` : '';
   const dsearch = `<div class="dsearch" role="search"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.5 16.5 21 21"/></svg><input type="search" id="dq" value="${esc(S.dq || '')}" placeholder="Buscar cliente: nombre, usuario, email o teléfono…" autocomplete="off" spellcheck="false" aria-label="Buscar clientes" aria-controls="dqr"></div><div id="dqr">${dqHtml()}</div>`;
   const rv = [];
   if (S.d.teamCount) rv.push(`<button type="button" class="rvb bad" data-view="atencion">${ic('alert')}<span><b>${S.d.teamCount}</b> ${S.d.teamCount === 1 ? 'aviso de tu equipo' : 'avisos de tu equipo'}</span><em>Revisar</em></button>`);
@@ -3988,7 +4003,8 @@ function fzLiveHtml() {
   const trBy = {}; ses.forEach((x) => { if (x.trVideo) trBy[x.server] = (trBy[x.server] || 0) + 1; });
   const COLS = [['#22c55e', '#4ade80'], ['#38bdf8', '#818cf8'], ['#a78bfa', '#c4b5fd'], ['#2dd4bf', '#5eead4'], ['#60a5fa', '#93c5fd']];
   const svList = Object.entries(bySrv).sort((a, b) => b[1] - a[1]), svMax = Math.max(1, ...svList.map((x) => x[1]));
-  const srvs = '';
+  // v271: vuelve la lista de siempre: cuántos están viendo en cada servidor
+  const srvs = S.d.servers.length > 1 ? Object.entries(bySrv).sort((a, b) => b[1] - a[1]).map(([n, k]) => `<span class="fzl-s">${ic('server')}${esc(n)} <b>${k}</b></span>`).join('') : '';
   const bars = S.d.servers.length > 1 && svList.length ? `<div class="fzl-svh"><span>Dónde están viendo</span><small>toca uno para ver quién</small></div><div class="fzl-sv">${svList.map(([n, k], i) => {
     const s = (S.dAll || S.d).servers.find((x) => x.name === n) || {}, tr = trBy[n] || 0, full = s.maxClients && (s.used || 0) >= s.maxClients * 0.9;
     const col = tr ? ['#f43f5e', '#fb7185'] : full ? ['#f97316', '#fbbf24'] : COLS[i % COLS.length];
@@ -4100,19 +4116,21 @@ function vHoy() {
       : `<div class="panel"><div class="empty">${k === 'all' ? `No hay movimientos ${dayBack ? 'de ayer' : 'hoy todavía'}.` : `No hay ${TAG[k][0].toLowerCase()}s ${dayBack ? 'de ayer' : 'hoy todavía'}.`}</div></div>`);
 }
 /** Resumen «Fácil»: lo importante, con palabras sencillas y colores claros */
-/** v264: fila de tarjetas de colores bajo el saludo: lo que vence esta semana, quién quiere volver o está descontento, y las plazas libres */
+/** v269: «Para hoy»: solo lo urgente y que pide hacer algo. Si no hay nada, una línea verde. Sustituye a las tarjetas de v264 */
 function fzTilesHtml(d, cnt) {
-  const t = d.today, wk = addDays(t, 7);
-  const act = live().filter((c) => !c.demo && !c.off && c.expires >= t && c.expires <= wk), today = act.filter((c) => c.expires === t).length;
+  const t = d.today, yd = addDays(t, -1);
+  const own = live().filter((c) => !c.demo && !c.off);
+  const hoy = own.filter((c) => c.expires === t).length;
+  const ayer = d.clients.filter((c) => !c.demo && c.expires === yd && c.status === 'expired').length;
   const gb = d.growBadge || { want: 0, low: 0 };
-  const srv = (S.dAll || d).servers.filter((s) => s.maxClients > 0);
-  const free = srv.reduce((n, s) => n + Math.max(0, s.maxClients - (s.used || 0)), 0), tight = srv.filter((s) => (s.used || 0) >= s.maxClients * 0.9).length;
-  const tile = (cls, emo, big, label, badge, attrs) => `<button type="button" class="fzk ${cls}" ${attrs}><span class="fzk-e">${emo}</span>${badge ? `<em>${badge}</em>` : ''}<b>${big}</b><span class="fzk-l">${label}</span></button>`;
-  const out = [tile('k2', '⏳', act.length, act.length === 1 ? 'vence esta semana' : 'vencen esta semana', today ? `${today} hoy` : '', 'data-view="calendario"')];
-  if (isSuper() && (gb.want || gb.low)) out.push(`<button type="button" class="fzk k3" data-view="crecer"><span class="fzk-e">💬</span><span class="fzk-two"><span><b>${gb.want}</b><span class="fzk-l">${gb.want === 1 ? 'quiere volver' : 'quieren volver'}</span></span><span><b>${gb.low}</b><span class="fzk-l">${gb.low === 1 ? 'descontento' : 'descontentos'}</span></span></span></button>`);
-  else out.push(tile('k3', '🎬', cnt.demo, cnt.demo === 1 ? 'demo en curso' : 'demos en curso', '', 'data-act="goto" data-filter="demo"'));
-  if (srv.length) out.push(tile('k4', '🪑', free, free === 1 ? 'plaza libre' : 'plazas libres', tight ? `${tight} casi ${tight === 1 ? 'lleno' : 'llenos'}` : '', isSuper() ? 'data-view="crecer"' : 'data-view="servidores"'));
-  return `<div class="fzk-row n${out.length}">${out.join('')}</div>`;
+  const rows = [];
+  const row = (cls, emo, txt, btn, attrs) => `<button type="button" class="fzt-r ${cls}" ${attrs}><span class="fzt-e">${emo}</span><span class="fzt-x">${txt}</span><span class="fzt-b">${btn}</span></button>`;
+  if (hoy) rows.push(row('red', '⚠️', `<b>${hoy}</b> ${hoy === 1 ? 'cuenta caduca' : 'cuentas caducan'} <b>hoy</b>`, 'Renovar', 'data-act="goto" data-filter="soon"'));
+  if (ayer) rows.push(row('ora', '⛔', `<b>${ayer}</b> ${ayer === 1 ? 'caducó ayer y no ha renovado' : 'caducaron ayer y no han renovado'}`, 'Escribir', 'data-act="goto" data-filter="expired"'));
+  if (isSuper() && gb.want) rows.push(row('pink', '🙋', `<b>${gb.want}</b> ${gb.want === 1 ? 'cliente quiere volver' : 'clientes quieren volver'}`, 'Ver', 'data-view="crecer"'));
+  if (isSuper() && gb.low) rows.push(row('pink', '😟', `<b>${gb.low}</b> ${gb.low === 1 ? 'cliente no está contento' : 'clientes no están contentos'}`, 'Ver', 'data-view="crecer"'));
+  if (!rows.length) return '<div class="fzt ok"><span>✅</span> Todo al día: hoy no hay nada urgente</div>';
+  return `<div class="fzt"><div class="fzt-h">Para hoy</div>${rows.join('')}</div>`;
 }
 function dashFacil(p) {
   const { d, cnt, g, urgent, greet, emoji, review, secTip } = p;
@@ -4130,7 +4148,7 @@ function dashFacil(p) {
   const note = cnt.expired ? `Tienes <b>${plural(cnt.expired, 'cuenta caducada', 'cuentas caducadas')}</b>: si renuevan, vuelven a ver al momento.` : cnt.soon ? `<b>${plural(cnt.soon, 'cuenta caduca', 'cuentas caducan')}</b> pronto. Buen momento para escribirles.` : total ? '¡Todo en orden! Ninguna cuenta caduca en los próximos días. 🎉' : 'Todavía no tienes cuentas. Crea la primera con «Nueva cuenta».';
   return licBanner() + downBox() + secTip + `<div class="fz">
     <section class="fz-hero sm"><div class="fz-hl"><p class="fz-g">${greet}, ${esc(wName)} ${emoji} · <span>${esc(date)}</span></p><h1>Así está tu negocio <span class="fz-hoy">hoy</span></h1>
-      <div class="fz-note">${note}${cnt.expired ? `<button type="button" class="fz-rec" data-act="goto" data-filter="expired">Recuperar ${ic('chev')}</button>` : ''}</div></div>
+      <div class="fz-note"><span class="fz-nt">${note}</span>${cnt.expired ? `<button type="button" class="fz-rec" data-act="goto" data-filter="expired">Recuperar <i aria-hidden="true">›</i></button>` : ''}</div></div>
       <div class="fz-ha"><button type="button" class="btn primary" data-act="new">${ic('userplus')}Nueva cuenta</button><button type="button" class="btn" data-act="demo">${ic('timer')}Nueva demo</button>${credits}</div></section>
     ${noCli() ? '' : fzTilesHtml(d, cnt)}
     ${d.servers.length && !noCli() ? `<button type="button" class="fz-live" id="fzLive" data-view="monitor" aria-label="Clientes viendo ahora: abrir el Monitor">${fzLiveHtml()}</button>` : ''}
@@ -4696,26 +4714,26 @@ function tcTitlesView() {
 }
 /** v259: bloque «Qué se convirtió»: original → lo que le llega, con la bajada de calidad y el motivo que da Emby */
 const VCODEC = { h264: 'H.264', avc: 'H.264', hevc: 'HEVC (H.265)', h265: 'HEVC (H.265)', av1: 'AV1', vp9: 'VP9', mpeg2video: 'MPEG-2', vc1: 'VC-1', mpeg4: 'MPEG-4' };
-function alConv(d) {
+function alConv(d, app = 'Emby') {
   if (!d) return '';
   const vc = (c) => VCODEC[c] || (c ? c.toUpperCase() : '');
   const ac = (c, ch) => (c ? (ACODEC[c] || c.toUpperCase()) + (ch ? ' ' + (ch === 6 ? '5.1' : ch === 8 ? '7.1' : ch === 2 ? 'estéreo' : ch + ' canales') : '') : '');
   const side = (res, w, h, codec, mbps, extra) => { const top = [res || (w && h ? `${w}×${h}` : ''), vc(codec)].filter(Boolean).join(' · '); return `<b>${esc(top || '—')}</b><span>${mbps ? mbps + ' Mbps' : 'velocidad sin dato'}${extra ? ' · ' + esc(extra) : ''}</span>`; };
   const rows = [];
   const noInfo = d.noInfo || (!d.vid && !d.aud && !d.tCodec && !d.tAudio && !(d.reasons || []).length);
-  if (noInfo) return `<div class="alv"><div class="alv-t">Qué se convirtió</div><div class="alv-lvl na">⚪ Emby avisa de que está convirtiendo, pero no manda los detalles</div><div class="alv-why"><span>El vídeo original es ${esc([d.sRes, vc(d.sCodec), d.sMbps ? d.sMbps + ' Mbps' : ''].filter(Boolean).join(' · ') || 'desconocido')}. Suele ser algo ligero (sonido o formato), no una bajada de imagen.</span></div></div>`;
+  if (noInfo) return `<div class="alv"><div class="alv-t">Qué se convirtió</div><div class="alv-lvl na">⚪ ${app} avisa de que está convirtiendo, pero no manda los detalles</div><div class="alv-why"><span>El vídeo original es ${esc([d.sRes, vc(d.sCodec), d.sMbps ? d.sMbps + ' Mbps' : ''].filter(Boolean).join(' · ') || 'desconocido')}. Suele ser algo ligero (sonido o formato), no una bajada de imagen.</span></div></div>`;
   if (d.vid) {
     const drop = d.sMbps && d.tMbps && d.tMbps < d.sMbps ? Math.round((1 - d.tMbps / d.sMbps) * 100) : 0;
     const resDown = d.sH && d.tH && d.tH < d.sH - 40;
     const known = (d.tMbps && d.sMbps) || (d.tH && d.sH);
-    const lvl = resDown || drop >= 50 ? ['bad', 'Baja mucho la calidad'] : drop >= 20 ? ['warn', 'Baja algo la calidad'] : known ? ['ok', 'Misma calidad, solo cambia el formato'] : ['na', 'Emby no dice con qué calidad le llega'];
+    const lvl = resDown || drop >= 50 ? ['bad', 'Baja mucho la calidad'] : drop >= 20 ? ['warn', 'Baja algo la calidad'] : known ? ['ok', 'Misma calidad, solo cambia el formato'] : ['na', `${app} no dice con qué calidad le llega`];
     rows.push(`<div class="alv-row"><span class="alv-k">🎞️ Imagen</span><div class="alv-s">${side(d.sRes, d.sW, d.sH, d.sCodec, d.sMbps, [d.sHdr, d.sBits >= 10 ? d.sBits + ' bits' : ''].filter(Boolean).join(' '))}</div><span class="alv-ar">→</span><div class="alv-s to">${side(d.tRes, d.tW, d.tH, d.tCodec, d.tMbps, d.fps ? d.fps + ' fps' : '')}</div></div>
       <div class="alv-lvl ${lvl[0]}">${lvl[0] === 'ok' ? '🟢' : lvl[0] === 'warn' ? '🟠' : lvl[0] === 'na' ? '⚪' : '🔴'} ${lvl[1]}${resDown ? ` · de ${esc(d.sRes || d.sH + 'p')} a ${esc(d.tRes || d.tH + 'p')}` : ''}${drop ? ` · ${drop} % menos de velocidad` : ''}</div>`);
   } else rows.push('<div class="alv-lvl ok">🟢 La imagen llega tal cual (no se ha convertido)</div>');
   if (d.aud && (d.sAudio || d.tAudio)) rows.push(`<div class="alv-row"><span class="alv-k">🔊 Sonido</span><div class="alv-s"><b>${esc(ac(d.sAudio, d.sCh) || '—')}</b></div><span class="alv-ar">→</span><div class="alv-s to"><b>${esc(ac(d.tAudio, d.tCh) || '—')}</b></div></div>`);
   if (d.subs) rows.push(`<div class="alv-row"><span class="alv-k">💬 Subtítulos</span><div class="alv-s"><b>${esc((d.subs.codec || '').toUpperCase() || '—')}</b><span>${d.subs.img ? 'de imagen: obligan a convertir' : 'de texto: no molestan'}</span></div></div>`);
   const rs = (d.reasons || []).map((r) => TR_REASON[r] || r);
-  return `<div class="alv"><div class="alv-t">Qué se convirtió${d.hw ? '<em>con la gráfica</em>' : ''}</div>${rows.join('')}${rs.length ? `<div class="alv-why"><span>Emby dice:</span>${rs.map((r) => `<i>${esc(r)}</i>`).join('')}</div>` : '<div class="alv-why"><span>Emby no ha dicho el motivo exacto.</span></div>'}</div>`;
+  return `<div class="alv"><div class="alv-t">Qué se convirtió${d.hw ? '<em>con la gráfica</em>' : ''}</div>${rows.join('')}${rs.length ? `<div class="alv-why"><span>${esc(app)} dice:</span>${rs.map((r) => `<i>${esc(r)}</i>`).join('')}</div>` : `<div class="alv-why"><span>${esc(app)} no ha dicho el motivo exacto.</span></div>`}</div>`;
 }
 /** v258: tarjeta moderna de cada alerta: quién, cuánto, dónde, por qué, qué se hizo y botones para escribirle */
 function alDur(ms) { const m = Math.round(ms / 60000); if (m < 1) return 'menos de 1 min'; if (m < 60) return m + ' min'; const hh = Math.floor(m / 60), mm = m % 60; return hh + ' h' + (mm ? ' ' + mm + ' min' : ''); }
@@ -4723,6 +4741,7 @@ function alertCard(x) {
   const c = ((S.dAll || S.d).clients || []).find((v) => v.id === x.clientId);
   const n = x.count || 1, end = Date.parse(x.ts), start = x.first ? Date.parse(x.first) : end, span = Math.max(0, end - start);
   const un = !!x.unsure;
+  const sv = (S.dAll || S.d).servers.find((v) => v.id === x.serverId), app = sv && sv.kind === 'jellyfin' ? 'Jellyfin' : sv && sv.kind === 'plex' ? 'Plex' : 'Emby';
   const cz = un ? ['⚪', 'Sin detalles', '#94a3b8'] : x.type === 'transcode' ? (TC_CAUSE[x.cause] || TC_CAUSE.other) : ['📺', 'Pantallas de más', '#f59e0b'];
   const crit = x.level === 'critica' && !un, loop = x.type === 'transcode' && !un && n >= 20 && span / n < 3 * 60000;
   const hm = (t) => new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -4730,7 +4749,7 @@ function alertCard(x) {
   const out = /^Aparato desconectado/.test(x.action || '') || x.outs;
   const cut = /detenid|desconectad/i.test(x.action || '');
   // estado grande arriba: lo primero que se lee
-  const st = un ? ['un', '⚪', 'No se cortó', 'Emby dice que convierte, pero no explica qué. Seguramente algo ligero.']
+  const st = un ? ['un', '⚪', 'No se cortó', `${app} dice que convierte, pero no explica qué. Seguramente algo ligero.`]
     : out ? ['out', '🔌', 'Aparato desconectado', 'No paraba de convertir: se le cerró la sesión en ese aparato.']
     : loop ? ['loop', '🔁', 'App en bucle', `Vuelve a ponerse sola tras cada corte (${n} veces en ${alDur(span)}).`]
     : cut ? ['cut', '⛔', 'Cortado', x.action]
@@ -4767,7 +4786,7 @@ function alertCard(x) {
       ${un ? '' : info('❓', 'Por qué', x.reason)}
       ${un ? '' : info(out ? '🔌' : '✋', 'Qué hizo el panel', x.action, x.outs && !/^Aparato desconectado/.test(x.action || '') ? `Se le desconectó el aparato ${x.outs === 1 ? '1 vez' : x.outs + ' veces'}` : '')}
     </div>
-    ${x.type === 'transcode' ? alConv(x.detail) : ''}
+    ${x.type === 'transcode' ? alConv(x.detail, app) : ''}
     ${live}
     <footer class="alc-f">${contact.join('')}${noContact}</footer>
   </article>`;
@@ -4900,7 +4919,20 @@ function vCalendario() {
   const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const offset = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7; // lunes primero
   const by = {};
-  live().filter((c) => !c.demo).forEach((c) => { (by[c.expires] = by[c.expires] || []).push(c); });
+  // v271: filtro por vendedor (el mismo que en Clientes): un toque y eliges de quién ver lo que caduca
+  const own = (c) => !S.fOwner || c.ownerId === S.fOwner;
+  live().filter((c) => !c.demo && own(c)).forEach((c) => { (by[c.expires] = by[c.expires] || []).push(c); });
+  const vendors = [...S.d.users].sort((a, b) => a.name.localeCompare(b.name)), curV = vendors.find((u) => u.id === S.fOwner);
+  const inMonth = (c) => c.expires.slice(0, 7) === S.cal, cntV = (id) => live().filter((c) => !c.demo && inMonth(c) && (!id || c.ownerId === id)).length;
+  const vBox = S.d.users.length > 1 ? `<div class="combo calv">
+      <button type="button" class="combo-btn" data-act="combo" aria-haspopup="listbox" aria-expanded="false"><span>👤 ${curV ? esc(curV.name) : 'Todos los vendedores'}</span></button>
+      <div class="combo-pop" hidden>
+        <input type="search" id="vq" placeholder="Buscar vendedor…" aria-label="Buscar vendedor" autocomplete="off">
+        <div class="combo-list" role="listbox">
+          <button type="button" role="option" data-act="pick-owner" data-id="0" aria-selected="${!S.fOwner}">Todos<small>${cntV(0)}</small></button>
+          ${vendors.map((u) => `<button type="button" role="option" data-act="pick-owner" data-id="${u.id}" data-t="${esc((u.name + ' ' + u.username).toLowerCase())}" aria-selected="${S.fOwner === u.id}">${esc(u.name)}<small>${cntV(u.id)}</small></button>`).join('')}
+          <div class="combo-none" hidden>Ningún vendedor con ese nombre.</div>
+        </div></div></div>` : '';
   let cells = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((x) => `<div class="dow">${x}</div>`).join('');
   for (let i = 0; i < offset; i++) cells += '<div class="out"></div>';
   for (let i = 1; i <= days; i++) {
@@ -4912,7 +4944,7 @@ function vCalendario() {
   for (let i = 0; i < tail; i++) cells += '<div class="out"></div>';
   return head('Calendario', 'Cada cuenta aparece en su último día de servicio. Pulsa un nombre para renovarla.',
     '<button class="btn" data-act="cal" data-step="-1">Anterior</button><button class="btn" data-act="cal" data-step="0">Hoy</button><button class="btn" data-act="cal" data-step="1">Siguiente</button>') +
-    `<h2>${MES_L[m - 1]} ${y}</h2><div class="panel"><div class="cal">${cells}</div></div>`;
+    `<div class="calh"><h2>${MES_L[m - 1]} ${y}</h2>${vBox}</div>${curV ? `<p class="calv-note">Viendo solo las cuentas de <b>${esc(curV.name)}</b> · ${plural(cntV(curV.id), 'caduca', 'caducan')} este mes <button type="button" class="linkb" data-act="pick-owner" data-id="0">Ver todas</button></p>` : ''}<div class="panel"><div class="cal">${cells}</div></div>`;
 }
 
 /** Buscador de las listas (papelera, demos vencidas y seguimiento): nombre, usuario, email, teléfono, Telegram, vendedor, notas… */
@@ -7778,6 +7810,10 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 272, d: '2026-11-16', items: ['🌐 Revisado que todo lo nuevo vale para Emby, Jellyfin, Plex e IPTV: los textos de las alertas y los avisos a clientes dicen el nombre de su app, y en Plex (que no dice cuándo vio algo por última vez) ya no se cuentan como «pagan pero no ven»'] },
+  { v: 271, d: '2026-11-16', team: ['👤 Calendario: elige un vendedor (arriba a la derecha) y ves solo lo que le caduca'], items: ['👤 Calendario: selector pequeño de vendedor, con buscador y cuántas le caducan este mes. Es el mismo filtro que en Clientes', '🖥️ «En directo» vuelve a enseñar cuántos están viendo en cada servidor'] },
+  { v: 270, d: '2026-11-15', items: ['🧹 Resumen: quitado el recuadro morado «Protege tu cuenta». La verificación en dos pasos sigue en Mi cuenta › Seguridad'] },
+  { v: 269, d: '2026-11-15', team: ['📋 Resumen: en vez de tarjetas, una lista «Para hoy» con solo lo urgente (lo que caduca hoy y lo que caducó ayer), con su botón'], items: ['📋 Resumen: fuera las tarjetas de colores; ahora sale «Para hoy» solo con lo urgente: lo que caduca hoy, lo que caducó ayer sin renovar, y quién quiere volver o no está contento. Si no hay nada, «Todo al día»', '🔧 El aviso de cuentas caducadas ya no se rompe en columnas en el móvil'] },
   { v: 268, d: '2026-11-15', items: ['📰 Novedades: los vendedores solo ven las que tienen que ver con sus clientes y su panel (alertas, botones, resumen). Lo tuyo (Crecer, servidores, dinero, seguridad) solo lo ves tú'] },
   { v: 267, d: '2026-11-15', items: ['🔒 Los vendedores solo reciben lo necesario para sus clientes: ya no les llegan tus gastos, socios, ajustes de «Crecer», antisabotaje, contactos ni la configuración de vigilancia de los servidores'] },
   { v: 266, d: '2026-11-15', items: ['🧹 Resumen: quitadas las barras de servidores de «En directo» para dejarlo más limpio; en el móvil se ven 4 clientes viendo (el resto en «y N más»)'] },

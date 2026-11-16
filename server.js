@@ -3392,6 +3392,12 @@ function outageText(s, up, mins) {
     ? `✅ ¡Ya funciona!\n\nEl servidor${nm} vuelve a estar en marcha. Si la app se quedó pensando, ciérrala y ábrela de nuevo.\n\nGracias por la paciencia 🙏`
     : `⚠️ Aviso de ${botName()}\n\nEl servidor${nm} tiene un problema y ahora mismo no se puede ver.\n\nYa lo sabemos y estamos en ello: no hace falta que nos escribas. Avisaremos aquí en cuanto vuelva 🛠️`;
 }
+/** v272: «paga pero no ve»: sin ver nada en 7 días. Plex no dice cuándo vio algo por última vez: si no hay dato, no se cuenta */
+function sleepyC(c) {
+  if (c.seenAt) return Date.now() - Date.parse(c.seenAt) > 7 * 86400000;
+  const s = db.servers.find((v) => v.id === c.serverId);
+  return !(s && s.kind === 'plex');
+}
 /** Usuarios de Emby: última vez que vieron algo (para el resumen y «pagan pero no ven») */
 async function refreshSeen() {
   for (const s of db.servers) {
@@ -3412,7 +3418,7 @@ async function weeklyText() {
   const cur = db.settings.currency || 'EUR';
   const credits = db.ledger.filter((l) => inWeek(l.ts) && l.kind === 'credito' && l.delta > 0).reduce((n, l) => n + l.delta, 0);
   const soon = live.filter((c) => { const d = diffDays(c.expires, t); return d >= 0 && d <= 7; }).length;
-  const sleepy = live.filter((c) => !c.seenAt || now - Date.parse(c.seenAt) > 7 * 86400000).length;
+  const sleepy = live.filter(sleepyC).length;
   const back = db.clients.filter((c) => (c.tgSent || []).some((k) => /:w\d+$/.test(k) && k.split(':')[0] !== c.expires) && c.status === 'active' && logs.some((l) => l.clientId === c.id && (l.type === 'renovacion' || l.type === 'restaurada'))).length;
   const al = db.alerts.filter((a) => a.type === 'transcode' && !a.unsure && inWeek(a.ts));
   const bySrv = new Map(); for (const a of al) bySrv.set(a.server || '—', (bySrv.get(a.server || '—') || 0) + (a.count || 1));
@@ -5698,7 +5704,7 @@ function tcBot(c, why) {
   if (a.bot === false || !c.tgChat || !db.settings.notices.telegram.token) return;
   const last = tcBotAt.get(c.id) || 0; if (why !== 'loop' && Date.now() - last < 30 * 60000) return;
   tcBotAt.set(c.id, Date.now());
-  const app = cliJf(c) ? 'Jellyfin' : 'Emby';
+  const app = appOf(db.servers.find((v) => v.id === c.serverId));
   const t = why === 'loop'
     ? `🔁 <b>Hemos cerrado la sesión de tu aparato</b>\n\nTu app volvía a poner el vídeo sola una y otra vez, y cada vez tenía que convertirse. Eso satura el servidor.\n\n✅ Para arreglarlo:\n1️⃣ Vuelve a entrar con tu usuario y contraseña.\n2️⃣ Ajustes › Reproducción › calidad al máximo (no «Auto»).\n3️⃣ Si usa subtítulos, elige otros o quítalos.\n4️⃣ Si sigue pasando, cierra la app del todo y ábrela de nuevo.`
     : why === 'subs'
@@ -5841,8 +5847,8 @@ async function monitor() {
               const nk = `n:${s.id}:${x.Id}:${itemId}`;
               if (recent.has(nk) && now - recent.get(nk) < 6 * 3600000) continue;
               recent.set(nk, now);
-              events.push({ type: 'transcode', c, s, unsure: true, action: 'No se cortó: Emby no explica qué convierte', device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: 'other', causeText: 'Sin detalles', detail: tcDetail(x), sid: x.Id, dev: x.DeviceId || '',
-                reason: 'Emby dice que convierte, pero no dice qué' });
+              events.push({ type: 'transcode', c, s, unsure: true, action: `No se cortó: ${appOf(s)} no explica qué convierte`, device: x.DeviceName || '', app: x.Client || '', item: sessionTitle(x), cause: 'other', causeText: 'Sin detalles', detail: tcDetail(x), sid: x.Id, dev: x.DeviceId || '',
+                reason: `${appOf(s)} dice que convierte, pero no dice qué` });
               continue;
             }
             // Aviso de calidad: solo si el vídeo PIERDE calidad de verdad, y como mucho cada «tipEvery» minutos por aparato
@@ -5852,7 +5858,7 @@ async function monitor() {
               if (!recent.has(tk) || now - recent.get(tk) >= (cfg.transcode.tipEvery || 30) * 60000) {
                 recent.set(tk, now);
                 const caps = sessionCaps(x);
-                if (caps.canMsg) { try { await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Calidad de vídeo', Text: (cfg.transcode.tipText || QUALITY_TEXT).slice(0, 400), TimeoutMs: 120000 }); tipped = true; } catch { /* queda registrado como aviso */ } }
+                if (caps.canMsg) { try { await emby(s, 'POST', `/Sessions/${x.Id}/Message`, { Header: 'Calidad de vídeo', Text: qualityText(s), TimeoutMs: 120000 }); tipped = true; } catch { /* queda registrado como aviso */ } }
               }
             }
             const key = `t:${s.id}:${x.Id}:${(x.NowPlayingItem || {}).Id || ''}`;
@@ -6263,7 +6269,7 @@ route('GET', '/api/grow', SUPER, () => {
   const tgLinked = db.clients.filter((c) => c.tgChat && !c.demo && c.status !== 'trash').length;
   const rooms = db.servers.map((s) => ({ id: s.id, name: s.name, used: srvLoad(s), max: srvMax(s), off: !!s.off }));
   const live = db.clients.filter((c) => !c.demo && c.status === 'active');
-  const sleepy = live.filter((c) => !c.seenAt || now - Date.parse(c.seenAt) > 7 * 86400000).length;
+  const sleepy = live.filter(sleepyC).length;
   const expired = db.clients.filter((c) => !c.demo && (c.status === 'expired' || (c.status === 'trash' && c.trashReason === 'Sin renovar'))).length;
   return { cfg: g, bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
     tgLinked, rooms, sleepy, live: live.length, outage: growChat() };
@@ -7768,6 +7774,9 @@ function sessionCaps(x) {
   const cmds = Array.isArray(x.SupportedCommands) ? x.SupportedCommands : null;
   return { canMsg: cmds ? cmds.includes('DisplayMessage') : true, remote: x.SupportsRemoteControl !== false, cmdsKnown: !!cmds };
 }
+/** v272: nombre de la app según la plataforma del servidor (para que los textos valgan en Emby, Jellyfin, Plex e IPTV) */
+const appOf = (s) => (s && s.kind === 'jellyfin' ? 'Jellyfin' : s && s.kind === 'plex' ? 'Plex' : s && s.kind === 'iptv' ? 'la app de IPTV' : 'Emby');
+const qualityText = (s) => (db.settings.alerts.transcode.tipText || QUALITY_TEXT.replace(/Ajustes de Emby/g, `Ajustes de ${appOf(s)}`)).slice(0, 400);
 const QUALITY_TEXT = 'Para ver el vídeo con la mejor calidad:\n1. Abre los Ajustes de Emby en este dispositivo.\n2. Busca Calidad de vídeo o Calidad remota.\n3. Elige la calidad máxima: el valor más alto que aparezca.\nDespués, vuelve a reproducir el vídeo.';
 const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
 route('GET', '/api/monitor', '*', async ({ me }) => {
@@ -7901,7 +7910,7 @@ async function sendScreenMsg(me, s, x, c, header, text, timeoutMs) {
 /* Aviso de calidad baja, a mano: 120 segundos en pantalla (algunas apps lo quitan antes) */
 route('POST', '/api/monitor/notice', '*', async ({ me, body }) => {
   const { s, x, c } = await findSession(me, body);
-  const text = (db.settings.alerts.transcode.tipText || QUALITY_TEXT).slice(0, 400);
+  const text = qualityText(s);
   return sendScreenMsg(me, s, x, c, 'Calidad de vídeo', text, 120000);
 });
 
