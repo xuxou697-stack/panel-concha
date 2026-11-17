@@ -2763,6 +2763,13 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 #dlg.wide{width:min(900px,96vw);max-width:96vw}
 .fd-bot{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;border:1px dashed var(--line)}
 .fd-bot.on{border-style:solid;border-color:color-mix(in srgb,#2aa3e6 50%,var(--line));background:color-mix(in srgb,#2aa3e6 10%,var(--surface))}
+.iv-st{display:inline-flex;padding:7px 13px;border-radius:999px;font-weight:700;font-size:13px;margin:-4px 0 14px;background:color-mix(in srgb,var(--muted) 14%,transparent);color:var(--muted)}.iv-st.on{background:color-mix(in srgb,#22c55e 18%,transparent);color:#4ade80}
+.iv-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}.iv-col{display:grid;gap:16px}@media (max-width:860px){.iv-grid{grid-template-columns:1fr}}
+.iv-c .gr-b{padding-top:4px}.iv-h{margin:16px 0 8px;font-size:14px}
+.iv-img{display:flex;gap:12px;align-items:center;padding:10px;border:1px dashed var(--line);border-radius:12px;margin-bottom:12px}.iv-img>img,.iv-img>span{width:74px;height:110px;object-fit:cover;border-radius:9px;flex:none;display:grid;place-items:center;font-size:11px;color:var(--muted);background:color-mix(in srgb,var(--text) 6%,transparent)}.iv-img b{display:block}.iv-img small{display:block;color:var(--muted);margin:2px 0 8px}
+.iv-tg{background:#0e1621;border-radius:14px;padding:12px;color:#e9eef3;max-width:380px;margin:0 auto}.iv-tg>img{display:block;width:100%;border-radius:12px 12px 0 0}.iv-bub{background:#182533;border-radius:0 0 12px 12px;padding:10px 13px;font-size:14px;line-height:1.5}.iv-tg>.iv-bub:first-child{border-radius:12px}.iv-bub code{background:#0e1621;padding:1px 5px;border-radius:5px}
+.iv-kb{display:grid;gap:4px;margin-top:4px}.iv-kb span{background:rgba(43,82,120,.75);border-radius:8px;text-align:center;padding:8px;font-size:13.5px}
+.iv-fr{list-style:none;margin:0;padding:0;display:grid;gap:6px}.iv-fr li{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.iv-fr li span{color:var(--muted);font-size:13px}.iv-fr li small{grid-column:1/-1;color:var(--muted);font-size:12px}
 .fd-top.on{border-color:color-mix(in srgb,#f97316 50%,var(--line));background:color-mix(in srgb,#f97316 10%,var(--surface))}
 .fd-topl{list-style:none;margin:10px 0;padding:0;display:grid;gap:6px}.fd-topl li{display:flex;gap:10px;align-items:center;padding:8px 11px;border-radius:11px;background:var(--surface2,color-mix(in srgb,var(--text) 5%,transparent))}.fd-topl li b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fd-topl li small{color:var(--muted);white-space:nowrap}
 .fd-bot-t{flex:1;min-width:0}.fd-bot-t b{display:block;font-size:13.5px}.fd-bot-t span{font-size:12px;color:var(--muted)}
@@ -2873,6 +2880,8 @@ function addMonths(s, n) {
 }
 const fmt = (s) => { if (!s) return '—'; const [y, m, d] = s.split('-').map(Number); return `${d} ${MES[m - 1]} ${y}`; };
 const fmtTs = (iso, year) => new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}), hour: '2-digit', minute: '2-digit' });
+const refDur = (d) => (d % 30 === 0 ? (d === 30 ? '1 mes' : `${d / 30} meses`) : d === 7 ? '1 semana' : d === 14 ? '2 semanas' : plural(d, 'día', 'días'));
+const refLive = () => { const r = S.d.settings.referral || {}, p = r.promo || {}; return (r.days > 0 || r.newDays > 0) && !(p.on && p.until && S.d.today > p.until); };
 const plural = (n, one, many) => (n === 1 ? `1 ${one}` : `${n} ${many}`);
 const options = (list, sel) => list.map(([v, t]) => `<option value="${esc(v)}"${String(v) === String(sel) ? ' selected' : ''}>${esc(t)}</option>`).join('');
 const MONTH_OPTS = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '12 meses']];
@@ -2916,6 +2925,7 @@ function toast(msg, bad) {
 
 /* ---------- Iconos (trazos propios, 24x24) ---------- */
 const IC = {
+  gift: 'M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-1.5-3-5-3-5-1s3 1 5 1zM12 7c1.5-3 5-3 5-1s-3 1-5 1z',
   key: 'M15.5 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM13 11l-9 9M6 18l2 2M9 15l2 2',
   send: 'M21 3 10 14M21 3l-7 18-4-7-7-4z', radio: 'M12 12h.01M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8', film: 'M4 4h16v16H4zM8 4v16M16 4v16M4 8h4M4 12h4M4 16h4M16 8h4M16 12h4M16 16h4', tv: 'M3 7h18v12H3zM8 3l4 4 4-4', pause: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10 9v6M14 9v6', wifi: 'M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a14.5 14.5 0 0 1 20 0M12 19.5h.01', xc: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6', refresh: 'M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4',
   upload: 'M12 16V4M7 9l5-5 5 5M4 20h16', info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01', grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', server: 'M4 5h16v6H4zM4 13h16v6H4zM7.5 8h.01M7.5 16h.01', msg: 'M4 5h16v11H9l-5 4z',
@@ -3066,6 +3076,7 @@ function navGroups() {
   const bot = [{ v: 'bot', t: 'Inicio del bot', i: 'grid' },
     { v: 'avisos', sec: 'Para tus clientes', t: 'Avisos al caducar', i: 'bell', n: noticeRows().filter((c) => c.noticeFor !== c.expires).length },
     ...(isSuper() ? [{ v: 'botauto', t: 'Automáticos', i: 'send' }] : []),
+    ...(isSuper() ? [{ v: 'invita', t: 'Invita a un amigo', i: 'gift' }] : []),
     { v: 'seguimiento', t: 'Seguimiento demos', i: 'timer', n: S.d.followPending || 0, hot: true },
     ...(canDo('servers') ? [{ v: 'canales', t: 'Canal de novedades', i: 'tv' }] : []),
     ...(['reseller', 'sub'].includes(me().role) && S.d.settings.feedVend !== false ? [{ v: 'misnov', sec: 'Para ti', t: 'Mis novedades', i: 'tv' }] : []),
@@ -3539,7 +3550,7 @@ function render() {
   if (d.salesEmail !== undefined) SALES = d.salesEmail || '';
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = salesHtml('ssales'); }
   clearInterval(S.liveTimer);
-  const fn = { hoy: vHoy, resumen: vResumen, crecer: () => vCrecer('crecer'), botauto: () => vCrecer('bot'), canales: vCanales, misnov: vMisNov, bot: vBot, botcfg: vBotCfg, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
+  const fn = { hoy: vHoy, resumen: vResumen, crecer: () => vCrecer('crecer'), botauto: () => vCrecer('bot'), invita: vInvita, canales: vCanales, misnov: vMisNov, bot: vBot, botcfg: vBotCfg, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), equipodel: vEquipoDel, stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   $('#main').dataset.v = S.view; // para dar a cada pantalla su toque de color
   document.body.classList.toggle('tech1', techOnly());
@@ -4542,7 +4553,7 @@ function vNuevo(demo) {
       <label class="f">WhatsApp<input name="whatsapp" maxlength="120" autocomplete="off" inputmode="tel" placeholder="+34 600 000 000"></label>
       <label class="f">Signal<input name="signal" maxlength="120" autocomplete="off" placeholder="@usuario"></label>
     </div>
-    ${!demo && S.d.settings.referral && S.d.settings.referral.days ? `<label class="f">Código de invitación <span class="muted small">(opcional: si viene de parte de otro cliente, ese cliente gana ${plural(S.d.settings.referral.days, 'día', 'días')})</span><input name="ref" maxlength="12" autocomplete="off" placeholder="Ej.: A1B2C3" style="text-transform:uppercase"></label>` : ''}
+    ${!demo && refLive() ? `<label class="f">🎁 Código de invitación <span class="muted small">(opcional: si viene de parte de otro cliente${S.d.settings.referral.days ? `, ese cliente gana ${refDur(S.d.settings.referral.days)}` : ''}${S.d.settings.referral.newDays ? `${S.d.settings.referral.days ? ' y' : ','} esta cuenta recibe ${refDur(S.d.settings.referral.newDays)} de regalo` : ''})</span><input name="ref" maxlength="12" autocomplete="off" placeholder="Ej.: A1B2C3" style="text-transform:uppercase"></label>` : ''}
     <label class="f">Notas<textarea name="note" rows="2" maxlength="300" placeholder="Notas adicionales…"></textarea></label>
     <div class="dfoot"><span class="bzsum" id="nwSum"></span><button type="button" class="btn ghost" data-view="cuentas" data-filter="${demo ? 'demo' : 'all'}">Cancelar</button><button type="submit" class="btn primary">${demo ? 'Crear demo ✨' : 'Crear cliente ✨'}</button></div>
   </form>`;
@@ -5635,6 +5646,7 @@ function vBot() {
   const cli = [
     tile('#f59e0b', '⏰', 'Avisos de caducidad', 'Antes de que venza su cuenta, el bot le avisa solo con un botón para renovar.', 'data-view="avisos"', pend),
     ...(sup ? [tile('#ec4899', '💌', 'Mensajes automáticos', 'Recuperar a los que no renuevan, encuesta de 1 a 5 estrellas y aviso si se cae un servidor.', 'data-view="botauto"')] : []),
+    ...(sup ? [tile('#f43f5e', '💝', 'Invita a un amigo', 'Recomienda y ganáis los dos: regalo para quien recomienda y para el amigo, con promociones como Black Friday.', 'data-view="invita"')] : []),
     tile('#8b5cf6', '🎁', 'Seguimiento de demos', 'Mensajes a los que probaron una demo y no compraron.', 'data-view="seguimiento"', d.followPending || 0),
     ...(canDo('servers') ? [tile('#22c55e', '📺', 'Canal de novedades', 'Cada servidor publica las pelis y series nuevas en su canal. Y cada cliente puede pedir que se las mande el bot.', 'data-view="canales"')] : []),
   ];
@@ -5650,6 +5662,47 @@ function vBot() {
     sec('v', '🧑‍💼', ven ? 'Para ti como vendedor' : 'Para tus vendedores', ven ? 'Lo nuevo de tus servidores, para pasárselo a tus clientes.' : 'Lo que tus resellers pueden recibir para sus clientes.', vend) +
     sec('y', '🙋', 'Para ti', 'Cómo va el bot y cómo está conectado.', mine);
 }
+/* v283: «Invita a un amigo»: regalos para los dos, máximo de amigos y promoción con imagen para el bot */
+function vInvita() {
+  const sub = '👥 Para tus clientes: en el bot tocan «🎁 Invita a un amigo», mandan su invitación y, al darle de alta al amigo con su código, los dos reciben su regalo.';
+  const r = S.inv;
+  if (!r || (r.at && Date.now() - r.at > 30000)) { if (!r || !r.busy) { S.inv = { busy: true }; api('GET', '/api/referral').then((x) => { S.inv = { ...x, at: Date.now() }; if (S.view === 'invita') render(); }, (e) => { S.inv = { error: e.message }; if (S.view === 'invita') render(); }); } return head('Invita a un amigo', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
+  if (r.busy) return head('Invita a un amigo', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (r.error) return head('Invita a un amigo', sub) + `<p class="err">${esc(r.error)}</p>`;
+  const D = [[0, 'Nada'], [3, '3 días'], [7, '1 semana'], [15, '15 días'], [30, '1 mes'], [60, '2 meses'], [90, '3 meses']];
+  const withCur = (v) => (D.some((x) => x[0] === v) ? D : [...D, [v, refDur(v)]]);
+  const st = r.over ? ['off', '⏳ La promoción ya terminó'] : r.live ? ['on', r.promo.on ? `🔥 Promoción activa · hasta el ${new Date(r.promo.until + 'T12:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}` : '✅ Activo'] : ['off', 'Apagado: pon algún regalo'];
+  const fr = r.friends.length ? r.friends.map((f) => `<li><b>${esc(f.name)}</b><span>de parte de <b>${esc(f.by)}</b></span><small>${f.at ? esc(f.at.split('-').reverse().join('/')) : ''}${f.gift ? ` · 🎁 ${refDur(f.gift)}` : ''}</small></li>`).join('') : '<li class="muted">Todavía nadie ha venido de parte de otro cliente.</li>';
+  return head('Invita a un amigo', sub) + `<div class="iv-st ${st[0]}">${st[1]}</div>
+  <div class="iv-grid">
+    <form class="gr-card iv-c" id="ivForm" onsubmit="return false">
+      <div class="gr-h"><span class="gr-i">🎁</span><div><h3>Regalos</h3><p>Se suman solos al crear la cuenta del amigo con el código.</p></div></div>
+      <div class="gr-b">
+        <div class="row2"><label class="f">🙋 Para quien recomienda<select name="days">${options(withCur(r.days), r.days)}</select></label>
+          <label class="f">🤝 Para el amigo nuevo<select name="newDays">${options(withCur(r.newDays), r.newDays)}</select></label></div>
+        <label class="f">👥 Amigos por cliente<select name="max">${options([[0, 'Sin límite'], [1, '1 amigo'], [2, '2 amigos'], [3, '3 amigos'], [5, '5 amigos']], r.max)}</select></label>
+        <h4 class="iv-h">🔥 Promoción</h4>
+        <label class="gr-sw" style="--g:#f97316"><input type="checkbox" name="pon"${r.promo.on ? ' checked' : ''}><span class="sw"></span><b>Es una promoción con fecha límite</b></label>
+        <div class="row2" style="margin-top:10px"><label class="f">Nombre<input name="pname" maxlength="40" value="${esc(r.promo.name)}" placeholder="Black Friday"></label>
+          <label class="f">Válida hasta<input type="date" name="puntil" value="${esc(r.promo.until)}"></label></div>
+        <p class="muted small" style="margin:0 0 10px">Pasada la fecha se apaga sola. Con promoción, los amigos se cuentan desde que la enciendes.</p>
+        <div class="iv-img">${r.promo.img ? `<img src="/api/referral/img?t=${r.at}" alt="">` : '<span>Sin imagen</span>'}
+          <div><b>Imagen para el bot</b><small>La ven tus clientes al tocar «Invita a un amigo». Por ejemplo, tu cartel de Black Friday.</small>
+            <label class="btn sm">🖼️ ${r.promo.img ? 'Cambiar' : 'Subir'} imagen<input type="file" accept="image/*" id="refFile" hidden></label>${r.promo.img ? ' <button type="button" class="btn sm ghost bad" data-act="iv-noimg">Quitar</button>' : ''}</div></div>
+        <button type="button" class="btn primary gr-save" data-act="iv-save">Guardar</button>
+      </div></form>
+    <div class="iv-col">
+      <div class="gr-card iv-c"><div class="gr-h"><span class="gr-i">📱</span><div><h3>Así lo ve tu cliente en el bot</h3><p>Con su código y el botón «📤 Invitar a un amigo».</p></div></div>
+        <div class="gr-b"><div class="iv-tg">${r.promo.img ? `<img src="/api/referral/img?t=${r.at}" alt="">` : ''}<div class="iv-bub">${r.preview.replace(/\n/g, '<br>')}</div><div class="iv-kb"><span>📤 Invitar a un amigo</span><span>🏠 Menú</span></div></div>
+        <p class="muted small" style="margin:10px 0 0">Cuando el amigo abre la invitación, el bot le da la bienvenida y <b>a ti te llega un aviso</b> con su Telegram para que le escribas. Al crearle la cuenta, pon el código de quien le invitó.</p></div></div>
+      <div class="gr-card iv-c"><div class="gr-h"><span class="gr-i">🤝</span><div><h3>Amigos que han venido</h3><p><b>${r.total}</b> en total${r.top.length ? ` · Quien más recomienda: <b>${esc(r.top[0].name)}</b> (${r.top[0].n})` : ''}</p></div></div>
+        <div class="gr-b"><ul class="iv-fr">${fr}</ul></div></div>
+    </div>
+  </div>`;
+}
+document.addEventListener('change', (e) => { if (e.target.id !== 'refFile' || !e.target.files[0]) return;
+  toast('Subiendo la imagen…');
+  soShrink(e.target.files[0]).then((data) => api('POST', '/api/referral/img', { data })).then(() => { toast('🖼️ Imagen guardada'); S.inv = null; render(); }, (er) => toast(er.message, true)); });
 /* v276: «Mis novedades» del vendedor: en su Telegram (para reenviar) o en su propio canal con su nombre */
 function vMisNov() {
   const sub = '🧑‍💼 Para ti como vendedor: recibe las pelis y series nuevas de tus servidores para pasárselas a tus clientes.';
@@ -7088,8 +7141,7 @@ function ajSections() {
       <label class="check"><input type="checkbox" name="d1"${g.notices.chat.d1 !== false ? ' checked' : ''}> Recordar también 1 día antes</label>
       <label class="check"><input type="checkbox" name="d0"${g.notices.chat.d0 !== false ? ' checked' : ''}> Recordar también el mismo día que caduca</label>
       <label class="f" style="max-width:300px;margin-top:8px">Rescate: días después de caducar (0 = no)<input type="number" name="after" min="0" max="30" value="${g.notices.chat.after != null ? g.notices.chat.after : 3}"></label>
-      <label class="f" style="max-width:300px;margin-top:8px">🎁 Invita a un amigo: días de regalo (0 = apagado)<input type="number" name="refDays" min="0" max="90" value="${(g.referral && g.referral.days) || 0}"></label>
-      <p class="muted small" style="margin:-6px 0 12px">Cada cliente tiene su código en el bot (/invitar). Al crear un cliente nuevo, escribe el código de quien le invitó y a ese cliente se le suman los días solos.</p>
+      <p class="muted small" style="margin:0 0 12px">🎁 «Invita a un amigo» (regalos y promociones) está ahora en <button type="button" class="linkbtn" data-view="invita">Bot › Invita a un amigo →</button></p>
       <p class="muted small" style="margin:-6px 0 12px">El rescate es un «te echamos de menos» con el botón para volver. Todos los avisos llevan el botón «💳 Renovar ahora» si tienes activado Cobro a clientes.</p>
       <label class="check"><input type="checkbox" name="tgOn"${g.notices.telegram.on ? ' checked' : ''}> Enviar el aviso solo por Telegram a los clientes enlazados</label>
       <label class="f" style="margin-top:10px">Token del bot de Telegram${g.notices.telegram.hasToken ? ` (guardado${g.notices.telegram.bot ? ', bot @' + esc(g.notices.telegram.bot) : ''}; vacío = no cambiarlo)` : ''}<input name="tgToken" type="password" autocomplete="off" placeholder="123456789:ABC-DEF…"></label>
@@ -8099,6 +8151,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 284, d: '2026-11-17', team: ['📺 En el bot, «Mis aparatos» es nuevo: el cliente ve qué está viendo ahora, los aparatos que ha usado estos días y puede cerrar sesión en cualquiera'], items: ['📺 Bot · «Mis aparatos» renovado: qué se está viendo ahora y en qué aparato, cuántas pantallas usa de su plan, los aparatos usados estos días (hoy, ayer, hace 3 días) y un botón para cerrar sesión en cada uno. Con «🔄 Actualizar» y «➕ Más pantallas»'] },
+  { v: 283, d: '2026-11-16', items: ['💝 Nuevo «Invita a un amigo» en Bot: regalo para quien recomienda y para el amigo nuevo, máximo de amigos por cliente y promociones con fecha límite (como Black Friday) con tu propia imagen', '🤖 En el bot, «🎁 Invita a un amigo» enseña la promo con su código y un botón para mandar la invitación. Cuando el amigo la abre, el bot le da la bienvenida y a ti te llega un aviso con su Telegram para escribirle', '🎁 Al crear la cuenta del amigo con el código, los dos regalos se suman solos'] },
+  { v: 282, d: '2026-11-16', team: ['💶 El mensaje de precios del bot es nuevo: más claro, con lo que ahorra cada plan y botones para ver 1, 2, 3 o 4 pantallas'], items: ['💶 Bot: nuevo mensaje de tarifas. Enseña primero las pantallas de su plan, con lo que ahorra en cada duración y cuánto le sale al mes; con los botones 1 📺 · 2 📺 · 3 📺 · 4 📺 cambia en el mismo mensaje'] },
   { v: 281, d: '2026-11-16', team: ['🧭 Menú más ordenado: en Bot verás «Para tus clientes» y «Para ti», y en Dinero lo del día a día va arriba'], items: ['🧭 Menú ordenado: dentro de cada apartado sale primero lo que usas cada día y abajo, con un pequeño título, lo que se configura una vez', '👥 Clientes: «Ajustar fechas», «Auditoría» e «Importar» van juntos al final, en «Herramientas» (Importar estaba en Sistema)', '🤖 Bot: separado en «Para tus clientes» y «Ajustes»', '💶 Dinero: arriba Cobros pendientes, Ingresos, Gastos…; abajo, en «Ajustes», Precios y paquetes, Cobro a clientes y Cobro a vendedores (antes «Pagos online»)'] },
   { v: 280, d: '2026-11-16', team: ['✅ Si un cliente tuyo con la cuenta caducada pulsa «Ya he pagado» en el bot, te llega un aviso a tu Telegram para que lo compruebes y le renueves', '🍿 Los mensajes para recuperar caducados (a los 7 y 30 días) dicen cuántas pelis y series nuevas han llegado desde que se fue'], items: ['🍿 Recuperar caducados: el mensaje de los 7 y 30 días dice «Desde que te fuiste han llegado X pelis y Y series nuevas», con algunos títulos (solo de lo que podría ver en su cuenta)', '📅 Pantalla de cuenta caducada en el bot: ahora pone el día que caducó y lo que cuesta renovar («Renovar 1 mes: 10 €»)', '✅ Nuevo botón «Ya he pagado» en esa pantalla: te avisa por Telegram (y al vendedor, si es suyo) para que lo compruebes. Como mucho un aviso al día por cliente', '🔥 Canal de novedades: cada domingo a las 20:00 publica «Lo más visto de la semana» con los 5 títulos que más personas han visto en ese servidor. Se puede apagar o publicar al momento'] },
   { v: 279, d: '2026-11-16', team: ['⛔ Si la cuenta de un cliente caduca o está en pausa, su bot solo le deja renovar o pagar: ni menú, ni buscador, ni novedades'], items: ['⛔ Cuenta caducada, en la papelera o en pausa: el bot del cliente se queda solo con «Renovar ahora» y «Precios». No puede buscar, ver guías, ni recibir novedades ni encuestas. Al renovar, vuelve todo solo'] },
@@ -10910,6 +10965,10 @@ document.addEventListener('click', (e) => {
   if (a === 'mn-test') { const fd = new FormData(el.closest('form')); el.disabled = true;
     api('POST', '/api/my-feed/test', { chan: fd.get('chan') || '', header: fd.get('header') || '', footer: fd.get('footer') || '' }).then((r) => toast(r.note), (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
   if (a === 'fd-bot') { dFeedBot(+el.dataset.id); return; }
+  if (a === 'iv-save') { const fm = $('#ivForm'), g = (n) => fm.elements[n];
+    el.disabled = true; api('PUT', '/api/referral', { days: +g('days').value, newDays: +g('newDays').value, max: +g('max').value, promo: { on: g('pon').checked, name: g('pname').value, until: g('puntil').value } })
+      .then(() => { toast('🎁 Invita a un amigo: guardado'); S.inv = null; reload().catch(() => render()); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'iv-noimg') { api('POST', '/api/referral/img', { remove: true }).then(() => { toast('Imagen quitada'); S.inv = null; render(); }, (e) => toast(e.message, true)); return; }
   if (a === 'fd-top') { dFeedTop(+el.dataset.id); return; }
   if (a === 'fd-invbot') { el.disabled = true; api('POST', `/api/feed/${el.dataset.id}/invite-bot`, {}).then((r) => { toast(r.note); dlg.close(); loadFeed(); }, (e) => { toast(e.message, true); el.disabled = false; }); return; }
   if (a === 'fd-rescan') { const id = +el.dataset.id; dlg.close(); api('GET', '/api/feed').then((r) => { S.feed = { ...r, at: Date.now() }; dFeedWiz(id); }); return; }
@@ -11566,7 +11625,7 @@ document.addEventListener('submit', (e) => {
   if (e.target.id === 'noticeForm') {
     e.preventDefault();
     const fd = new FormData(e.target);
-    act(() => api('PUT', '/api/notices', { screen: { on: fd.get('screenOn') === 'on', days: +fd.get('screenDays'), message: fd.get('screenMsg') }, chat: { days: +fd.get('chatDays'), d1: fd.get('d1') === 'on', d0: fd.get('d0') === 'on', after: +(fd.get('after') || 0) }, referral: { days: +(fd.get('refDays') || 0) }, telegram: { on: fd.get('tgOn') === 'on', token: fd.get('tgToken') } }), 'Avisos guardados');
+    act(() => api('PUT', '/api/notices', { screen: { on: fd.get('screenOn') === 'on', days: +fd.get('screenDays'), message: fd.get('screenMsg') }, chat: { days: +fd.get('chatDays'), d1: fd.get('d1') === 'on', d0: fd.get('d0') === 'on', after: +(fd.get('after') || 0) }, telegram: { on: fd.get('tgOn') === 'on', token: fd.get('tgToken') } }), 'Avisos guardados');
   }
   if (e.target.id === 'botBrandForm') { e.preventDefault(); const fd = new FormData(e.target);
     api('PUT', '/api/bot-brand', { name: fd.get('name') || '', logo: fd.get('logo') || '' }).then(async () => { toast('Imagen y nombre del bot guardados 🤖'); await reload(); }, (x) => toast(x.message, true)); return; }

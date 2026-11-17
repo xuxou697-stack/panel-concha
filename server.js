@@ -3179,6 +3179,8 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
           jobs.push(() => botReply(chat, 'menu', mine));
           continue;
         }
+        const rfm = /^\/start\s+ref_([A-F0-9]{6})$/i.exec(text); // v283: el amigo abre la invitación
+        if (rfm) { if (botTooFast(chat)) continue; const code = rfm[1].toUpperCase(), fr = msg.from || {}; jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : refLead(chat, fr, code))); continue; }
         const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
         if (/^\/stop\b/i.test(text)) {
           let n = 0;
@@ -4063,6 +4065,92 @@ function expPrice(c) {
     return `Renovar ${m === 12 ? '1 año' : m === 1 ? '1 mes' : m + ' meses'}${sc > 1 ? ` (${sc} pantallas)` : ''}: ${money}`;
   } catch { return ''; }
 }
+/* ---------- v283: «Recomienda y ganáis los dos» ----------
+   Regalo para quien recomienda (days) y para el amigo nuevo (newDays), con un máximo de amigos por cliente (max).
+   Con promoción: nombre, fecha límite y una imagen para el bot. Pasada la fecha, se apaga sola */
+const REF_IMG = path.join(DATA_DIR, 'promo', 'invita.jpg');
+function refNow() {
+  const r = db.settings.referral || {}, p = r.promo || {};
+  const over = !!(p.on && p.until && today() > p.until);
+  const days = Number(r.days) || 0, newDays = Number(r.newDays) || 0;
+  return { on: !over && (days > 0 || newDays > 0), days, newDays, max: Number(r.max) || 0, promo: p.on && !over ? { name: String(p.name || ''), until: p.until || '', since: p.since || '', img: !!p.img && fs.existsSync(REF_IMG) } : null, over };
+}
+/** Amigos que ya ha traído (con promoción, solo los de esta promoción) */
+const refUsed = (r, rc) => db.clients.filter((x) => x.refBy === r.id && (!rc.promo || !rc.promo.since || String(x.createdAt || '') >= rc.promo.since)).length;
+const durText = (d) => (d % 30 === 0 ? (d === 30 ? '1 mes' : `${d / 30} meses`) : d === 7 ? '1 semana' : d === 14 ? '2 semanas' : `${d} ${d === 1 ? 'día' : 'días'}`);
+const untilText = (d) => { const x = new Date(d + 'T12:00:00'); return `${x.toLocaleDateString('es-ES', { weekday: 'long' })} ${x.getDate()} de ${x.toLocaleDateString('es-ES', { month: 'long' })}`; };
+async function refCode(c) {
+  if (!c.refCode) await lock(async () => { if (!c.refCode) { let k; do { k = crypto.randomBytes(3).toString('hex').toUpperCase(); } while (db.clients.some((x) => x.refCode === k)); c.refCode = k; saveDb(); } });
+  return c.refCode;
+}
+function refCaption(c, rc, code) {
+  const used = refUsed(c, rc), left = rc.max ? Math.max(0, rc.max - used) : null, both = rc.days > 0 && rc.newDays > 0;
+  const L = [`🎁 <b>${rc.promo && rc.promo.name ? hEsc(rc.promo.name.toUpperCase()) + ' · ' : ''}${both ? 'Recomienda y ganáis los dos' : 'Recomienda y gana'}</b>`, ''];
+  if (rc.days > 0) L.push(`🙋 <b>Para ti:</b> ${durText(rc.days)} gratis`);
+  if (rc.newDays > 0) L.push(`🤝 <b>Para tu amigo:</b> ${rc.newDays >= 28 && rc.newDays <= 31 ? 'primer mes' : durText(rc.newDays)} gratis`);
+  L.push('', '<b>Así de fácil</b>', '1️⃣ Toca «📤 Invitar a un amigo» y mándale tu invitación', '2️⃣ Tu amigo nos escribe de tu parte', `3️⃣ Al darle de alta, ${both ? '¡los dos recibís el regalo!' : rc.days > 0 ? '¡te llega tu regalo!' : '¡tu amigo recibe su regalo!'} 🎉`, '');
+  L.push(`🔑 Tu código: <code>${code}</code>`);
+  if (rc.promo && rc.promo.until) L.push(`⏳ Válida hasta el ${untilText(rc.promo.until)}`);
+  if (rc.promo) L.push('🔥 Plazas limitadas hasta llenar los servidores');
+  if (left === 0) L.push('', `✅ <b>Ya has invitado a ${rc.max === 1 ? 'tu amigo' : 'tus amigos'}.</b> ¡Gracias por recomendarnos! 💛`);
+  else if (rc.max) L.push(`👥 Puedes invitar a ${rc.max === 1 ? '1 amigo' : rc.max + ' amigos'}${used ? ` (te ${left === 1 ? 'queda 1' : `quedan ${left}`})` : ''}`);
+  return { text: L.join('\n'), left };
+}
+async function refBot(chat, c) {
+  const rc = refNow(), nm = botName(), bot = (db.settings.notices.telegram || {}).bot || '';
+  const menu = [{ text: '🏠 Menú', callback_data: 'bm:menu' }];
+  if (!rc.on || !c) {
+    const share = `🎬 Te recomiendo ${nm}: pelis y series en 4K en todos tus aparatos.${botContact() ? '\n\n' + botContact() : ''}`;
+    return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `💛 <b>¿Te gusta ${hEsc(nm)}?</b>\n\nSi conoces a alguien a quien le pueda gustar, pásale nuestro contacto y dile que va de tu parte. ¡Gracias por recomendarnos! 🙌`,
+      reply_markup: { inline_keyboard: [[{ text: '📤 Recomendar a un amigo', url: `https://t.me/share/url?url=${encodeURIComponent(share)}` }], menu] } });
+  }
+  const code = await refCode(c), { text, left } = refCaption(c, rc, code);
+  const link = bot ? `https://t.me/${bot}?start=ref_${code}` : '';
+  const share = `🎬 Te invito a ${nm}: pelis y series en 4K en todos tus aparatos.${rc.newDays > 0 ? `\n🎁 Viniendo de mi parte tienes ${rc.newDays >= 28 && rc.newDays <= 31 ? 'el primer mes' : durText(rc.newDays)} gratis.` : ''}\n\n👉 Pulsa aquí y te atienden: ${link || botContact() || ''}\n🔑 Mi código: ${code}`;
+  const kb = { inline_keyboard: [...(left === 0 ? [] : [[{ text: '📤 Invitar a un amigo', url: `https://t.me/share/url?url=${encodeURIComponent(link || ' ')}&text=${encodeURIComponent(share)}` }]]), menu] };
+  if (rc.promo && rc.promo.img) { try { return await tgPhoto(chat, fs.readFileSync(REF_IMG), text, kb, true, 'image/jpeg'); } catch (e) { console.error('Bot (promo):', e.message); } }
+  return tg('sendMessage', { chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb });
+}
+/** El amigo abre el enlace de invitación: le damos la bienvenida y avisamos al dueño (y al vendedor de quien le invitó) */
+const refLeadSeen = new Map();
+async function refLead(chat, from, code) {
+  const r = db.clients.find((x) => x.refCode === code), rc = refNow(), nm = botName();
+  const first = String(from.first_name || '').trim(), full = [from.first_name, from.last_name].filter(Boolean).join(' ') || 'Alguien';
+  const rFirst = r ? String(r.panelName || '').split(/\s+/)[0] : '';
+  const gift = rc.on && rc.newDays > 0 ? `\n🎁 Por venir de su parte tienes <b>${rc.newDays >= 28 && rc.newDays <= 31 ? 'el primer mes' : durText(rc.newDays)} gratis</b>.` : '';
+  await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true,
+    text: `👋 ¡Hola${first ? ' ' + hEsc(first) : ''}!${rFirst ? ` <b>${hEsc(rFirst)}</b> te ha invitado a` : ' Bienvenido a'} <b>${hEsc(nm)}</b> 🎬\n\n🍿 Pelis y series en 4K, en todos tus aparatos.${gift}\n\n✅ Ya hemos avisado: te escribimos enseguida por aquí para dejarte tu cuenta lista.${botContact() ? `\n\nSi tienes prisa, escríbenos:\n${hEsc(botContact())}` : ''}\n\n🔑 Código de invitación: <code>${code}</code>` }).catch(() => {});
+  const k = chat + ':' + code; if (refLeadSeen.has(k) && Date.now() - refLeadSeen.get(k) < 86400000) return; refLeadSeen.set(k, Date.now());
+  const who = `<a href="tg://user?id=${Number(from.id) || chat}">${hEsc(full)}</a>${from.username ? ' (@' + hEsc(from.username) + ')' : ''}`;
+  const txt = `🙋 <b>Nuevo interesado</b>: ${who}\n${r ? `Viene de parte de <b>${hEsc(r.panelName)}</b>` : 'Ha abierto un enlace de invitación'} · código <code>${code}</code>\n\nEscríbele para darle de alta. Al crearle la cuenta pon el código <b>${code}</b> y ${rc.on ? 'el regalo se aplica solo.' : 'quedará apuntado quién le invitó.'}`;
+  const ow = r && db.users.find((u) => u.id === r.ownerId);
+  for (const u of db.users.filter((x) => !x.disabled && (x.role === 'super' || (ow && x.id === ow.id && VEND_ROLES.includes(ow.role))))) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML' }).catch(() => {});
+  if (r) await lock(async () => { addLog('aviso', r, `🙋 ${full}${from.username ? ' (@' + from.username + ')' : ''} ha abierto su invitación en el bot`, null); saveDb(); });
+}
+/** v282: tarifas modernas: una pantalla cada vez (la de su plan primero), con lo que ahorra y botones para ver las demás */
+function pricesMsg(c, scr) {
+  const ctx = cpCtx(c), o = db.users.find((u) => u.id === c.ownerId);
+  const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
+  const cur = (db.settings.currency || 'EUR').toUpperCase();
+  const money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur, minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+  const P = (m, sc) => Number(pr[`${m}-${sc}`]) || 0;
+  const scs = [1, 2, 3, 4].filter((sc) => [1, 3, 6, 12].some((m) => P(m, sc) >= 0.5));
+  if (!scs.length) return null;
+  const mine = Number(c.screens) || 1, sc = scs.includes(Number(scr)) ? Number(scr) : scs.includes(mine) ? mine : scs[0];
+  const ms = [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5), base = P(1, sc);
+  const ICON = { 1: '📅', 3: '🗓️', 6: '⭐', 12: '🏆' }, NAME = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
+  const rows = ms.map((m) => { const v = P(m, sc), off = base >= 0.5 && m > 1 ? Math.round((1 - v / (base * m)) * 100) : 0;
+    return `${ICON[m]} ${NAME[m]}  ·  <b>${money(v)}</b>${off >= 1 ? `  <i>(−${off} %)</i>` : ''}`; });
+  const best = ms[ms.length - 1], per = best > 1 ? P(best, sc) / best : 0;
+  const text = [`💶 <b>Tarifas de ${hEsc(botName())}</b>`, `📺 ${sc === 1 ? '1 pantalla' : sc + ' pantallas'} a la vez${sc === mine && !c.demo ? ' · <i>tu plan</i>' : ''}`, '',
+    `<blockquote>${rows.join('\n')}</blockquote>`,
+    ...(per ? ['', `💡 Con ${NAME[best]} te sale a <b>${money(Math.round(per * 100) / 100)}/mes</b>.`] : [])].join('\n');
+  const kb = [];
+  if (scs.length > 1) kb.push(scs.map((x) => ({ text: `${x === sc ? '✅ ' : ''}${x} 📺`, callback_data: 'pr:' + x })));
+  if (cpEligible(c) && siteBase()) kb.push([{ text: '💳 Renovar ahora', url: cpLink(c) }]);
+  kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
+  return { text, kb: { inline_keyboard: kb } };
+}
 async function botReply(chat, kind, list) {
   if (list.length && !botAlive(list) && !['renovar', 'precios'].includes(kind)) return botExpired(chat, list);
   const send = (text, kb, html) => tg('sendMessage', { chat_id: chat, text, disable_web_page_preview: true, ...(html ? { parse_mode: 'HTML' } : {}), ...(kb ? { reply_markup: kb } : {}) });
@@ -4094,34 +4182,51 @@ async function botReply(chat, kind, list) {
       return `🔑 <b>Tus datos${accs.length > 1 ? ' · ' + hEsc(c.panelName) : ''}</b>\n\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : cliPx(c) ? '<i>la de tu cuenta de Plex</i>' : '<i>pídenosla y te la damos</i>'}${cliTv(c) && xuiLinks(c) && c.password ? `\n📺 Lista M3U: <tg-spoiler>${hEsc(xuiLinks(c).m3u)}</tg-spoiler>` : ''}${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}`; });
     return send(parts.join('\n\n') + '\n\n🤫 No compartas tus datos con nadie.', null, true);
   }
-  if (kind === 'aparatos') {
-    const out = [], kb = [];
+  if (kind === 'aparatos') { // v284: aparatos modernos: lo que ve ahora, los usados últimamente y cerrar sesión en uno
+    const parts = [], kb = [], tz = process.env.TZ || 'Europe/Madrid';
+    const icon = (n) => (/tv|tele|fire|roku|tizen|webos|samsung|lg|bravia|chromecast|shield|apple ?tv|google tv|xiaomi|mi box|formuler|nvidia/i.test(n) ? '📺' : /ipad|tablet|tab /i.test(n) ? '📱' : /iphone|android|mobile|phone|móvil|movil|pixel|galaxy|redmi/i.test(n) ? '📱' : /chrome|firefox|safari|edge|web|windows|mac|linux|opera/i.test(n) ? '💻' : '🖥️');
+    const hm = (t) => new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: tz });
+    const when = (t) => { const d = Math.round((Date.parse(today() + 'T12:00:00') - Date.parse(localDate(new Date(t)) + 'T12:00:00')) / 86400000); return d <= 0 ? `hoy, ${hm(t)}` : d === 1 ? `ayer, ${hm(t)}` : `hace ${d} días`; };
+    const allConn = (() => { try { return connLoad(); } catch { return {}; } })();
     for (const c of accs) {
       const s = db.servers.find((x) => x.id === c.serverId);
-      let list2 = [];
-      if (s && c.embyId) { try { list2 = ((await emby(s, 'GET', '/Sessions')) || []).filter((x) => x.UserId === c.embyId); } catch { /* servidor sin respuesta */ } }
-      const devs = new Map(); for (const x of list2) if (x.DeviceId && !devs.has(x.DeviceId)) devs.set(x.DeviceId, x);
-      out.push(`📺 Aparatos conectados${accs.length > 1 ? ' · ' + c.panelName : ''}: ${devs.size}${c.screens ? ` (tu plan: ${c.screens} a la vez)` : ''}\n` + ([...devs.values()].map((x) => `• ${x.DeviceName || 'Aparato'} — ${x.Client || ''}${x.NowPlayingItem ? ' ▶️ viendo' : ''}`).join('\n') || '• Ninguno ahora mismo'));
-      for (const x of [...devs.values()].slice(0, 6)) { const k = crypto.randomBytes(5).toString('hex'); devKeys.set(k, { chat, clientId: c.id, deviceId: x.DeviceId, name: x.DeviceName || 'Aparato', at: Date.now() }); kb.push([{ text: `❌ Cerrar sesión en ${String(x.DeviceName || 'Aparato').slice(0, 30)}`, callback_data: 'dv:' + k }]); }
+      let live = [], ok = true;
+      if (s && c.embyId) { try { live = ((await emby(s, 'GET', '/Sessions')) || []).filter((x) => x.UserId === c.embyId); } catch { ok = false; } }
+      const now = new Map(); for (const x of live) if (x.DeviceId && x.NowPlayingItem && !now.has(x.DeviceId)) now.set(x.DeviceId, x);
+      const watching = [...now.values()], scr = Number(c.screens) || 1;
+      const recent = new Map();
+      for (const r of [...(allConn[c.id] || [])].reverse()) { if (Date.now() - Date.parse(r[1]) > 30 * 86400000) break; if (!recent.has(r[5]) && !now.has(r[5])) recent.set(r[5], r); }
+      for (const x of live) if (x.DeviceId && !now.has(x.DeviceId) && !recent.has(x.DeviceId)) recent.set(x.DeviceId, [x.LastActivityDate || new Date().toISOString(), x.LastActivityDate || new Date().toISOString(), x.DeviceName || 'Aparato', x.Client || '', '', x.DeviceId, 0]);
+      const L = [`📺 <b>Tus aparatos${accs.length > 1 ? ' · ' + hEsc(c.panelName) : ''}</b>`];
+      L.push(!ok ? '⚪ Ahora no puedo ver tu servidor. Prueba en un rato.' : watching.length > scr ? `🔴 <b>Viendo en ${watching.length} pantallas</b> · tu plan es de ${scr}` : watching.length ? `🟢 <b>Viendo ahora en ${watching.length} de ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}</b>` : `⚪ Nadie está viendo ahora · tu plan: <b>${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}</b> a la vez`);
+      if (watching.length) {
+        L.push('', '<b>▶️ Ahora mismo</b>');
+        L.push(`<blockquote>${watching.map((x) => { const it = x.NowPlayingItem || {}, t = it.Type === 'Episode' ? `${it.SeriesName || ''}${it.ParentIndexNumber != null ? ` · T${it.ParentIndexNumber}E${String(it.IndexNumber || 0).padStart(2, '0')}` : ''}` : it.Name || '';
+          return `${icon((x.DeviceName || '') + ' ' + (x.Client || ''))} <b>${hEsc(x.DeviceName || 'Aparato')}</b> · ${hEsc(x.Client || '')}\n🎬 ${hEsc(String(t).slice(0, 60))}${(x.PlayState || {}).IsPaused ? ' ⏸️' : ''}`; }).join('\n\n')}</blockquote>`);
+      }
+      const rec = [...recent.values()].slice(0, 6);
+      if (rec.length) {
+        L.push('', '<b>🕒 Usados estos días</b>');
+        L.push(rec.map((r) => `${icon(r[2] + ' ' + r[3])} ${hEsc(r[2])} — <i>${when(r[1])}</i>`).join('\n'));
+      }
+      if (!watching.length && !rec.length && ok) L.push('', 'Todavía no has usado tu cuenta en ningún aparato estos días. 😊');
+      if (watching.length > scr) L.push('', '⚠️ Si no eres tú en todas, cierra la que sobre con su botón.');
+      parts.push(L.join('\n'));
+      for (const [did, name] of [...watching.map((x) => [x.DeviceId, x.DeviceName || 'Aparato']), ...rec.map((r) => [r[5], r[2]])].slice(0, 6)) {
+        const k = crypto.randomBytes(5).toString('hex'); devKeys.set(k, { chat, clientId: c.id, deviceId: did, name, at: Date.now() });
+        kb.push([{ text: `🚪 Cerrar sesión · ${String(name).slice(0, 28)}`, callback_data: 'dv:' + k }]);
+      }
     }
     if (devKeys.size > 3000) for (const [k, v] of devKeys) if (Date.now() - v.at > 3600000) devKeys.delete(k);
-    return send(out.join('\n\n') + (kb.length ? '\n\n¿No reconoces alguno? Ciérralo con su botón 👇' : ''), kb.length ? { inline_keyboard: kb } : null);
+    const tip = kb.length ? '\n\n🔒 <i>¿No reconoces alguno? Ciérralo con su botón y pídenos una contraseña nueva.</i>' : '';
+    kb.push([{ text: '🔄 Actualizar', callback_data: 'bm:aparatos' }, { text: '➕ Más pantallas', callback_data: 'bm:precios' }], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
+    return send(parts.join('\n\n— — —\n\n') + tip, { inline_keyboard: kb }, true);
   }
   if (kind === 'precios') {
-    const c = accs[0], ctx = cpCtx(c);
-    const pr = (ctx && ctx.cfg.prices) || {}, cur = (db.settings.currency || 'EUR').toUpperCase(), money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur });
-    const rows = [1, 3, 6, 12].map((m) => { const xs = [1, 2, 3, 4].filter((sc) => Number(pr[`${m}-${sc}`]) >= 0.5).map((sc) => `${sc} 📺 ${money(Number(pr[`${m}-${sc}`]))}`); return xs.length ? `${m === 12 ? '🗓️ 1 año' : m === 1 ? '📅 1 mes' : `⏳ ${m} meses`}\n   ${xs.join(' · ')}` : ''; }).filter(Boolean);
-    if (!rows.length) return send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
-    const btn = cpEligible(c) && siteBase() ? { inline_keyboard: [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] } : null;
-    return send(`💶 Nuestras tarifas\n\n${rows.join('\n\n')}\n\n📺 = pantallas a la vez. Cuanto más tiempo, más ahorras 😉`, btn);
+    const r = pricesMsg(accs[0]);
+    return r ? send(r.text, r.kb, true) : send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
   }
-  if (kind === 'invitar') {
-    const days = Number((db.settings.referral || {}).days) || 0, c = accs.find((x) => !x.demo) || accs[0];
-    if (!days) return send(`🎁 ¿Conoces a alguien que quiera el servicio? Dile que nos escriba:${botContact() ? '\n\n' + botContact() : ''}`);
-    if (!c.refCode) { await lock(async () => { if (!c.refCode) { let k; do { k = crypto.randomBytes(3).toString('hex').toUpperCase(); } while (db.clients.some((x) => x.refCode === k)); c.refCode = k; saveDb(); } }); }
-    const share = `🎬 Te recomiendo este servicio: películas y series en 4K, en todos tus aparatos.\nAl contratar, di que vas de mi parte con el código ${c.refCode} 😉${botContact() ? '\n\n' + botContact() : ''}`;
-    return send(`🎁 Invita a un amigo y gana ${days} ${days === 1 ? 'día' : 'días'} gratis\n\nTu código: ${c.refCode}\n\nCuando un amigo contrate con tu código, se te suman ${days} ${days === 1 ? 'día' : 'días'} a tu cuenta automáticamente. ¡Sin límite de amigos! 🙌`, { inline_keyboard: [[{ text: '📤 Enviar a un amigo', url: `https://t.me/share/url?url=${encodeURIComponent(share)}` }]] });
-  }
+  if (kind === 'invitar') return refBot(chat, accs.find((x) => !x.demo) || accs[0]);
   return send(botAnswer('ayuda', list).text);
 }
 async function botRequest(chat, list, text) {
@@ -4144,6 +4249,12 @@ async function botCallback(cq) {
   if (!chat) return;
   // v279: con la cuenta caducada o en pausa, el bot solo deja renovar o pagar
   if (/^(dv|gd|ga|pb|pt|nv):/.test(data)) { const mine0 = db.clients.filter((c) => c.tgChat === chat); if (mine0.length && !botAlive(mine0)) { searchWait.delete(chat); return botExpired(chat, mine0); } }
+  if (/^pr:[1-4]$/.test(data)) { // v282: tarifas, cambiar de número de pantallas (se cambia el mismo mensaje)
+    const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length) return;
+    const r = pricesMsg(mine[0], +data.slice(3)); if (!r) return;
+    return tg('editMessageText', { chat_id: chat, message_id: cq.message.message_id, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb })
+      .catch(() => tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb }).catch(() => {}));
+  }
   if (data.startsWith('bm:')) { // botones del menú del cliente
     const k = data.slice(3), mine = db.clients.filter((c) => c.tgChat === chat);
     if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda'].includes(k) || !mine.length || botTooFast(chat)) return;
@@ -4263,7 +4374,7 @@ Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como
     try { await emby(s, 'DELETE', `/Devices?Id=${encodeURIComponent(d.deviceId)}`); }
     catch { return tg('sendMessage', { chat_id: chat, text: 'No he podido cerrarla ahora. Inténtalo en un rato o escríbenos.' }); }
     await lock(async () => { addLog('aviso', c, `El cliente cerró desde el bot la sesión en «${d.name}»`, null); saveDb(); });
-    return tg('sendMessage', { chat_id: chat, text: `✅ Sesión cerrada en «${d.name}».\n\nSi no fuiste tú quien la abrió, escríbenos y te cambiamos la contraseña. 🔒` });
+    return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `✅ <b>Sesión cerrada en «${hEsc(d.name)}»</b>\n\nEse aparato tendrá que volver a entrar con tu usuario y contraseña.\n🔒 Si no fuiste tú quien lo abrió, escríbenos y te cambiamos la contraseña.`, reply_markup: { inline_keyboard: [[{ text: '📺 Ver mis aparatos', callback_data: 'bm:aparatos' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
   }
 }
 // Peticiones en el panel (cada uno ve las de sus clientes)
@@ -4793,17 +4904,25 @@ route('POST', '/api/clients', '*', ({ me, body }) => lock(async () => {
   spend(me, cost, `Alta de ${c.embyName} (${what})`);
   if (cost > 0) c.charges = [{ ts: new Date().toISOString(), userId: me.id, credits: cost, from: c.createdAt, to: c.expires, kind: 'alta' }];
   addLog('alta', c, `Alta: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
-  // «Invita a un amigo»: si viene con el código de otro cliente, a ese cliente se le suman los días de regalo
-  const refCode = str(body.ref, 12).toUpperCase(), refDays = Number((db.settings.referral || {}).days) || 0;
-  if (refCode && refDays > 0) {
-    const r = db.clients.find((x) => x.refCode === refCode && x.id !== c.id);
+  // «Invita a un amigo» (v283): regalo para quien recomienda y para el amigo nuevo, con máximo de amigos por cliente
+  const refCodeIn = str(body.ref, 12).toUpperCase().replace(/^REF_/, ''), rc = refNow();
+  if (refCodeIn && !c.demo) {
+    const r = db.clients.find((x) => x.refCode === refCodeIn && x.id !== c.id);
     if (r) {
+      const used = refUsed(r, rc);
       c.refBy = r.id;
-      if (!r.demo && r.status === 'active' && diffDays(r.expires, today()) >= 0) {
-        r.expires = addDays(r.expires, refDays);
-        addLog('edicion', r, `🎁 +${refDays} días de regalo: ${c.panelName} se ha unido con su código`, me);
-        if (r.tgChat) tg('sendMessage', { chat_id: r.tgChat, text: `🎁 ¡Gracias por recomendarnos, ${r.panelName}!\n\nTu amigo se ha unido con tu código y te regalamos ${refDays} ${refDays === 1 ? 'día' : 'días'}.\n📅 Tu cuenta vence ahora el ${r.expires.split('-').reverse().join('/')}.` }).catch(() => {});
-      } else addLog('edicion', r, `${c.panelName} se ha unido con su código (no se suman días: su cuenta no está activa)`, me);
+      if (!rc.on) addLog('edicion', r, `${c.panelName} se ha unido con su código (ahora no hay regalos de invitación)`, me);
+      else if (rc.max && used >= rc.max) addLog('edicion', r, `${c.panelName} se ha unido con su código, pero ya había invitado a ${rc.max === 1 ? '1 amigo' : rc.max + ' amigos'}: esta vez no hay regalo`, me);
+      else {
+        if (rc.newDays > 0) { c.expires = addDays(c.expires, rc.newDays); c.refGift = rc.newDays; addLog('edicion', c, `🎁 +${durText(rc.newDays)} de regalo por venir de parte de ${r.panelName}. Vence el ${c.expires}`, me); }
+        if (rc.days > 0) {
+          if (!r.demo && r.status === 'active' && diffDays(r.expires, today()) >= 0) {
+            r.expires = addDays(r.expires, rc.days);
+            addLog('edicion', r, `🎁 +${durText(rc.days)} de regalo: ${c.panelName} se ha unido con su código`, me);
+            if (r.tgChat) tg('sendMessage', { chat_id: r.tgChat, parse_mode: 'HTML', text: `🎉 <b>¡Gracias por recomendarnos, ${hEsc(String(r.panelName).split(/\s+/)[0])}!</b>\n\nTu amigo ya está dentro y te regalamos <b>${durText(rc.days)}</b> 🎁\n📅 Tu cuenta vence ahora el <b>${r.expires.split('-').reverse().join('/')}</b>.` }).catch(() => {});
+          } else addLog('edicion', r, `${c.panelName} se ha unido con su código (no se suman días: su cuenta no está activa)`, me);
+        }
+      }
     }
   }
   const soc = socAccount(me, c, plan.months, plan.screens, body, 'alta');
@@ -6728,6 +6847,46 @@ route('POST', '/api/feed/:id/test', STAFF, async ({ me, params, body }) => {
     else await feedSend(s, f, `🧪 Prueba del canal de contenidos de ${botName()}\n\nAquí saldrán las pelis y series que se añadan.`, null);
   } catch (e) { throw new HttpError(400, /not found/i.test(e.message) ? 'No encuentro ese canal. Revisa que el bot esté dentro como administrador.' : /rights|administrator|forbidden|not enough/i.test(e.message) ? 'El bot no puede publicar: hazlo administrador con permiso para publicar.' : e.message); }
   return { ok: true, note: 'Prueba publicada: mírala en el canal.' };
+});
+/* ---------- v283: pantalla «Invita a un amigo» ---------- */
+route('GET', '/api/referral', SUPER, () => {
+  const r = db.settings.referral || {}, rc = refNow();
+  const byId = new Map(db.clients.map((c) => [c.id, c]));
+  const friends = db.clients.filter((c) => c.refBy).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0, 30)
+    .map((c) => { const x = byId.get(c.refBy); return { id: c.id, name: c.panelName, by: x ? x.panelName : '—', byId: c.refBy, at: c.createdAt || '', gift: c.refGift || 0 }; });
+  const top = {}; for (const c of db.clients) if (c.refBy) top[c.refBy] = (top[c.refBy] || 0) + 1;
+  return { days: Number(r.days) || 0, newDays: Number(r.newDays) || 0, max: Number(r.max) || 0, promo: { on: !!(r.promo || {}).on, name: (r.promo || {}).name || '', until: (r.promo || {}).until || '', img: !!(r.promo || {}).img && fs.existsSync(REF_IMG) },
+    live: rc.on, over: rc.over, bot: (db.settings.notices.telegram || {}).bot || '', total: db.clients.filter((c) => c.refBy).length, codes: db.clients.filter((c) => c.refCode).length,
+    friends, top: Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, n]) => ({ name: (byId.get(+id) || {}).panelName || '—', n })),
+    preview: refCaption({ id: -1 }, { ...rc, on: true, promo: (r.promo || {}).on ? { name: (r.promo || {}).name || '', until: (r.promo || {}).until || '', since: '' } : null }, 'A1B2C3').text };
+});
+route('PUT', '/api/referral', SUPER, ({ me, body }) => lock(async () => {
+  const r = db.settings.referral, b = body || {};
+  const int = (v, min, max, d) => { const n = Number(v); return Number.isInteger(n) && n >= min && n <= max ? n : d; };
+  r.days = int(b.days, 0, 365, r.days || 0); r.newDays = int(b.newDays, 0, 365, r.newDays || 0); r.max = int(b.max, 0, 50, r.max || 0);
+  const p = r.promo || (r.promo = { on: false, name: '', until: '', since: '', img: false });
+  if (b.promo && typeof b.promo === 'object') {
+    const was = p.on; p.on = !!b.promo.on; p.name = str(b.promo.name || '', 40).trim();
+    p.until = /^\d{4}-\d{2}-\d{2}$/.test(String(b.promo.until || '')) ? b.promo.until : '';
+    if (p.on && !p.until) throw new HttpError(400, 'Pon hasta qué día vale la promoción.');
+    if (p.on && !was) p.since = today(); // los amigos se cuentan desde que empieza la promoción
+  }
+  addLog('ajustes', null, `Invita a un amigo: ${r.days ? durText(r.days) : 'nada'} para quien recomienda, ${r.newDays ? durText(r.newDays) : 'nada'} para el amigo${r.max ? `, máx. ${r.max} por cliente` : ''}${p.on ? ` · promoción «${p.name || 'sin nombre'}» hasta el ${p.until}` : ''}`, me);
+  saveDb(); return { ok: true };
+}));
+route('POST', '/api/referral/img', SUPER, ({ me, body }) => lock(async () => {
+  const r = db.settings.referral, p = r.promo || (r.promo = { on: false, name: '', until: '', since: '', img: false });
+  if (body && body.remove) { try { fs.unlinkSync(REF_IMG); } catch { /* nada */ } p.img = false; saveDb(); return { ok: true }; }
+  const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String((body || {}).data || ''));
+  if (!m) throw new HttpError(400, 'La imagen no es válida.');
+  const buf = Buffer.from(m[1], 'base64');
+  if (buf.length > 1500000 || buf[0] !== 0xff || buf[1] !== 0xd8) throw new HttpError(400, 'La imagen no es válida o es demasiado grande.');
+  fs.mkdirSync(path.dirname(REF_IMG), { recursive: true }); fs.writeFileSync(REF_IMG, buf); p.img = true;
+  addLog('ajustes', null, 'Invita a un amigo: imagen de la promoción cambiada', me); saveDb(); return { ok: true };
+}));
+route('GET', '/api/referral/img', SUPER, () => {
+  if (!fs.existsSync(REF_IMG)) throw new HttpError(404, 'No hay imagen.');
+  return { __raw: fs.readFileSync(REF_IMG), headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } };
 });
 /** v280: publicar ahora «Lo más visto de la semana» (para probar cómo queda) */
 route('POST', '/api/feed/:id/top', STAFF, async ({ me, params }) => {
