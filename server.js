@@ -3367,16 +3367,16 @@ async function newItemsOf(s, maxAge = 3600000) {
       for (const m of [].concat(mc.Metadata || [])) {
         const at = Number(m.addedAt) * 1000, ids = [lib.id, lib.guid];
         if (m.type === 'movie') items.push({ t: 'm', name: m.title, year: m.year, at, ids, pid: String(m.ratingKey || '') });
-        else if (m.type === 'episode') items.push({ t: 's', name: m.grandparentTitle, key: String(m.grandparentRatingKey || m.grandparentTitle), at, ids, pid: String(m.grandparentRatingKey || '') });
+        else if (m.type === 'episode') items.push({ t: 's', name: m.grandparentTitle, key: String(m.grandparentRatingKey || m.grandparentTitle), at, ids, pid: String(m.grandparentRatingKey || ''), se: m.parentIndex, ep: m.index, en: m.title || '' });
         else if (m.type === 'season') items.push({ t: 's', name: m.parentTitle, key: String(m.parentRatingKey || m.parentTitle), at, ids });
         else if (m.type === 'show') items.push({ t: 's', name: m.title, key: String(m.ratingKey), at, ids });
       }
     } else {
-      const r = await emby(s, 'GET', `/Items?ParentId=${encodeURIComponent(lib.id)}&Recursive=true&IncludeItemTypes=Movie,Episode&SortBy=DateCreated&SortOrder=Descending&Limit=300&Fields=DateCreated,ProductionYear,SeriesName,SeriesId`);
+      const r = await emby(s, 'GET', `/Items?ParentId=${encodeURIComponent(lib.id)}&Recursive=true&IncludeItemTypes=Movie,Episode&SortBy=DateCreated&SortOrder=Descending&Limit=300&Fields=DateCreated,ProductionYear,SeriesName,SeriesId,ParentIndexNumber,IndexNumber`);
       for (const it of (r && r.Items) || []) {
         const at = Date.parse(it.DateCreated || 0) || 0, ids = [lib.id, lib.guid];
         if (it.Type === 'Movie') items.push({ t: 'm', name: it.Name, year: it.ProductionYear, at, ids, pid: it.Id });
-        else if (it.Type === 'Episode') items.push({ t: 's', name: it.SeriesName, key: String(it.SeriesId || it.SeriesName), at, ids, pid: it.SeriesId || '' });
+        else if (it.Type === 'Episode') items.push({ t: 's', name: it.SeriesName, key: String(it.SeriesId || it.SeriesName), at, ids, pid: it.SeriesId || '', se: it.ParentIndexNumber, ep: it.IndexNumber, en: it.Name || '' });
       }
     }
   }
@@ -3394,7 +3394,7 @@ async function botNewsData(c) {
   const byDay = new Map();
   for (const x of items.filter((y) => y.at > from && y.name && can(y.ids)).sort((p, q) => q.at - p.at)) {
     const d = localDate(new Date(x.at)), g = byDay.get(d) || { movies: [], series: new Map() };
-    if (x.t === 'm') { if (!g.movies.some((m) => m.name === x.name)) g.movies.push(x); } else { const k = g.series.get(x.key); if (k) k.n++; else g.series.set(x.key, { ...x, n: 1 }); }
+    if (x.t === 'm') { if (!g.movies.some((m) => m.name === x.name)) g.movies.push(x); } else { const k = g.series.get(x.key); if (k) { k.n++; k.eps.push(x); } else g.series.set(x.key, { ...x, n: 1, eps: [x] }); }
     byDay.set(d, g);
   }
   return { s, days: [...byDay.entries()].sort((p, q) => q[0].localeCompare(p[0])).map(([d, g]) => ({ d, movies: g.movies, series: [...g.series.values()] })) };
@@ -3405,35 +3405,99 @@ function newsDayName(d, short) {
   const wd = x.toLocaleDateString('es-ES', { weekday: short ? 'short' : 'long' }).replace('.', '');
   return `${wd.charAt(0).toUpperCase() + wd.slice(1)} ${x.getDate()}`;
 }
-function botNewsView(c, data, day) {
+/* v289: cada título es un botón (8 por página). Al tocarlo llega su ficha con carátula, nota, géneros y de qué va.
+   «🖼️ Ver carátulas» manda un álbum con las carátulas del día. Las claves de los botones viven en memoria */
+const newsKeys = new Map();
+const newsKey = (v) => { const k = crypto.randomBytes(4).toString('hex'); newsKeys.set(k, { ...v, at: Date.now() }); if (newsKeys.size > 20000) for (const [x, y] of newsKeys) if (Date.now() - y.at > 2 * 86400000) newsKeys.delete(x); return k; };
+const NEWS_PAGE = 8;
+function botNewsView(c, data, day, page = 0) {
   const s = data.s, f = (s && s.feed) || {}, nm = botName(), days = data.days;
   const cur = days.find((x) => x.d === day) || days[0];
-  const L = [`🍿 <b>Novedades en ${hEsc(nm)}</b>`];
+  const L = [`🍿 <b>Novedades en ${hEsc(nm)}</b>`], kb = [];
   if (!cur) L.push('', 'Esta semana todavía no ha llegado nada nuevo.', '¡Muy pronto más! 🎬');
   else {
-    const long = new Date(cur.d + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    const long = new Date(cur.d + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
     const nmv = cur.movies.length, nsr = cur.series.length;
-    L.push(`📅 <b>${newsDayName(cur.d)}</b> · <i>${long}</i>`);
-    const block = (rows, more) => `<blockquote${rows.length > 6 ? ' expandable' : ''}>${rows.join('\n')}${more ? `\n<i>…y ${more} más</i>` : ''}</blockquote>`;
-    if (nmv) L.push('', `🎬 <b>${nmv === 1 ? 'Película nueva' : nmv + ' películas nuevas'}</b>`, block(cur.movies.slice(0, 30).map((m) => `▸ ${hEsc(m.name)}${m.year ? ` <i>(${m.year})</i>` : ''}`), Math.max(0, nmv - 30)));
-    if (nsr) L.push('', `📺 <b>${nsr === 1 ? 'Serie con capítulos nuevos' : nsr + ' series con capítulos nuevos'}</b>`, block(cur.series.slice(0, 30).map((x) => `▸ ${hEsc(x.name)} · <i>${x.n === 1 ? '1 capítulo' : x.n + ' capítulos'}</i>`), Math.max(0, nsr - 30)));
-    L.push('', '▶️ Ya están en tu app: búscalas con la 🔍 lupa.');
+    L.push('', `📅 <b>${newsDayName(cur.d)}</b> · ${long}`);
+    L.push([nmv && `🎬 <b>${nmv}</b> ${nmv === 1 ? 'película' : 'películas'}`, nsr && `📺 <b>${nsr}</b> ${nsr === 1 ? 'serie' : 'series'}`].filter(Boolean).join('   ·   '));
+    L.push('', '👇 <b>Toca un título</b> para ver su carátula y de qué va.');
+    const all = [...cur.movies.map((m) => ({ k: 'm', x: m })), ...cur.series.map((x) => ({ k: 's', x }))];
+    const pages = Math.max(1, Math.ceil(all.length / NEWS_PAGE)), pg = Math.min(Math.max(0, page | 0), pages - 1);
+    for (const it of all.slice(pg * NEWS_PAGE, pg * NEWS_PAGE + NEWS_PAGE)) {
+      const key = newsKey({ cid: c.id, sid: s.id, k: it.k, pid: it.x.pid, name: it.x.name, year: it.x.year, d: cur.d, pg, eps: it.k === 's' ? it.x.eps.slice(0, 8).map((e) => ({ se: e.se, ep: e.ep, en: e.en })) : null, n: it.x.n || 0 });
+      const label = it.k === 'm' ? `🎬 ${it.x.name}${it.x.year ? ` (${it.x.year})` : ''}` : `📺 ${it.x.name} · ${it.x.n === 1 ? '1 cap.' : it.x.n + ' caps.'}`;
+      kb.push([{ text: label.slice(0, 60), callback_data: 'ni:' + key }]);
+    }
+    if (pages > 1) kb.push([pg > 0 ? { text: '◀️', callback_data: `nd:${cur.d}:${pg - 1}` } : { text: '·', callback_data: 'nx' }, { text: `${pg + 1} / ${pages}`, callback_data: 'nx' }, pg < pages - 1 ? { text: '▶️', callback_data: `nd:${cur.d}:${pg + 1}` } : { text: '·', callback_data: 'nx' }]);
+    if (all.some((it) => it.x.pid)) kb.push([{ text: '🖼️ Ver las carátulas de este día', callback_data: 'na:' + newsKey({ cid: c.id, sid: s.id, d: cur.d, list: all.filter((it) => it.x.pid).slice(0, 10).map((it) => ({ pid: it.x.pid, name: it.x.name, k: it.k })) }) }]);
   }
-  if (f.botOn && !c.demo && !c.feedSub) L.push('', `🔔 ¿Te aviso yo${f.botMode === 'now' ? ' en cuanto llegue algo' : ' cada día'}? Toca el botón 👇`);
-  const kb = [], tabs = days.slice(0, 7).map((x) => ({ text: `${cur && x.d === cur.d ? '✅ ' : ''}${newsDayName(x.d, true)}`, callback_data: 'nd:' + x.d }));
-  for (let i = 0; i < tabs.length; i += 4) kb.push(tabs.slice(i, i + 4));
-  if (tabs.length === 1) kb.pop();
+  if (f.botOn && !c.demo && !c.feedSub) L.push('', `🔔 ¿Te aviso yo${f.botMode === 'now' ? ' en cuanto llegue algo' : ' cada día'}? Toca el botón de abajo.`);
+  const tabs = days.slice(0, 7).map((x) => ({ text: `${cur && x.d === cur.d ? '✅ ' : ''}${newsDayName(x.d, true)}`, callback_data: 'nd:' + x.d }));
+  if (tabs.length > 1) for (let i = 0; i < tabs.length; i += 4) kb.push(tabs.slice(i, i + 4));
   if (f.botOn && !c.demo) kb.push([c.feedSub ? { text: '🔕 Dejar de avisarme', callback_data: 'nv:off' } : { text: `🔔 Avisarme ${f.botMode === 'now' ? 'en cuanto llegue algo' : 'cada día'}`, callback_data: 'nv:on' }]);
   if (f.on && f.invite) kb.push([{ text: '📣 Unirme al canal de novedades', url: f.invite }]);
   kb.push([{ text: '🔎 Buscar peli o serie', callback_data: 'bm:buscar' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]);
   return { text: L.join('\n').slice(0, 4000), kb: { inline_keyboard: kb } };
 }
-async function botNews(chat, c, day, editId) {
+async function botNews(chat, c, day, editId, page) {
   let data;
   try { data = await botNewsData(c); } catch (e) { console.error('Bot (novedades):', e.message); return tg('sendMessage', { chat_id: chat, text: '⚪ Ahora no puedo mirar el servidor. Prueba en un rato. 🙏', reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }); }
-  const v = botNewsView(c, data, day), m = { chat_id: chat, text: v.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: v.kb };
+  const v = botNewsView(c, data, day, page), m = { chat_id: chat, text: v.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: v.kb };
   if (editId) return tg('editMessageText', { ...m, message_id: editId }).catch((e) => (/not modified/i.test(e.message) ? null : tg('sendMessage', m)));
   return tg('sendMessage', m);
+}
+/** Ficha de un título: carátula + nota, duración, géneros y sinopsis (y los capítulos nuevos si es serie) */
+async function newsInfo(s, pid) {
+  if (s.kind === 'plex') {
+    const m = [].concat((pxMC(await pxLocal(s, `/library/metadata/${encodeURIComponent(pid)}`)) || {}).Metadata || [])[0] || {};
+    return { overview: m.summary || '', rating: m.audienceRating || m.rating || 0, genres: [].concat(m.Genre || []).map((g) => g.tag).filter(Boolean), mins: m.duration ? Math.round(m.duration / 60000) : 0, year: m.year, age: m.contentRating || '' };
+  }
+  const r = await emby(s, 'GET', `/Items?Ids=${encodeURIComponent(pid)}&Fields=Overview,Genres,CommunityRating,ProductionYear,RunTimeTicks,OfficialRating`);
+  const it = ((r && r.Items) || [])[0] || {};
+  return { overview: it.Overview || '', rating: it.CommunityRating || 0, genres: it.Genres || [], mins: it.RunTimeTicks ? Math.round(it.RunTimeTicks / 6e8) : 0, year: it.ProductionYear, age: it.OfficialRating || '' };
+}
+async function botNewsItem(chat, key) {
+  const v = newsKeys.get(key), back = (d, pg) => ({ inline_keyboard: [[{ text: `⬅️ Volver a ${d ? newsDayName(d) : 'las novedades'}`, callback_data: d ? `nd:${d}:${pg || 0}` : 'bm:novedades' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] });
+  if (!v) return tg('sendMessage', { chat_id: chat, text: '⌛ Este botón ya no vale. Abre otra vez las novedades 👇', reply_markup: back() });
+  const c = db.clients.find((x) => x.id === v.cid), s = db.servers.find((x) => x.id === v.sid);
+  if (!c || String(c.tgChat) !== String(chat) || !s) return;
+  let info = {}; try { info = await newsInfo(s, v.pid); } catch { /* sin ficha: va lo que sabemos */ }
+  const dur = info.mins ? (info.mins >= 60 ? `${Math.floor(info.mins / 60)} h ${info.mins % 60 ? (info.mins % 60) + ' min' : ''}`.trim() : `${info.mins} min`) : '';
+  const meta = [info.rating ? `⭐ ${Number(info.rating).toFixed(1).replace('.', ',')}` : '', v.k === 'm' && dur ? `⏱️ ${dur}` : '', info.age ? `🔞 ${hEsc(info.age)}` : ''].filter(Boolean).join('  ·  ');
+  const head = `${v.k === 'm' ? '🎬' : '📺'} <b>${hEsc(v.name)}</b>${(info.year || v.year) ? ` (${info.year || v.year})` : ''}`;
+  const L = [head];
+  if (meta) L.push(meta);
+  if ((info.genres || []).length) L.push(`🎭 ${hEsc(info.genres.slice(0, 3).join(', '))}`);
+  if (v.k === 's' && (v.eps || []).length) {
+    const tag = (e) => `${e.se != null ? 'T' + e.se : ''}${e.ep != null ? 'E' + String(e.ep).padStart(2, '0') : ''}`;
+    L.push('', `🆕 <b>${v.n === 1 ? 'Capítulo nuevo' : v.n + ' capítulos nuevos'}</b>`, ...v.eps.slice(0, 5).map((e) => `▸ ${tag(e)}${e.en ? ` · ${hEsc(String(e.en).slice(0, 40))}` : ''}`), ...(v.n > 5 ? [`<i>…y ${v.n - 5} más</i>`] : []));
+  }
+  const tail = ['', `📅 Llegó ${newsDayName(v.d) === 'Hoy' ? 'hoy' : newsDayName(v.d) === 'Ayer' ? 'ayer' : 'el ' + newsDayName(v.d).toLowerCase()} · ▶️ Ya la tienes en tu app.`];
+  const room = 1000 - [...L, ...tail].join('\n').length - 10;
+  if (info.overview && room > 80) { const o = String(info.overview).replace(/\s+/g, ' ').trim(); L.push('', `<i>${hEsc(o.length > room ? o.slice(0, room - 1).replace(/\s+\S*$/, '') + '…' : o)}</i>`); }
+  const cap = [...L, ...tail].join('\n'), kb = back(v.d, v.pg);
+  if (v.pid) { try { const pic = await posterBytes(s, v.pid); if (pic) return await tgPhoto(chat, pic.buf, cap, kb, true, pic.type); } catch (e) { console.error('Bot (ficha):', e.message); } }
+  return tg('sendMessage', { chat_id: chat, text: cap, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb });
+}
+/** Álbum con las carátulas de un día (hasta 10) */
+async function botNewsAlbum(chat, key) {
+  const v = newsKeys.get(key);
+  if (!v) return tg('sendMessage', { chat_id: chat, text: '⌛ Este botón ya no vale. Abre otra vez las novedades.', reply_markup: { inline_keyboard: [[{ text: '🍿 Novedades', callback_data: 'bm:novedades' }]] } });
+  const c = db.clients.find((x) => x.id === v.cid), s = db.servers.find((x) => x.id === v.sid);
+  if (!c || String(c.tgChat) !== String(chat) || !s) return;
+  const cfg = db.settings.notices.telegram, form = new FormData(), media = [];
+  for (const [i, it] of v.list.entries()) {
+    let pic = null; try { pic = await posterBytes(s, it.pid); } catch { /* sin carátula */ }
+    if (!pic) continue;
+    form.append('f' + i, new Blob([pic.buf], { type: pic.type }), `c${i}.jpg`);
+    media.push({ type: 'photo', media: 'attach://f' + i, caption: `${it.k === 'm' ? '🎬' : '📺'} ${it.name}`.slice(0, 200) });
+  }
+  if (!media.length) return tg('sendMessage', { chat_id: chat, text: '😕 No he podido sacar las carátulas ahora. Prueba en un rato.' });
+  form.append('chat_id', String(chat)); form.append('media', JSON.stringify(media));
+  const res = await fetch(`${TG_API}/bot${cfg.token}/sendMediaGroup`, { method: 'POST', body: form, signal: AbortSignal.timeout(60000) });
+  const j = await res.json().catch(() => ({}));
+  if (!j.ok) console.error('Bot (álbum):', j.description || res.status);
+  return tg('sendMessage', { chat_id: chat, text: `🖼️ Carátulas de ${newsDayName(v.d).toLowerCase() === 'hoy' ? 'hoy' : newsDayName(v.d).toLowerCase() === 'ayer' ? 'ayer' : 'el ' + newsDayName(v.d).toLowerCase()}. Toca una para verla en grande.`, reply_markup: { inline_keyboard: [[{ text: `⬅️ Volver a ${newsDayName(v.d)}`, callback_data: `nd:${v.d}:0` }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
 }
 async function newSince(c) {
   try {
@@ -4300,11 +4364,15 @@ async function botCallback(cq) {
   await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   if (!chat) return;
   // v279: con la cuenta caducada o en pausa, el bot solo deja renovar o pagar
-  if (/^(dv|gd|ga|pb|pt|nv|nd):/.test(data)) { const mine0 = db.clients.filter((c) => c.tgChat === chat); if (mine0.length && !botAlive(mine0)) { searchWait.delete(chat); return botExpired(chat, mine0); } }
-  if (/^nd:\d{4}-\d{2}-\d{2}$/.test(data)) { // v287: novedades, cambiar de día (se cambia el mismo mensaje)
-    const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length || botTooFast(chat)) return;
-    return botNews(chat, mine.find((x) => !x.demo) || mine[0], data.slice(3), cq.message && cq.message.message_id);
+  if (/^(dv|gd|ga|pb|pt|nv|nd|ni|na):/.test(data)) { const mine0 = db.clients.filter((c) => c.tgChat === chat); if (mine0.length && !botAlive(mine0)) { searchWait.delete(chat); return botExpired(chat, mine0); } }
+  if (/^nd:\d{4}-\d{2}-\d{2}(:\d{1,3})?$/.test(data)) { // v287/v289: novedades, cambiar de día o de página (se cambia el mismo mensaje)
+    const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length) return;
+    const [, d, pg] = data.split(':');
+    return botNews(chat, mine.find((x) => !x.demo) || mine[0], d, cq.message && cq.message.message_id, Number(pg) || 0);
   }
+  if (data === 'nx') return;
+  if (/^ni:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsItem(chat, data.slice(3)); } // v289: ficha de un título
+  if (/^na:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsAlbum(chat, data.slice(3)); } // v289: carátulas del día
   if (/^pr:[1-4]$/.test(data)) { // v282: tarifas, cambiar de número de pantallas (se cambia el mismo mensaje)
     const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length) return;
     const r = pricesMsg(mine[0], +data.slice(3)); if (!r) return;
