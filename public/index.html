@@ -5766,7 +5766,7 @@ function vCanales() {
 function dFeedBot(id) {
   const s = S.feed.servers.find((x) => x.id === id); if (!s) return;
   openDlg({ title: `🤖 Novedades por el bot · ${s.name}`, submit: 'Guardar',
-    body: `<p class="supnote" style="--x:1">Además del canal, cada cliente puede recibir las novedades <b>en su chat con el bot</b>, y solo de lo que puede ver en su cuenta. Solo les llega a los que lo piden con el botón <b>«🔔 Avisarme de novedades»</b> del menú del bot.</p>
+    body: `<p class="supnote" style="--x:1">Además del canal, cada cliente puede recibir las novedades <b>en su chat con el bot</b>, y solo de lo que puede ver en su cuenta. Solo les llega a los que lo piden desde el botón <b>«🍿 Novedades»</b> del menú del bot, tocando <b>«🔔 Avisarme»</b>.</p>
       <label class="gr-sw" style="--g:#2aa3e6"><input type="checkbox" name="on"${s.botOn ? ' checked' : ''}><span class="sw"></span><b>Enviar novedades por el bot</b></label>
       <div class="row2" style="margin-top:12px"><label class="f">Cuándo<select name="mode">${options([['day', 'Un resumen al día (recomendado)'], ['now', 'Al momento, una a una']], s.botMode)}</select></label>
         <label class="f">Hora del resumen<select name="hour">${options([9, 10, 12, 14, 16, 18, 19, 20, 21, 22].map((x) => [x, x + ':00']), s.botHour)}</select></label></div>
@@ -8151,6 +8151,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 286, d: '2026-11-17', items: ['🔑 Paneles alquilados: cuando les activas una plataforma (por ejemplo Plex), su panel se entera en unos minutos al abrirlo, sin esperar una hora'] },
+  { v: 285, d: '2026-11-17', team: ['🍿 Nuevo botón «Novedades» en el bot de tus clientes: ven lo que ha llegado estos 7 días y pueden pedir que se les avise cada día'], items: ['🍿 Bot de clientes: nuevo botón «Novedades: lo último que ha llegado». Enseña las pelis y series de los últimos 7 días (solo lo que su cuenta puede ver), con la carátula de la más nueva', '🔔 Desde ahí el cliente se apunta con un toque a los avisos (cada día o al momento) y entra en tu canal de novedades. También con /novedades'] },
   { v: 284, d: '2026-11-17', team: ['📺 En el bot, «Mis aparatos» es nuevo: el cliente ve qué está viendo ahora, los aparatos que ha usado estos días y puede cerrar sesión en cualquiera'], items: ['📺 Bot · «Mis aparatos» renovado: qué se está viendo ahora y en qué aparato, cuántas pantallas usa de su plan, los aparatos usados estos días (hoy, ayer, hace 3 días) y un botón para cerrar sesión en cada uno. Con «🔄 Actualizar» y «➕ Más pantallas»'] },
   { v: 283, d: '2026-11-16', items: ['💝 Nuevo «Invita a un amigo» en Bot: regalo para quien recomienda y para el amigo nuevo, máximo de amigos por cliente y promociones con fecha límite (como Black Friday) con tu propia imagen', '🤖 En el bot, «🎁 Invita a un amigo» enseña la promo con su código y un botón para mandar la invitación. Cuando el amigo la abre, el bot le da la bienvenida y a ti te llega un aviso con su Telegram para escribirle', '🎁 Al crear la cuenta del amigo con el código, los dos regalos se suman solos'] },
   { v: 282, d: '2026-11-16', team: ['💶 El mensaje de precios del bot es nuevo: más claro, con lo que ahorra cada plan y botones para ver 1, 2, 3 o 4 pantallas'], items: ['💶 Bot: nuevo mensaje de tarifas. Enseña primero las pantallas de su plan, con lo que ahorra en cada duración y cuánto le sale al mes; con los botones 1 📺 · 2 📺 · 3 📺 · 4 📺 cambia en el mismo mensaje'] },

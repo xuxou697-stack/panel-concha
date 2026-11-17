@@ -2907,7 +2907,7 @@ Si no has sido tú, avisa al superadministrador.`);
   return { ok: true };
 });
 
-route('GET', '/api/data', '*', ({ me, req }) => { try { const b = panelBase(req); if (/^https?:\/\/[\w.-]+(:\d+)?$/.test(b) && db.settings.siteBase !== b) db.settings.siteBase = b; } catch { /* nada */ } return publicData(me); });
+route('GET', '/api/data', '*', ({ me, req }) => { if (LIC_CLIENT && me && me.role === 'super' && Date.now() - licTry > 5 * 60000) licCheck().catch(() => {}); /* v286: al abrir el panel, mira si el dueño ha cambiado las plataformas */ try { const b = panelBase(req); if (/^https?:\/\/[\w.-]+(:\d+)?$/.test(b) && db.settings.siteBase !== b) db.settings.siteBase = b; } catch { /* nada */ } return publicData(me); });
 
 /* Ajustes (solo superadministrador) */
 route('PUT', '/api/settings', SUPER, ({ me, body }) => lock(async () => {
@@ -3357,17 +3357,17 @@ async function telegramNotices() {
 /** v280: lo que ha llegado al servidor de un cliente desde que caducó (solo de lo que podría ver con su cuenta).
    Se guarda una hora por servidor para no preguntar al servidor por cada cliente. */
 const newCache = new Map();
-async function newItemsOf(s) {
+async function newItemsOf(s, maxAge = 3600000) {
   const hit = newCache.get(s.id);
-  if (hit && Date.now() - hit.at < 3600000) return hit.items;
+  if (hit && Date.now() - hit.at < maxAge) return hit.items;
   const items = [];
   for (const lib of await feedLibs(s)) {
     if (s.kind === 'plex') {
       const mc = pxMC(await pxLocal(s, `/library/sections/${encodeURIComponent(lib.id)}/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=300`));
       for (const m of [].concat(mc.Metadata || [])) {
         const at = Number(m.addedAt) * 1000, ids = [lib.id, lib.guid];
-        if (m.type === 'movie') items.push({ t: 'm', name: m.title, year: m.year, at, ids });
-        else if (m.type === 'episode') items.push({ t: 's', name: m.grandparentTitle, key: String(m.grandparentRatingKey || m.grandparentTitle), at, ids });
+        if (m.type === 'movie') items.push({ t: 'm', name: m.title, year: m.year, at, ids, pid: String(m.ratingKey || '') });
+        else if (m.type === 'episode') items.push({ t: 's', name: m.grandparentTitle, key: String(m.grandparentRatingKey || m.grandparentTitle), at, ids, pid: String(m.grandparentRatingKey || '') });
         else if (m.type === 'season') items.push({ t: 's', name: m.parentTitle, key: String(m.parentRatingKey || m.parentTitle), at, ids });
         else if (m.type === 'show') items.push({ t: 's', name: m.title, key: String(m.ratingKey), at, ids });
       }
@@ -3375,13 +3375,43 @@ async function newItemsOf(s) {
       const r = await emby(s, 'GET', `/Items?ParentId=${encodeURIComponent(lib.id)}&Recursive=true&IncludeItemTypes=Movie,Episode&SortBy=DateCreated&SortOrder=Descending&Limit=300&Fields=DateCreated,ProductionYear,SeriesName,SeriesId`);
       for (const it of (r && r.Items) || []) {
         const at = Date.parse(it.DateCreated || 0) || 0, ids = [lib.id, lib.guid];
-        if (it.Type === 'Movie') items.push({ t: 'm', name: it.Name, year: it.ProductionYear, at, ids });
-        else if (it.Type === 'Episode') items.push({ t: 's', name: it.SeriesName, key: String(it.SeriesId || it.SeriesName), at, ids });
+        if (it.Type === 'Movie') items.push({ t: 'm', name: it.Name, year: it.ProductionYear, at, ids, pid: it.Id });
+        else if (it.Type === 'Episode') items.push({ t: 's', name: it.SeriesName, key: String(it.SeriesId || it.SeriesName), at, ids, pid: it.SeriesId || '' });
       }
     }
   }
   newCache.set(s.id, { at: Date.now(), items });
   return items;
+}
+/** v285: «🍿 Novedades» en el bot: lo que ha llegado estos 7 días (solo lo que puede ver con su cuenta), con avisos y canal */
+async function botNews(chat, c) {
+  const s = c && db.servers.find((x) => x.id === c.serverId), f = (s && s.feed) || {}, nm = botName();
+  const kb = [];
+  if (f.botOn && !c.demo) kb.push([c.feedSub ? { text: '🔕 Dejar de avisarme', callback_data: 'nv:off' } : { text: `🔔 Avisarme ${f.botMode === 'now' ? 'en cuanto llegue algo' : 'cada día'}`, callback_data: 'nv:on' }]);
+  if (f.on && f.invite) kb.push([{ text: '📣 Unirme al canal de novedades', url: f.invite }]);
+  kb.push([{ text: '🔎 Buscar peli o serie', callback_data: 'bm:buscar' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]);
+  if (!s || s.off || s.kind === 'iptv') return tg('sendMessage', { chat_id: chat, text: '🍿 Aquí verás las pelis y series nuevas en cuanto las tengamos.', reply_markup: { inline_keyboard: kb } });
+  let items = [];
+  try { items = await newItemsOf(s, 900000); } catch { return tg('sendMessage', { chat_id: chat, text: '⚪ Ahora no puedo mirar el servidor. Prueba en un rato. 🙏', reply_markup: { inline_keyboard: kb } }); }
+  const from = Date.now() - 7 * 86400000, okLib = new Map();
+  const can = (ids) => { const k = ids.join('|'); if (!okLib.has(k)) okLib.set(k, feedCanSee(c, ids)); return okLib.get(k); };
+  const mine = items.filter((x) => x.at > from && x.name && can(x.ids)).sort((a, b) => b.at - a.at);
+  const movies = [], series = new Map();
+  for (const x of mine) { if (x.t === 'm') { if (!movies.some((m) => m.name === x.name)) movies.push(x); } else { const k = series.get(x.key); if (k) k.n++; else series.set(x.key, { ...x, n: 1 }); } }
+  const sr = [...series.values()];
+  const day = (t) => { const d = Math.round((Date.parse(today() + 'T12:00:00') - Date.parse(localDate(new Date(t)) + 'T12:00:00')) / 86400000); return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} días`; };
+  const L = [`🍿 <b>Novedades en ${hEsc(nm)}</b>`, '<i>Lo que ha llegado estos últimos 7 días</i>'];
+  if (!movies.length && !sr.length) L.push('', 'Esta semana todavía no ha llegado nada nuevo. ¡Muy pronto más! 🎬');
+  if (movies.length) L.push('', `🎬 <b>Películas</b> · ${movies.length}`, ...movies.slice(0, 8).map((m) => `• ${hEsc(m.name)}${m.year ? ` (${m.year})` : ''} · <i>${day(m.at)}</i>`), ...(movies.length > 8 ? [`<i>…y ${movies.length - 8} más</i>`] : []));
+  if (sr.length) L.push('', `📺 <b>Series</b> · ${sr.length}`, ...sr.slice(0, 8).map((x) => `• ${hEsc(x.name)}${x.n > 1 ? ` · ${x.n} capítulos` : ' · capítulo nuevo'} · <i>${day(x.at)}</i>`), ...(sr.length > 8 ? [`<i>…y ${sr.length - 8} más</i>`] : []));
+  if (movies.length || sr.length) L.push('', '▶️ Ya las tienes en tu app. Búscalas con la 🔍 lupa.');
+  if (f.botOn && !c.demo && !c.feedSub) L.push('', `🔔 ¿Quieres que te avise yo${f.botMode === 'now' ? ' en cuanto llegue algo' : ' cada día'}? Toca el botón 👇`);
+  const text = L.join('\n'), markup = { inline_keyboard: kb };
+  const top = mine[0];
+  if (top && top.pid && text.length <= 1000) {
+    try { const pic = await posterBytes(s, top.pid); if (pic) return await tgPhoto(chat, pic.buf, text, markup, true, pic.type); } catch { /* sin carátula: va en texto */ }
+  }
+  return tg('sendMessage', { chat_id: chat, text: text.slice(0, 4000), parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: markup });
 }
 async function newSince(c) {
   try {
@@ -3518,8 +3548,8 @@ async function weeklySend(force) {
 const BOT_CMD = { start: 'menu', inicio: 'menu', buscar: 'buscar', busca: 'buscar', buscador: 'buscar', suscripcion: 'estado', subscripcion: 'estado', cuenta: 'estado', micuenta: 'estado', estado: 'estado', dias: 'estado',
   renovar: 'renovar', pagar: 'renovar', app: 'app', descargar: 'app', calidad: 'calidad', ayuda: 'ayuda', help: 'ayuda', menu: 'menu',
   problemas: 'problemas', problema: 'problemas', soporte: 'problemas', servidor: 'servidor', funciona: 'servidor',
-  instalar: 'guia', guia: 'guia', moonfin: 'guia', datos: 'datos', acceso: 'datos', contrasena: 'datos', aparatos: 'aparatos', dispositivos: 'aparatos', invitar: 'invitar', amigo: 'invitar', precios: 'precios', tarifa: 'precios' };
-const BOT_MENU = [['menu', '🏠 Menú con botones'], ['suscripcion', '📋 Cuántos días te quedan'], ['buscar', '🔎 ¿Lo tenéis? Busca una peli o serie'], ['renovar', '💳 Renovar tu cuenta al momento'], ['problemas', '🛠️ Soluciones rápidas a problemas'], ['servidor', '🟢 ¿Funciona el servidor?'],
+  instalar: 'guia', guia: 'guia', moonfin: 'guia', datos: 'datos', acceso: 'datos', contrasena: 'datos', aparatos: 'aparatos', dispositivos: 'aparatos', invitar: 'invitar', amigo: 'invitar', precios: 'precios', tarifa: 'precios', novedades: 'novedades', nuevo: 'novedades', estrenos: 'novedades' };
+const BOT_MENU = [['menu', '🏠 Menú con botones'], ['suscripcion', '📋 Cuántos días te quedan'], ['buscar', '🔎 ¿Lo tenéis? Busca una peli o serie'], ['novedades', '🍿 Lo último que ha llegado'], ['renovar', '💳 Renovar tu cuenta al momento'], ['problemas', '🛠️ Soluciones rápidas a problemas'], ['servidor', '🟢 ¿Funciona el servidor?'],
   ['instalar', '📲 Cómo instalar la app (Moonfin)'], ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis aparatos conectados'], ['precios', '💶 Precios'], ['invitar', '🎁 Invita a un amigo'],
   ['app', '📲 Descargar la app'], ['calidad', '✨ Ver con la mejor calidad'], ['ayuda', '💬 Ayuda y contacto'], ['stop', '🔕 Dejar de recibir avisos']];
 function tgSetCommands() {
@@ -3859,10 +3889,9 @@ function botMenuKb(list) {
   const b = (t, k) => ({ text: t, callback_data: 'bm:' + k });
   return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar peli o serie', 'buscar')], [b('🟢 ¿Funciona?', 'servidor'), b('🛠️ Problemas', 'problemas')],
     [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis aparatos', 'aparatos'), b('💶 Precios', 'precios')], [b('🎁 Invita a un amigo', 'invitar'), b('💬 Ayuda', 'ayuda')],
-    ...(() => { const sv = c && db.servers.find((x) => x.id === c.serverId), f = (sv && sv.feed) || {}, row = [];
-      if (f.botOn && c && !c.demo) row.push(c.feedSub ? { text: '🔕 Dejar de avisarme', callback_data: 'nv:off' } : { text: '🔔 Avisarme de novedades', callback_data: 'nv:on' });
-      if (f.on && f.invite) row.push({ text: '🍿 Canal de novedades', url: f.invite });
-      return row.length ? [row] : []; })()] };
+    ...(() => { // v285: «Novedades» siempre a mano (si su servidor tiene pelis y series); avisarme y el canal van dentro
+      const sv = c && db.servers.find((x) => x.id === c.serverId);
+      return sv && sv.kind !== 'iptv' && !list.every(cliTv) ? [[b('🍿 Novedades: lo último que ha llegado', 'novedades')]] : []; })()] };
 }
 /** Manda la tarjeta en imagen; si algo falla, el mismo texto de siempre */
 async function sendCard(chat, c, caption, kb, html) {
@@ -4227,6 +4256,7 @@ async function botReply(chat, kind, list) {
     return r ? send(r.text, r.kb, true) : send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
   }
   if (kind === 'invitar') return refBot(chat, accs.find((x) => !x.demo) || accs[0]);
+  if (kind === 'novedades') return botNews(chat, accs.find((x) => !x.demo) || accs[0]);
   return send(botAnswer('ayuda', list).text);
 }
 async function botRequest(chat, list, text) {
@@ -4257,7 +4287,7 @@ async function botCallback(cq) {
   }
   if (data.startsWith('bm:')) { // botones del menú del cliente
     const k = data.slice(3), mine = db.clients.filter((c) => c.tgChat === chat);
-    if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda'].includes(k) || !mine.length || botTooFast(chat)) return;
+    if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda', 'novedades'].includes(k) || !mine.length || botTooFast(chat)) return;
     if (k !== 'buscar') searchWait.delete(chat);
     return botReply(chat, k, mine);
   }
