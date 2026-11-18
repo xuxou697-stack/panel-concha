@@ -1975,6 +1975,7 @@ textarea.typing{caret-color:transparent}
 .fztg:hover{border-color:#2aa1de}.fztg-i{font-size:26px;flex:none}.fztg-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .fztg-k{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#2aa1de}.fztg-n{font-size:14px}.fztg-n b{font-size:22px;color:#2aa1de;margin-right:2px}.fztg-n small{margin-left:4px}
 .fztg-who{display:flex;flex-wrap:wrap;gap:4px}.fztg-p{font-size:12px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,#2aa1de 18%,transparent)}.fztg-p.more{opacity:.8}
+.fztg-off{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 10px;border-radius:999px;background:rgba(248,113,113,.12);color:#fca5a5;font-size:12.5px;font-weight:600;width:max-content}.fztg-off small{color:var(--muted);font-weight:500}.fztg-r.off b{color:#fca5a5}
 .fztg-t{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:110px}.fztg-t b{font-size:26px;line-height:1}.fztg-t small{font-size:11px;color:var(--muted)}
 .fztg-bar{width:100%;height:6px;border-radius:9px;background:var(--raised);overflow:hidden}.fztg-bar i{display:block;height:100%;background:#2aa1de;border-radius:9px}
 .fztg-list{display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow:auto}.fztg-r{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:8px 10px;border-radius:10px;background:var(--raised)}.fztg-r small{grid-column:1;color:var(--muted);font-size:12px}.fztg-r time{grid-column:2;grid-row:1/3;align-self:center;font-size:12px;color:var(--muted)}
@@ -4165,7 +4166,9 @@ function tgStats(d, t, y) {
   const linked = live.filter((c) => c.tgLinked);
   const base = live.filter((c) => !c.demo);
   const today = linked.filter((c) => c.tgAt && ymd(c.tgAt) === t), yday = linked.filter((c) => c.tgAt && ymd(c.tgAt) === y);
-  return { linked, today, yday, base: base.length, pct: base.length ? Math.round((linked.filter((c) => !c.demo).length / base.length) * 100) : 0 };
+  const gone = live.filter((c) => c.tgOffAt && !c.tgLinked && !c.demo).sort((a, b) => String(b.tgOffAt).localeCompare(String(a.tgOffAt))); // v304: se han dado de baja
+  const gone30 = gone.filter((c) => Date.now() - Date.parse(c.tgOffAt) < 30 * 86400000);
+  return { linked, today, yday, gone, gone30, base: base.length, pct: base.length ? Math.round((linked.filter((c) => !c.demo).length / base.length) * 100) : 0 };
 }
 function fzTgHtml(d, t, y) {
   if (!(d.settings.notices && d.settings.notices.telegram && d.settings.notices.telegram.bot) || noCli()) return '';
@@ -4176,7 +4179,7 @@ function fzTgHtml(d, t, y) {
     <span class="fztg-i" aria-hidden="true">📲</span>
     <span class="fztg-m"><span class="fztg-k">Bot de Telegram</span>
       <span class="fztg-n"><b>${x.today.length ? '+' + x.today.length : 0}</b> ${x.today.length === 1 ? 'lo ha aceptado hoy' : 'lo han aceptado hoy'} <small class="fzt-c ${df > 0 ? 'up' : df < 0 ? 'down' : ''}">${cmp}</small></span>
-      ${who ? `<span class="fztg-who">${who}</span>` : ''}</span>
+      ${who ? `<span class="fztg-who">${who}</span>` : ''}${x.gone30.length ? `<span class="fztg-off">👋 ${plural(x.gone30.length, 'se ha dado de baja', 'se han dado de baja')} <small>· 30 días</small></span>` : ''}</span>
     <span class="fztg-t"><b>${x.linked.length}</b><small>lo tienen en total</small><span class="fztg-bar" title="${x.pct}% de tus cuentas"><i style="width:${x.pct}%"></i></span><small>${x.pct}% de ${plural(x.base, 'cuenta', 'cuentas')}</small></span>
   </button>`;
 }
@@ -4190,6 +4193,10 @@ function dTgStats() {
     body: `<p class="muted small" style="margin:0 0 10px">${plural(x.linked.length, 'cliente lo tiene', 'clientes lo tienen')} enlazado (${x.pct}% de tus cuentas). Les llegan solos los avisos antes de caducar. Los más recientes, arriba.</p>
       <div class="fztg-list">${list.slice(0, 200).map((c) => `<div class="fztg-r"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)}${team && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small><time>${when(c)}</time></div>`).join('') || '<p class="muted">Todavía nadie lo ha aceptado. Al crear una cuenta, en el mensaje para el cliente puedes añadir su enlace de Telegram.</p>'}</div>`,
     onSubmit: async () => '' });
+  if (x.gone.length) { // v304: quién se ha dado de baja del bot
+    const box = document.querySelector('.fztg-list'); const wOff = (c) => new Date(c.tgOffAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    if (box) box.insertAdjacentHTML('afterend', `<h4 class="iv-h" style="margin-top:14px">👋 Se han dado de baja del bot · ${x.gone.length}</h4><p class="muted small" style="margin:0 0 8px">Ya no les llegan los avisos. Escríbeles para saber por qué; si vuelven a abrir su enlace, se activan otra vez.</p><div class="fztg-list">${x.gone.slice(0, 200).map((c) => `<div class="fztg-r off"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)} · ${c.tgOffWhy === 'block' ? '🚫 bloqueó el bot' : '🔕 escribió /stop'}${team && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small><time>${wOff(c)}</time></div>`).join('')}</div>`);
+  }
 }
 /** Pantalla «Hoy en tu negocio»: cada alta, demo y renovación de hoy (o de ayer) con sus datos */
 function vHoy() {
@@ -5730,6 +5737,14 @@ function vAutoDemo() {
       <label class="f">🔑 Contraseña<select name="passMode">${options([['random', 'Una distinta para cada demo (recomendado)'], ['fixed', 'La misma para todas']], r.passMode || 'random')}</select></label>
       <label class="f sd-fixed"${r.passMode === 'fixed' ? '' : ' hidden'}>Contraseña para todas las demos<input name="passFixed" type="password" autocomplete="new-password" placeholder="${r.passSet ? '•••••••• (guardada; escribe otra para cambiarla)' : 'Escríbela aquí'}"></label>
       <p class="gr-warn sd-fixed"${r.passMode === 'fixed' ? '' : ' hidden'} style="margin:0 0 10px">⚠️ Con la misma contraseña para todas, quien sepa el usuario de otra demo podría entrar en ella. Si la usas, mejor que el usuario lleve el número al azar.</p>
+      <h4 class="iv-h">💬 Ayuda y avisos durante la prueba</h4>
+      <label class="gr-sw" style="--g:#38bdf8"><input type="checkbox" name="nudgeHelp"${r.nudgeHelp !== false ? ' checked' : ''}><span class="sw"></span><span>🙋 A los 30 min, si no ha entrado, ofrecerle ayuda</span></label>
+      <label class="gr-sw" style="--g:#f97316;margin-top:8px"><input type="checkbox" name="nudgeHour"${r.nudgeHour !== false ? ' checked' : ''}><span class="sw"></span><span>⏳ 1 hora antes del final, avisarle para quedarse</span></label>
+      <label class="f" style="margin-top:12px">🎁 Regalo si compra antes de que acabe la prueba<select name="bonusDays">${options([[0, 'Sin regalo'], [1, '1 día gratis'], [2, '2 días gratis'], [3, '3 días gratis'], [5, '5 días gratis'], [7, '7 días gratis']], r.bonusDays || 0)}</select></label>
+      <h4 class="iv-h">🎟️ Tus clientes regalan pruebas</h4>
+      <label class="gr-sw" style="--g:#ec4899"><input type="checkbox" name="giftOn"${r.giftOn !== false ? ' checked' : ''}><span class="sw"></span><span>Botón «🎟️ Regala una prueba gratis» en el bot de tus clientes</span></label>
+      <label class="f" style="margin-top:10px">Pruebas que puede regalar cada cliente al mes<select name="giftMax">${options([[1, '1'], [2, '2'], [3, '3 (recomendado)'], [5, '5'], [10, '10']], r.giftMax || 3)}</select></label>
+      <p class="muted small" style="margin:-4px 0 10px">Le sale un enlace suyo para mandar a un amigo o familiar: la prueba se crea sola, sin que tú hagas nada. Te avisa a ti y a él. Solo tus clientes directos (los de tus revendedores no lo ven).${r.gifts && r.gifts.n ? ` <b>${r.gifts.n}</b> regaladas · <b>${r.gifts.bought}</b> ya son clientes.` : ''}</p>
       <h4 class="iv-h">🖥️ En qué servidores</h4><div class="sd-srvs">${srvChips}</div>
       <p class="muted small" style="margin:8px 0 12px">🔒 Una sola demo por cuenta de Telegram, siempre. 1 pantalla y <b>sin descargas</b>. Cada demo nueva te llega por Telegram con un botón para <b>pausarlas</b> al momento.</p>
       <button type="button" class="btn primary" data-act="sd-save">Guardar</button>
@@ -5739,7 +5754,7 @@ function vAutoDemo() {
         <div class="gr-b"><ul class="sd-lns">${links}</ul>
           <div class="sd-add"><input id="sdNew" maxlength="40" placeholder="Nuevo enlace: Instagram, WhatsApp…"><button type="button" class="btn sm primary" data-act="sd-ln-add">＋ Añadir</button></div></div></div>
       <div class="gr-card iv-c"><div class="gr-h"><span class="gr-i">📊</span><div><h3>Cómo va</h3><p><b>${r.today}</b> hoy · <b>${r.total}</b> en total · <b>${r.live}</b> probando ahora · <b>${r.bought}</b> ya son clientes${r.total ? ` (${Math.round(r.bought / r.total * 100)} %)` : ''}</p></div></div>
-        <div class="gr-b"><ul class="bw-l">${last}</ul></div></div>
+        <div class="gr-b"><ul class="bw-l">${last}</ul>${(r.devs || []).some((x) => x[1]) ? `<h4 class="iv-h" style="margin-top:12px">📺 Qué aparatos eligen</h4><div class="sd-devs">${r.devs.filter((x) => x[1]).sort((a, b) => b[1] - a[1]).map((x) => `<span class="chip">${esc(x[0])} · <b>${x[1]}</b></span>`).join(' ')}</div>` : ''}</div></div>
     </div></div>
   <div class="gr-card iv-c" style="margin-top:16px"><div class="gr-h"><span class="gr-i">🧭</span><div><h3>Así funciona, paso a paso</h3></div></div><div class="gr-b"><ol class="sd-steps">
     <li>Alguien abre tu enlace y le sale el bot: «Pruébalo gratis ${esc(r.hours >= 24 ? (r.hours / 24) + (r.hours === 24 ? ' día' : ' días') : r.hours + (r.hours === 1 ? ' hora' : ' horas'))}».</li>
@@ -8260,6 +8275,13 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 306, d: '2026-11-18', team: ['💶 Fin de la prueba: el precio que se enseña es el real de 1 mes (antes salía «desde» con el plan más largo dividido entre los meses)'], items: ['💶 Fin de la prueba: precio real de 1 mes, sin «desde»'] },
+  { v: 305, d: '2026-11-18', team: ['🎬 Fin de la prueba: el mensaje que le llega al cliente es nuevo, con una tarjeta de colores (lo que ha visto en su prueba y desde cuánto al mes) y el botón «🚀 Quiero quedarme»'], items: ['🎬 Fin de la prueba: mensaje moderno con tarjeta de colores (lo que ha visto, desde cuánto al mes) y botones «🚀 Quiero quedarme», «💶 Ver precios» y «💬 Tengo una duda»'] },
+  { v: 304, d: '2026-11-18', team: ['👋 Bot de Telegram: en el Resumen ves cuántos clientes se han dado de baja del bot (escribieron /stop o lo bloquearon). Toca la tarjeta para ver quiénes y cuándo'], items: ['👋 Bot de Telegram: el Resumen muestra quién se ha dado de baja del bot (/stop o bloqueado), con fecha y motivo'] },
+  { v: 303, d: '2026-11-18', items: ['🎟️ Demo automática: tus clientes pueden regalar pruebas gratis a amigos y familiares desde su bot («🎟️ Regala una prueba gratis»): les sale su enlace, la prueba se crea sola y os avisa a los dos (también si el amigo se hace cliente). Tú eliges cuántas al mes'] },
+  { v: 302, d: '2026-11-18', team: ['🧾 Cuando tu cliente paga con su enlace, ahora le llega también su recibo en imagen (importe, hasta cuándo vale, días por delante, plan, pantallas y nº de recibo), con el mismo estilo que los recibos de recarga'], items: ['🧾 Recibo de pago del cliente: ahora en imagen y con más datos (días por delante, cuándo le avisas). Si es una demo que se hace cliente: «¡Bienvenido!» con confeti y los días de regalo'] },
+  { v: 301, d: '2026-11-18', items: ['🙋 Demo automática: a los 30 minutos, si el cliente todavía no ha entrado, el bot le ofrece ayuda con su aparato', '⏳ Demo automática: 1 hora antes del final le avisa para quedarse, con el botón de pago', '🎁 Demo automática: puedes regalar días extra a quien compre antes de que acabe su prueba', '📺 Demo automática: en «Cómo va» ves qué aparatos eligen tus clientes'] },
+  { v: 300, d: '2026-11-18', items: ['🎉 Demo automática: «tu prueba está lista» es ahora una tarjeta con letras grandes (servidor, usuario, contraseña y hasta qué hora vale) y debajo un botón por aparato: Samsung / LG (app oficial, gratis), Fire TV, Android TV, móvil, iPhone / Apple TV (Moonfin, la recomendada) y ordenador, cada uno con sus pasos y sus datos para copiar', '🎨 La tarjeta es más colorida y explica que es una demo que se apaga sola, que puede quedarse pagando con el enlace (sigue al momento) y que le llega su justificante con la nueva fecha'] },
   { v: 299, d: '2026-11-18', team: ['💶 En el bot, «Precios» es ahora más sencillo: el cliente toca cuántas pantallas quiere y le abre directamente la página para elegir el tiempo y pagar'], items: ['🛒 Bot · Demos: menú corto y fácil para quien está probando (Comprar mi cuenta, Instalar la app, Mis datos, Novedades, Buscar, Precios, Ayuda) y cuánto tiempo le queda de prueba', '💶 Bot · Precios sencillos: «¿Cuántas pantallas?» con un botón por opción que abre directamente la página de pago con esas pantallas; la tabla completa, en «Ver todos los precios»', '🎉 El mensaje de «tu prueba está lista» trae el botón «🛒 Comprar»'] },
   { v: 298, d: '2026-11-18', team: ['💶 En el bot, los precios salen ahora de todas las pantallas a la vez (1, 2, 3 y 4), cada una en su recuadro'], items: ['🎉 Demo automática: el mensaje de «tu prueba está lista» es nuevo y claro: servidor, usuario y contraseña en un recuadro (se copian con un toque), hasta cuándo vale y cómo empezar', '💶 Bot · Precios: salen todas las pantallas a la vez (1, 2, 3 y 4), cada una en su recuadro, con lo que ahorra; el botón de pago deja elegir pantallas y tiempo'] },
   { v: 297, d: '2026-11-18', items: ['👤 Demo automática: eliges cómo es el usuario (por ejemplo prueba4821@uno.com: cómo empieza y cómo termina) y si la contraseña es distinta para cada demo o la misma para todas (se guarda cifrada)'] },
@@ -11095,7 +11117,7 @@ document.addEventListener('click', (e) => {
   if (a === 'sd-save') { const fm = $('#sdForm'), g = (n) => fm.elements[n];
     const all = [...fm.querySelectorAll('input[name=srv]')], on = all.filter((x) => x.checked).map((x) => +x.value);
     if (all.length && !on.length) { toast('Elige al menos un servidor', true); return; }
-    el.disabled = true; api('PUT', '/api/self-demo', { on: g('on').checked, hours: +g('hours').value, quality: g('quality').value, perDay: +g('perDay').value, perHour: +g('perHour').value, servers: on.length === all.length ? [] : on, userPrefix: g('userPrefix').value, userSuffix: g('userSuffix').value, passMode: g('passMode').value, ...(g('passFixed').value ? { passFixed: g('passFixed').value } : {}) })
+    el.disabled = true; api('PUT', '/api/self-demo', { on: g('on').checked, hours: +g('hours').value, quality: g('quality').value, perDay: +g('perDay').value, perHour: +g('perHour').value, servers: on.length === all.length ? [] : on, userPrefix: g('userPrefix').value, userSuffix: g('userSuffix').value, passMode: g('passMode').value, nudgeHelp: g('nudgeHelp').checked, giftOn: g('giftOn').checked, giftMax: +g('giftMax').value, nudgeHour: g('nudgeHour').checked, bonusDays: +g('bonusDays').value, ...(g('passFixed').value ? { passFixed: g('passFixed').value } : {}) })
       .then(() => { toast(g('on').checked ? '🤖 Demo automática encendida' : 'Demo automática guardada'); S.sdm = null; render(); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
   if (a === 'sd-ln-add') { const i = $('#sdNew'), name = (i && i.value || '').trim(); if (!name) { toast('Escribe un nombre, por ejemplo «Instagram»', true); return; }
     api('PUT', '/api/self-demo', { link: { add: true, name } }).then(() => { toast('🔗 Enlace creado'); S.sdm = null; render(); }, (e) => toast(e.message, true)); return; }

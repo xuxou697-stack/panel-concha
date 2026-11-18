@@ -3126,10 +3126,17 @@ async function tg(method, body, token) {
   try { res = await fetch(`${TG_API}/bot${tk}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(15000) }); }
   catch (e) { throw new Error('No se pudo conectar con Telegram. Revisa la conexión a internet de este equipo.'); }
   const j = await res.json().catch(() => ({}));
+  if (!j.ok && !token && body && body.chat_id && /blocked by the user|user is deactivated/i.test(j.description || '')) setImmediate(() => lock(async () => tgGone(body.chat_id, 'block')).catch(() => {})); // v304: nos ha bloqueado
   if (!j.ok) throw new Error(res.status === 401 || res.status === 404 ? 'Telegram no reconoce ese token. Cópialo de nuevo desde BotFather.' : `Telegram respondió: ${j.description || res.status}`);
   return j.result;
 }
 let tgBusy = false, tgLastErr = '';
+/** v304: el cliente ha bloqueado el bot: lo quitamos de los avisos y lo apuntamos como baja */
+function tgGone(chat, why) {
+  let n = 0;
+  for (const c of db.clients) if (c.tgChat != null && String(c.tgChat) === String(chat)) { delete c.tgChat; n++; if (!c.demo) { c.tgOffAt = new Date().toISOString(); c.tgOffWhy = why; addLog('aviso', c, why === 'block' ? '👋 Ha bloqueado el bot de Telegram' : '👋 Ha quitado los avisos de Telegram', null); } }
+  if (n) saveDb();
+}
 async function telegramPoll() {
   if (SUPERSEDED) return;
   const cfg = db.settings.notices.telegram;
@@ -3144,7 +3151,7 @@ async function telegramPoll() {
       for (const u of ups) {
         cfg.offset = u.update_id + 1;
         if (u.callback_query) { const cq = u.callback_query; jobs.push(() => botCallback(cq)); continue; }
-        if (u.my_chat_member) { feedSeeChat(u.my_chat_member); continue; } // v274: el bot entra (o sale) de un canal o grupo
+        if (u.my_chat_member) { const mc = u.my_chat_member; if ((mc.chat || {}).type === 'private') { if ((mc.new_chat_member || {}).status === 'kicked') tgGone(mc.chat.id, 'block'); continue; } feedSeeChat(mc); continue; } // v274: el bot entra (o sale) de un canal o grupo
         const msg = u.message;
         if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') continue;
         const chat = msg.chat.id, text = msg.text.trim();
@@ -3187,12 +3194,14 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
         }
         const sdm = /^\/start\s+(?:demo|prueba)(?:_([a-z0-9-]{1,30}))?$/i.exec(text); // v295/v296: demo automática (con el sitio de donde viene)
         if (sdm) { if (botTooFast(chat)) continue; const src = (sdm[1] || '').toLowerCase(); jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : sdOffer(chat, src))); continue; }
+        const gfm = /^\/start\s+regalo_([A-F0-9]{6})$/i.exec(text); // v303: el amigo abre la prueba que le regalan
+        if (gfm) { if (botTooFast(chat)) continue; const code = gfm[1].toUpperCase(), fr = msg.from || {}; jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : sdOffer(chat, 'g-' + code.toLowerCase(), fr))); continue; }
         const rfm = /^\/start\s+ref_([A-F0-9]{6})$/i.exec(text); // v283: el amigo abre la invitación
         if (rfm) { if (botTooFast(chat)) continue; const code = rfm[1].toUpperCase(), fr = msg.from || {}; jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : refLead(chat, fr, code))); continue; }
         const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
         if (/^\/stop\b/i.test(text)) {
           let n = 0;
-          for (const c of db.clients) if (c.tgChat === chat) { delete c.tgChat; n++; }
+          for (const c of db.clients) if (c.tgChat === chat) { delete c.tgChat; n++; if (!c.demo) { c.tgOffAt = new Date().toISOString(); c.tgOffWhy = 'stop'; } } // v304: se ha dado de baja
           for (const x of db.users) {
             if ((x.tgExtra || []).includes(chat)) { x.tgExtra = x.tgExtra.filter((v) => v !== chat); n++; }
             if (x.tgChat === chat) { delete x.tgChat; if ((x.tgExtra || []).length) x.tgChat = x.tgExtra.shift(); n++; }
@@ -3218,6 +3227,7 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
           const c = m && db.clients.find((x) => x.id === Number(m[2]));
           if (c && tgCode(c) === m[1].toLowerCase()) {
             if (c.tgChat !== chat || !c.tgAt) c.tgAt = new Date().toISOString();
+            delete c.tgOffAt; delete c.tgOffWhy; // v304: ha vuelto
             c.tgChat = chat;
             addLog('aviso', c, 'Telegram enlazado para recibir avisos', null);
             const days = (db.settings.notices.chat || {}).days || 5, fd = c.expires ? c.expires.split('-').reverse().join('/') : '';
@@ -3880,6 +3890,35 @@ function accountCard(c) {
   cv.text(cv.fit(cardTxt(`Usuario: ${c.embyName}`), 'r22', W - 120), W / 2, 516, 'r22', soft, 0.6, 'center');
   return cv.png();
 }
+/** v300: tarjeta de bienvenida de la demo automática: letras grandes con servidor, usuario y contraseña */
+function demoCard(c, s, hours, until) {
+  const W = 1000, H = s.publicUrl ? 760 : 624, sky = [56, 189, 248], green = [34, 197, 94], pink = [236, 72, 153], violet = [139, 92, 246], amber = [250, 204, 21], orange = [249, 115, 22];
+  const { cv, white, soft } = cardBase(W, H, violet, 'Tu prueba gratis está lista', 'PRUEBA GRATIS', green);
+  cv.glow(W * 0.55, 250, 380, sky, 0.18); cv.glow(W - 80, H - 60, 360, orange, 0.22); cv.glow(120, 300, 260, pink, 0.16); // v300: más colorido
+  const name = cardTxt(String(c.panelName || '').split(/\s+/)[0]);
+  cv.text(cv.fit(name ? `¡Hola, ${name}!` : '¡Hola!', 'b40', W - 120), 60, 160, 'b40', white);
+  // Horas en grande, en amarillo
+  const days = hours >= 24 && hours % 24 === 0, end = cv.text(String(days ? hours / 24 : hours), 56, 214, 'b96', amber);
+  cv.text(days ? (hours === 24 ? 'día gratis' : 'días gratis') : hours === 1 ? 'hora gratis' : 'horas gratis', end + 16, 236, 'b40', white, 0.95);
+  cv.text(cardTxt(`Hasta ${until}`), end + 18, 286, 'r22', cardMix(amber, white, 0.5), 0.95);
+  const tag = cardTxt(kindOf(s) === 'jellyfin' ? 'Jellyfin' : 'Emby'), tw = cv.measure(tag, 'b28') + 40;
+  cv.rect(W - 56 - tw, 236, tw, 48, sky, 0.25, 24); cv.text(tag, W - 56 - tw / 2, 244, 'b28', cardMix(sky, white, 0.6), 1, 'center');
+  // Cajas de datos, cada una de un color
+  const box = (x, y, w, lb, v, col) => { cv.rect(x, y, w, 120, (xx) => cardMix(col, violet, Math.min(1, (xx - x) / w) * 0.6), 0.2, 22); cv.rect(x, y + 22, 6, 76, col, 1, 3);
+    cv.text(lb, x + 26, y + 20, 'r22', cardMix(col, white, 0.55), 1);
+    const t = cardTxt(v) || '—', k = cv.measure(t, 'b40') <= w - 48 ? 'b40' : 'b28'; cv.text(cv.fit(t, k, w - 48), x + 24, k === 'b40' ? y + 56 : y + 64, k, white); };
+  let y = 338;
+  if (s.publicUrl) { box(60, y, W - 120, 'Servidor', String(s.publicUrl).replace(/\/+$/, ''), sky); y += 136; }
+  const bw = (W - 120 - 20) / 2;
+  box(60, y, bw, 'Usuario', c.embyName, violet); box(60 + bw + 20, y, bw, 'Contraseña', c.password || '', pink);
+  // Franja de colores: es una demo y cómo quedarse
+  y += 148;
+  cv.rect(60, y, W - 120, 84, (xx) => cardMix(cardMix(sky, violet, 0), cardMix(pink, orange, 0.35), Math.min(1, Math.max(0, (xx - 60) / (W - 120)))), 0.9, 24);
+  cv.text(cv.fit(cardTxt(`Es una demo: se apaga sola ${until}`), 'b28', W - 170), W / 2, y + 10, 'b28', white, 1, 'center');
+  cv.text(cv.fit(cardTxt('¿Te gusta? Paga con el enlace y sigue al momento'), 'r22', W - 170), W / 2, y + 48, 'r22', white, 0.95, 'center');
+  cv.text(cardTxt('Elige tu aparato abajo y te digo los pasos'), W / 2, H - 42, 'r22', soft, 0.7, 'center');
+  return cv.png();
+}
 /** Cabecera común de las tarjetas: fondo, logo, marca y una etiqueta a la derecha */
 function cardBase(W, H, tint, sub, pill, pillCol) {
   const cv = new CardCanvas(W, H), white = [255, 255, 255], soft = [203, 213, 225];
@@ -3919,6 +3958,36 @@ function rechargeCard(u, r) {
   boxes.forEach(([lb, v], i) => { const x = 60 + i * (bw + gap); cv.rect(x, 432, bw, 112, white, 0.07, 20);
     cv.text(lb, x + 20, 452, 'r22', soft, 0.85); const vk = cv.measure(v, 'b28') <= bw - 36 ? 'b28' : 'r22'; cv.text(cv.fit(v, vk, bw - 36), x + 20, vk === 'b28' ? 490 : 494, vk, white); });
   cv.text(cv.fit(cardTxt(r.foot), 'r22', W - 120), W / 2, 576, 'r22', soft, 0.65, 'center');
+  return cv.png();
+}
+/** v302: recibo en imagen del pago de un cliente (renovación o demo que se hace cliente), del mismo estilo que el de las recargas */
+function payCard(c, o) {
+  const W = 1000, H = o.bonusDays ? 724 : 668, green = [34, 197, 94], sky = [56, 189, 248], amber = [250, 204, 21], pink = [236, 72, 153];
+  const name = cardTxt(String(c.panelName || '').split(/\s+/)[0]);
+  const { cv, white, soft } = cardBase(W, H, green, o.wasDemo ? `¡Bienvenido${name ? ', ' + name : ''}!` : `Recibo para ${cardTxt(c.panelName)}`, 'PAGADO', green);
+  cv.glow(W - 120, H - 40, 360, sky, 0.16); cv.glow(140, H - 80, 300, pink, 0.12);
+  // ✓ e importe en grande
+  cv.circle(110, 232, 50, green, 0.22); cv.circle(110, 232, 38, green, 1); cv.line(92, 233, 105, 247, 9, white); cv.line(105, 247, 130, 219, 9, white);
+  const m = rcMoney(o).replace(/\s/g, ' '), mm = m.match(/^([\d.]+)(.*)$/) || ['', '', m];
+  let end = 186; if (mm[1]) end = cv.text(mm[1].replace(/\./g, ''), 186, 170, 'b96', white);
+  end = cv.text(cardTxt(mm[2].trim().replace(/^,/, ',')), end + 6, 216, 'b40', white, 0.95);
+  cv.text(o.wasDemo ? 'Tu cuenta ya está activada · bienvenido a la familia' : 'Renovada y pagada al momento', 188, 266, 'r22', soft, 0.9);
+  // Fechas: antes -> ahora
+  const by = 318, after = rcFmtD(o.expiresAfter || c.expires), left = diffDays(o.expiresAfter || c.expires, today());
+  cv.rect(60, by, W - 120, 104, (x) => cardMix(cardMix(green, [11, 16, 32], 0.35), cardMix(sky, [11, 16, 32], 0.4), Math.min(1, (x - 60) / (W - 120))), 0.55, 22);
+  cv.text(o.wasDemo ? 'Empieza' : 'Antes vencía', 88, by + 20, 'r22', soft, 0.9); cv.text(o.wasDemo ? 'Hoy' : rcFmtD(o.expiresBefore) || '—', 88, by + 50, 'b28', white, 0.85);
+  cv.line(W / 2 - 60, by + 40, W / 2 - 8, by + 40, 5, soft, 0.6); cv.line(W / 2 - 24, by + 26, W / 2 - 8, by + 40, 5, soft, 0.6); cv.line(W / 2 - 24, by + 54, W / 2 - 8, by + 40, 5, soft, 0.6);
+  cv.text('Válida hasta', W - 88, by + 14, 'r22', soft, 0.9, 'right'); cv.text(after, W - 88, by + 40, 'b40', cardMix(green, white, 0.5), 1, 'right');
+  if (left >= 0) cv.text(cardTxt(`${left} ${left === 1 ? 'día' : 'días'} por delante`), W / 2 - 34, by + 70, 'r22', cardMix(amber, white, 0.4), 1, 'center');
+  // Datos
+  const scr = rcScr(o), boxes = [['Plan', `${o.months} ${o.months === 1 ? 'mes' : 'meses'}`], ['Pantallas', String(scr)], ['Forma de pago', cardTxt(MANUAL[o.method] ? MANUAL[o.method].t : 'Tarjeta')], ['Nº de recibo', cardTxt(o.num || o.id)]];
+  const gap = 16, bw = (W - 120 - gap * 3) / 4, cols = [sky, [139, 92, 246], pink, amber];
+  boxes.forEach(([lb, v], i) => { const x = 60 + i * (bw + gap); cv.rect(x, 444, bw, 112, cols[i], 0.13, 20); cv.rect(x, 464, 5, 72, cols[i], 1, 3);
+    cv.text(lb, x + 22, 462, 'r22', cardMix(cols[i], white, 0.55), 1); const vk = cv.measure(v, 'b28') <= bw - 36 ? 'b28' : 'r22'; cv.text(cv.fit(v, vk, bw - 36), x + 22, vk === 'b28' ? 500 : 504, vk, white); });
+  let y = 576;
+  if (o.bonusDays) { const t = cardTxt(`+${o.bonusDays} ${o.bonusDays === 1 ? 'día' : 'días'} de regalo incluidos por comprar en tu prueba`), tw = Math.min(W - 120, cv.measure(t, 'b28') + 60);
+    cv.rect(W / 2 - tw / 2, y, tw, 48, amber, 0.2, 24); cv.text(cv.fit(t, 'b28', tw - 40), W / 2, y + 8, 'b28', cardMix(amber, white, 0.5), 1, 'center'); y += 64; }
+  cv.text(cv.fit(cardTxt(`${botName()} · ${rcWhen(o.paidAt)} · Gracias por confiar en nosotros`), 'r22', W - 120), W / 2, y + 12, 'r22', soft, 0.65, 'center');
   return cv.png();
 }
 /** Manda el recibo bonito de una recarga (imagen + texto). Si la imagen falla, va solo el texto */
@@ -4015,6 +4084,7 @@ function botMenuKb(list) {
   const b = (t, k) => ({ text: t, callback_data: 'bm:' + k });
   return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar peli o serie', 'buscar')], [b('🟢 ¿Funciona?', 'servidor'), b('🛠️ Problemas', 'problemas')],
     [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis aparatos', 'aparatos'), b('💶 Precios', 'precios')], [b('🎁 Invita a un amigo', 'invitar'), b('💬 Ayuda', 'ayuda')],
+    ...(list.some((x) => sdGiftOk(x)) ? [[b('🎟️ Regala una prueba gratis', 'regalo')]] : []), // v303: el cliente regala demos a sus amigos
     ...(() => { // v285: «Novedades» siempre a mano (si su servidor tiene pelis y series); avisarme y el canal van dentro
       const sv = c && db.servers.find((x) => x.id === c.serverId);
       return sv && sv.kind !== 'iptv' && !list.every(cliTv) ? [[b('🍿 Novedades: lo último que ha llegado', 'novedades')]] : []; })()] };
@@ -4406,6 +4476,7 @@ async function botReply(chat, kind, list) {
     return r ? send(r.text, r.kb, true) : send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
   }
   if (kind === 'invitar') return refBot(chat, accs.find((x) => !x.demo) || accs[0]);
+  if (kind === 'regalo') return sdGiftBot(chat, accs.find((x) => sdGiftOk(x)) || accs[0]); // v303
   if (kind === 'novedades') return botNews(chat, accs.find((x) => !x.demo) || accs[0]);
   return send(botAnswer('ayuda', list).text);
 }
@@ -4443,6 +4514,14 @@ async function botCallback(cq) {
     return tg('sendMessage', { chat_id: chat, text: on ? '▶️ Demo automática reanudada: el enlace vuelve a crear demos.' : '⏸️ Demo automática pausada: el enlace ya no crea demos hasta que la reanudes.', reply_markup: { inline_keyboard: [[on ? { text: '⏸️ Pausar otra vez', callback_data: 'sdx:off' } : { text: '▶️ Reanudar', callback_data: 'sdx:on' }]] } }).catch(() => {});
   }
   if (data === 'sd:pr') return sdPrices(chat);
+  if (data.startsWith('dv:')) { // v300: pasos de la demo según el aparato
+    const c = db.clients.filter((x) => x.tgChat === chat && x.status === 'active' && !x.off).sort((a, b) => (b.demo ? 1 : 0) - (a.demo ? 1 : 0))[0]; if (!c) return;
+    const k = data.slice(3);
+    if (k === 'list') return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: '📲 <b>¿Dónde lo vas a ver?</b>\nElige tu aparato 👇', reply_markup: sdDevKb(c) });
+    if (!SD_DEV.some((x) => x[0] === k)) return;
+    if (c.selfDemo && !(c.sdDevs || []).includes(k)) await lock(async () => { c.sdDevs = [...(c.sdDevs || []), k].slice(-6); saveDb(); }); // v301: para saber qué aparatos usan
+    return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: sdDevText(k, c), reply_markup: sdDevKb(c, true) });
+  }
   if (data === 'nx') return;
   if (data === 'nt') { const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length || botTooFast(chat)) return; if (!botAlive(mine)) return botExpired(chat, mine); return botNewsTop(chat, mine.find((x) => !x.demo) || mine[0]); } // v291
   if (data.startsWith('em:')) { // v291: no avisar más de una serie
@@ -4461,7 +4540,7 @@ async function botCallback(cq) {
   }
   if (data.startsWith('bm:')) { // botones del menú del cliente
     const k = data.slice(3), mine = db.clients.filter((c) => c.tgChat === chat);
-    if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda', 'novedades'].includes(k) || !mine.length || botTooFast(chat)) return;
+    if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda', 'novedades', 'regalo'].includes(k) || !mine.length || botTooFast(chat)) return;
     if (k !== 'buscar') searchWait.delete(chat);
     return botReply(chat, k, mine);
   }
@@ -4599,9 +4678,64 @@ route('POST', '/api/requests/:id', '*', ({ me, params, body }) => lock(async () 
 function demoEndTg(c) {
   if (!c.tgChat || !db.settings.notices.telegram.on || !db.settings.notices.telegram.token) return;
   const pay = cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase();
-  const text = `🎬 Hola ${c.panelName}, tu prueba ha terminado\n\n¿Qué te ha parecido? 😊 Si te ha gustado, actívala ahora y sigue viendo al momento, con todo como lo dejaste.\n\n${pay ? '👇 Eliges pantallas y tiempo, pagas en 1 minuto y tu cuenta se activa sola.' : 'Escríbeme y te la dejo activa hoy mismo.'}`;
-  tg('sendMessage', { chat_id: c.tgChat, text, disable_web_page_preview: true, ...(pay ? { reply_markup: { inline_keyboard: [[{ text: '🚀 Activar mi cuenta', url: cpLink(c) }]] } } : {}) })
+  const first = String(c.panelName || '').split(/\s+/)[0], w = demoWatch(c), from = demoFrom(c), sp = db.settings.support || {}, tgu = String(sp.telegram || '').replace(/^@/, '');
+  const L = [`🎬 <b>¡Se acabó tu prueba${first ? ', ' + hEsc(first) : ''}!</b>`, '',
+    w.mins >= 5 ? `🍿 Has disfrutado <b>${minsTxt(w.mins)}</b>${w.n ? ` y ${w.n === 1 ? '1 título' : w.n + ' títulos'}` : ''}${w.top ? `, sobre todo <b>«${hEsc(w.top)}»</b>` : ''}. ¿De verdad lo vas a dejar aquí? 😉` : '⏰ Se te pasó el tiempo volando… ¡nos pasa a todos! 😅',
+    '', pay ? '🚀 <b>Quédate en 1 minuto:</b>' : '🚀 <b>¿Te quedas con nosotros?</b>'];
+  if (pay) L.push('1️⃣ Toca <b>«Quiero quedarme»</b>', '2️⃣ Elige pantallas y tiempo', '3️⃣ Pagas y tu cuenta vuelve <b>al momento</b>, con todo como lo dejaste ⚡', '', `🧾 Te llega aquí tu justificante con la nueva fecha.${from ? `\n💶 1 mes, ${demoFrom.scr === 1 ? '1 pantalla' : demoFrom.scr + ' pantallas'}: <b>${hEsc(from)}</b>.` : ''}`);
+  else L.push(`💬 Escríbenos y te la dejamos activa hoy mismo.${botContact() ? '\n\n' + hEsc(botContact()) : ''}`);
+  const text = L.join('\n');
+  const kb = { inline_keyboard: [...(pay ? [[{ text: '🚀 Quiero quedarme', url: cpLink(c) }], [{ text: '💶 Ver precios', callback_data: 'bm:precios' }, ...(/^[A-Za-z0-9_]{3,40}$/.test(tgu) ? [{ text: '💬 Tengo una duda', url: `https://t.me/${tgu}` }] : [])]] : /^[A-Za-z0-9_]{3,40}$/.test(tgu) ? [[{ text: '💬 Escríbenos', url: `https://t.me/${tgu}` }]] : [])] };
+  const plain = () => tg('sendMessage', { chat_id: c.tgChat, text, parse_mode: 'HTML', disable_web_page_preview: true, ...(kb.inline_keyboard.length ? { reply_markup: kb } : {}) });
+  // v305: tarjeta moderna (lo que ha visto, desde cuánto y cómo quedarse) + texto; si la foto falla, solo el texto
+  let png = null; try { png = demoEndCard(c, w, from, !!pay); } catch (e) { console.error('Fin de demo (tarjeta):', e.message); }
+  (png ? tgPhoto(c.tgChat, png, text, kb.inline_keyboard.length ? kb : null, true).catch(() => plain()) : plain())
     .then(() => addLog('aviso', c, 'Invitación a activar la cuenta enviada por Telegram (fin de la demo)', null)).catch(() => {});
+}
+/** v305: lo que ha visto durante la prueba (minutos, títulos y el que más) */
+function demoWatch(c) {
+  const w = (watchLoad() || {})[c.id]; let mins = 0; const t = {};
+  if (w && w.d) for (const d of Object.values(w.d)) { mins += Number(d.m) || 0; for (const [k, v] of Object.entries(d.mv || {})) t[k] = (t[k] || 0) + v; for (const [k, v] of Object.entries(d.sr || {})) t[k] = (t[k] || 0) + v; }
+  const top = Object.entries(t).sort((a, b) => b[1] - a[1])[0];
+  return { mins: Math.round(mins), n: Object.keys(t).length, top: top ? top[0] : '' };
+}
+const minsTxt = (m) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`);
+/** v305: el precio más bajo al mes de sus tarifas (para «desde X €/mes») */
+function demoFrom(c) {
+  const ctx = cpCtx(c), o = db.users.find((u) => u.id === c.ownerId);
+  const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
+  // v306: el precio real de 1 mes (con las menos pantallas que tenga), nada de «desde» con el plan anual dividido
+  let best = 0, bsc = 0; for (const sc of [1, 2, 3, 4]) { const v = Number(pr[`1-${sc}`]) || 0; if (v >= 0.5) { best = v; bsc = sc; break; } }
+  if (!best) return '';
+  demoFrom.scr = bsc;
+  const cur = (db.settings.currency || 'EUR').toUpperCase(), n = Math.round(best * 100) / 100;
+  return n.toLocaleString('es-ES', { style: 'currency', currency: cur, minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+}
+function demoEndCard(c, w, from, pay) {
+  const W = 1000, H = 640, orange = [249, 115, 22], pink = [236, 72, 153], violet = [139, 92, 246], sky = [56, 189, 248], amber = [250, 204, 21], green = [34, 197, 94];
+  const first = cardTxt(String(c.panelName || '').split(/\s+/)[0]);
+  const { cv, white, soft } = cardBase(W, H, pink, first ? `Hola, ${first}` : 'Tu prueba', 'PRUEBA TERMINADA', orange);
+  cv.glow(W - 100, 200, 380, orange, 0.2); cv.glow(160, H - 60, 340, violet, 0.2); cv.glow(W / 2, H, 300, sky, 0.1);
+  cv.text('¿Te quedas con nosotros?', 60, 160, 'b40', white);
+  cv.text(cardTxt(w.mins >= 5 ? 'Esto es lo que has disfrutado en tu prueba' : 'Se te pasó el tiempo volando... ¡nos pasa a todos!'), 62, 214, 'r22', soft, 0.9);
+  // Tres cajas de colores
+  const gap = 18, bw = (W - 120 - gap * 2) / 3, y = 262;
+  const boxes = w.mins >= 5 ? [['Has visto', minsTxt(w.mins), sky], ['Títulos', String(w.n || 1), violet], ['Lo que más', w.top || '—', pink]]
+    : [['Pantallas', (() => { const sc = pay ? cpScreens(c, cpCtx(c)) : []; return sc.length > 1 ? `${Math.min(...sc)} a ${Math.max(...sc)}` : sc.length ? String(sc[0]) : 'Las que quieras'; })(), sky], ['Aparatos', 'Tele, móvil, PC', violet], ['Novedades', 'Cada semana', pink]];
+  boxes.forEach(([lb, v, col], i) => { const x = 60 + i * (bw + gap); cv.rect(x, y, bw, 124, (xx) => cardMix(col, pink, Math.min(1, (xx - x) / bw) * 0.5), 0.18, 22); cv.rect(x, y + 24, 6, 76, col, 1, 3);
+    cv.text(lb, x + 26, y + 20, 'r22', cardMix(col, white, 0.55), 1); const t = cardTxt(v), k = cv.measure(t, 'b40') <= bw - 48 ? 'b40' : 'b28'; cv.text(cv.fit(t, k, bw - 48), x + 24, k === 'b40' ? y + 58 : y + 64, k, white); });
+  // Precio grande + franja
+  const py = 414;
+  if (from) { const m = cardTxt(from).match(/^([\d.]+)(.*)$/);
+    cv.text(cardTxt(`1 mes · ${demoFrom.scr === 1 ? '1 pantalla' : demoFrom.scr + ' pantallas'}`), 62, py + 8, 'r22', soft, 0.9);
+    let e = 62; if (m) { e = cv.text(m[1].replace(/\./g, ''), 60, py + 30, 'b96', amber); e = cv.text(cardTxt(m[2].trim()), e + 8, py + 76, 'b40', white, 0.95); } else e = cv.text(cardTxt(from), 62, py + 60, 'b40', amber);
+  }
+  const rx = from ? 520 : 60, rw = W - 60 - rx;
+  cv.rect(rx, py + 22, rw, 112, (xx) => cardMix(orange, pink, Math.min(1, Math.max(0, (xx - rx) / rw))), 0.92, 26);
+  cv.text(pay ? 'Quédate en 1 minuto' : 'Escríbenos y seguimos', rx + rw / 2, py + 38, 'b28', white, 1, 'center');
+  cv.text(cv.fit(cardTxt(pay ? 'Con todo como lo dejaste' : 'Te la dejamos activa hoy mismo'), 'r22', rw - 40), rx + rw / 2, py + 82, 'r22', white, 0.95, 'center');
+  cv.text(cardTxt(`${botName()} · Toca «Quiero quedarme» abajo`), W / 2, H - 44, 'r22', soft, 0.6, 'center');
+  return cv.png();
 }
 /** Mensaje de rescate: la cuenta caducó hace unos días; con el botón para volver si tiene pago online */
 function rescueTg(c) {
@@ -7102,9 +7236,11 @@ route('GET', '/api/self-demo', SUPER, () => {
   const owner = ownerUser(), ctx = cpCtx({ id: 0, ownerId: owner ? owner.id : 0 });
   return { ...cf, passFixedEnc: undefined, passSet: !!cf.passFixedEnc, sel: cf.servers || [], bot, link: bot ? `https://t.me/${bot}?start=demo` : '', hasBot: !!db.settings.notices.telegram.token,
     servers: db.servers.filter((s) => !s.off && ['emby', 'jellyfin'].includes(kindOf(s))).map((s) => ({ id: s.id, name: s.name, kind: kindOf(s), free: srvMax(s) ? srvMax(s) - srvLoad(s) : null })),
+    gifts: { n: mine.filter((c) => c.sdGift).length, bought: mine.filter((c) => c.sdGift && (paid.has(c.id) || (!c.demo && c.status === 'active'))).length },
+    devs: SD_DEV.map(([k, t]) => [t, mine.filter((c) => (c.sdDevs || []).includes(k)).length]), // v301: qué aparatos eligen
     pay: !!ctx, payAuto: !!(ctx && (ctx.key || ctx.pp)), today: sdToday(), total: mine.length, live: mine.filter((c) => c.demo && c.status === 'active').length,
     bought: mine.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length,
-    last: mine.slice(-15).reverse().map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, at: c.createdAt, tg: c.telegram || '', src: ((cf.links || []).find((l) => l.code === c.sdSrc) || {}).name || '', state: !c.demo ? 'cliente' : c.status === 'active' ? 'probando' : 'terminada' })),
+    last: mine.slice(-15).reverse().map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, at: c.createdAt, tg: c.telegram || '', src: c.sdGift ? '🎟️ regalo de ' + ((db.clients.find((x) => x.id === c.sdGift) || {}).panelName || 'un cliente') : ((cf.links || []).find((l) => l.code === c.sdSrc) || {}).name || '', state: !c.demo ? 'cliente' : c.status === 'active' ? 'probando' : 'terminada' })),
     links: [{ code: '', name: 'Enlace general', on: true, gen: true }, ...(cf.links || [])].map((l) => { const of = mine.filter((c) => (c.sdSrc || '') === l.code); return { ...l, url: bot ? `https://t.me/${bot}?start=demo${l.code ? '_' + l.code : ''}` : '', n: of.length, bought: of.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length }; }) };
 });
 route('PUT', '/api/self-demo', SUPER, ({ me, body }) => lock(async () => {
@@ -7122,6 +7258,11 @@ route('PUT', '/api/self-demo', SUPER, ({ me, body }) => lock(async () => {
   if (['random', 'fixed'].includes(b.passMode)) cf.passMode = b.passMode;
   if (typeof b.passFixed === 'string' && b.passFixed) cf.passFixedEnc = encApiKey(readCliPassword(b.passFixed, ''), 'selfdemo');
   if (cf.passMode === 'fixed' && !cf.passFixedEnc) throw new HttpError(400, 'Escribe la contraseña fija que quieres para las demos.');
+  if (Number.isInteger(Number(b.bonusDays)) && Number(b.bonusDays) >= 0 && Number(b.bonusDays) <= 30) cf.bonusDays = Number(b.bonusDays); // v301: regalo por comprar en la prueba
+  if (b.nudgeHelp !== undefined) cf.nudgeHelp = !!b.nudgeHelp;
+  if (b.giftOn !== undefined) cf.giftOn = !!b.giftOn; // v303
+  if ([1, 2, 3, 5, 10].includes(Number(b.giftMax))) cf.giftMax = Number(b.giftMax);
+  if (b.nudgeHour !== undefined) cf.nudgeHour = !!b.nudgeHour;
   if (b.on) delete cf.autoPaused;
   // v296: enlaces por sitio
   if (b.link && typeof b.link === 'object') {
@@ -7461,17 +7602,86 @@ function sdPick() {
 const sdToday = () => db.clients.filter((c) => c.selfDemo && String(c.createdAt) === today()).length;
 const sdHoursText = (h) => (h % 24 === 0 ? (h === 24 ? '1 día' : `${h / 24} días`) : h === 1 ? '1 hora' : `${h} horas`);
 const sdLink = (src) => (sdCfg().links || []).find((l) => l.code === src) || null;
-async function sdOffer(chat, src = '') {
-  const cf = sdCfg(), nm = botName(), ln = src ? sdLink(src) : null;
+/** v303: pruebas que regalan tus clientes a sus amigos (solo tus clientes directos, nunca los de los revendedores) */
+const sdGiver = (src) => { const m = /^g-([a-f0-9]{6})$/i.exec(src || ''); return m ? db.clients.find((x) => x.refCode === m[1].toUpperCase()) || null : null; };
+const sdGiftMax = () => Number(sdCfg().giftMax) || 3;
+const sdGiftUsed = (c) => (c.sdGifts || []).filter((t) => Date.now() - Date.parse(t) < 30 * 86400000).length;
+function sdGiftOk(c) {
+  const cf = sdCfg(), o = c && db.users.find((u) => u.id === c.ownerId);
+  return !!(cf.on && cf.giftOn !== false && c && !c.demo && c.status === 'active' && !c.off && o && ['super', 'admin'].includes(o.role) && db.settings.notices.telegram.bot);
+}
+async function sdGiftBot(chat, c) {
+  const menu = [{ text: '🏠 Menú', callback_data: 'bm:menu' }];
+  if (!sdGiftOk(c)) return tg('sendMessage', { chat_id: chat, text: '🎟️ Ahora mismo no se pueden regalar pruebas. ¡Vuelve a mirar en unos días! 😊', reply_markup: { inline_keyboard: [menu] } });
+  const code = await refCode(c), cf = sdCfg(), nm = botName(), max = sdGiftMax(), left = Math.max(0, max - sdGiftUsed(c));
+  const link = `https://t.me/${db.settings.notices.telegram.bot}?start=regalo_${code}`, first = String(c.panelName || '').split(/\s+/)[0];
+  const share = `🎁 Te regalo una prueba GRATIS de ${sdHoursText(cf.hours)} en ${nm}: pelis y series en todos tus aparatos.\n\n👉 Ábrelo y empieza a ver al momento:`;
+  const text = [`🎟️ <b>Regala una prueba gratis</b>`, '', `¿Tienes un amigo o familiar que quiera probar ${hEsc(nm)}? Mándale tu enlace: con un toque tendrá <b>${sdHoursText(cf.hours)} gratis</b>, sin esperar a nadie 🙌`, '',
+    '1️⃣ Toca <b>«📤 Enviar a un amigo»</b>', '2️⃣ Elige a quién se lo mandas', '3️⃣ Tu amigo lo abre y empieza a ver al momento 🍿', '',
+    '🔔 Te aviso cuando empiece a probar.', left ? `👥 Puedes regalar <b>${max}</b> al mes · te ${left === 1 ? 'queda <b>1</b>' : `quedan <b>${left}</b>`}` : `✅ Este mes ya has regalado tus ${max} pruebas. ¡Gracias por recomendarnos${first ? ', ' + hEsc(first) : ''}! 💛`].join('\n');
+  return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text, reply_markup: { inline_keyboard: [...(left ? [[{ text: '📤 Enviar a un amigo', url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(share)}` }]] : []), menu] } });
+}
+async function sdOffer(chat, src = '', from = null) {
+  const cf = sdCfg(), nm = botName(), gv = sdGiver(src), ln = src && !gv ? sdLink(src) : null;
+  if (gv) { // v303: prueba regalada por un cliente
+    const ok = sdGiftOk(gv) && sdGiftUsed(gv) < sdGiftMax(), gFirst = String(gv.panelName || '').split(/\s+/)[0], me = from && from.first_name ? ' ' + hEsc(String(from.first_name).slice(0, 30)) : '';
+    if (!ok) return sdOffer(chat);
+    return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `👋 ¡Hola${me}! <b>${hEsc(gFirst || 'Un amigo')}</b> te regala una <b>prueba gratis de ${sdHoursText(cf.hours)}</b> en <b>${hEsc(nm)}</b> 🎁\n\n🍿 Pelis y series en todos tus aparatos\n📺 Tele, móvil, tablet y ordenador\n⚡ Tu cuenta, lista en unos segundos\n\n👇 Pulsa el botón y empieza a ver ya.`,
+      reply_markup: { inline_keyboard: [[{ text: `🎁 Quiero mi prueba gratis (${sdHoursText(cf.hours)})`, callback_data: 'sd:go:' + src.toLowerCase() }], [{ text: '💶 Ver precios', callback_data: 'sd:pr' }]] } });
+  }
   if (src && (!ln || !ln.on)) return tg('sendMessage', { chat_id: chat, text: `👋 ¡Hola! Este enlace de prueba ya no está activo.${botContact() ? `\n\nEscríbenos y te ayudamos:\n${botContact()}` : ''}` });
   if (!cf.on) return tg('sendMessage', { chat_id: chat, text: `👋 ¡Hola! Ahora mismo no hay pruebas gratis disponibles.${botContact() ? `\n\nEscríbenos y te ayudamos:\n${botContact()}` : ''}` });
   return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎬 <b>¡Bienvenido a ${hEsc(nm)}!</b>\n\nPruébalo <b>gratis durante ${sdHoursText(cf.hours)}</b>, sin compromiso y sin dar ningún dato:\n\n🍿 Pelis y series en todos tus aparatos\n📺 Tele, móvil, tablet y ordenador\n⚡ Tu cuenta, lista en unos segundos\n\n👇 Pulsa el botón y empieza a ver ya.`,
     reply_markup: { inline_keyboard: [[{ text: `🎁 Quiero mi prueba gratis (${sdHoursText(cf.hours)})`, callback_data: 'sd:go' + (ln ? ':' + ln.code : '') }], [{ text: '💶 Ver precios', callback_data: 'sd:pr' }]] } });
 }
 const sdBusy = new Set();
+/** v301: regalo por comprar antes de que acabe la prueba (0 = sin regalo) */
+const sdBonus = () => Number(sdCfg().bonusDays) || 0;
+const sdBonusTxt = () => { const n = sdBonus(); return n ? `🎁 <b>Regalo:</b> si compras antes de que acabe tu prueba, te sumamos <b>${n} ${n === 1 ? 'día' : 'días'} gratis</b> más.` : ''; };
+/** v300: pasos por aparato para la demo. Samsung y LG: la app oficial (gratis). Todo lo demás: Moonfin (recomendada) */
+const SD_DEV = [['tv', '📺 Samsung / LG'], ['fire', '🔥 Fire TV'], ['atv', '🤖 Android TV / TV Box'], ['mov', '📱 Móvil / tablet'], ['apple', '🍏 iPhone / Apple TV'], ['pc', '💻 Ordenador']];
+const sdDevKb = (c, back) => { const rows = []; SD_DEV.forEach(([k, t], i) => { if (i % 2 === 0) rows.push([]); rows[rows.length - 1].push({ text: t, callback_data: 'dv:' + k }); });
+  const buy = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar', url: cpLink(c) } : { text: '💶 Precios', callback_data: 'bm:precios' };
+  return { inline_keyboard: [...(back ? [] : rows), ...(back ? [[{ text: '⬅️ Otro aparato', callback_data: 'dv:list' }]] : []), [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, buy], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] }; };
+function sdDevText(k, c) {
+  const s = db.servers.find((x) => x.id === c.serverId) || {}, app = kindOf(s) === 'jellyfin' ? 'Jellyfin' : 'Emby';
+  const data = `<blockquote>${s.publicUrl ? `🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>\n` : ''}👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔑 Contraseña: <code>${hEsc(c.password || '')}</code></blockquote>`;
+  const login = (n) => [`${n}️⃣ Ábrela y elige <b>«Añadir servidor»</b> (o «Servidor manual»)`, `${n + 1}️⃣ Escribe tus datos:`, data, `${n + 2}️⃣ Pulsa <b>«Entrar»</b>… ¡y a disfrutar! 🍿`].join('\n');
+  const moon = (where) => [`1️⃣ Abre <b>${where}</b>`, '2️⃣ Busca <b>«Moonfin»</b> e instálala', login(3).replace(/^3️⃣ Ábrela y elige/, `3️⃣ Ábrela (si te pregunta, elige <b>${app}</b>) y pulsa`)].join('\n');
+  const T = {
+    tv: [`📺 <b>SAMSUNG / LG</b>`, '', `En estas teles va genial la app oficial de <b>${app}</b>, y es gratis 🙌`, '', `1️⃣ Con el mando, abre la tienda de apps de la tele\n     (Samsung: <b>«Apps»</b> · LG: <b>«LG Content Store»</b>)`, `2️⃣ Busca <b>«${app}»</b> e instálala`, login(3)],
+    fire: ['🔥 <b>FIRE TV</b>', '', '🌙 Te recomiendo <b>Moonfin</b>: rápida, bonita y sin complicaciones.', '', moon('la tienda de Amazon (la lupa 🔎 del menú)')],
+    atv: ['🤖 <b>ANDROID TV / GOOGLE TV / TV BOX</b>', '', '🌙 Te recomiendo <b>Moonfin</b>: rápida, bonita y sin complicaciones.', '', moon('Google Play Store')],
+    mov: ['📱 <b>MÓVIL O TABLET ANDROID</b>', '', '🌙 Te recomiendo <b>Moonfin</b>: rápida, bonita y sin complicaciones.', '', moon('Google Play Store')],
+    apple: ['🍏 <b>IPHONE / IPAD / APPLE TV</b>', '', '🌙 Te recomiendo <b>Moonfin</b>: rápida, bonita y sin complicaciones.', '', moon('la App Store')],
+    pc: ['💻 <b>ORDENADOR</b>', '', '🌙 Puedes instalar <b>Moonfin</b> o, más rápido aún, verlo en el navegador sin instalar nada:', '', s.publicUrl ? `1️⃣ Abre esta dirección en Chrome, Edge o Safari:\n     <code>${hEsc(s.publicUrl)}</code>` : '1️⃣ Abre la dirección de tu servidor en el navegador', `2️⃣ Escribe tu usuario y tu contraseña:`, data, '3️⃣ Pulsa <b>«Entrar»</b>… ¡y a disfrutar! 🍿'],
+  };
+  return (T[k] || T.tv).join('\n') + '\n\n<i>👆 Toca cada dato para copiarlo</i>';
+}
+/** v301: durante la prueba: a los 30 min, si no ha entrado, le ofrecemos ayuda; 1 hora antes del final, le avisamos para comprar */
+async function sdTick() {
+  const cf = sdCfg(); if (!db.settings.notices.telegram.token) return;
+  const now = Date.now();
+  for (const c of db.clients.filter((x) => x.selfDemo && x.demo && x.status === 'active' && !x.off && x.tgChat && x.expiresAt)) {
+    const end = Date.parse(c.expiresAt), start = end - (Number(c.sdHours) || 4) * 3600000, left = end - now;
+    if (left <= 0) continue;
+    if (!c.sdHelp && cf.nudgeHelp !== false && now - start >= 30 * 60000 && left > 20 * 60000) {
+      c.sdHelp = true; let inside = !!c.seenAt;
+      const s = db.servers.find((x) => x.id === c.serverId);
+      if (!inside && s && c.embyId) { try { const u = await emby(s, 'GET', `/Users/${c.embyId}`); inside = !!(validDate(u && u.LastActivityDate) || validDate(u && u.LastLoginDate)); } catch { inside = true; /* sin datos: mejor no molestar */ } }
+      if (!inside) await tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text: `🙋 <b>¿Ya has podido entrar?</b>\n\nTodavía no te vemos dentro 😊 Es muy fácil: elige tu aparato y te digo los pasos, con tus datos listos para copiar.\n\n⏳ Te quedan <b>${Math.floor(left / 3600000) ? Math.floor(left / 3600000) + ' h ' : ''}${Math.floor((left % 3600000) / 60000)} min</b> de prueba.`, reply_markup: sdDevKb(c) }).catch(() => {});
+    }
+    if (!c.sdHour && cf.nudgeHour !== false && (Number(c.sdHours) || 4) >= 2 && left <= 60 * 60000 && left > 5 * 60000) {
+      c.sdHour = true;
+      const buy = cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Quiero quedarme', url: cpLink(c) } : { text: '💶 Ver precios', callback_data: 'bm:precios' };
+      await tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text: [`⏳ <b>¡Te queda menos de 1 hora de prueba!</b>`, '', `¿Te está gustando ${hEsc(botName())}? 🍿 Quédate y sigue viendo sin cortes:`, '', '1️⃣ Toca <b>«🛒 Quiero quedarme»</b>', '2️⃣ Elige pantallas y tiempo, y paga con el enlace', '3️⃣ Tu cuenta sigue <b>al momento</b>, con todo como lo dejaste ⚡', '', '🧾 Te llega aquí tu justificante con la nueva fecha.', ...(sdBonusTxt() ? ['', sdBonusTxt()] : [])].join('\n'), reply_markup: { inline_keyboard: [[buy], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {});
+    }
+  }
+}
 async function sdCreate(chat, from, src = '') {
-  const cf = sdCfg(), uid = String((from && from.id) || chat), ln = src ? sdLink(src) : null;
-  if (src && (!ln || !ln.on)) return sdOffer(chat, src);
+  const cf = sdCfg(), uid = String((from && from.id) || chat), gv = sdGiver(src), ln = src && !gv ? sdLink(src) : null;
+  if (gv && !(sdGiftOk(gv) && sdGiftUsed(gv) < sdGiftMax())) return sdOffer(chat);
+  if (src && !gv && (!ln || !ln.on)) return sdOffer(chat, src);
   if (!cf.on) return sdOffer(chat);
   if (sdBusy.has(uid)) return; sdBusy.add(uid);
   try {
@@ -7504,11 +7714,12 @@ async function sdCreate(chat, from, src = '') {
       if (!embyName) throw new Error('No he encontrado un usuario libre');
       c = { id: newId(), serverId: s.id, ownerId: own.id, embyId: '', embyName, panelName: full, note: `Demo automática desde Telegram${from && from.username ? ' (@' + from.username + ')' : ''}`,
         createdAt: today(), expires: localDate(end), expiresAt: end.toISOString(), status: 'active', demo: true, screens: 1, quality: QUALITIES[cf.quality] ? cf.quality : 'basico',
-        paid: true, selfDemo: true, sdSrc: ln ? ln.code : '', sdHours: hours, tgChat: chat, tgAt: new Date().toISOString(), tgUser: uid, ...(from && from.username ? { telegram: '@' + from.username } : {}) };
+        paid: true, selfDemo: true, sdSrc: ln ? ln.code : gv ? 'regalo' : '', ...(gv ? { sdGift: gv.id } : {}), sdHours: hours, tgChat: chat, tgAt: new Date().toISOString(), tgUser: uid, ...(from && from.username ? { telegram: '@' + from.username } : {}) };
       await createInEmby(c, password);
       c.password = password;
       db.clients.push(c);
       db.selfDemoUsed[uid] = { at: new Date().toISOString(), clientId: c.id };
+      if (gv) gv.sdGifts = [...(gv.sdGifts || []), new Date().toISOString()].slice(-30); // v303
       addLog('demo', c, `🤖 Demo automática de ${sdHoursText(hours)} creada desde el bot de Telegram (${s.name})${ln ? ` · viene de «${ln.name}»` : ''}`, null);
       libCheckLater(c);
       saveDb();
@@ -7522,9 +7733,17 @@ async function sdCreate(chat, from, src = '') {
       `<blockquote>${s.publicUrl ? `🌐 <b>Servidor</b>\n<code>${hEsc(s.publicUrl)}</code>\n\n` : ''}👤 <b>Usuario</b>\n<code>${hEsc(c.embyName)}</code>\n\n🔑 <b>Contraseña</b>\n<code>${hEsc(c.password)}</code></blockquote>`,
       '<i>👆 Toca cada dato para copiarlo</i>', '', '<b>📲 Cómo empezar</b>', `1️⃣ Instala la app de <b>${app}</b> (toca «📲 Instalar la app»)`, `2️⃣ Pon el ${s.publicUrl ? 'servidor, el ' : ''}usuario y la contraseña`, '3️⃣ ¡Y a disfrutar! 🍿', '',
       '💬 Cuando termine te escribo por aquí para que la actives si te ha gustado. 😉'].join('\n');
-    await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: card,
+    const sendOld = () => tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: card,
       reply_markup: { inline_keyboard: [[{ text: '📲 Instalar la app', callback_data: 'bm:guia' }], [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar', url: cpLink(c) } : { text: '💶 Precios', callback_data: 'bm:precios' }], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
-    const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
+    // v300: tarjeta con letras grandes + «¿dónde lo vas a ver?» con un botón por aparato (si la foto falla, el mensaje de antes)
+    const cap = [`🎉 <b>¡Tu prueba gratis está lista, ${hEsc(full.split(' ')[0])}!</b>`, `⏳ Válida hasta <b>${when}</b>`, '',
+      `<blockquote>${s.publicUrl ? `🌐 <code>${hEsc(s.publicUrl)}</code>\n` : ''}👤 <code>${hEsc(c.embyName)}</code>\n🔑 <code>${hEsc(c.password)}</code></blockquote>`,
+      '<i>👆 Toca cada dato para copiarlo</i>', '',
+      `🎁 <b>Es una demo gratis:</b> dura ${sdHoursText(hours)} y ${when} se apaga sola.`, '💳 ¿Te gusta? Hazte de ' + hEsc(botName()) + ' con <b>«🛒 Comprar»</b>: pagas con el enlace y tu cuenta sigue <b>al momento</b>, con todo como lo dejaste ⚡', '🧾 Te llega aquí tu <b>justificante de pago</b> con la nueva fecha de tu cuenta.', ...(sdBonusTxt() ? [sdBonusTxt()] : []), '',
+      '📲 <b>¿Dónde lo vas a ver?</b> Elige tu aparato 👇'].join('\n');
+    try { await tgPhoto(chat, demoCard(c, s, hours, when), cap, sdDevKb(c), true); } catch (e) { console.error('Demo (tarjeta):', e.message); await sendOld(); }
+    if (gv && gv.tgChat) tg('sendMessage', { chat_id: gv.tgChat, parse_mode: 'HTML', text: `🎉 <b>${hEsc(full.split(' ')[0])}</b> ya está usando la prueba que le has regalado.\n\n¡Gracias por recomendarnos! 💛`, reply_markup: { inline_keyboard: [[{ text: '🎟️ Regalar otra', callback_data: 'bm:regalo' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {}); // v303
+    const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : ''}${gv ? `\n🎟️ Regalo de tu cliente <b>${hEsc(gv.panelName)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
     for (const u of db.users.filter((x) => !x.disabled && x.role === 'super')) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '⏸️ Pausar las demos', callback_data: 'sdx:off' }]] } }).catch(() => {}); // v296: pausar con un toque
   } catch (e) {
     console.error('Demo automática:', e.message);
@@ -8183,9 +8402,10 @@ async function cpPaid(o, via) {
   o.wasDemo = !!c.demo;
   if (c.demo) for (const f of db.followups) if (f.clientId === c.id && f.status === 'pending') { f.status = 'bought'; f.doneAt = new Date().toISOString(); }
   if (o.subId) c.sub = { id: o.subId, months: o.months, screens: o.screens || c.screens || 1, vendorId: o.vendorId || null, status: 'active', since: new Date().toISOString(), inv: [] };
-  const oldScr = c.screens;
+  const oldScr = c.screens, sdEnd = c.selfDemo && c.demo && c.expiresAt ? Date.parse(c.expiresAt) : 0;
   c.expires = addMonths(base, o.months); c.lastMonths = o.months; c.demo = false; c.status = 'active'; c.paid = true;
   if (o.screens && [1, 2, 3, 4].includes(o.screens)) c.screens = o.screens; // eligió otras pantallas al pagar
+  if (sdEnd && sdBonus() && Date.parse(o.paidAt) <= sdEnd + 10 * 60000) { o.bonusDays = sdBonus(); c.expires = addDays(c.expires, o.bonusDays); } // v301: compró durante la prueba: días de regalo
   delete c.expiresAt; delete c.off; delete c.offBy; delete c.hold; delete c.trashedAt; delete c.trashReason;
   try { await grantAccess(c); delete c.lastError; }
   catch (e) { c.lastError = e.message; notifyStaff('payments', `⚠️ ${c.panelName} ha pagado y la fecha ya está renovada, pero ${srvKind(db.servers.find((x) => x.id === c.serverId))} dio un error al dar acceso: ${e.message}. El vigilante lo volverá a intentar.`); }
@@ -8197,7 +8417,7 @@ async function cpPaid(o, via) {
     if (cost > 0) c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: vend.id, credits: cost, from: base, to: c.expires, kind: 'renovacion' }].slice(-24);
     notifyUser(vend, `💳 Tu cliente ${c.panelName} ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola hasta el ${c.expires.split('-').reverse().join('/')}.${cost ? `\nSe han descontado ${cost} créditos. Saldo: ${vend.credits}.` : ''}${vend.credits < 0 ? '\n⚠️ Tu saldo está en negativo: pide una recarga.' : ''}`);
   }
-  addLog('renovacion', c, `${o.wasDemo ? 'Demo convertida en cuenta pagando online' : o.cycle ? 'Renovada sola (renovación automática)' : 'Renovada pagando online'} (${what}): ${o.amount.toFixed(2)} ${o.currency}. Vence el ${c.expires}`, null);
+  addLog('renovacion', c, `${o.wasDemo ? 'Demo convertida en cuenta pagando online' : o.cycle ? 'Renovada sola (renovación automática)' : 'Renovada pagando online'} (${what})${o.bonusDays ? ` + ${o.bonusDays} días de regalo por comprar en la prueba` : ''}: ${o.amount.toFixed(2)} ${o.currency}. Vence el ${c.expires}`, null);
   addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
@@ -8206,6 +8426,9 @@ async function cpPaid(o, via) {
   if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`);
   o.screensAfter = c.screens || 1; o.expiresFrom = base;
   if (c.tgChat) receiptTg(c, o);
+  if (o.wasDemo && c.sdGift) { const g = db.clients.find((x) => x.id === c.sdGift); // v303: el amigo al que regaló la prueba se ha hecho cliente
+    if (g && g.tgChat) tg('sendMessage', { chat_id: g.tgChat, parse_mode: 'HTML', text: `🥳 <b>${hEsc(String(c.panelName || '').split(/\s+/)[0] || 'Tu amigo')}</b> se ha quedado con nosotros gracias a ti.\n\n¡Mil gracias por recomendarnos! 💛` }).catch(() => {});
+    if (g) addLog('aviso', g, `🎟️ ${c.panelName}, al que regaló una prueba, se ha hecho cliente`, null); }
   return true;
 }
 /* ── Recibo del pago: mensaje de Telegram y página para verlo, imprimirlo o guardarlo en PDF ── */
@@ -8221,14 +8444,23 @@ function receiptTg(c, o) {
   const text = `🧾 <b>RECIBO DE PAGO</b> · ${hEsc(brand)}\n<code>Nº ${hEsc(o.num || o.id)}  ·  ${hEsc(rcWhen(o.paidAt))}</code>\n\n`
     + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 ${MANUAL[o.method] ? 'Pagado por ' + hEsc(MANUAL[o.method].t) : 'Pago online con tarjeta · seguro'}\n👤 ${hEsc(c.panelName)}\n\n`
     + `📦 <b>Tu plan</b>${db.servers.some((x) => x.kind === 'jellyfin' || x.kind === 'plex' || x.kind === 'iptv') ? `\n▫️ Plataforma: <b>${hEsc(srvKind(s))}</b>` : ''}\n▫️ ${o.wasDemo ? 'Alta' : 'Renovación'}: ${hEsc(rcPlan(o))}\n▫️ Válida hasta: <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`
+    + (o.bonusDays ? `\n🎁 Incluye <b>${o.bonusDays} ${o.bonusDays === 1 ? 'día' : 'días'} de regalo</b> por comprar en tu prueba` : '')
     + (o.expiresBefore && !o.wasDemo ? `\n▫️ <i>Antes vencía el ${hEsc(rcFmtD(o.expiresBefore))}</i>` : '')
-    + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '') + '\n\n'
+    + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '')
+    + (() => { const l = diffDays(o.expiresAfter || c.expires, today()), d = (db.settings.notices.chat || {}).days || 5; return l >= 0 ? `\n📅 Tienes <b>${l} ${l === 1 ? 'día' : 'días'}</b> por delante\n🔔 Te aviso ${d} ${d === 1 ? 'día' : 'días'} antes de que caduque` : ''; })() + '\n\n'
     + `🔑 <b>Tus datos de acceso</b>${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}\n👤 ${s.kind === 'plex' ? 'Cuenta de Plex' : 'Usuario'}: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : s.kind === 'plex' ? '<i>la de tu cuenta de Plex</i>' : '<i>la de siempre</i>'}${s.kind === 'iptv' && xuiLinks(c) && c.password ? `\n📺 Lista M3U: <tg-spoiler>${hEsc(xuiLinks(c).m3u)}</tg-spoiler>` : ''}\n\n`
     + `🍿 ${o.wasDemo ? 'Tu cuenta ya está activada' : 'No tienes que hacer nada'}: sigue viendo como siempre.\n💙 ¡Gracias por confiar en ${hEsc(brand)}!`;
   const url = rcUrl(c, o), kb = [];
   if (url) kb.push([{ text: '📄 Ver recibo completo', url }]);
   kb.push([{ text: '📲 Cómo instalar', callback_data: 'gd:main' }, ...(url ? [{ text: '🏠 Mi cuenta', url: url.replace(/\/recibo\/.*$/, '') }] : [])]);
-  return tg('sendMessage', { chat_id: c.tgChat, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: { inline_keyboard: kb } }).catch(() => {});
+  const head = o.wasDemo ? `🎉 <b>¡Bienvenido a ${hEsc(brand)}!</b> Ya eres de la familia 💙\n\n` : '', full = head + text, markup = { inline_keyboard: kb };
+  const plain = () => tg('sendMessage', { chat_id: c.tgChat, text: full, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: markup }).catch(() => {});
+  let png = null; try { png = payCard(c, o); } catch (e) { console.error('Recibo (imagen):', e.message); }
+  if (!png) return plain();
+  // v302: imagen del recibo + el texto de siempre (si el texto no cabe debajo de la foto, va justo después)
+  const fits = full.replace(/<[^>]+>/g, '').length <= 1000, eff = o.wasDemo ? TG_PARTY : undefined;
+  const photo = (e) => tgPhoto(c.tgChat, png, fits ? full : `🧾 <b>Recibo de pago</b> · ${hEsc(rcMoney(o))} · válida hasta <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`, fits ? markup : null, true, 'image/png', e);
+  return photo(eff).catch(() => (eff ? photo() : Promise.reject(new Error('foto')))).then(() => (fits ? null : plain()), () => plain());
 }
 const RC_JS = "document.getElementById('pr').onclick=function(){window.print()}";
 const RC_HASH = crypto.createHash('sha256').update(RC_JS).digest('base64');
@@ -11759,5 +11991,6 @@ server.listen(PORT, HOST, () => {
   setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000);
   setInterval(() => { if (live()) weeklySend(false).catch((e) => console.error('Resumen semanal:', e.message)); }, Number(process.env.WEEKLY_MS) || 10 * 60000);
   setInterval(() => { if (live()) feedTick().catch((e) => console.error('Canal de contenidos:', e.message)); }, Number(process.env.FEED_MS) || 10 * 60000);
+  setInterval(() => { if (live()) sdTick().then(() => lock(async () => saveDb())).catch((e) => console.error('Demo automática (avisos):', e.message)); }, Number(process.env.SD_MS) || 2 * 60000); // v301
   setInterval(() => { if (live()) epAlertTick().catch((e) => console.error('Capítulos nuevos:', e.message)); }, Number(process.env.EP_MS) || 15 * 60000); // v291 // mensajes que llegan al bot de Telegram
 });
