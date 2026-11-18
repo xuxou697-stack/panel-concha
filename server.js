@@ -4279,28 +4279,26 @@ async function refLead(chat, from, code) {
   if (r) await lock(async () => { addLog('aviso', r, `🙋 ${full}${from.username ? ' (@' + from.username + ')' : ''} ha abierto su invitación en el bot`, null); saveDb(); });
 }
 /** v282: tarifas modernas: una pantalla cada vez (la de su plan primero), con lo que ahorra y botones para ver las demás */
-function pricesMsg(c, scr) {
-  const ctx = cpCtx(c), o = db.users.find((u) => u.id === c.ownerId);
+function pricesMsg(c, scr) { // v298: todas las pantallas a la vez, cada una en su recuadro (la de su plan, marcada)
+  const ctx = c.id ? cpCtx(c) : null, o = db.users.find((u) => u.id === c.ownerId);
   const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
   const cur = (db.settings.currency || 'EUR').toUpperCase();
   const money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur, minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
   const P = (m, sc) => Number(pr[`${m}-${sc}`]) || 0;
   const scs = [1, 2, 3, 4].filter((sc) => [1, 3, 6, 12].some((m) => P(m, sc) >= 0.5));
   if (!scs.length) return null;
-  const mine = Number(c.screens) || 1, sc = scs.includes(Number(scr)) ? Number(scr) : scs.includes(mine) ? mine : scs[0];
-  const ms = [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5), base = P(1, sc);
-  const ICON = { 1: '📅', 3: '🗓️', 6: '⭐', 12: '🏆' }, NAME = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
-  const rows = ms.map((m) => { const v = P(m, sc), off = base >= 0.5 && m > 1 ? Math.round((1 - v / (base * m)) * 100) : 0;
-    return `${ICON[m]} ${NAME[m]}  ·  <b>${money(v)}</b>${off >= 1 ? `  <i>(−${off} %)</i>` : ''}`; });
-  const best = ms[ms.length - 1], per = best > 1 ? P(best, sc) / best : 0;
-  const text = [`💶 <b>Tarifas de ${hEsc(botName())}</b>`, `📺 ${sc === 1 ? '1 pantalla' : sc + ' pantallas'} a la vez${sc === mine && !c.demo ? ' · <i>tu plan</i>' : ''}`, '',
-    `<blockquote>${rows.join('\n')}</blockquote>`,
-    ...(per ? ['', `💡 Con ${NAME[best]} te sale a <b>${money(Math.round(per * 100) / 100)}/mes</b>.`] : [])].join('\n');
+  const mine = Number(c.screens) || 1, ICON = { 1: '📅', 3: '🗓️', 6: '⭐', 12: '🏆' }, NAME = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
+  const L = [`💶 <b>Tarifas de ${hEsc(botName())}</b>`];
+  for (const sc of scs) {
+    const ms = [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5), base = P(1, sc);
+    const rows = ms.map((m) => { const v = P(m, sc), off = base >= 0.5 && m > 1 ? Math.round((1 - v / (base * m)) * 100) : 0; return `${ICON[m]} ${NAME[m]}  ·  <b>${money(v)}</b>${off >= 1 ? `  <i>(−${off} %)</i>` : ''}`; });
+    L.push('', `📺 <b>${sc === 1 ? '1 pantalla' : sc + ' pantallas'}</b>${sc === mine && c.id && !c.demo ? '  ·  <i>tu plan</i>' : ''}`, `<blockquote>${rows.join('\n')}</blockquote>`);
+  }
+  L.push('', '📺 = aparatos viendo a la vez. Cuanto más tiempo, más ahorras 😉');
   const kb = [];
-  if (scs.length > 1) kb.push(scs.map((x) => ({ text: `${x === sc ? '✅ ' : ''}${x} 📺`, callback_data: 'pr:' + x })));
-  if (c.id && cpEligible(c) && siteBase()) kb.push([{ text: '💳 Renovar ahora', url: cpLink(c) }]);
+  if (c.id && cpEligible(c) && siteBase()) kb.push([{ text: `💳 ${c.demo ? 'Activar mi cuenta' : 'Renovar ahora'} (eliges pantallas y tiempo)`, url: cpLink(c) }]);
   kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
-  return { text, kb: { inline_keyboard: kb } };
+  return { text: L.join('\n'), kb: { inline_keyboard: kb } };
 }
 async function botReply(chat, kind, list) {
   if (list.length && !botAlive(list) && !['renovar', 'precios'].includes(kind)) return botExpired(chat, list);
@@ -7486,9 +7484,15 @@ async function sdCreate(chat, from, src = '') {
     });
     if (!c) return;
     const until = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' });
-    await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎉 <b>¡Tu prueba gratis está lista, ${hEsc(full.split(' ')[0])}!</b>\n\n⏳ Tienes <b>${sdHoursText(hours)}</b>: hasta las <b>${until}</b>${hours >= 24 ? ` del ${end.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}` : ''}.\n\n<b>Ahora:</b>\n1️⃣ Instala la app (botón «📲 Instalar la app»)\n2️⃣ Entra con tus datos de aquí abajo 👇\n\nCuando termine, te escribo por aquí para que la actives si te ha gustado. 😉` });
-    await botReply(chat, 'datos', [c]).catch(() => {});
-    await botMenu(chat, [c]).catch(() => {});
+    // v298: todo en un solo mensaje, claro: servidor, usuario y contraseña (se copian con un toque) y cómo empezar
+    const app = kindOf(s) === 'jellyfin' ? 'Jellyfin' : 'Emby', sameDay = localDate(end) === today();
+    const when = sameDay ? `hoy a las ${until}` : `${localDate(end) === addDays(today(), 1) ? 'mañana' : 'el ' + end.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} a las ${until}`;
+    const card = [`🎉 <b>¡Tu prueba gratis está lista, ${hEsc(full.split(' ')[0])}!</b>`, '', `⏳ <b>Válida hasta ${when}</b> · ${sdHoursText(hours)}`, '',
+      `<blockquote>${s.publicUrl ? `🌐 <b>Servidor</b>\n<code>${hEsc(s.publicUrl)}</code>\n\n` : ''}👤 <b>Usuario</b>\n<code>${hEsc(c.embyName)}</code>\n\n🔑 <b>Contraseña</b>\n<code>${hEsc(c.password)}</code></blockquote>`,
+      '<i>👆 Toca cada dato para copiarlo</i>', '', '<b>📲 Cómo empezar</b>', `1️⃣ Instala la app de <b>${app}</b> (toca «📲 Instalar la app»)`, `2️⃣ Pon el ${s.publicUrl ? 'servidor, el ' : ''}usuario y la contraseña`, '3️⃣ ¡Y a disfrutar! 🍿', '',
+      '💬 Cuando termine te escribo por aquí para que la actives si te ha gustado. 😉'].join('\n');
+    await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: card,
+      reply_markup: { inline_keyboard: [[{ text: '📲 Instalar la app', callback_data: 'bm:guia' }], [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, { text: '💶 Precios', callback_data: 'bm:precios' }], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
     const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
     for (const u of db.users.filter((x) => !x.disabled && x.role === 'super')) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '⏸️ Pausar las demos', callback_data: 'sdx:off' }]] } }).catch(() => {}); // v296: pausar con un toque
   } catch (e) {
