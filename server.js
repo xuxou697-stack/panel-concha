@@ -150,6 +150,8 @@ function loadDb() {
       outage: { on: false, chat: '', thread: 0, delay: 3, name: true, ...(g.outage || {}) }, survey: { on: false, days: 30, since: '', ...(g.survey || {}) },
       epAlert: { on: true, ...(g.epAlert || {}) }, wrap: { on: true, days: 5, ...(g.wrap || {}) } }; }
   if (!db.botStats || typeof db.botStats !== 'object') db.botStats = { days: {}, miss: {} };
+  db.settings.selfDemo = { on: false, hours: 4, servers: [], quality: 'basico', perDay: 20, perHour: 5, userPrefix: 'prueba', userSuffix: '', passMode: 'random', links: [{ code: 'forobeta', name: 'Forobeta', on: true }, { code: 'canal', name: 'Mi canal de Telegram', on: true }], ...(db.settings.selfDemo || {}) }; // v295/v296
+  if (!db.selfDemoUsed || typeof db.selfDemoUsed !== 'object') db.selfDemoUsed = {};
   db.settings.security = { idleMin: 180, ...(db.settings.security || {}) };
   db.payCfg = { stripe: { on: false, key: '', whsec: '' }, nowpay: { on: false, key: '', ipn: '' }, min: 5, ...(db.payCfg || {}) };
   if (!Array.isArray(db.orders)) db.orders = [];
@@ -1033,7 +1035,7 @@ function accessOf(client) {
 /** Las cuentas del panel son siempre usuarios normales de Emby: nunca administradores ni con permisos de gestion */
 /** ¿Bloquear las descargas a los clientes? Encendido salvo que lo apagues en Servidores */
 const noDl = () => !db.settings || db.settings.noDownload !== false;
-function lockDown(pol) {
+function lockDown(pol, client) {
   pol.IsAdministrator = false;
   pol.EnableContentDeletion = false;
   pol.EnableContentDeletionFromFolders = [];
@@ -1041,7 +1043,8 @@ function lockDown(pol) {
   pol.EnableLiveTvManagement = false;
   pol.EnableVideoPlaybackTranscoding = false; // ningun cliente puede transcodificar video: es lo que mas carga el servidor
   pol.RemoteClientBitrateLimit = 0; // sin tope de velocidad en el servidor: un tope bajo obliga a convertir el video
-  if (noDl()) { pol.EnableContentDownloading = false; pol.EnableSyncTranscoding = false; pol.EnableMediaConversion = false; } // sin descargas: los clientes no pueden bajarse el contenido
+  if (noDl() || (client && client.demo)) { pol.EnableContentDownloading = false; pol.EnableSyncTranscoding = false; pol.EnableMediaConversion = false; } // sin descargas (v296: las demos, siempre)
+  else if (client && pol.EnableContentDownloading === false) pol.EnableContentDownloading = true; // v296: era demo y ya es cliente
   return pol;
 }
 const polHasLibs = (pol) => !!pol.EnableAllFolders || (pol.EnabledFolders || []).length > 0;
@@ -1066,7 +1069,7 @@ function embyPlanOf(s, pol) {
 let dlJob = null;
 function dlApplyAll(me) {
   if (dlJob && !dlJob.finished) return dlJob;
-  const want = noDl(), list = db.clients.filter((c) => c.status !== 'trash' && c.embyId && db.servers.some((x) => x.id === c.serverId && !x.off));
+  const want0 = noDl(), list = db.clients.filter((c) => c.status !== 'trash' && c.embyId && db.servers.some((x) => x.id === c.serverId && !x.off)), want = want0;
   const job = (dlJob = { total: list.length, done: 0, changed: 0, failed: 0, want, finished: false, at: new Date().toISOString() });
   (async () => {
     for (const c of list) {
@@ -1077,8 +1080,9 @@ function dlApplyAll(me) {
           if (s.kind === 'iptv') return; // en IPTV no hay descargas que quitar
           if (s.kind === 'plex') { const e = pxReg(s).users[c.embyId]; if (e && e.uid && e.syncOff !== want) { await pxSyncPerm(s, e); if (e.syncOff === want) job.changed++; } return; }
           const pol = await readPolicy(s, c.embyId);
-          if (want ? pol.EnableContentDownloading !== false || pol.EnableSyncTranscoding !== false : pol.EnableContentDownloading === false) {
-            Object.assign(pol, want ? { EnableContentDownloading: false, EnableSyncTranscoding: false, EnableMediaConversion: false } : { EnableContentDownloading: true });
+          const wantC = want || !!c.demo; // v296: las demos, siempre sin descargas
+          if (wantC ? pol.EnableContentDownloading !== false || pol.EnableSyncTranscoding !== false : pol.EnableContentDownloading === false) {
+            Object.assign(pol, wantC ? { EnableContentDownloading: false, EnableSyncTranscoding: false, EnableMediaConversion: false } : { EnableContentDownloading: true });
             await emby(s, 'POST', `/Users/${c.embyId}/Policy`, pol); job.changed++;
           }
         });
@@ -1103,7 +1107,7 @@ async function grantAccess(client) {
   const acc = accessOf(client);
   // Cuenta sin contenido (por ejemplo, importada de otro panel cuando ya no tenía bibliotecas): mejor avisar que dejarla vacía
   if (!acc.all && !(acc.folders || []).length) throw new HttpError(400, 'Esta cuenta no tiene contenido asignado. Elige Básico o 4K en «Contenido» y vuelve a intentarlo.');
-  const pol = lockDown(await readPolicy(s, client.embyId));
+  const pol = lockDown(await readPolicy(s, client.embyId), client);
   pol.IsDisabled = false;
   pol.EnableAllFolders = !!acc.all;
   pol.EnabledFolders = acc.all ? [] : acc.folders;
@@ -1126,7 +1130,7 @@ async function grantAccess(client) {
 async function removeAccess(client, disable) {
   const s = serverOf(client);
   let pol;
-  try { pol = lockDown(await readPolicy(s, client.embyId)); }
+  try { pol = lockDown(await readPolicy(s, client.embyId), client); }
   catch (e) { if (e.embyStatus === 404) return false; throw e; }
   if (polHasLibs(pol) && !client.quality) client.access = { all: !!pol.EnableAllFolders, folders: pol.EnabledFolders || [] };
   pol.EnableAllFolders = false;
@@ -3181,6 +3185,8 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
           jobs.push(() => botReply(chat, 'menu', mine));
           continue;
         }
+        const sdm = /^\/start\s+(?:demo|prueba)(?:_([a-z0-9-]{1,30}))?$/i.exec(text); // v295/v296: demo automática (con el sitio de donde viene)
+        if (sdm) { if (botTooFast(chat)) continue; const src = (sdm[1] || '').toLowerCase(); jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : sdOffer(chat, src))); continue; }
         const rfm = /^\/start\s+ref_([A-F0-9]{6})$/i.exec(text); // v283: el amigo abre la invitación
         if (rfm) { if (botTooFast(chat)) continue; const code = rfm[1].toUpperCase(), fr = msg.from || {}; jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : refLead(chat, fr, code))); continue; }
         const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
@@ -3221,7 +3227,8 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
             { const wb = welcomeBtn; jobs.push(() => botWelcome(chat, c, wb)); } // bienvenida con imagen y confeti 🎉, y después su tarjeta con el menú
             if (gift) jobs.push(async () => { try { await applyState(c); } catch { /* el servidor ya lo cogerá */ } await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎁 <b>¡Tu regalo!</b>\n\nPor activar los avisos te hemos sumado <b>${gift}</b> gratis.\n\n📅 Ahora tu cuenta vence el <b>${c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' }) : c.expires.split('-').reverse().join('/')}</b>. ¡Disfrútalo! 🍿` }).catch(() => {}); });
             reply = null; welcomeBtn = null;
-          } else reply = '👋 ¡Hola! Para activar tus avisos abre el enlace personal que te ha enviado tu proveedor y pulsa «Iniciar».';
+          } else if (sdCfg().on && !/^\/start\s+\S/.test(text)) { reply = null; jobs.push(() => sdOffer(chat)); } // v295: quien llega sin cuenta, a la prueba gratis
+          else reply = '👋 ¡Hola! Para activar tus avisos abre el enlace personal que te ha enviado tu proveedor y pulsa «Iniciar».';
         }
         if (reply) await tg('sendMessage', { chat_id: chat, text: reply, ...(welcomeBtn ? { reply_markup: welcomeBtn } : {}) }).catch(() => {});
       }
@@ -4291,7 +4298,7 @@ function pricesMsg(c, scr) {
     ...(per ? ['', `💡 Con ${NAME[best]} te sale a <b>${money(Math.round(per * 100) / 100)}/mes</b>.`] : [])].join('\n');
   const kb = [];
   if (scs.length > 1) kb.push(scs.map((x) => ({ text: `${x === sc ? '✅ ' : ''}${x} 📺`, callback_data: 'pr:' + x })));
-  if (cpEligible(c) && siteBase()) kb.push([{ text: '💳 Renovar ahora', url: cpLink(c) }]);
+  if (c.id && cpEligible(c) && siteBase()) kb.push([{ text: '💳 Renovar ahora', url: cpLink(c) }]);
   kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
   return { text, kb: { inline_keyboard: kb } };
 }
@@ -4399,6 +4406,15 @@ async function botCallback(cq) {
     const [, d, pg] = data.split(':');
     return botNews(chat, mine.find((x) => !x.demo) || mine[0], d, cq.message && cq.message.message_id, Number(pg) || 0);
   }
+  if (/^sd:go(:[a-z0-9-]{1,30})?$/.test(data)) return sdCreate(chat, cq.from || {}, data.split(':')[2] || ''); // v295/v296 (sdBusy evita dobles)
+  if (data === 'sdx:off' || data === 'sdx:on') { // v296: pausar o reanudar desde el aviso (solo un superadministrador)
+    const boss = db.users.find((u) => !u.disabled && u.role === 'super' && userChats(u).map(String).includes(String(chat)));
+    if (!boss) return;
+    const cf = db.settings.selfDemo, on = data === 'sdx:on';
+    await lock(async () => { cf.on = on; delete cf.autoPaused; addLog('ajustes', null, `Demo automática ${on ? 'reanudada' : 'pausada'} desde Telegram`, boss); saveDb(); });
+    return tg('sendMessage', { chat_id: chat, text: on ? '▶️ Demo automática reanudada: el enlace vuelve a crear demos.' : '⏸️ Demo automática pausada: el enlace ya no crea demos hasta que la reanudes.', reply_markup: { inline_keyboard: [[on ? { text: '⏸️ Pausar otra vez', callback_data: 'sdx:off' } : { text: '▶️ Reanudar', callback_data: 'sdx:on' }]] } }).catch(() => {});
+  }
+  if (data === 'sd:pr') return sdPrices(chat);
   if (data === 'nx') return;
   if (data === 'nt') { const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length || botTooFast(chat)) return; if (!botAlive(mine)) return botExpired(chat, mine); return botNewsTop(chat, mine.find((x) => !x.demo) || mine[0]); } // v291
   if (data.startsWith('em:')) { // v291: no avisar más de una serie
@@ -7049,6 +7065,52 @@ route('GET', '/api/referral/img', SUPER, () => {
   if (!fs.existsSync(REF_IMG)) throw new HttpError(404, 'No hay imagen.');
   return { __raw: fs.readFileSync(REF_IMG), headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } };
 });
+/* v295: pantalla «Demo automática» */
+route('GET', '/api/self-demo', SUPER, () => {
+  const cf = sdCfg(), bot = db.settings.notices.telegram.bot || '';
+  const mine = db.clients.filter((c) => c.selfDemo);
+  const paid = new Set((db.orders || []).filter((o) => o.status === 'paid' && o.wasDemo).map((o) => o.clientId));
+  const owner = ownerUser(), ctx = cpCtx({ id: 0, ownerId: owner ? owner.id : 0 });
+  return { ...cf, passFixedEnc: undefined, passSet: !!cf.passFixedEnc, sel: cf.servers || [], bot, link: bot ? `https://t.me/${bot}?start=demo` : '', hasBot: !!db.settings.notices.telegram.token,
+    servers: db.servers.filter((s) => !s.off && ['emby', 'jellyfin'].includes(kindOf(s))).map((s) => ({ id: s.id, name: s.name, kind: kindOf(s), free: srvMax(s) ? srvMax(s) - srvLoad(s) : null })),
+    pay: !!ctx, payAuto: !!(ctx && (ctx.key || ctx.pp)), today: sdToday(), total: mine.length, live: mine.filter((c) => c.demo && c.status === 'active').length,
+    bought: mine.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length,
+    last: mine.slice(-15).reverse().map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, at: c.createdAt, tg: c.telegram || '', src: ((cf.links || []).find((l) => l.code === c.sdSrc) || {}).name || '', state: !c.demo ? 'cliente' : c.status === 'active' ? 'probando' : 'terminada' })),
+    links: [{ code: '', name: 'Enlace general', on: true, gen: true }, ...(cf.links || [])].map((l) => { const of = mine.filter((c) => (c.sdSrc || '') === l.code); return { ...l, url: bot ? `https://t.me/${bot}?start=demo${l.code ? '_' + l.code : ''}` : '', n: of.length, bought: of.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length }; }) };
+});
+route('PUT', '/api/self-demo', SUPER, ({ me, body }) => lock(async () => {
+  const cf = db.settings.selfDemo, b = body || {};
+  if (b.on !== undefined) { cf.on = !!b.on; if (cf.on && !db.settings.notices.telegram.token) throw new HttpError(400, 'Primero conecta el bot de Telegram en Bot › Conexión del bot.'); }
+  if ([1, 2, 3, 4, 6, 12, 24, 48].includes(Number(b.hours))) cf.hours = Number(b.hours);
+  if (QUALITIES[b.quality]) cf.quality = b.quality;
+  if (Number.isInteger(Number(b.perDay)) && Number(b.perDay) >= 0 && Number(b.perDay) <= 500) cf.perDay = Number(b.perDay);
+  if (Array.isArray(b.servers)) { const ok = new Set(db.servers.map((x) => x.id)); cf.servers = b.servers.map(Number).filter((x) => ok.has(x)); }
+  if (Number.isInteger(Number(b.perHour)) && Number(b.perHour) >= 0 && Number(b.perHour) <= 100) cf.perHour = Number(b.perHour);
+  // v297: formato del usuario y contraseña de las demos
+  if (typeof b.userPrefix === 'string') { const v = b.userPrefix.trim().toLowerCase(); if (!/^[a-z0-9._-]{0,20}$/.test(v)) throw new HttpError(400, 'El principio del usuario solo puede llevar letras, números, punto, guion o guion bajo (hasta 20).'); cf.userPrefix = v; }
+  if (typeof b.userSuffix === 'string') { const v = b.userSuffix.trim().toLowerCase(); if (!/^[a-z0-9@._-]{0,30}$/.test(v)) throw new HttpError(400, 'El final del usuario solo puede llevar letras, números, @, punto o guiones (hasta 30). Por ejemplo: @uno.com'); cf.userSuffix = v; }
+  if ((cf.userPrefix || '') === '' && (cf.userSuffix || '') === '') cf.userPrefix = 'prueba';
+  if (['random', 'fixed'].includes(b.passMode)) cf.passMode = b.passMode;
+  if (typeof b.passFixed === 'string' && b.passFixed) cf.passFixedEnc = encApiKey(readCliPassword(b.passFixed, ''), 'selfdemo');
+  if (cf.passMode === 'fixed' && !cf.passFixedEnc) throw new HttpError(400, 'Escribe la contraseña fija que quieres para las demos.');
+  if (b.on) delete cf.autoPaused;
+  // v296: enlaces por sitio
+  if (b.link && typeof b.link === 'object') {
+    const L = cf.links || (cf.links = []), x = b.link;
+    if (x.add) {
+      const name = String(x.name || '').trim().slice(0, 40); if (!name) throw new HttpError(400, 'Ponle un nombre al enlace (por ejemplo «Instagram»).');
+      let code = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'enlace';
+      if (L.some((l) => l.code === code)) code = (code + '-' + crypto.randomBytes(2).toString('hex')).slice(0, 30);
+      if (L.length >= 20) throw new HttpError(400, 'Como mucho 20 enlaces.');
+      L.push({ code, name, on: true });
+    } else {
+      const l = L.find((y) => y.code === String(x.code || '')); if (!l) throw new HttpError(404, 'Ese enlace ya no existe.');
+      if (x.remove) cf.links = L.filter((y) => y !== l); else if (x.on !== undefined) l.on = !!x.on;
+    }
+  }
+  addLog('ajustes', null, `Demo automática: ${cf.on ? 'encendida' : 'apagada'}, ${sdHoursText(cf.hours)}, máx. ${cf.perDay || 'sin límite'} al día`, me);
+  saveDb(); return { ok: true };
+}));
 /* v291: «Uso del bot» y «Lo que buscan y no tenemos» (solo el superadministrador) */
 route('GET', '/api/bot-stats', SUPER, () => {
   const st = db.botStats || { days: {}, miss: {} }, ks = ['news', 'item', 'album', 'top', 'hit', 'miss', 'ep', 'wrap'];
@@ -7354,6 +7416,92 @@ async function wrapSend() {
     catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) { delete c.tgChat; } else break; }
   }
   if (n) saveDb();
+}
+/* ---------- v295: demo automática por el bot. El cliente abre t.me/<bot>?start=demo, pulsa un botón y se le crea
+   una demo al momento (una por cuenta de Telegram, con un máximo al día). Al terminar, el bot le ofrece activarla
+   pagando online: al pagar se convierte en cliente sin que tengas que hacer nada ---------- */
+const sdCfg = () => db.settings.selfDemo || { on: false };
+function sdServers() {
+  const cf = sdCfg(), allow = (cf.servers || []).map(Number);
+  return db.servers.filter((s) => !s.off && ['emby', 'jellyfin'].includes(kindOf(s)) && (!allow.length || allow.includes(s.id)));
+}
+function sdPick() {
+  const list = sdServers().map((s) => ({ s, free: srvMax(s) ? srvMax(s) - srvLoad(s) : 1e6 })).filter((x) => x.free > 0).sort((a, b) => b.free - a.free);
+  return list.length ? list[0].s : null;
+}
+const sdToday = () => db.clients.filter((c) => c.selfDemo && String(c.createdAt) === today()).length;
+const sdHoursText = (h) => (h % 24 === 0 ? (h === 24 ? '1 día' : `${h / 24} días`) : h === 1 ? '1 hora' : `${h} horas`);
+const sdLink = (src) => (sdCfg().links || []).find((l) => l.code === src) || null;
+async function sdOffer(chat, src = '') {
+  const cf = sdCfg(), nm = botName(), ln = src ? sdLink(src) : null;
+  if (src && (!ln || !ln.on)) return tg('sendMessage', { chat_id: chat, text: `👋 ¡Hola! Este enlace de prueba ya no está activo.${botContact() ? `\n\nEscríbenos y te ayudamos:\n${botContact()}` : ''}` });
+  if (!cf.on) return tg('sendMessage', { chat_id: chat, text: `👋 ¡Hola! Ahora mismo no hay pruebas gratis disponibles.${botContact() ? `\n\nEscríbenos y te ayudamos:\n${botContact()}` : ''}` });
+  return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎬 <b>¡Bienvenido a ${hEsc(nm)}!</b>\n\nPruébalo <b>gratis durante ${sdHoursText(cf.hours)}</b>, sin compromiso y sin dar ningún dato:\n\n🍿 Pelis y series en todos tus aparatos\n📺 Tele, móvil, tablet y ordenador\n⚡ Tu cuenta, lista en unos segundos\n\n👇 Pulsa el botón y empieza a ver ya.`,
+    reply_markup: { inline_keyboard: [[{ text: `🎁 Quiero mi prueba gratis (${sdHoursText(cf.hours)})`, callback_data: 'sd:go' + (ln ? ':' + ln.code : '') }], [{ text: '💶 Ver precios', callback_data: 'sd:pr' }]] } });
+}
+const sdBusy = new Set();
+async function sdCreate(chat, from, src = '') {
+  const cf = sdCfg(), uid = String((from && from.id) || chat), ln = src ? sdLink(src) : null;
+  if (src && (!ln || !ln.on)) return sdOffer(chat, src);
+  if (!cf.on) return sdOffer(chat);
+  if (sdBusy.has(uid)) return; sdBusy.add(uid);
+  try {
+    const mine = db.clients.filter((c) => c.tgChat === chat);
+    if (mine.length) return botReply(chat, 'menu', mine);
+    if (db.selfDemoUsed[uid]) return tg('sendMessage', { chat_id: chat, text: `✋ Ya hiciste tu prueba gratis con este Telegram.\n\n¿Te gustó? 😊 Escríbenos y te activamos tu cuenta:${botContact() ? '\n' + botContact() : ''}`, reply_markup: { inline_keyboard: [[{ text: '💶 Ver precios', callback_data: 'sd:pr' }]] } });
+    // v296: freno: demasiadas en una hora → se pausa sola y te avisa
+    const lastHour = db.clients.filter((c) => c.selfDemo && c.expiresAt && Date.parse(c.expiresAt) - (Number(c.sdHours) || Number(cf.hours) || 4) * 3600000 > Date.now() - 3600000).length;
+    if (cf.perHour && lastHour >= cf.perHour) {
+      await lock(async () => { if (cf.on) { cf.on = false; cf.autoPaused = new Date().toISOString(); addLog('seguridad', null, `🛑 Demo automática pausada sola: ${lastHour} demos en la última hora (máximo ${cf.perHour})`, null); saveDb();
+        const t2 = `🛑 <b>Demo automática pausada</b>\n\nSe han creado ${lastHour} demos en la última hora (tu máximo es ${cf.perHour}). Por si alguien está abusando, la he parado.\n\nRevísalo y, si todo está bien, reanúdala.`;
+        for (const u of db.users.filter((x) => !x.disabled && x.role === 'super')) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: t2, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '▶️ Reanudar las demos', callback_data: 'sdx:on' }]] } }).catch(() => {}); } });
+      return tg('sendMessage', { chat_id: chat, text: `😕 Ahora mismo hay muchas pruebas en marcha. Vuelve en un rato${botContact() ? ' o escríbenos:\n' + botContact() : '.'}` });
+    }
+    if (cf.perDay && sdToday() >= cf.perDay) return tg('sendMessage', { chat_id: chat, text: `😕 Por hoy ya no quedan pruebas gratis. Vuelve mañana o escríbenos:${botContact() ? '\n' + botContact() : ''}` });
+    const s = sdPick();
+    if (!s) return tg('sendMessage', { chat_id: chat, text: `😕 Ahora mismo no quedan plazas libres para pruebas. Vuelve en unos días o escríbenos:${botContact() ? '\n' + botContact() : ''}` });
+    await tg('sendMessage', { chat_id: chat, text: '⏳ Preparando tu cuenta… un momento 🍿' }).catch(() => {});
+    const own = ownerUser(); if (!own) throw new Error('No hay superadministrador');
+    const A = 'abcdefghjkmnpqrstuvwxyz', N = '23456789', pick = (x, n) => Array.from({ length: n }, () => x[crypto.randomInt(x.length)]).join('');
+    let fixed = ''; if (cf.passMode === 'fixed' && cf.passFixedEnc) { try { fixed = decApiKey(cf.passFixedEnc, 'selfdemo'); } catch { fixed = ''; } } // v297: contraseña fija (guardada cifrada)
+    const password = fixed || pick(A, 4) + pick(N, 4), hours = Number(cf.hours) || 4, end = new Date(Date.now() + hours * 3600000);
+    const full = [from && from.first_name, from && from.last_name].filter(Boolean).join(' ').slice(0, 60) || 'Prueba Telegram';
+    let c = null;
+    await lock(async () => {
+      if (db.selfDemoUsed[uid]) return;
+      let embyName = '';
+      const pre = String(cf.userPrefix ?? 'prueba'), suf = String(cf.userSuffix || ''); // v297: usuario con tu formato, p. ej. prueba4821@uno.com
+      for (let i = 0; i < 25 && !embyName; i++) { const t = pre + pick(N, i < 15 ? 4 : 6) + suf; try { assertEmbyNameFree(s, t); embyName = t; } catch { /* ocupado */ } }
+      if (!embyName) throw new Error('No he encontrado un usuario libre');
+      c = { id: newId(), serverId: s.id, ownerId: own.id, embyId: '', embyName, panelName: full, note: `Demo automática desde Telegram${from && from.username ? ' (@' + from.username + ')' : ''}`,
+        createdAt: today(), expires: localDate(end), expiresAt: end.toISOString(), status: 'active', demo: true, screens: 1, quality: QUALITIES[cf.quality] ? cf.quality : 'basico',
+        paid: true, selfDemo: true, sdSrc: ln ? ln.code : '', sdHours: hours, tgChat: chat, tgAt: new Date().toISOString(), tgUser: uid, ...(from && from.username ? { telegram: '@' + from.username } : {}) };
+      await createInEmby(c, password);
+      c.password = password;
+      db.clients.push(c);
+      db.selfDemoUsed[uid] = { at: new Date().toISOString(), clientId: c.id };
+      addLog('demo', c, `🤖 Demo automática de ${sdHoursText(hours)} creada desde el bot de Telegram (${s.name})${ln ? ` · viene de «${ln.name}»` : ''}`, null);
+      libCheckLater(c);
+      saveDb();
+    });
+    if (!c) return;
+    const until = end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' });
+    await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎉 <b>¡Tu prueba gratis está lista, ${hEsc(full.split(' ')[0])}!</b>\n\n⏳ Tienes <b>${sdHoursText(hours)}</b>: hasta las <b>${until}</b>${hours >= 24 ? ` del ${end.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}` : ''}.\n\n<b>Ahora:</b>\n1️⃣ Instala la app (botón «📲 Instalar la app»)\n2️⃣ Entra con tus datos de aquí abajo 👇\n\nCuando termine, te escribo por aquí para que la actives si te ha gustado. 😉` });
+    await botReply(chat, 'datos', [c]).catch(() => {});
+    await botMenu(chat, [c]).catch(() => {});
+    const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
+    for (const u of db.users.filter((x) => !x.disabled && x.role === 'super')) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '⏸️ Pausar las demos', callback_data: 'sdx:off' }]] } }).catch(() => {}); // v296: pausar con un toque
+  } catch (e) {
+    console.error('Demo automática:', e.message);
+    tg('sendMessage', { chat_id: chat, text: `😕 Vaya, no he podido crear tu prueba ahora mismo. Inténtalo en un rato${botContact() ? ' o escríbenos:\n' + botContact() : '.'}` }).catch(() => {});
+    notifyStaff('servers', `⚠️ No se pudo crear una demo automática desde el bot: ${e.message}`);
+  } finally { sdBusy.delete(uid); }
+}
+/** Precios para quien todavía no es cliente (con los del dueño) */
+function sdPrices(chat) {
+  const r = pricesMsg({ id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true });
+  const kb = { inline_keyboard: [...(sdCfg().on ? [[{ text: '🎁 Probar gratis primero', callback_data: 'sd:go' }]] : [])] };
+  return r ? tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb }) : tg('sendMessage', { chat_id: chat, text: `💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`, reply_markup: kb });
 }
 const CONN_FILE = path.join(DATA_DIR, 'conexiones.json');
 let conn = null, connDirty = false, connSaved = 0;

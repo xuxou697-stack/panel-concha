@@ -2764,6 +2764,12 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 .fd-bot{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;border:1px dashed var(--line)}
 .fd-bot.on{border-style:solid;border-color:color-mix(in srgb,#2aa3e6 50%,var(--line));background:color-mix(in srgb,#2aa3e6 10%,var(--surface))}
 .bs-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:16px}.bs-k{padding:14px;border-radius:14px;background:color-mix(in srgb,var(--c) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}.bs-k b{display:block;font-size:26px;color:var(--c)}.bs-k span{font-size:12.5px;color:var(--muted)}button.bs-k{text-align:left;font:inherit;color:inherit;cursor:pointer;position:relative;transition:transform .15s,box-shadow .15s}button.bs-k:hover{transform:translateY(-2px);box-shadow:0 8px 22px -10px var(--c)}.bs-k i{display:block;font-style:normal;font-size:11.5px;font-weight:700;color:var(--c);margin-top:6px;opacity:.85}
+.sd-srvs{display:flex;flex-wrap:wrap;gap:7px}.sd-srv{display:inline-flex}.sd-srv input{display:none}.sd-srv span{padding:7px 12px;border-radius:999px;border:1.5px dashed var(--line);color:var(--muted);cursor:pointer;font-size:13.5px}.sd-srv span small{opacity:.75;margin-left:4px}.sd-srv input:checked+span{border:1.5px solid color-mix(in srgb,#22c55e 55%,var(--line));background:color-mix(in srgb,#22c55e 14%,transparent);color:var(--text)}
+.sd-link{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sd-link code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;padding:9px 11px;border-radius:10px;background:color-mix(in srgb,var(--text) 7%,transparent);font-size:13.5px}
+.sd-lns{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:10px}.sd-ln{padding:11px 12px;border-radius:13px;border:1px solid var(--line);background:color-mix(in srgb,var(--text) 4%,transparent);display:grid;gap:8px}.sd-ln.off{opacity:.55}.sd-ln-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.sd-ln-h span{color:var(--muted);font-size:12.5px}.sd-ln-b{display:flex;gap:6px;flex-wrap:wrap}.sd-add{display:flex;gap:8px}.sd-add input{flex:1;min-width:0}
+.sd-msg{white-space:pre-wrap;font:inherit;font-size:13.5px;padding:11px 13px;border-radius:12px;background:color-mix(in srgb,var(--text) 6%,transparent);margin:0 0 8px}
+.sd-st{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--muted) 16%,transparent)}.sd-st.probando{color:#fbbf24;background:color-mix(in srgb,#f59e0b 16%,transparent)}.sd-st.cliente{color:#4ade80;background:color-mix(in srgb,#22c55e 16%,transparent)}
+.sd-steps{margin:0;padding-left:20px;display:grid;gap:8px;line-height:1.5}
 .bw-l{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:60vh;overflow:auto}.bw-l li{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.bw-l li>div{flex:1;min-width:0}.bw-l li b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bw-l li small{color:var(--muted);font-size:12px}.bw-n{font-weight:800;color:var(--accent,#38bdf8);white-space:nowrap}.bw-q{width:100%;margin:0 0 10px}
 .bs-c{margin-bottom:16px}.bs-bars{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:6px}.bs-bars i{flex:1;background:linear-gradient(#38bdf8,#0ea5e9);border-radius:4px 4px 1px 1px;min-width:4px}
 .bs-miss{list-style:none;margin:0;padding:0;display:grid;gap:6px}.bs-miss li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.bs-miss li b{display:block}.bs-miss li small{color:var(--muted);font-size:12px}
@@ -3092,7 +3098,8 @@ function navGroups() {
     { k: 'cli', t: 'Clientes', i: 'users', items: cli },
     { k: 'demo', t: 'Demos', i: 'timer', items: [
       { v: 'demonueva', t: 'Nueva', i: 'plus' }, { v: 'cuentas', f: 'demo', t: 'Activas', i: 'play', n: cnt.demo },
-      { v: 'demosvencidas', t: 'Papelera', i: 'trash', n: trash().filter((c) => c.demo).length }] },
+      { v: 'demosvencidas', t: 'Papelera', i: 'trash', n: trash().filter((c) => c.demo).length },
+      ...(isSuper() ? [{ v: 'autodemo', sec: 'Automático', t: 'Demo automática', i: 'send' }] : [])] },
     { k: 'mon', t: 'En directo', i: 'radio', items: [
       { v: 'monitor', t: 'Monitor', i: 'screen' }, { v: 'altrans', t: 'Transcode', i: 'bolt', hide: 'alhist|' }, { v: 'alses', t: 'Pantallas de más', i: 'screen', hide: 'alhist|' },
       { v: 'alhist', t: 'Alertas', i: 'history', n: S.d.alertsUnread, hot: true }, { v: 'inactivos', t: 'Inactivos', i: 'pause' },
@@ -3560,7 +3567,7 @@ function render() {
   if (d.salesEmail !== undefined) SALES = d.salesEmail || '';
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = ''; } // v288: fuera del menú; está en Mi cuenta › Perfil (y en la pantalla de entrada)
   clearInterval(S.liveTimer);
-  const fn = { hoy: vHoy, resumen: vResumen, crecer: () => vCrecer('crecer'), botauto: () => vCrecer('bot'), invita: vInvita, botstats: vBotStats, canales: vCanales, misnov: vMisNov, bot: vBot, botcfg: vBotCfg, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
+  const fn = { hoy: vHoy, resumen: vResumen, crecer: () => vCrecer('crecer'), botauto: () => vCrecer('bot'), invita: vInvita, autodemo: vAutoDemo, botstats: vBotStats, canales: vCanales, misnov: vMisNov, bot: vBot, botcfg: vBotCfg, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), equipodel: vEquipoDel, stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   $('#main').dataset.v = S.view; // para dar a cada pantalla su toque de color
   document.body.classList.toggle('tech1', techOnly());
@@ -5686,6 +5693,60 @@ function vBot() {
     sec('v', '🧑‍💼', ven ? 'Para ti como vendedor' : 'Para tus vendedores', ven ? 'Lo nuevo de tus servidores, para pasárselo a tus clientes.' : 'Lo que tus resellers pueden recibir para sus clientes.', vend) +
     sec('y', '🙋', 'Para ti', 'Cómo va el bot y cómo está conectado.', mine);
 }
+/* v295: «Demo automática»: el cliente se crea su demo desde el bot y, al terminar, paga y se convierte en cliente solo */
+function vAutoDemo() {
+  const TT = 'Demo automática', sub = '🤖 Pon un enlace en un foro o en tus redes: quien lo abre se crea él solo una demo desde el bot y, si le gusta, paga y se queda como cliente. Sin escribirte.';
+  const r = S.sdm;
+  if (!r || (r.at && Date.now() - r.at > 30000)) { if (!r || !r.busy) { S.sdm = { busy: true }; api('GET', '/api/self-demo').then((x) => { S.sdm = { ...x, at: Date.now() }; if (S.view === 'autodemo') render(); }, (e) => { S.sdm = { error: e.message }; if (S.view === 'autodemo') render(); }); } return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
+  if (r.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (r.error) return head(TT, sub) + `<p class="err">${esc(r.error)}</p>`;
+  if (!r.hasBot) return head(TT, sub) + '<div class="panel"><div class="empty">Primero conecta el bot de Telegram en <b>Bot › Conexión del bot</b>.</div></div>';
+  const sel = r.sel || [];
+  const srvChips = r.servers.map((x) => `<label class="sd-srv"><input type="checkbox" name="srv" value="${x.id}"${!sel.length || sel.includes(x.id) ? ' checked' : ''}><span>🖥️ ${esc(x.name)} <small>${x.free == null ? 'sin límite' : x.free > 0 ? `quedan ${x.free}` : 'lleno'}</small></span></label>`).join('') || '<p class="muted small">No tienes servidores de Emby o Jellyfin. (Plex no vale para la demo automática: necesita invitación por email.)</p>';
+  const st = { probando: ['⏳', 'probando'], terminada: ['⌛', 'terminada'], cliente: ['✅', '¡es cliente!'] };
+  const last = r.last.length ? r.last.map((x) => `<li><div><b>${esc(x.name)}</b><small>@${esc(x.emby)}${x.tg ? ' · ' + esc(x.tg) : ''} · ${esc(x.at.split('-').reverse().slice(0, 2).join('/'))}${x.src ? ' · 🔗 ' + esc(x.src) : ''}</small></div><span class="sd-st ${x.state}">${st[x.state][0]} ${st[x.state][1]}</span><button type="button" class="btn sm ghost" data-act="ficha" data-id="${x.id}">📇</button></li>`).join('') : '<li class="muted">Todavía nadie se ha creado una demo.</li>';
+  const hrs = r.hours >= 24 ? (r.hours / 24) + (r.hours === 24 ? ' día' : ' días') : r.hours + (r.hours === 1 ? ' hora' : ' horas');
+  const msgFor = (url) => `🎬 ¿Quieres probarlo gratis?\n\nPelis y series en tu tele, móvil y ordenador. Pruébalo ${hrs} gratis, sin compromiso: tu cuenta se crea sola en unos segundos.\n\n👉 ${url}`;
+  // v296: un enlace para cada sitio, con lo que trae cada uno y su interruptor
+  const links = (r.links || []).map((l) => `<li class="sd-ln${l.on ? '' : ' off'}"><div class="sd-ln-h"><b>${l.gen ? '🌐' : '🔗'} ${esc(l.name)}</b><span>${plural(l.n, 'demo', 'demos')} · <b>${l.bought}</b> ${l.bought === 1 ? 'cliente' : 'clientes'}</span></div>
+      <div class="sd-link"><code>${esc(l.url)}</code></div>
+      <div class="sd-ln-b"><button type="button" class="btn sm" data-act="sd-copy" data-v="${esc(l.url)}">📋 Enlace</button><button type="button" class="btn sm" data-act="sd-copy" data-v="${esc(msgFor(l.url))}">📝 Texto para publicar</button>
+      ${l.gen ? '' : `<button type="button" class="btn sm ${l.on ? 'ghost' : ''}" data-act="sd-ln" data-code="${esc(l.code)}" data-on="${l.on ? 0 : 1}">${l.on ? '⏸️ Apagar' : '▶️ Encender'}</button><button type="button" class="btn sm ghost bad" data-act="sd-ln-del" data-code="${esc(l.code)}" title="Borrar este enlace">🗑️</button>`}</div></li>`).join('');
+  return head(TT, sub) + `<div class="iv-st ${r.on ? 'on' : 'off'}">${r.on ? '✅ Encendida: cualquiera con el enlace puede crearse una demo' : r.autoPaused ? '🛑 Pausada sola por el freno: demasiadas demos en una hora' : '⏸️ Apagada: el enlace no crea demos'}</div>
+  ${!r.on && r.autoPaused ? `<p class="gr-warn">🛑 El ${esc(fmtTs(r.autoPaused, true))} se crearon demasiadas demos en una hora y se pausó sola. Revisa abajo quién ha sido y, si está todo bien, enciéndela otra vez.</p>` : ''}
+  ${!r.pay ? '<p class="gr-warn">⚠️ No tienes el pago online de clientes activado (Dinero › Cobro a clientes). Las demos se crean igual, pero al terminar el cliente tendrá que escribirte para pagar.</p>' : !r.payAuto ? '<p class="gr-warn">ℹ️ Tu cobro a clientes es manual (Bizum, transferencia…): al terminar la demo el cliente te paga y tú confirmas el pago. Con tarjeta o cripto se activa solo.</p>' : ''}
+  <div class="iv-grid"><form class="gr-card iv-c" id="sdForm" onsubmit="return false">
+    <div class="gr-h"><span class="gr-i">⚙️</span><div><h3>Cómo es la demo</h3><p>Se crea en el servidor con más sitio de los que elijas.</p></div></div>
+    <div class="gr-b">
+      <label class="gr-sw" style="--g:#22c55e"><input type="checkbox" name="on"${r.on ? ' checked' : ''}><span class="sw"></span><b>Demo automática encendida</b></label>
+      <div class="row2" style="margin-top:12px"><label class="f">⏳ Duración<select name="hours">${options([[1, '1 hora'], [2, '2 horas'], [3, '3 horas'], [4, '4 horas'], [6, '6 horas'], [12, '12 horas'], [24, '1 día'], [48, '2 días']], r.hours)}</select></label>
+        <label class="f">🎞️ Contenido<select name="quality">${options([['basico', 'Básico'], ['4k', '4K']], r.quality)}</select></label></div>
+      <div class="row2"><label class="f">🛡️ Máximo al día<select name="perDay">${options([[5, '5'], [10, '10'], [20, '20 (recomendado)'], [50, '50'], [100, '100'], [0, 'Sin límite']], r.perDay)}</select></label>
+        <label class="f">🛑 Freno: pausar si en 1 hora hay más de<select name="perHour">${options([[3, '3'], [5, '5 (recomendado)'], [10, '10'], [20, '20'], [0, 'Sin freno'], ...([0, 3, 5, 10, 20].includes(r.perHour ?? 5) ? [] : [[r.perHour, String(r.perHour)]])], r.perHour ?? 5)}</select></label></div>
+      <h4 class="iv-h">👤 Usuario y contraseña de las demos</h4>
+      <div class="row2"><label class="f">Empieza por<input name="userPrefix" maxlength="20" value="${esc(r.userPrefix ?? 'prueba')}" placeholder="prueba" autocomplete="off"></label>
+        <label class="f">Termina en <span class="muted small">(opcional)</span><input name="userSuffix" maxlength="30" value="${esc(r.userSuffix || '')}" placeholder="@uno.com" autocomplete="off"></label></div>
+      <p class="muted small" style="margin:-4px 0 10px">En medio va un número al azar. Así quedará: <b id="sdUserEx">${esc((r.userPrefix ?? 'prueba') + '4821' + (r.userSuffix || ''))}</b></p>
+      <label class="f">🔑 Contraseña<select name="passMode">${options([['random', 'Una distinta para cada demo (recomendado)'], ['fixed', 'La misma para todas']], r.passMode || 'random')}</select></label>
+      <label class="f sd-fixed"${r.passMode === 'fixed' ? '' : ' hidden'}>Contraseña para todas las demos<input name="passFixed" type="password" autocomplete="new-password" placeholder="${r.passSet ? '•••••••• (guardada; escribe otra para cambiarla)' : 'Escríbela aquí'}"></label>
+      <p class="gr-warn sd-fixed"${r.passMode === 'fixed' ? '' : ' hidden'} style="margin:0 0 10px">⚠️ Con la misma contraseña para todas, quien sepa el usuario de otra demo podría entrar en ella. Si la usas, mejor que el usuario lleve el número al azar.</p>
+      <h4 class="iv-h">🖥️ En qué servidores</h4><div class="sd-srvs">${srvChips}</div>
+      <p class="muted small" style="margin:8px 0 12px">🔒 Una sola demo por cuenta de Telegram, siempre. 1 pantalla y <b>sin descargas</b>. Cada demo nueva te llega por Telegram con un botón para <b>pausarlas</b> al momento.</p>
+      <button type="button" class="btn primary" data-act="sd-save">Guardar</button>
+    </div></form>
+    <div class="iv-col">
+      <div class="gr-card iv-c"><div class="gr-h"><span class="gr-i">🔗</span><div><h3>Tus enlaces para compartir</h3><p>Uno para cada sitio: ves qué trae cada uno y, si en uno abusan, apagas solo ese.</p></div></div>
+        <div class="gr-b"><ul class="sd-lns">${links}</ul>
+          <div class="sd-add"><input id="sdNew" maxlength="40" placeholder="Nuevo enlace: Instagram, WhatsApp…"><button type="button" class="btn sm primary" data-act="sd-ln-add">＋ Añadir</button></div></div></div>
+      <div class="gr-card iv-c"><div class="gr-h"><span class="gr-i">📊</span><div><h3>Cómo va</h3><p><b>${r.today}</b> hoy · <b>${r.total}</b> en total · <b>${r.live}</b> probando ahora · <b>${r.bought}</b> ya son clientes${r.total ? ` (${Math.round(r.bought / r.total * 100)} %)` : ''}</p></div></div>
+        <div class="gr-b"><ul class="bw-l">${last}</ul></div></div>
+    </div></div>
+  <div class="gr-card iv-c" style="margin-top:16px"><div class="gr-h"><span class="gr-i">🧭</span><div><h3>Así funciona, paso a paso</h3></div></div><div class="gr-b"><ol class="sd-steps">
+    <li>Alguien abre tu enlace y le sale el bot: «Pruébalo gratis ${esc(r.hours >= 24 ? (r.hours / 24) + (r.hours === 24 ? ' día' : ' días') : r.hours + (r.hours === 1 ? ' hora' : ' horas'))}».</li>
+    <li>Pulsa el botón y en unos segundos tiene su usuario, contraseña y cómo instalar la app. Ya tiene el bot enlazado.</li>
+    <li>Cuando termina, el bot le escribe: «¿Te ha gustado? Actívala ahora» con el botón de pago.</li>
+    <li>Paga y su cuenta se activa sola, como cliente tuyo, con todo lo que tenía. A ti te llega el aviso.</li></ol></div></div>`;
+}
 /* v291: «Uso del bot»: qué usan tus clientes y lo que buscan en la lupa y no encuentran */
 function vBotStats() {
   const TT = 'Uso del bot', sub = '🙋 Solo para ti: cuánto usan tus clientes el bot en los últimos 30 días y lo que buscan y no tenemos.';
@@ -5744,6 +5805,8 @@ function vInvita() {
     </div>
   </div>`;
 }
+document.addEventListener('input', (e) => { const fm = e.target.closest && e.target.closest('#sdForm'); if (!fm || !['userPrefix', 'userSuffix'].includes(e.target.name)) return; const x = $('#sdUserEx'); if (x) x.textContent = (fm.elements.userPrefix.value.trim().toLowerCase() || '') + '4821' + fm.elements.userSuffix.value.trim().toLowerCase(); });
+document.addEventListener('change', (e) => { if (e.target.name === 'passMode' && e.target.closest('#sdForm')) { for (const x of document.querySelectorAll('#sdForm .sd-fixed')) x.hidden = e.target.value !== 'fixed'; } });
 document.addEventListener('change', (e) => { if (e.target.id !== 'refFile' || !e.target.files[0]) return;
   toast('Subiendo la imagen…');
   soShrink(e.target.files[0]).then((data) => api('POST', '/api/referral/img', { data })).then(() => { toast('🖼️ Imagen guardada'); S.inv = null; render(); }, (er) => toast(er.message, true)); });
@@ -8197,6 +8260,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 297, d: '2026-11-18', items: ['👤 Demo automática: eliges cómo es el usuario (por ejemplo prueba4821@uno.com: cómo empieza y cómo termina) y si la contraseña es distinta para cada demo o la misma para todas (se guarda cifrada)'] },
+  { v: 296, d: '2026-11-18', items: ['🔗 Demo automática: un enlace para cada sitio (Forobeta, tu canal…), con cuántas demos y clientes trae cada uno; se apaga uno solo si abusan', '⏸️ En el aviso de cada demo nueva, botón «Pausar las demos» para pararlas desde el móvil', '🛑 Freno: si se crean demasiadas demos en una hora, se pausa sola y te avisa', '🚫 Las demos, siempre sin descargas (al pagar, pasan a ser como tus clientes)'] },
+  { v: 295, d: '2026-11-18', items: ['🤖 Nueva Demos › Demo automática: un enlace para el foro o tus redes. Quien lo abre se crea solo una demo desde el bot (una por Telegram, con máximo al día) y, al terminar, el bot le ofrece pagar; al pagar se convierte en cliente sin que hagas nada. Viene apagada'] },
   { v: 294, d: '2026-11-18', team: ['🧭 Menú reordenado: lo que más se usa, arriba (Clientes, Demos, Dinero, Equipo y Bot)'], items: ['🧭 Menú reordenado: Clientes, Demos, Dinero, Equipo y Bot arriba; después En directo, Mensajes, Servidores, Mi cuenta y Sistema'] },
   { v: 293, d: '2026-11-18', items: ['👆 Bot › Uso del bot: toca cualquier cifra y te dice qué clientes son (quién ha usado el bot, quién está apuntado a las novedades, quién ha buscado…), con un botón para abrir su ficha'] },
   { v: 292, d: '2026-11-18', team: ['🖥️ En Bot › Mis novedades ya puedes elegir de qué servidores quieres recibir las novedades: toca ✕ para quitar uno y ＋ para volver a ponerlo'], items: ['🖥️ Mis novedades (vendedores): cada vendedor elige de qué servidores le llegan las novedades, a su Telegram y a su canal (✕ quitar · ＋ volver a poner)'] },
@@ -11024,6 +11090,16 @@ document.addEventListener('click', (e) => {
   if (a === 'iv-save') { const fm = $('#ivForm'), g = (n) => fm.elements[n];
     el.disabled = true; api('PUT', '/api/referral', { days: +g('days').value, newDays: +g('newDays').value, max: +g('max').value, promo: { on: g('pon').checked, name: g('pname').value, until: g('puntil').value } })
       .then(() => { toast('🎁 Invita a un amigo: guardado'); S.inv = null; reload().catch(() => render()); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'sd-save') { const fm = $('#sdForm'), g = (n) => fm.elements[n];
+    const all = [...fm.querySelectorAll('input[name=srv]')], on = all.filter((x) => x.checked).map((x) => +x.value);
+    if (all.length && !on.length) { toast('Elige al menos un servidor', true); return; }
+    el.disabled = true; api('PUT', '/api/self-demo', { on: g('on').checked, hours: +g('hours').value, quality: g('quality').value, perDay: +g('perDay').value, perHour: +g('perHour').value, servers: on.length === all.length ? [] : on, userPrefix: g('userPrefix').value, userSuffix: g('userSuffix').value, passMode: g('passMode').value, ...(g('passFixed').value ? { passFixed: g('passFixed').value } : {}) })
+      .then(() => { toast(g('on').checked ? '🤖 Demo automática encendida' : 'Demo automática guardada'); S.sdm = null; render(); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'sd-ln-add') { const i = $('#sdNew'), name = (i && i.value || '').trim(); if (!name) { toast('Escribe un nombre, por ejemplo «Instagram»', true); return; }
+    api('PUT', '/api/self-demo', { link: { add: true, name } }).then(() => { toast('🔗 Enlace creado'); S.sdm = null; render(); }, (e) => toast(e.message, true)); return; }
+  if (a === 'sd-ln') { api('PUT', '/api/self-demo', { link: { code: el.dataset.code, on: el.dataset.on === '1' } }).then(() => { toast(el.dataset.on === '1' ? '▶️ Enlace encendido' : '⏸️ Enlace apagado'); S.sdm = null; render(); }, (e) => toast(e.message, true)); return; }
+  if (a === 'sd-ln-del') { const code = el.dataset.code; dConfirm('¿Borrar este enlace?', 'Quien lo abra verá que ya no está activo. Las demos que ya trajo no se tocan.', 'Borrar', async () => { await api('PUT', '/api/self-demo', { link: { code, remove: true } }); S.sdm = null; render(); }, 'Enlace borrado'); return; }
+  if (a === 'sd-copy') { const v = el.dataset.v || ''; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast('📋 Copiado'), () => { const t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); toast('📋 Copiado'); } catch { toast('No se pudo copiar', true); } t.remove(); }); return; }
   if (a === 'bs-who') { // v293: qué clientes hay detrás de cada cifra
     const k = el.dataset.k, T = { users: ['👥 Han usado el bot', 'vez', 'veces'], linked: ['🤖 Clientes activos con el bot'], subs: ['🔔 Apuntados a las novedades'], news: ['🍿 Han abierto Novedades', 'vez', 'veces'], item: ['🎬 Han visto fichas', 'ficha', 'fichas'], top: ['🔥 Han mirado «Lo más visto»', 'vez', 'veces'], search: ['🔎 Han buscado con la lupa', 'búsqueda', 'búsquedas'], ep: ['🔔 Les llegó «capítulo nuevo»', 'aviso', 'avisos'], wrap: ['🎬 Les llegó «Tu mes»', 'vez', 'veces'] }[k] || ['Clientes'];
     api('GET', '/api/bot-stats/who?k=' + encodeURIComponent(k)).then((r) => {
