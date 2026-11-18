@@ -4006,6 +4006,11 @@ const SEARCH_MAX = 60;
 /** Botones del menú (2 por fila). «Renovar» abre su enlace de pago si lo tiene */
 function botMenuKb(list) {
   const c = list.find((x) => !x.demo) || list[0];
+  if (c && c.demo && list.every((x) => x.demo)) { // v299: en la demo, menú corto y «Comprar» bien a la vista
+    const b2 = (t, k) => ({ text: t, callback_data: 'bm:' + k });
+    const buy = cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar mi cuenta', url: cpLink(c) } : b2('🛒 Comprar mi cuenta', 'precios');
+    return { inline_keyboard: [[buy], [b2('📲 Instalar la app', 'guia'), b2('🔑 Mis datos', 'datos')], [b2('🍿 Novedades', 'novedades'), b2('🔎 Buscar', 'buscar')], [b2('💶 Precios', 'precios'), b2('💬 Ayuda', 'ayuda')]] };
+  }
   const pay = c && !c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '💳 Renovar', url: cpLink(c) } : { text: '💳 Renovar', callback_data: 'bm:renovar' };
   const b = (t, k) => ({ text: t, callback_data: 'bm:' + k });
   return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar peli o serie', 'buscar')], [b('🟢 ¿Funciona?', 'servidor'), b('🛠️ Problemas', 'problemas')],
@@ -4021,7 +4026,10 @@ async function sendCard(chat, c, caption, kb, html) {
 }
 async function botMenu(chat, list) {
   const c = list.find((x) => !x.demo) || list[0], name = String(c.panelName || '').split(/\s+/)[0];
-  const cap = `👋 ¡Hola${name ? ', ' + name : ''}! Bienvenido a ${botName()} 🍿\n\n¿Qué quieres hacer? Toca un botón 👇`;
+  const left = c.demo && c.expiresAt ? Date.parse(c.expiresAt) - Date.now() : 0, lh = Math.floor(left / 3600000), lm = Math.floor((left % 3600000) / 60000);
+  const cap = c.demo && list.every((x) => x.demo) && left > 0 // v299: en la demo, cuánto le queda y cómo comprar
+    ? `👋 ¡Hola${name ? ', ' + name : ''}! Estás probando ${botName()} 🍿\n\n⏳ Te ${lh === 1 && !lm ? 'queda' : 'quedan'} ${lh ? lh + (lh === 1 ? ' hora' : ' horas') + (lm ? ' y ' : '') : ''}${lm ? lm + ' min' : ''} de prueba.\n\n🛒 ¿Te gusta? Toca «Comprar mi cuenta», eliges pantallas y tiempo y sigues viendo sin cortes.`
+    : `👋 ¡Hola${name ? ', ' + name : ''}! Bienvenido a ${botName()} 🍿\n\n¿Qué quieres hacer? Toca un botón 👇`;
   return sendCard(chat, c, cap, botMenuKb(list));
 }
 /** Mi cuenta: una tarjeta por cuenta (hasta 3) con su texto debajo */
@@ -4279,6 +4287,28 @@ async function refLead(chat, from, code) {
   if (r) await lock(async () => { addLog('aviso', r, `🙋 ${full}${from.username ? ' (@' + from.username + ')' : ''} ha abierto su invitación en el bot`, null); saveDb(); });
 }
 /** v282: tarifas modernas: una pantalla cada vez (la de su plan primero), con lo que ahorra y botones para ver las demás */
+/** v299: precios sencillos para quien no entiende de esto: 1) cuántas pantallas → 2) en la página eliges el tiempo y pagas */
+function pricesSimple(c) {
+  const ctx = c.id ? cpCtx(c) : null, o = db.users.find((u) => u.id === c.ownerId);
+  const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
+  const cur = (db.settings.currency || 'EUR').toUpperCase();
+  const money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur, minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+  const P = (m, sc) => Number(pr[`${m}-${sc}`]) || 0;
+  const scs = [1, 2, 3, 4].filter((sc) => [1, 3, 6, 12].some((m) => P(m, sc) >= 0.5));
+  if (!scs.length) return null;
+  const from = (sc) => { const ms = [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5); return ms.length ? Math.min(...ms.map((m) => P(m, sc) / m)) : 0; };
+  const canPay = !!(c.id && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()), payScr = canPay ? cpScreens(c, cpCtx(c)) : [];
+  const L = [`💶 <b>${c.demo || !c.id ? 'Elige tu plan' : 'Renueva tu cuenta'}</b>`, ''];
+  L.push(canPay ? '1️⃣ Toca cuántas <b>pantallas</b> quieres\n<i>(pantallas = aparatos viendo a la vez)</i>\n2️⃣ Eliges el <b>tiempo</b> y pagas en 1 minuto 💳\n3️⃣ ¡Listo! Se activa al momento ✅'
+    : `📺 <i>Pantallas = aparatos viendo a la vez.</i>\n\n${scs.map((sc) => `📺 <b>${sc === 1 ? '1 pantalla' : sc + ' pantallas'}</b> · desde <b>${money(Math.round(from(sc) * 100) / 100)}/mes</b>`).join('\n')}`);
+  const kb = [];
+  if (canPay) for (const sc of scs.filter((x) => payScr.includes(x))) kb.push([{ text: `📺 ${sc === 1 ? '1 pantalla' : sc + ' pantallas'} · desde ${money(Math.round(from(sc) * 100) / 100)}/mes`, url: `${cpLink(c)}?s=${sc}` }]);
+  if (!c.id && sdCfg().on) kb.push([{ text: '🎁 Pruébalo gratis primero', callback_data: 'sd:go' }]);
+  kb.push([{ text: '📋 Ver todos los precios', callback_data: 'pr:all' }]);
+  if (c.id) kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
+  if (!canPay && c.id && botContact()) L.push('', `💬 Para contratar, escríbenos:\n${hEsc(botContact())}`);
+  return { text: L.join('\n'), kb: { inline_keyboard: kb } };
+}
 function pricesMsg(c, scr) { // v298: todas las pantallas a la vez, cada una en su recuadro (la de su plan, marcada)
   const ctx = c.id ? cpCtx(c) : null, o = db.users.find((u) => u.id === c.ownerId);
   const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
@@ -4372,7 +4402,7 @@ async function botReply(chat, kind, list) {
     return send(parts.join('\n\n— — —\n\n') + tip, { inline_keyboard: kb }, true);
   }
   if (kind === 'precios') {
-    const r = pricesMsg(accs[0]);
+    const r = pricesSimple(accs.find((x) => !x.demo) || accs[0]); // v299
     return r ? send(r.text, r.kb, true) : send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
   }
   if (kind === 'invitar') return refBot(chat, accs.find((x) => !x.demo) || accs[0]);
@@ -4422,9 +4452,10 @@ async function botCallback(cq) {
   }
   if (/^ni:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsItem(chat, data.slice(3)); } // v289: ficha de un título
   if (/^na:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsAlbum(chat, data.slice(3)); } // v289: carátulas del día
-  if (/^pr:[1-4]$/.test(data)) { // v282: tarifas, cambiar de número de pantallas (se cambia el mismo mensaje)
-    const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length) return;
-    const r = pricesMsg(mine[0], +data.slice(3)); if (!r) return;
+  if (/^pr:([1-4]|all)$/.test(data)) { // v282/v299: tabla completa de precios (también para quien todavía no es cliente)
+    const mine = db.clients.filter((c) => c.tgChat === chat);
+    const r = pricesMsg(mine.find((x) => !x.demo) || mine[0] || { id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }); if (!r) return;
+    if (!mine.length) r.kb = { inline_keyboard: sdCfg().on ? [[{ text: '🎁 Pruébalo gratis primero', callback_data: 'sd:go' }]] : [] };
     return tg('editMessageText', { chat_id: chat, message_id: cq.message.message_id, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb })
       .catch(() => tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb }).catch(() => {}));
   }
@@ -7492,7 +7523,7 @@ async function sdCreate(chat, from, src = '') {
       '<i>👆 Toca cada dato para copiarlo</i>', '', '<b>📲 Cómo empezar</b>', `1️⃣ Instala la app de <b>${app}</b> (toca «📲 Instalar la app»)`, `2️⃣ Pon el ${s.publicUrl ? 'servidor, el ' : ''}usuario y la contraseña`, '3️⃣ ¡Y a disfrutar! 🍿', '',
       '💬 Cuando termine te escribo por aquí para que la actives si te ha gustado. 😉'].join('\n');
     await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: card,
-      reply_markup: { inline_keyboard: [[{ text: '📲 Instalar la app', callback_data: 'bm:guia' }], [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, { text: '💶 Precios', callback_data: 'bm:precios' }], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
+      reply_markup: { inline_keyboard: [[{ text: '📲 Instalar la app', callback_data: 'bm:guia' }], [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar', url: cpLink(c) } : { text: '💶 Precios', callback_data: 'bm:precios' }], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
     const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
     for (const u of db.users.filter((x) => !x.disabled && x.role === 'super')) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '⏸️ Pausar las demos', callback_data: 'sdx:off' }]] } }).catch(() => {}); // v296: pausar con un toque
   } catch (e) {
@@ -7503,7 +7534,8 @@ async function sdCreate(chat, from, src = '') {
 }
 /** Precios para quien todavía no es cliente (con los del dueño) */
 function sdPrices(chat) {
-  const r = pricesMsg({ id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true });
+  const r = pricesSimple({ id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }); // v299
+  if (r) return tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb });
   const kb = { inline_keyboard: [...(sdCfg().on ? [[{ text: '🎁 Probar gratis primero', callback_data: 'sd:go' }]] : [])] };
   return r ? tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb }) : tg('sendMessage', { chat_id: chat, text: `💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`, reply_markup: kb });
 }
@@ -8244,7 +8276,7 @@ h1{margin:0 0 4px;font-size:24px}.sub{margin:0 0 18px;color:#9fb6c2;font-size:14
 .op:hover{border-color:#a78bfa;background:rgba(167,139,250,.12)}.op b{font-size:16px}.op small{display:block;color:#9fb6c2;font-size:12.5px}.op .p{margin-left:auto;font-size:20px;font-weight:900;white-space:nowrap}
 .op.best{border-color:#f472b6;background:linear-gradient(120deg,rgba(14,165,233,.16),rgba(236,72,153,.16))}.tag{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:900;padding:2px 7px;border-radius:99px;background:#ec4899;color:#fff;vertical-align:2px}
 .acc{margin:6px 0 18px;padding:14px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}.acc.ok{border-color:rgba(74,222,128,.45)}.acc.soon{border-color:rgba(251,191,36,.55)}.acc.off{border-color:rgba(248,113,113,.55)}.acc.demo{border-color:rgba(167,139,250,.55)}
-.acc-h{display:flex;justify-content:space-between;align-items:center;font-weight:800;margin-bottom:10px}.acc-h b{font-size:18px}.acc-r{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.acc-r small{display:block;color:#9fb6c2;font-size:11.5px}.acc-r b{font-size:15px;word-break:break-all}
+.acc-h{display:flex;justify-content:space-between;align-items:center;font-weight:800;margin-bottom:10px}.acc-h b{font-size:18px}.acc-r{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.acc-r small{display:block;color:#9fb6c2;font-size:11.5px}.acc-r b{font-size:15px;word-break:break-all}.acc-r .wide{grid-column:1/-1}.acc-r .wide b{word-break:normal;overflow-wrap:anywhere}
 h2{font-size:17px;margin:22px 0 8px}.btn2{display:block;text-align:center;padding:14px;border-radius:14px;color:#fff;font-weight:800;text-decoration:none;background:linear-gradient(90deg,#22c55e,#0ea5e9)}.code{font-size:18px;letter-spacing:.1em;color:#fde68a}
 details{margin-top:18px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}summary{cursor:pointer;font-weight:800}.pre{white-space:pre-wrap;color:#cfe0ea;font-size:13.5px;line-height:1.5;margin:10px 0 0}
 .hl{display:flex;flex-wrap:wrap;gap:8px}.hl a{flex:1;min-width:110px;text-align:center;padding:12px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#fff;text-decoration:none;font-weight:700}
@@ -8407,7 +8439,7 @@ async function cpRoute(req, res, pathname) {
   const state = c.demo ? (ended ? '¡Tu prueba ha terminado! 🎬 Actívala ahora y sigue viendo al momento, con todo como lo dejaste.' : `Estás probando el servicio hasta el <b>${H(dmyT(c.expiresAt))}</b>. Actívalo ya como cuenta y no pierdas nada.`)
     : left < 0 ? `Tu cuenta caducó el <b>${H(fmtD(c.expires))}</b>. Al pagar vuelve a funcionar al momento.` : left === 0 ? 'Tu cuenta vence <b>hoy</b>. Lo que pagues se suma a tu fecha.' : `Tu cuenta vence el <b>${H(fmtD(c.expires))}</b> (en ${left} ${left === 1 ? 'día' : 'días'}). Lo que pagues se suma a esa fecha.`;
   const card = `<div class="acc ${st[2]}"><div class="acc-h"><span>${st[0]} ${st[1]}</span>${c.demo ? '' : `<b>${H(fmtD(c.expires))}</b>`}</div>
-    <div class="acc-r"><div><small>Usuario</small><b>${H(c.embyName)}</b></div><div><small>Pantallas</small><b>${c.screens || 1}</b></div>${c.demo ? '' : `<div><small>Quedan</small><b>${left < 0 ? 0 : left} ${left === 1 ? 'día' : 'días'}</b></div>`}</div></div>`;
+    <div class="acc-r"><div${String(c.embyName || '').length > 12 ? ' class="wide"' : ''}><small>Usuario</small><b>${H(c.embyName)}</b></div><div><small>Pantallas</small><b>${c.screens || 1}</b></div>${c.demo ? '' : `<div><small>Quedan</small><b>${left < 0 ? 0 : left} ${left === 1 ? 'día' : 'días'}</b></div>`}</div></div>`;
   let renew = '';
   if (ctx) {
     const scrs = cpScreens(c, ctx), cur0 = c.screens || 1;
