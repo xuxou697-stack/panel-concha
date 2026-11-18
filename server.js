@@ -7058,6 +7058,23 @@ route('GET', '/api/bot-stats', SUPER, () => {
   const live = db.clients.filter((c) => !c.demo && c.status === 'active');
   return { sum, series, miss, linked: live.filter((c) => c.tgChat).length, live: live.length, subs: live.filter((c) => c.feedSub).length, watching: Object.keys(watchLoad()).length };
 });
+/* v293: al tocar una cifra de «Uso del bot», qué clientes son */
+route('GET', '/api/bot-stats/who', SUPER, ({ req }) => {
+  const k = String(new URL(req.url, 'http://x').searchParams.get('k') || ''), st = db.botStats || { days: {} }, from = addDays(today(), -29);
+  const cnt = new Map(), lastAt = new Map(), keys = { search: ['hit', 'miss'] }[k] || [k];
+  for (const [d, x] of Object.entries(st.days)) {
+    if (d < from) continue;
+    if (k === 'users') { for (const id of x.u || []) { let n = 0; for (const m of Object.values(x.c || {})) n += m[id] || 0; cnt.set(id, (cnt.get(id) || 0) + (n || 1)); if (!lastAt.has(id) || lastAt.get(id) < d) lastAt.set(id, d); } continue; }
+    for (const kk of keys) for (const [id, n] of Object.entries((x.c || {})[kk] || {})) { const i = Number(id); cnt.set(i, (cnt.get(i) || 0) + n); if (!lastAt.has(i) || lastAt.get(i) < d) lastAt.set(i, d); }
+  }
+  const row = (c, n, last) => ({ id: c.id, name: c.panelName, emby: c.embyName, srv: (db.servers.find((s) => s.id === c.serverId) || {}).name || '', n: n || 0, last: last || '', expires: c.expires, status: c.status });
+  let list;
+  const live = db.clients.filter((c) => !c.demo && c.status === 'active');
+  if (k === 'linked') list = live.filter((c) => c.tgChat).map((c) => row(c, 0, '')).sort((a, b) => a.name.localeCompare(b.name));
+  else if (k === 'subs') list = live.filter((c) => c.feedSub).map((c) => row(c, 0, '')).sort((a, b) => a.name.localeCompare(b.name));
+  else list = [...cnt.entries()].map(([id, n]) => { const c = db.clients.find((x) => x.id === id); return c ? row(c, n, lastAt.get(id)) : null; }).filter(Boolean).sort((a, b) => b.n - a.n || b.last.localeCompare(a.last));
+  return { k, list: list.slice(0, 500), total: list.length, old: Object.entries(st.days).some(([d, x]) => d >= from && (x.u || []).length && !x.c) };
+});
 route('DELETE', '/api/bot-stats/miss', SUPER, ({ body }) => lock(async () => { const k = String((body || {}).k || ''); if (db.botStats && db.botStats.miss[k]) delete db.botStats.miss[k]; saveDb(); return { ok: true }; }));
 /** v280: publicar ahora «Lo más visto de la semana» (para probar cómo queda) */
 route('POST', '/api/feed/:id/top', STAFF, async ({ me, params }) => {
@@ -7240,7 +7257,7 @@ function saveWatch(force) {
 function botStat(k, c) {
   const st = db.botStats || (db.botStats = { days: {}, miss: {} }), t = today(), d = st.days[t] || (st.days[t] = {});
   d[k] = (d[k] || 0) + 1;
-  if (c) { d.u = d.u || []; if (!d.u.includes(c.id) && d.u.length < 2000) d.u.push(c.id); }
+  if (c) { d.u = d.u || []; if (!d.u.includes(c.id) && d.u.length < 2000) d.u.push(c.id); d.c = d.c || {}; const m = d.c[k] || (d.c[k] = {}); m[c.id] = (m[c.id] || 0) + 1; } // v293: quién
   const keys = Object.keys(st.days); if (keys.length > 62) for (const x of keys.sort().slice(0, keys.length - 62)) delete st.days[x];
 }
 function botStatSum(ks, days = 30) {
@@ -7289,7 +7306,7 @@ async function epAlertTick() {
           try {
             let pic = null; if (g.pid) { try { pic = await posterBytes(s, g.pid); } catch { /* sin carátula */ } }
             if (pic) await tgPhoto(c.tgChat, pic.buf, cap, kb, true, pic.type); else await tg('sendMessage', { chat_id: c.tgChat, text: cap, parse_mode: 'HTML', reply_markup: kb });
-            botStat('ep'); sent++;
+            botStat('ep', c); sent++;
           } catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) break; }
           await new Promise((r) => setTimeout(r, 80));
         }
@@ -7333,7 +7350,7 @@ async function wrapSend() {
     const left = diffDays(c.expires, t);
     if (left > days || left < 1 || (c.tgSent || []).includes(c.expires + ':wrap')) continue;
     const x = wrapData(c); if (!x || x.m < 120) continue; // con menos de 2 horas vistas no merece la pena
-    try { await tg('sendMessage', wrapTg(c, x)); c.tgSent = [...(c.tgSent || []), c.expires + ':wrap'].slice(-12); botStat('wrap'); addLog('aviso', c, '«Tu mes» enviado por Telegram (lo que ha visto en el último mes)', null); n++; }
+    try { await tg('sendMessage', wrapTg(c, x)); c.tgSent = [...(c.tgSent || []), c.expires + ':wrap'].slice(-12); botStat('wrap', c); addLog('aviso', c, '«Tu mes» enviado por Telegram (lo que ha visto en el último mes)', null); n++; }
     catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) { delete c.tgChat; } else break; }
   }
   if (n) saveDb();

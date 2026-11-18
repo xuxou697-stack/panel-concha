@@ -2763,7 +2763,8 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 #dlg.wide{width:min(900px,96vw);max-width:96vw}
 .fd-bot{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;border:1px dashed var(--line)}
 .fd-bot.on{border-style:solid;border-color:color-mix(in srgb,#2aa3e6 50%,var(--line));background:color-mix(in srgb,#2aa3e6 10%,var(--surface))}
-.bs-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:16px}.bs-k{padding:14px;border-radius:14px;background:color-mix(in srgb,var(--c) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}.bs-k b{display:block;font-size:26px;color:var(--c)}.bs-k span{font-size:12.5px;color:var(--muted)}
+.bs-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:16px}.bs-k{padding:14px;border-radius:14px;background:color-mix(in srgb,var(--c) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}.bs-k b{display:block;font-size:26px;color:var(--c)}.bs-k span{font-size:12.5px;color:var(--muted)}button.bs-k{text-align:left;font:inherit;color:inherit;cursor:pointer;position:relative;transition:transform .15s,box-shadow .15s}button.bs-k:hover{transform:translateY(-2px);box-shadow:0 8px 22px -10px var(--c)}.bs-k i{display:block;font-style:normal;font-size:11.5px;font-weight:700;color:var(--c);margin-top:6px;opacity:.85}
+.bw-l{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:60vh;overflow:auto}.bw-l li{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.bw-l li>div{flex:1;min-width:0}.bw-l li b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bw-l li small{color:var(--muted);font-size:12px}.bw-n{font-weight:800;color:var(--accent,#38bdf8);white-space:nowrap}.bw-q{width:100%;margin:0 0 10px}
 .bs-c{margin-bottom:16px}.bs-bars{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:6px}.bs-bars i{flex:1;background:linear-gradient(#38bdf8,#0ea5e9);border-radius:4px 4px 1px 1px;min-width:4px}
 .bs-miss{list-style:none;margin:0;padding:0;display:grid;gap:6px}.bs-miss li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.bs-miss li b{display:block}.bs-miss li small{color:var(--muted);font-size:12px}
 .gr-card.c7{--g:#10b981}.gr-card.c8{--g:#e879f9}
@@ -5688,15 +5689,15 @@ function vBotStats() {
   if (!r || (r.at && Date.now() - r.at > 30000)) { if (!r || !r.busy) { S.bst = { busy: true }; api('GET', '/api/bot-stats').then((x) => { S.bst = { ...x, at: Date.now() }; if (S.view === 'botstats') render(); }, (e) => { S.bst = { error: e.message }; if (S.view === 'botstats') render(); }); } return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
   if (r.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (r.error) return head(TT, sub) + `<p class="err">${esc(r.error)}</p>`;
-  const u = r.sum, k = (n, t, col) => `<div class="bs-k" style="--c:${col}"><b>${n}</b><span>${t}</span></div>`;
+  const u = r.sum, k = (n, t, col, key) => `<button type="button" class="bs-k" style="--c:${col}" data-act="bs-who" data-k="${key}" title="Ver qué clientes son"><b>${n}</b><span>${t}</span><i>Ver quién ›</i></button>`;
   const max = Math.max(1, ...r.series.map((x) => x.n));
   const bars = r.series.map((x) => `<i title="${esc(x.d.split('-').reverse().join('/'))}: ${x.n}" style="height:${Math.max(3, Math.round(x.n / max * 100))}%"></i>`).join('');
   const searches = u.hit + u.miss, pctMiss = searches ? Math.round(u.miss / searches * 100) : 0;
   const miss = r.miss.length ? r.miss.map((m) => `<li><div><b>${esc(m.q)}</b><small>${plural(m.people, 'cliente', 'clientes')} · ${plural(m.n, 'vez', 'veces')} · ${fmtTs(m.last, true)}</small></div><button type="button" class="btn sm ghost" data-act="bs-done" data-k="${esc(m.k)}" title="Quitar de la lista">✓ Ya lo tengo</button></li>`).join('') : '<li class="muted">Nadie ha buscado nada que no tengamos en estos 30 días. 🎉</li>';
   return head(TT, sub) + `<div class="bs-kpis">
-    ${k(u.users, 'clientes han usado el bot', '#0ea5e9')}${k(r.linked + ' / ' + r.live, 'clientes activos con el bot', '#22c55e')}${k(r.subs, 'apuntados a las novedades', '#f59e0b')}
-    ${k(u.news, 'veces han abierto Novedades', '#f43f5e')}${k(u.item, 'fichas vistas', '#a855f7')}${k(u.top, 'veces «Lo más visto»', '#f97316')}
-    ${k(searches, 'búsquedas con la lupa', '#38bdf8')}${k(u.ep, 'avisos de capítulo nuevo', '#10b981')}${k(u.wrap, '«Tu mes» enviados', '#e879f9')}</div>
+    ${k(u.users, 'clientes han usado el bot', '#0ea5e9', 'users')}${k(r.linked + ' / ' + r.live, 'clientes activos con el bot', '#22c55e', 'linked')}${k(r.subs, 'apuntados a las novedades', '#f59e0b', 'subs')}
+    ${k(u.news, 'veces han abierto Novedades', '#f43f5e', 'news')}${k(u.item, 'fichas vistas', '#a855f7', 'item')}${k(u.top, 'veces «Lo más visto»', '#f97316', 'top')}
+    ${k(searches, 'búsquedas con la lupa', '#38bdf8', 'search')}${k(u.ep, 'avisos de capítulo nuevo', '#10b981', 'ep')}${k(u.wrap, '«Tu mes» enviados', '#e879f9', 'wrap')}</div>
   <div class="gr-card bs-c"><div class="gr-h"><span class="gr-i">📈</span><div><h3>Uso cada día</h3><p>Novedades, fichas, carátulas, lo más visto y búsquedas, día a día (30 días).</p></div></div><div class="gr-b"><div class="bs-bars">${bars}</div></div></div>
   <div class="gr-card bs-c"><div class="gr-h"><span class="gr-i">🔎</span><div><h3>Lo que buscan y no tenemos</h3><p>${searches ? `${pctMiss} % de las búsquedas no encontraron nada. ` : ''}Arriba, lo que más clientes distintos han buscado. Cuando lo añadas, pulsa «Ya lo tengo».</p></div></div>
     <div class="gr-b"><ul class="bs-miss">${miss}</ul></div></div>`;
@@ -8192,6 +8193,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 293, d: '2026-11-18', items: ['👆 Bot › Uso del bot: toca cualquier cifra y te dice qué clientes son (quién ha usado el bot, quién está apuntado a las novedades, quién ha buscado…), con un botón para abrir su ficha'] },
   { v: 292, d: '2026-11-18', team: ['🖥️ En Bot › Mis novedades ya puedes elegir de qué servidores quieres recibir las novedades: toca ✕ para quitar uno y ＋ para volver a ponerlo'], items: ['🖥️ Mis novedades (vendedores): cada vendedor elige de qué servidores le llegan las novedades, a su Telegram y a su canal (✕ quitar · ＋ volver a poner)'] },
   { v: 291, d: '2026-11-17', team: ['🔔 El bot avisa a cada cliente cuando llega un capítulo nuevo de la serie que está viendo', '🎬 Unos días antes de caducar, el bot le manda «Tu mes»: lo que ha visto en el último mes', '🔥 En Novedades del bot, nuevo botón «Lo más visto de la semana»'], items: ['🔔 Capítulo nuevo de su serie: si un cliente está viendo una serie y llega un capítulo nuevo, el bot le avisa solo a él, con la carátula (Bot › Automáticos)', '🎬 «Tu mes»: unos días antes de caducar le llega lo que ha visto en el último mes (horas, películas, capítulos, su serie favorita) con el botón de renovar (Bot › Automáticos)', '🔎 Nuevo Bot › Uso del bot: cuánto usan Novedades y la lupa, y la lista de lo que buscan y no tenemos', '🔥 En Novedades del bot, «Lo más visto de la semana» con su ficha y tráiler'] },
   { v: 290, d: '2026-11-17', team: ['🎬 En las novedades del bot, cada ficha tiene ahora el botón «Ver el tráiler»'], items: ['🎬 Bot · Novedades: cada ficha tiene un botón «🎬 Ver el tráiler» (el de la película o serie; si no tiene, abre la búsqueda en YouTube)', '🧹 Quitados los botones que no hacían nada («·» y «1 / 2»): ahora solo «◀️ Anteriores» y «Ver 8 más ▶️»'] },
@@ -11017,6 +11019,15 @@ document.addEventListener('click', (e) => {
   if (a === 'iv-save') { const fm = $('#ivForm'), g = (n) => fm.elements[n];
     el.disabled = true; api('PUT', '/api/referral', { days: +g('days').value, newDays: +g('newDays').value, max: +g('max').value, promo: { on: g('pon').checked, name: g('pname').value, until: g('puntil').value } })
       .then(() => { toast('🎁 Invita a un amigo: guardado'); S.inv = null; reload().catch(() => render()); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'bs-who') { // v293: qué clientes hay detrás de cada cifra
+    const k = el.dataset.k, T = { users: ['👥 Han usado el bot', 'vez', 'veces'], linked: ['🤖 Clientes activos con el bot'], subs: ['🔔 Apuntados a las novedades'], news: ['🍿 Han abierto Novedades', 'vez', 'veces'], item: ['🎬 Han visto fichas', 'ficha', 'fichas'], top: ['🔥 Han mirado «Lo más visto»', 'vez', 'veces'], search: ['🔎 Han buscado con la lupa', 'búsqueda', 'búsquedas'], ep: ['🔔 Les llegó «capítulo nuevo»', 'aviso', 'avisos'], wrap: ['🎬 Les llegó «Tu mes»', 'vez', 'veces'] }[k] || ['Clientes'];
+    api('GET', '/api/bot-stats/who?k=' + encodeURIComponent(k)).then((r) => {
+      const rows = r.list.map((x) => `<li data-q="${esc((x.name + ' ' + x.emby + ' ' + x.srv).toLowerCase())}"><div><b>${esc(x.name)}</b><small>@${esc(x.emby)}${x.srv ? ' · ' + esc(x.srv) : ''}${x.last ? ' · último ' + esc(x.last.split('-').reverse().slice(0, 2).join('/')) : ''}</small></div>${x.n && T[1] ? `<span class="bw-n">${plural(x.n, T[1], T[2])}</span>` : ''}<button type="button" class="btn sm ghost" data-act="ficha" data-id="${x.id}">📇 Ficha</button></li>`).join('');
+      openDlg({ title: `${T[0]} · ${r.total}`, submit: null, wide: true,
+        body: `${r.total > 8 ? '<input class="bw-q" type="search" placeholder="Buscar cliente…" oninput="const q=this.value.toLowerCase();this.nextElementSibling.querySelectorAll(&quot;li&quot;).forEach((l)=>{l.hidden=!!q&&!l.dataset.q.includes(q)})">' : ''}<ul class="bw-l">${rows || '<li class="muted">Nadie todavía.</li>'}</ul>${r.old && !['linked', 'subs'].includes(k) ? '<p class="muted small" style="margin:10px 0 0">ℹ️ El detalle de quién se apunta desde hoy: lo de días anteriores solo cuenta en el número.</p>' : ''}<p class="muted small" style="margin:8px 0 0">Últimos 30 días.</p>` });
+    }, (e) => toast(e.message, true));
+    return;
+  }
   if (a === 'bs-done') { api('DELETE', '/api/bot-stats/miss', { k: el.dataset.k }).then(() => { toast('✓ Quitado de la lista'); S.bst = null; render(); }, (e) => toast(e.message, true)); return; }
   if (a === 'mn-srv') { const f = S.mynov, id = +el.dataset.id; if (!f || !f.srv) return;
     const skip = f.srv.filter((x) => (x.id === id ? x.on : !x.on)).map((x) => x.id), x = f.srv.find((y) => y.id === id);
