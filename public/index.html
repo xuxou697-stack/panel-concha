@@ -2763,6 +2763,11 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 #dlg.wide{width:min(900px,96vw);max-width:96vw}
 .fd-bot{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;border:1px dashed var(--line)}
 .fd-bot.on{border-style:solid;border-color:color-mix(in srgb,#2aa3e6 50%,var(--line));background:color-mix(in srgb,#2aa3e6 10%,var(--surface))}
+.bs-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:16px}.bs-k{padding:14px;border-radius:14px;background:color-mix(in srgb,var(--c) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 35%,var(--line))}.bs-k b{display:block;font-size:26px;color:var(--c)}.bs-k span{font-size:12.5px;color:var(--muted)}
+.bs-c{margin-bottom:16px}.bs-bars{display:flex;align-items:flex-end;gap:3px;height:120px;padding-top:6px}.bs-bars i{flex:1;background:linear-gradient(#38bdf8,#0ea5e9);border-radius:4px 4px 1px 1px;min-width:4px}
+.bs-miss{list-style:none;margin:0;padding:0;display:grid;gap:6px}.bs-miss li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.bs-miss li b{display:block}.bs-miss li small{color:var(--muted);font-size:12px}
+.gr-card.c7{--g:#10b981}.gr-card.c8{--g:#e879f9}
+.mn-srvs{margin:-4px 0 14px}.mn-srvs small{display:block;color:var(--muted);margin-bottom:7px}.mn-srvs>div{display:flex;flex-wrap:wrap;gap:7px}.mn-srv{display:inline-flex;align-items:center;gap:8px;padding:7px 8px 7px 12px;border-radius:999px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13.5px;cursor:pointer;text-decoration:line-through}.mn-srv b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,#22c55e 22%,transparent);color:#4ade80;font-size:12px;text-decoration:none}.mn-srv.on{border:1.5px solid color-mix(in srgb,#8b5cf6 55%,var(--line));background:color-mix(in srgb,#8b5cf6 14%,transparent);color:var(--text);text-decoration:none}.mn-srv.on b{background:color-mix(in srgb,#ef4444 20%,transparent);color:#f87171}
 .iv-st{display:inline-flex;padding:7px 13px;border-radius:999px;font-weight:700;font-size:13px;margin:-4px 0 14px;background:color-mix(in srgb,var(--muted) 14%,transparent);color:var(--muted)}.iv-st.on{background:color-mix(in srgb,#22c55e 18%,transparent);color:#4ade80}
 .iv-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}.iv-col{display:grid;gap:16px}@media (max-width:860px){.iv-grid{grid-template-columns:1fr}}
 .iv-c .gr-b{padding-top:4px}.iv-h{margin:16px 0 8px;font-size:14px}
@@ -3080,7 +3085,7 @@ function navGroups() {
     { v: 'seguimiento', t: 'Seguimiento demos', i: 'timer', n: S.d.followPending || 0, hot: true },
     ...(canDo('servers') ? [{ v: 'canales', t: 'Canal de novedades', i: 'tv' }] : []),
     ...(['reseller', 'sub'].includes(me().role) && S.d.settings.feedVend !== false ? [{ v: 'misnov', sec: 'Para ti', t: 'Mis novedades', i: 'tv' }] : []),
-    ...(sys ? [{ v: 'botcfg', sec: 'Ajustes', t: 'Conexión del bot', i: 'sliders' }] : [])];
+    ...(isSuper() ? [{ v: 'botstats', sec: 'Para ti', t: 'Uso del bot', i: 'chart' }] : []), ...(sys ? [{ v: 'botcfg', sec: 'Ajustes', t: 'Conexión del bot', i: 'sliders' }] : [])];
   let g = [
     { k: 'ini', items: [{ v: 'resumen', t: 'Resumen', i: 'grid' }, ...(isSuper() ? [{ v: 'crecer', t: 'Crecer', i: 'chart' }] : [])] },
     { k: 'cli', t: 'Clientes', i: 'users', items: cli },
@@ -3550,7 +3555,7 @@ function render() {
   if (d.salesEmail !== undefined) SALES = d.salesEmail || '';
   { const ss = $('#sideSales'); if (ss) ss.innerHTML = ''; } // v288: fuera del menú; está en Mi cuenta › Perfil (y en la pantalla de entrada)
   clearInterval(S.liveTimer);
-  const fn = { hoy: vHoy, resumen: vResumen, crecer: () => vCrecer('crecer'), botauto: () => vCrecer('bot'), invita: vInvita, canales: vCanales, misnov: vMisNov, bot: vBot, botcfg: vBotCfg, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
+  const fn = { hoy: vHoy, resumen: vResumen, crecer: () => vCrecer('crecer'), botauto: () => vCrecer('bot'), invita: vInvita, botstats: vBotStats, canales: vCanales, misnov: vMisNov, bot: vBot, botcfg: vBotCfg, cuentas: vCuentas, calendario: vCalendario, papelera: vPapelera, directo: vDirecto, equipo: vEquipo, creditos: vCreditos, movimientos: vMovimientos, ajustes: vAjustes, nuevo: vNuevo, cobros: vCobros, avisos: vAvisos, auditoria: vAuditoria, servidores: vServidores,
     demonueva: () => vNuevo(true), demosvencidas: () => vPapelera(true), movdemos: () => vMovimientos(true), equipooff: () => vEquipo(true), equipodel: vEquipoDel, stats: vStats, venajustes: vVenAjustes, plantillas: vPlantillas, vendedor: vVendedor, admins: vAdmins, perfil: vPerfil, tiempos: vTiempos, retencion: vRetencion, apariencia: vApariencia, notifs: vNotifs, importar: vImportar, logs: vLogs, guia: vGuia, monitor: vMonitor, pagos: vPagos, seguridad: vSeguridad, copias: vCopias, inactivos: vInactivos, uso: vUso, calidad: vCalidad, accesos: vAccesos, compartidas: vCompartidas, atencion: vAtencion, mensajeeq: vMensajeEq, cobrosven: vCobrosVen, seguimiento: vSeguimiento, mensajecli: vMensajeCli, ingresos: vIngresos, gastos: vGastos, socios: vSocios, migplex: vMigPlex, licencias: vLicencias, fechas: vFechas, estado: vEstado, avisotv: vAvisoTv, srvficha: vSrvFicha, cficha: vCFicha, appcli: vAppCli, appinst: vAppInst, cobrocli: vCobroCli, peticiones: vPeticiones, altrans: () => vAlertas('altrans'), alses: () => vAlertas('alses'), alhist: () => vAlertas('alhist') }[S.view];
   $('#main').dataset.v = S.view; // para dar a cada pantalla su toque de color
   document.body.classList.toggle('tech1', techOnly());
@@ -5579,7 +5584,7 @@ function vCrecer(mode = 'crecer') {
   // v278: «Crecer» (para ti: resumen semanal, plazas, quién no ve) y «Mensajes automáticos» del Bot (para tus clientes)
   const isBot = mode === 'bot', TT = isBot ? 'Mensajes automáticos' : 'Crecer';
   const sub = isBot ? 'Mensajes que el bot manda solo a tus clientes para no perderlos. Enciende los que quieras.' : 'Lo que te ayuda a ver cómo va el negocio y a tener sitio para clientes nuevos.';
-  const show = (k) => (isBot ? ['winback', 'survey', 'outage'] : ['weekly']).includes(k);
+  const show = (k) => (isBot ? ['winback', 'epAlert', 'wrap', 'survey', 'outage'] : ['weekly']).includes(k);
   const g = S.grow;
   if (!g || (g.at && Date.now() - g.at > 20000)) { loadGrow(); return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
   if (g.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
@@ -5591,7 +5596,7 @@ function vCrecer(mode = 'crecer') {
       <div class="gr-h"><span class="gr-i">${icon}</span><div><h3>${title}</h3><p>${desc}</p></div><span class="gr-st">${on ? 'Encendido' : 'Apagado'}</span></div>
       <div class="gr-b">${inner}</div></form>`;
   const save = (k) => `<button type="button" class="btn primary gr-save" data-act="grow-save" data-k="${k}">Guardar</button>`;
-  const wb = c.winback, wk = c.weekly, ou = c.outage, sv = c.survey;
+  const wb = c.winback, wk = c.weekly, ou = c.outage, sv = c.survey, ea = c.epAlert || { on: true }, wr = c.wrap || { on: true, days: 5 };
   const offerEx = 'Si vuelves esta semana, te regalamos 7 días extra.';
   const preview = `👋 Hola Laura, te echamos de menos en ${esc(BRAND.name)}\n\nTu cuenta caducó hace unos días y ya no puedes ver nada.${wb.offer ? '\n\n🎁 ' + esc(wb.offer) : ''}\n\n👉 Si quieres volver, se activa al momento y lo tienes todo como lo dejaste.`;
   const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -5610,6 +5615,19 @@ function vCrecer(mode = 'crecer') {
       ${g.winback.want.length ? `<div class="gr-list"><h4>🙋 Quieren volver: escríbeles</h4>${g.winback.want.map((x) => `<div class="gr-li"><div><b>${esc(x.name)}</b><small>@${esc(x.emby)} · ${fmtTs(x.at, true)}</small></div><div class="gr-li-a">${contact(x)}</div></div>`).join('')}</div>` : ''}
       <p class="gr-note">ℹ️ Solo llega a quien tiene el bot enlazado (${g.tgLinked} clientes). Sigue funcionando también el aviso de «rescate» a los pocos días de caducar.</p>
       ${save('winback')}`)}
+    ${card('epAlert', 'c7', '🔔', 'Capítulo nuevo de su serie', '<span class="aud c">👥 Le llega a tus clientes</span> Si un cliente está viendo una serie y llega un capítulo nuevo, el bot le avisa solo a él, con la carátula. Puede decir «no avisarme de esta serie».', ea.on, `
+      ${sw('on', ea.on, 'Avisar de los capítulos nuevos')}
+      <div class="gr-prev"><small>Así le llega:</small><pre>🔔 ¡Capítulo nuevo de The Last of Us!\n\n🆕 T2E05 · Sentir su amor\n\nComo estás viendo esta serie, te aviso en cuanto llega. ▶️ Ya lo tienes en tu app. ¡A disfrutarlo! 🍿</pre><div class="gr-prev-b">🔕 No avisarme de esta serie</div></div>
+      <div class="gr-kpis"><div><b>${g.ep || 0}</b><span>avisos en 30 días</span></div><div><b>${g.watching || 0}</b><span>clientes con series vistas</span></div></div>
+      <p class="gr-note">ℹ️ Se mira cada 15 minutos. De noche (de 22:00 a 10:00) no se manda nada: llegan por la mañana. Las series que ve cada cliente se van apuntando desde ahora.</p>
+      ${save('epAlert')}`)}
+    ${card('wrap', 'c8', '🎬', 'Tu mes en ' + esc(BRAND.name), '<span class="aud c">👥 Le llega a tus clientes</span> Unos días antes de caducar, el bot le manda lo que ha visto en el último mes: horas, películas, capítulos y su serie favorita. Le recuerda lo que pierde si no renueva.', wr.on, `
+      ${sw('on', wr.on, 'Mandar «Tu mes» antes de caducar')}
+      <label class="f">Cuándo<select name="days">${options([[3, '3 días antes'], [5, '5 días antes (recomendado)'], [7, '7 días antes']], wr.days || 5)}</select></label>
+      <div class="gr-prev"><small>Así le llega:</small><pre>🎬 Tu mes en ${esc(BRAND.name)}, Laura\n\n⏱️ Has visto 31 horas\n🎞️ 12 películas  ·  📺 48 capítulos\n\n⭐ Tu serie del mes: The Last of Us\n🍿 Tu película del mes: Dune: Parte dos\n\n📅 Tu cuenta vence en 5 días.\n¡Que no se te corte a mitad de temporada! 😉</pre><div class="gr-prev-b">💳 Renovar ahora</div></div>
+      <div class="gr-kpis"><div><b>${g.wrapN || 0}</b><span>enviados en 30 días</span></div></div>
+      <p class="gr-note">ℹ️ Solo a quien ha visto 2 horas o más en el mes. Lo que ve cada cliente se apunta desde ahora, así que el primer mes saldrá con menos datos.</p>
+      ${save('wrap')}`)}
     ${card('weekly', 'c2', '📊', 'Resumen semanal', '<span class="aud y">🙋 Solo te llega a ti</span> Cada semana te llega por Telegram cómo va el negocio: altas, renovaciones, bajas, dinero, caídas y plazas.', wk.on, `
       ${sw('on', wk.on, 'Mandarme el resumen')}
       <div class="row2"><label class="f">Día<select name="day">${options(days.map((d, i) => [i, d]), wk.day ?? 1)}</select></label><label class="f">Hora<select name="hour">${options([8, 9, 10, 11, 12, 13, 16, 18, 20, 21, 22].map((x) => [x, x + ':00']), wk.hour ?? 10)}</select></label></div>
@@ -5653,6 +5671,7 @@ function vBot() {
   const vend = staffy && canDo('servers') ? [tile('#a855f7', '🧑‍💼', 'Novedades para vendedores', 'Tus vendedores pueden recibir lo nuevo en su Telegram o tener su propio canal con su nombre. Se activa en Canal de novedades.', 'data-view="canales"')]
     : ven && d.settings.feedVend !== false ? [tile('#22c55e', '📺', 'Mis novedades', 'Recibe las pelis y series nuevas en tu Telegram para reenviarlas, o ten tu propio canal con tu nombre.', 'data-view="misnov"')] : [];
   const mine = [
+    ...(sup ? [tile('#0ea5e9', '📊', 'Uso del bot', 'Cuánto usan tus clientes Novedades y la lupa, y lo que buscan y no tenemos.', 'data-view="botstats"')] : []),
     tile('#2aa3e6', '👥', 'Quién tiene el bot', `${plural(x.linked.length, 'cliente lo tiene', 'clientes lo tienen')} enlazado (${x.pct} %). Hoy, ${x.today.length} ${x.today.length === 1 ? 'nuevo' : 'nuevos'}.`, 'data-act="tg-stats"'),
     ...(sys ? [tile('#94a3b8', '⚙️', 'Conexión del bot', 'El token, la imagen y el nombre del bot, el regalo por activarlo y los días de los avisos.', 'data-view="botcfg"')] : []),
   ];
@@ -5661,6 +5680,26 @@ function vBot() {
     sec('c', '👥', ven ? 'Para tus clientes' : 'Para tus clientes', 'Lo que el bot les manda a ellos, en su chat de Telegram.', cli) +
     sec('v', '🧑‍💼', ven ? 'Para ti como vendedor' : 'Para tus vendedores', ven ? 'Lo nuevo de tus servidores, para pasárselo a tus clientes.' : 'Lo que tus resellers pueden recibir para sus clientes.', vend) +
     sec('y', '🙋', 'Para ti', 'Cómo va el bot y cómo está conectado.', mine);
+}
+/* v291: «Uso del bot»: qué usan tus clientes y lo que buscan en la lupa y no encuentran */
+function vBotStats() {
+  const TT = 'Uso del bot', sub = '🙋 Solo para ti: cuánto usan tus clientes el bot en los últimos 30 días y lo que buscan y no tenemos.';
+  const r = S.bst;
+  if (!r || (r.at && Date.now() - r.at > 30000)) { if (!r || !r.busy) { S.bst = { busy: true }; api('GET', '/api/bot-stats').then((x) => { S.bst = { ...x, at: Date.now() }; if (S.view === 'botstats') render(); }, (e) => { S.bst = { error: e.message }; if (S.view === 'botstats') render(); }); } return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
+  if (r.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
+  if (r.error) return head(TT, sub) + `<p class="err">${esc(r.error)}</p>`;
+  const u = r.sum, k = (n, t, col) => `<div class="bs-k" style="--c:${col}"><b>${n}</b><span>${t}</span></div>`;
+  const max = Math.max(1, ...r.series.map((x) => x.n));
+  const bars = r.series.map((x) => `<i title="${esc(x.d.split('-').reverse().join('/'))}: ${x.n}" style="height:${Math.max(3, Math.round(x.n / max * 100))}%"></i>`).join('');
+  const searches = u.hit + u.miss, pctMiss = searches ? Math.round(u.miss / searches * 100) : 0;
+  const miss = r.miss.length ? r.miss.map((m) => `<li><div><b>${esc(m.q)}</b><small>${plural(m.people, 'cliente', 'clientes')} · ${plural(m.n, 'vez', 'veces')} · ${fmtTs(m.last, true)}</small></div><button type="button" class="btn sm ghost" data-act="bs-done" data-k="${esc(m.k)}" title="Quitar de la lista">✓ Ya lo tengo</button></li>`).join('') : '<li class="muted">Nadie ha buscado nada que no tengamos en estos 30 días. 🎉</li>';
+  return head(TT, sub) + `<div class="bs-kpis">
+    ${k(u.users, 'clientes han usado el bot', '#0ea5e9')}${k(r.linked + ' / ' + r.live, 'clientes activos con el bot', '#22c55e')}${k(r.subs, 'apuntados a las novedades', '#f59e0b')}
+    ${k(u.news, 'veces han abierto Novedades', '#f43f5e')}${k(u.item, 'fichas vistas', '#a855f7')}${k(u.top, 'veces «Lo más visto»', '#f97316')}
+    ${k(searches, 'búsquedas con la lupa', '#38bdf8')}${k(u.ep, 'avisos de capítulo nuevo', '#10b981')}${k(u.wrap, '«Tu mes» enviados', '#e879f9')}</div>
+  <div class="gr-card bs-c"><div class="gr-h"><span class="gr-i">📈</span><div><h3>Uso cada día</h3><p>Novedades, fichas, carátulas, lo más visto y búsquedas, día a día (30 días).</p></div></div><div class="gr-b"><div class="bs-bars">${bars}</div></div></div>
+  <div class="gr-card bs-c"><div class="gr-h"><span class="gr-i">🔎</span><div><h3>Lo que buscan y no tenemos</h3><p>${searches ? `${pctMiss} % de las búsquedas no encontraron nada. ` : ''}Arriba, lo que más clientes distintos han buscado. Cuando lo añadas, pulsa «Ya lo tengo».</p></div></div>
+    <div class="gr-b"><ul class="bs-miss">${miss}</ul></div></div>`;
 }
 /* v283: «Invita a un amigo»: regalos para los dos, máximo de amigos y promoción con imagen para el bot */
 function vInvita() {
@@ -5711,9 +5750,11 @@ function vMisNov() {
   if (f.busy) return head('Mis novedades', sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   if (f.error) return head('Mis novedades', sub) + `<p class="err">${esc(f.error)}</p>`;
   if (!f.hasBot) return head('Mis novedades', sub) + '<div class="panel"><div class="empty">Tu administrador todavía no tiene el bot de Telegram conectado.</div></div>';
-  const srv = f.servers.length ? f.servers.map((n) => `<span class="alc-tag">🖥️ ${esc(n)}</span>`).join(' ') : '<span class="muted small">Cuando tengas clientes activos, aquí salen sus servidores.</span>';
+  // v292: el vendedor elige de qué servidores quiere las novedades (✕ para quitar, ＋ para volver a ponerlo)
+  const sl = f.srv || [], onN = sl.filter((x) => x.on).length;
+  const srv = sl.length ? sl.map((x) => `<button type="button" class="mn-srv${x.on ? ' on' : ''}" data-act="mn-srv" data-id="${x.id}" title="${x.on ? 'Dejar de recibir las de este servidor' : 'Volver a recibir las de este servidor'}">🖥️ ${esc(x.name)}<b>${x.on ? '✕' : '＋'}</b></button>`).join('') : '<span class="muted small">Cuando tengas clientes activos, aquí salen sus servidores.</span>';
   const bot = f.bot ? '@' + f.bot : 'el bot';
-  return head('Mis novedades', sub) + `<p class="muted small" style="margin:-4px 0 12px">De estos servidores: ${srv}</p><div class="gr-grid">
+  return head('Mis novedades', sub) + `<div class="mn-srvs"><small>${sl.length > 1 ? `Recibes las de <b>${onN} de ${sl.length}</b> servidores · toca ✕ para quitar uno o ＋ para volver a ponerlo` : 'De estos servidores'}</small><div>${srv}</div>${sl.length && !onN ? '<p class="gr-warn" style="margin:8px 0 0">⚠️ Has quitado todos: no te llegará ninguna novedad.</p>' : ''}</div><div class="gr-grid">
     <form class="gr-card c2${f.tg ? ' on' : ''}" data-mn="tg" onsubmit="return false"><div class="gr-h"><span class="gr-i">📲</span><div><h3>En mi Telegram</h3><p>Te llegan a tu chat con ${esc(bot)}. Las reenvías a tus clientes o a tus grupos con un toque.</p></div><span class="gr-st">${f.tg ? 'Encendido' : 'Apagado'}</span></div>
       <div class="gr-b">${f.myTg ? '' : '<p class="gr-warn">⚠️ Primero enlaza tu Telegram en <b>Mi cuenta</b>.</p>'}
         <label class="gr-sw"><input type="checkbox" name="tg"${f.tg ? ' checked' : ''}><span class="sw"></span><b>Recibir las novedades</b></label>
@@ -8151,6 +8192,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 292, d: '2026-11-18', team: ['🖥️ En Bot › Mis novedades ya puedes elegir de qué servidores quieres recibir las novedades: toca ✕ para quitar uno y ＋ para volver a ponerlo'], items: ['🖥️ Mis novedades (vendedores): cada vendedor elige de qué servidores le llegan las novedades, a su Telegram y a su canal (✕ quitar · ＋ volver a poner)'] },
+  { v: 291, d: '2026-11-17', team: ['🔔 El bot avisa a cada cliente cuando llega un capítulo nuevo de la serie que está viendo', '🎬 Unos días antes de caducar, el bot le manda «Tu mes»: lo que ha visto en el último mes', '🔥 En Novedades del bot, nuevo botón «Lo más visto de la semana»'], items: ['🔔 Capítulo nuevo de su serie: si un cliente está viendo una serie y llega un capítulo nuevo, el bot le avisa solo a él, con la carátula (Bot › Automáticos)', '🎬 «Tu mes»: unos días antes de caducar le llega lo que ha visto en el último mes (horas, películas, capítulos, su serie favorita) con el botón de renovar (Bot › Automáticos)', '🔎 Nuevo Bot › Uso del bot: cuánto usan Novedades y la lupa, y la lista de lo que buscan y no tenemos', '🔥 En Novedades del bot, «Lo más visto de la semana» con su ficha y tráiler'] },
+  { v: 290, d: '2026-11-17', team: ['🎬 En las novedades del bot, cada ficha tiene ahora el botón «Ver el tráiler»'], items: ['🎬 Bot · Novedades: cada ficha tiene un botón «🎬 Ver el tráiler» (el de la película o serie; si no tiene, abre la búsqueda en YouTube)', '🧹 Quitados los botones que no hacían nada («·» y «1 / 2»): ahora solo «◀️ Anteriores» y «Ver 8 más ▶️»'] },
   { v: 289, d: '2026-11-17', team: ['🍿 Novedades del bot: cada título es un botón; al tocarlo llega su ficha con carátula, nota, géneros y de qué va. Y un botón para ver todas las carátulas del día'], items: ['🍿 Bot · Novedades: cada película y serie es ahora un botón (8 por página, con ◀️ ▶️). Al tocarla llega su ficha con carátula, nota, duración, géneros y sinopsis; en las series, también qué capítulos son nuevos', '🖼️ Nuevo botón «Ver las carátulas de este día»: manda un álbum con las carátulas'] },
   { v: 288, d: '2026-11-17', team: ['🧹 Menú más limpio: el recuadro «¿Quieres tu propio panel?» ya no ocupa sitio abajo del menú; está en Mi cuenta › Perfil'], items: ['🧹 Menú más limpio: quitado el recuadro «¿Quieres tu propio panel?» de abajo del menú (sobre todo molestaba en el móvil). Sigue en Mi cuenta › Perfil, en «Contratar el panel», y en la pantalla de entrada'] },
   { v: 287, d: '2026-11-17', team: ['🍿 Las novedades del bot ahora van por días: botones Hoy · Ayer · Dom 15…, con las pelis y las series de cada día bien separadas'], items: ['🍿 Bot · Novedades rediseñadas: van por días con botones (Hoy · Ayer · Dom 15…). Cada día enseña sus películas y sus series en recuadros separados, y las listas largas se pliegan con «mostrar más». Al tocar otro día se cambia el mismo mensaje, sin llenar el chat'] },
@@ -10973,6 +11017,10 @@ document.addEventListener('click', (e) => {
   if (a === 'iv-save') { const fm = $('#ivForm'), g = (n) => fm.elements[n];
     el.disabled = true; api('PUT', '/api/referral', { days: +g('days').value, newDays: +g('newDays').value, max: +g('max').value, promo: { on: g('pon').checked, name: g('pname').value, until: g('puntil').value } })
       .then(() => { toast('🎁 Invita a un amigo: guardado'); S.inv = null; reload().catch(() => render()); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
+  if (a === 'bs-done') { api('DELETE', '/api/bot-stats/miss', { k: el.dataset.k }).then(() => { toast('✓ Quitado de la lista'); S.bst = null; render(); }, (e) => toast(e.message, true)); return; }
+  if (a === 'mn-srv') { const f = S.mynov, id = +el.dataset.id; if (!f || !f.srv) return;
+    const skip = f.srv.filter((x) => (x.id === id ? x.on : !x.on)).map((x) => x.id), x = f.srv.find((y) => y.id === id);
+    el.disabled = true; api('PUT', '/api/my-feed', { skip }).then(() => { toast(x && x.on ? `Ya no te llegarán las de ${x.name}` : `Vuelven a llegarte las de ${x ? x.name : 'ese servidor'}`); S.mynov = null; render(); }, (e) => { toast(e.message, true); el.disabled = false; }); return; }
   if (a === 'iv-noimg') { api('POST', '/api/referral/img', { remove: true }).then(() => { toast('Imagen quitada'); S.inv = null; render(); }, (e) => toast(e.message, true)); return; }
   if (a === 'fd-top') { dFeedTop(+el.dataset.id); return; }
   if (a === 'fd-invbot') { el.disabled = true; api('POST', `/api/feed/${el.dataset.id}/invite-bot`, {}).then((r) => { toast(r.note); dlg.close(); loadFeed(); }, (e) => { toast(e.message, true); el.disabled = false; }); return; }
@@ -10985,6 +11033,7 @@ document.addEventListener('click', (e) => {
     const body = k === 'winback' ? { winback: { on, d7: fd.get('d7') === 'on', d30: fd.get('d30') === 'on', offer: fd.get('offer') || '' } }
       : k === 'weekly' ? { weekly: { on, day: +fd.get('day'), hour: +fd.get('hour') } }
       : k === 'outage' ? { outage: { on, chat: fd.get('chat') || '', delay: +fd.get('delay'), name: fd.get('name') === '1' } }
+      : k === 'epAlert' ? { epAlert: { on } } : k === 'wrap' ? { wrap: { on, days: +fd.get('days') } }
       : { survey: { on, days: +fd.get('days') } };
     if (k === 'outage' && on && !String(fd.get('chat') || '').trim()) { toast('Pega primero el enlace de tu grupo o canal.', true); return; }
     el.disabled = true;

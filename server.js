@@ -147,7 +147,9 @@ function loadDb() {
   // v263: «Crecer»: recuperar caducados, resumen semanal, avisos de caídas al grupo y encuesta
   { const g = db.settings.grow || {};
     db.settings.grow = { winback: { on: false, d7: true, d30: true, offer: '', ...(g.winback || {}) }, weekly: { on: true, day: 1, hour: 10, last: '', ...(g.weekly || {}) },
-      outage: { on: false, chat: '', thread: 0, delay: 3, name: true, ...(g.outage || {}) }, survey: { on: false, days: 30, since: '', ...(g.survey || {}) } }; }
+      outage: { on: false, chat: '', thread: 0, delay: 3, name: true, ...(g.outage || {}) }, survey: { on: false, days: 30, since: '', ...(g.survey || {}) },
+      epAlert: { on: true, ...(g.epAlert || {}) }, wrap: { on: true, days: 5, ...(g.wrap || {}) } }; }
+  if (!db.botStats || typeof db.botStats !== 'object') db.botStats = { days: {}, miss: {} };
   db.settings.security = { idleMin: 180, ...(db.settings.security || {}) };
   db.payCfg = { stripe: { on: false, key: '', whsec: '' }, nowpay: { on: false, key: '', ipn: '' }, min: 5, ...(db.payCfg || {}) };
   if (!Array.isArray(db.orders)) db.orders = [];
@@ -3351,6 +3353,7 @@ async function telegramNotices() {
   }
   if (due.length) saveDb();
   await surveySend();
+  await wrapSend(); // v291
 }
 /* ---------- v263: Crecer ---------- */
 /** Mensaje para recuperar a un cliente que no renovó (a los 7 o 30 días) */
@@ -3428,7 +3431,13 @@ function botNewsView(c, data, day, page = 0) {
       const label = it.k === 'm' ? `🎬 ${it.x.name}${it.x.year ? ` (${it.x.year})` : ''}` : `📺 ${it.x.name} · ${it.x.n === 1 ? '1 cap.' : it.x.n + ' caps.'}`;
       kb.push([{ text: label.slice(0, 60), callback_data: 'ni:' + key }]);
     }
-    if (pages > 1) kb.push([pg > 0 ? { text: '◀️', callback_data: `nd:${cur.d}:${pg - 1}` } : { text: '·', callback_data: 'nx' }, { text: `${pg + 1} / ${pages}`, callback_data: 'nx' }, pg < pages - 1 ? { text: '▶️', callback_data: `nd:${cur.d}:${pg + 1}` } : { text: '·', callback_data: 'nx' }]);
+    if (pages > 1) { // v290: solo botones que hacen algo, con texto claro
+      const left = all.length - (pg + 1) * NEWS_PAGE, row = [];
+      if (pg > 0) row.push({ text: '◀️ Anteriores', callback_data: `nd:${cur.d}:${pg - 1}` });
+      if (pg < pages - 1) row.push({ text: `Ver ${Math.min(left, NEWS_PAGE)} más ▶️`, callback_data: `nd:${cur.d}:${pg + 1}` });
+      kb.push(row);
+    }
+    if (feedTop(s).length) kb.push([{ text: '🔥 Lo más visto de la semana', callback_data: 'nt' }]);
     if (all.some((it) => it.x.pid)) kb.push([{ text: '🖼️ Ver las carátulas de este día', callback_data: 'na:' + newsKey({ cid: c.id, sid: s.id, d: cur.d, list: all.filter((it) => it.x.pid).slice(0, 10).map((it) => ({ pid: it.x.pid, name: it.x.name, k: it.k })) }) }]);
   }
   if (f.botOn && !c.demo && !c.feedSub) L.push('', `🔔 ¿Te aviso yo${f.botMode === 'now' ? ' en cuanto llegue algo' : ' cada día'}? Toca el botón de abajo.`);
@@ -3439,7 +3448,20 @@ function botNewsView(c, data, day, page = 0) {
   kb.push([{ text: '🔎 Buscar peli o serie', callback_data: 'bm:buscar' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]);
   return { text: L.join('\n').slice(0, 4000), kb: { inline_keyboard: kb } };
 }
+/** v291: «🔥 Lo más visto de la semana» en el bot (de su servidor), con cada título como botón para ver su ficha */
+async function botNewsTop(chat, c, editId) {
+  const s = c && db.servers.find((x) => x.id === c.serverId); if (!s) return;
+  botStat('top', c);
+  const top = feedTop(s, 10), med = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+  const L = [`🔥 <b>Lo más visto de la semana</b>`, `<i>en ${hEsc(botName())}, los últimos 7 días</i>`, ''];
+  L.push(top.length ? '👇 <b>Toca un título</b> para ver su carátula, de qué va y su tráiler.' : 'Todavía no hay datos de esta semana. ¡Vuelve en unos días! 🍿');
+  const kb = top.map((x, i) => [{ text: `${med[i]} ${x.t}${x.y && x.k === 'pelicula' ? ` (${x.y})` : ''} ${x.k === 'serie' ? '📺' : '🎬'}`.slice(0, 60), callback_data: 'ni:' + newsKey({ cid: c.id, sid: s.id, k: x.k === 'serie' ? 's' : 'm', pid: x.p, name: x.t, year: x.y, d: today(), top: true, eps: null, n: 0 }) }]);
+  kb.push([{ text: '🍿 Volver a las novedades', callback_data: 'bm:novedades' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]);
+  const m = { chat_id: chat, text: L.join('\n'), parse_mode: 'HTML', reply_markup: { inline_keyboard: kb } };
+  return tg('sendMessage', m);
+}
 async function botNews(chat, c, day, editId, page) {
+  if (!editId) botStat('news', c);
   let data;
   try { data = await botNewsData(c); } catch (e) { console.error('Bot (novedades):', e.message); return tg('sendMessage', { chat_id: chat, text: '⚪ Ahora no puedo mirar el servidor. Prueba en un rato. 🙏', reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }); }
   const v = botNewsView(c, data, day, page), m = { chat_id: chat, text: v.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: v.kb };
@@ -3450,17 +3472,19 @@ async function botNews(chat, c, day, editId, page) {
 async function newsInfo(s, pid) {
   if (s.kind === 'plex') {
     const m = [].concat((pxMC(await pxLocal(s, `/library/metadata/${encodeURIComponent(pid)}`)) || {}).Metadata || [])[0] || {};
-    return { overview: m.summary || '', rating: m.audienceRating || m.rating || 0, genres: [].concat(m.Genre || []).map((g) => g.tag).filter(Boolean), mins: m.duration ? Math.round(m.duration / 60000) : 0, year: m.year, age: m.contentRating || '' };
+    return { overview: m.summary || '', rating: m.audienceRating || m.rating || 0, genres: [].concat(m.Genre || []).map((g) => g.tag).filter(Boolean), mins: m.duration ? Math.round(m.duration / 60000) : 0, year: m.year, age: m.contentRating || '', trailer: '' };
   }
-  const r = await emby(s, 'GET', `/Items?Ids=${encodeURIComponent(pid)}&Fields=Overview,Genres,CommunityRating,ProductionYear,RunTimeTicks,OfficialRating`);
+  const r = await emby(s, 'GET', `/Items?Ids=${encodeURIComponent(pid)}&Fields=Overview,Genres,CommunityRating,ProductionYear,RunTimeTicks,OfficialRating,RemoteTrailers`);
   const it = ((r && r.Items) || [])[0] || {};
-  return { overview: it.Overview || '', rating: it.CommunityRating || 0, genres: it.Genres || [], mins: it.RunTimeTicks ? Math.round(it.RunTimeTicks / 6e8) : 0, year: it.ProductionYear, age: it.OfficialRating || '' };
+  const tr = (it.RemoteTrailers || []).map((x) => String(x.Url || '')).find((u) => /^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(u)) || '';
+  return { overview: it.Overview || '', rating: it.CommunityRating || 0, genres: it.Genres || [], mins: it.RunTimeTicks ? Math.round(it.RunTimeTicks / 6e8) : 0, year: it.ProductionYear, age: it.OfficialRating || '', trailer: tr };
 }
 async function botNewsItem(chat, key) {
   const v = newsKeys.get(key), back = (d, pg) => ({ inline_keyboard: [[{ text: `⬅️ Volver a ${d ? newsDayName(d) : 'las novedades'}`, callback_data: d ? `nd:${d}:${pg || 0}` : 'bm:novedades' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] });
   if (!v) return tg('sendMessage', { chat_id: chat, text: '⌛ Este botón ya no vale. Abre otra vez las novedades 👇', reply_markup: back() });
   const c = db.clients.find((x) => x.id === v.cid), s = db.servers.find((x) => x.id === v.sid);
   if (!c || String(c.tgChat) !== String(chat) || !s) return;
+  botStat('item', c);
   let info = {}; try { info = await newsInfo(s, v.pid); } catch { /* sin ficha: va lo que sabemos */ }
   const dur = info.mins ? (info.mins >= 60 ? `${Math.floor(info.mins / 60)} h ${info.mins % 60 ? (info.mins % 60) + ' min' : ''}`.trim() : `${info.mins} min`) : '';
   const meta = [info.rating ? `⭐ ${Number(info.rating).toFixed(1).replace('.', ',')}` : '', v.k === 'm' && dur ? `⏱️ ${dur}` : '', info.age ? `🔞 ${hEsc(info.age)}` : ''].filter(Boolean).join('  ·  ');
@@ -3472,10 +3496,13 @@ async function botNewsItem(chat, key) {
     const tag = (e) => `${e.se != null ? 'T' + e.se : ''}${e.ep != null ? 'E' + String(e.ep).padStart(2, '0') : ''}`;
     L.push('', `🆕 <b>${v.n === 1 ? 'Capítulo nuevo' : v.n + ' capítulos nuevos'}</b>`, ...v.eps.slice(0, 5).map((e) => `▸ ${tag(e)}${e.en ? ` · ${hEsc(String(e.en).slice(0, 40))}` : ''}`), ...(v.n > 5 ? [`<i>…y ${v.n - 5} más</i>`] : []));
   }
-  const tail = ['', `📅 Llegó ${newsDayName(v.d) === 'Hoy' ? 'hoy' : newsDayName(v.d) === 'Ayer' ? 'ayer' : 'el ' + newsDayName(v.d).toLowerCase()} · ▶️ Ya la tienes en tu app.`];
+  const tail = v.top ? ['', '🔥 De lo más visto esta semana · ▶️ Ya la tienes en tu app.'] : ['', `📅 Llegó ${newsDayName(v.d) === 'Hoy' ? 'hoy' : newsDayName(v.d) === 'Ayer' ? 'ayer' : 'el ' + newsDayName(v.d).toLowerCase()} · ▶️ Ya la tienes en tu app.`];
   const room = 1000 - [...L, ...tail].join('\n').length - 10;
   if (info.overview && room > 80) { const o = String(info.overview).replace(/\s+/g, ' ').trim(); L.push('', `<i>${hEsc(o.length > room ? o.slice(0, room - 1).replace(/\s+\S*$/, '') + '…' : o)}</i>`); }
-  const cap = [...L, ...tail].join('\n'), kb = back(v.d, v.pg);
+  const cap = [...L, ...tail].join('\n'), kb = v.top ? { inline_keyboard: [[{ text: '⬅️ Volver a lo más visto', callback_data: 'nt' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } : back(v.d, v.pg);
+  // v290: tráiler (el de la ficha si lo tiene; si no, la búsqueda en YouTube)
+  const yr = info.year || v.year, trUrl = info.trailer || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${v.name}${yr ? ' ' + yr : ''} tráiler español`)}`;
+  kb.inline_keyboard.unshift([{ text: '🎬 Ver el tráiler', url: trUrl }]);
   if (v.pid) { try { const pic = await posterBytes(s, v.pid); if (pic) return await tgPhoto(chat, pic.buf, cap, kb, true, pic.type); } catch (e) { console.error('Bot (ficha):', e.message); } }
   return tg('sendMessage', { chat_id: chat, text: cap, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb });
 }
@@ -3485,6 +3512,7 @@ async function botNewsAlbum(chat, key) {
   if (!v) return tg('sendMessage', { chat_id: chat, text: '⌛ Este botón ya no vale. Abre otra vez las novedades.', reply_markup: { inline_keyboard: [[{ text: '🍿 Novedades', callback_data: 'bm:novedades' }]] } });
   const c = db.clients.find((x) => x.id === v.cid), s = db.servers.find((x) => x.id === v.sid);
   if (!c || String(c.tgChat) !== String(chat) || !s) return;
+  botStat('album', c);
   const cfg = db.settings.notices.telegram, form = new FormData(), media = [];
   for (const [i, it] of v.list.entries()) {
     let pic = null; try { pic = await posterBytes(s, it.pid); } catch { /* sin carátula */ }
@@ -4039,6 +4067,7 @@ async function botSearch(chat, list, text) {
   for (const c of live.filter((x, i, a) => a.findIndex((y) => y.serverId === x.serverId) === i).slice(0, 2)) {
     try { for (const x of await searchFor(c, q)) { const k = String(x.name).toLowerCase() + '|' + (x.year || ''); if (!seen.has(k)) { seen.add(k); found.push(x); } } } catch (e) { failed++; console.error('Bot (buscar):', e.message); }
   }
+  { const cc = live[0]; if (found.length) botStat('hit', cc); else if (!failed) { botStat('miss', cc); botMiss(q, cc); } } // v291
   if (!found.length && failed) return tg('sendMessage', { chat_id: chat, text: '⚪ Ahora mismo no he podido buscar. Prueba otra vez en un rato.', reply_markup: menu });
   if (!found.length) return tg('sendMessage', { chat_id: chat, text: `😕 Ahora mismo no tenemos «${q}».\n\nPrueba a escribirlo de otra forma (por ejemplo, el título en inglés o solo una palabra).\n\n${again}`, reply_markup: menu });
   const norm = (x) => String(x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(), nq = norm(q);
@@ -4371,6 +4400,12 @@ async function botCallback(cq) {
     return botNews(chat, mine.find((x) => !x.demo) || mine[0], d, cq.message && cq.message.message_id, Number(pg) || 0);
   }
   if (data === 'nx') return;
+  if (data === 'nt') { const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length || botTooFast(chat)) return; if (!botAlive(mine)) return botExpired(chat, mine); return botNewsTop(chat, mine.find((x) => !x.demo) || mine[0]); } // v291
+  if (data.startsWith('em:')) { // v291: no avisar más de una serie
+    const key = data.slice(3), mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length) return;
+    await lock(async () => { for (const c of mine) c.epMute = [...new Set([...(c.epMute || []), key])].slice(-100); saveDb(); });
+    return tg('sendMessage', { chat_id: chat, text: '🔕 Hecho: no te avisaré más de esa serie.\n\nDe las demás que veas, sí. 😉', reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {});
+  }
   if (/^ni:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsItem(chat, data.slice(3)); } // v289: ficha de un título
   if (/^na:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsAlbum(chat, data.slice(3)); } // v289: carátulas del día
   if (/^pr:[1-4]$/.test(data)) { // v282: tarifas, cambiar de número de pantallas (se cambia el mismo mensaje)
@@ -6847,6 +6882,7 @@ const vendServers = (u) => db.servers.filter((s) => s.kind !== 'iptv' && !s.off 
 function feedVendors(s) {
   if (db.settings.feedVend === false) return [];
   return db.users.filter((u) => VEND_ROLES.includes(u.role) && !u.disabled && u.feed && ((u.feed.on && u.feed.chan) || u.feed.tg)
+    && !(u.feed.skip || []).includes(s.id) // v292: el vendedor elige de qué servidores las quiere
     && db.clients.some((c) => c.ownerId === u.id && c.serverId === s.id && c.status === 'active' && !c.demo));
 }
 async function feedVendorPost(s, f, v, p) {
@@ -6880,7 +6916,7 @@ async function feedVendorDigests() {
 route('GET', '/api/my-feed', VEND_ROLES, ({ me }) => {
   if (db.settings.feedVend === false) throw new HttpError(403, 'Tu administrador no tiene activadas las novedades para vendedores.');
   const f = vfeedOf(me);
-  return { ...f, digest: undefined, bot: db.settings.notices.telegram.bot || '', hasBot: !!db.settings.notices.telegram.token, myTg: userChats(me).length > 0, servers: vendServers(me).map((s) => s.name) };
+  return { ...f, digest: undefined, bot: db.settings.notices.telegram.bot || '', hasBot: !!db.settings.notices.telegram.token, myTg: userChats(me).length > 0, servers: vendServers(me).map((s) => s.name), srv: vendServers(me).map((s) => ({ id: s.id, name: s.name, on: !(f.skip || []).includes(s.id) })) };
 });
 route('PUT', '/api/my-feed', VEND_ROLES, ({ me, body }) => lock(async () => {
   if (db.settings.feedVend === false) throw new HttpError(403, 'Tu administrador no tiene activadas las novedades para vendedores.');
@@ -6892,6 +6928,7 @@ route('PUT', '/api/my-feed', VEND_ROLES, ({ me, body }) => lock(async () => {
   if (b.tg !== undefined) { f.tg = !!b.tg; if (f.tg && !userChats(me).length) throw new HttpError(400, 'Primero enlaza tu Telegram en Mi cuenta para poder recibirlas.'); }
   if (['now', 'day'].includes(b.tgMode)) f.tgMode = b.tgMode;
   if (Number(b.tgHour) >= 8 && Number(b.tgHour) <= 23) f.tgHour = Number(b.tgHour);
+  if (Array.isArray(b.skip)) { const ok = new Set(db.servers.map((x) => x.id)); f.skip = [...new Set(b.skip.map(Number).filter((id) => ok.has(id)))]; } // v292
   for (const s of vendServers(me)) { const sf = feedOf(s); if (!sf.since) sf.since = new Date().toISOString(); }
   saveDb();
   return { ok: true };
@@ -6899,7 +6936,7 @@ route('PUT', '/api/my-feed', VEND_ROLES, ({ me, body }) => lock(async () => {
 route('POST', '/api/my-feed/test', VEND_ROLES, async ({ me, body }) => {
   const b = body || {}, f = vfeedOf(me), chan = typeof b.chan === 'string' ? b.chan.trim() : f.chan;
   if (!chan) throw new HttpError(400, 'Pega primero el enlace o @usuario de tu canal.');
-  const s = vendServers(me)[0];
+  const s = vendServers(me).find((x) => !(f.skip || []).includes(x.id)) || vendServers(me)[0];
   let p = null;
   if (s) { try { const posts = await feedNew(s, { ...(s.feed || {}), since: new Date(Date.now() - 60 * 86400000).toISOString(), sent: [] }); p = posts.filter((x) => x.kind === 'movie').pop() || posts[posts.length - 1] || null; } catch { /* nada */ } }
   const sf = (s && s.feed) || {};
@@ -7012,6 +7049,16 @@ route('GET', '/api/referral/img', SUPER, () => {
   if (!fs.existsSync(REF_IMG)) throw new HttpError(404, 'No hay imagen.');
   return { __raw: fs.readFileSync(REF_IMG), headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } };
 });
+/* v291: «Uso del bot» y «Lo que buscan y no tenemos» (solo el superadministrador) */
+route('GET', '/api/bot-stats', SUPER, () => {
+  const st = db.botStats || { days: {}, miss: {} }, ks = ['news', 'item', 'album', 'top', 'hit', 'miss', 'ep', 'wrap'];
+  const sum = botStatSum(ks, 30), from = addDays(today(), -29), series = [];
+  for (let i = 29; i >= 0; i--) { const d = addDays(today(), -i), x = st.days[d] || {}; series.push({ d, n: (x.news || 0) + (x.item || 0) + (x.album || 0) + (x.top || 0) + (x.hit || 0) + (x.miss || 0) }); }
+  const miss = Object.entries(st.miss).filter(([, m]) => String(m.last).slice(0, 10) >= from).map(([k, m]) => ({ k, q: m.q, n: m.n, people: (m.cl || []).length, last: m.last })).sort((a, b) => b.people - a.people || b.n - a.n).slice(0, 60);
+  const live = db.clients.filter((c) => !c.demo && c.status === 'active');
+  return { sum, series, miss, linked: live.filter((c) => c.tgChat).length, live: live.length, subs: live.filter((c) => c.feedSub).length, watching: Object.keys(watchLoad()).length };
+});
+route('DELETE', '/api/bot-stats/miss', SUPER, ({ body }) => lock(async () => { const k = String((body || {}).k || ''); if (db.botStats && db.botStats.miss[k]) delete db.botStats.miss[k]; saveDb(); return { ok: true }; }));
 /** v280: publicar ahora «Lo más visto de la semana» (para probar cómo queda) */
 route('POST', '/api/feed/:id/top', STAFF, async ({ me, params }) => {
   needPerm(me, 'servers');
@@ -7037,7 +7084,7 @@ route('GET', '/api/grow', SUPER, () => {
   const sleepy = live.filter(sleepyC).length;
   const expired = db.clients.filter((c) => !c.demo && (c.status === 'expired' || (c.status === 'trash' && c.trashReason === 'Sin renovar'))).length;
   return { cfg: g, bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
-    tgLinked, rooms, sleepy, live: live.length, outage: growChat() };
+    tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, watching: Object.keys(watchLoad()).length };
 });
 route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   const g = db.settings.grow, b = body || {};
@@ -7045,6 +7092,8 @@ route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   if (b.weekly) { const w = b.weekly; g.weekly.on = !!w.on; if ([0, 1, 2, 3, 4, 5, 6].includes(Number(w.day))) g.weekly.day = Number(w.day); if (Number(w.hour) >= 8 && Number(w.hour) <= 22) g.weekly.hour = Number(w.hour); }
   if (b.outage) { const o = b.outage; g.outage.on = !!o.on; if (typeof o.chat === 'string') g.outage.chat = o.chat.trim().slice(0, 200); g.outage.thread = Math.max(0, Math.min(1e9, Number(o.thread) || 0)); if ([1, 2, 3, 5, 10, 15].includes(Number(o.delay))) g.outage.delay = Number(o.delay); g.outage.name = o.name !== false; }
   if (b.survey) { const v = b.survey; const was = g.survey.on; g.survey.on = !!v.on; if ([7, 15, 30, 60].includes(Number(v.days))) g.survey.days = Number(v.days); if (g.survey.on && (!was || !g.survey.since)) g.survey.since = today(); }
+  if (b.epAlert) g.epAlert.on = !!b.epAlert.on;
+  if (b.wrap) { g.wrap.on = !!b.wrap.on; if ([3, 5, 7].includes(Number(b.wrap.days))) g.wrap.days = Number(b.wrap.days); }
   addLog('ajustes', null, 'Ajustes de «Crecer» cambiados', me);
   saveDb();
   return { ok: true };
@@ -7134,7 +7183,7 @@ async function recordUsage() {
         day.m += mins; day.hours[hour] += mins;
         day.servers[s.id] = (day.servers[s.id] || 0) + mins;
         const c = byEmby.get(x.UserId);
-        if (c) day.clients[c.id] = (day.clients[c.id] || 0) + mins;
+        if (c) { day.clients[c.id] = (day.clients[c.id] || 0) + mins; watchAdd(c, s, it, mins); }
         const app = String(x.Client || 'Otra').slice(0, 40);
         day.apps[app] = (day.apps[app] || 0) + mins;
       }
@@ -7147,7 +7196,7 @@ async function recordUsage() {
     const keys = Object.keys(db.usage.days).sort();
     for (const k of keys.slice(0, Math.max(0, keys.length - 120))) delete db.usage.days[k];
     if (++usageDirty >= 5) { usageDirty = 0; lock(async () => saveDb()).catch(() => {}); }
-    saveConn();
+    saveConn(); saveWatch();
   } finally { usageBusy = false; }
 }
 
@@ -7156,6 +7205,139 @@ async function recordUsage() {
    Se guarda aparte, en data/conexiones.json: 45 días y hasta 150 tramos por cuenta.
    Cada tramo: [inicio, fin, aparato, app, ip, idAparato, viendo]
    ====================================================================== */
+/* ---------- v291: lo que ve cada cliente (para «capítulo nuevo de tu serie» y «Tu mes»). En data/visto-clientes.json, 40 días ---------- */
+const WATCH_FILE = path.join(DATA_DIR, 'visto-clientes.json');
+let watch = null, watchDirty = false, watchSaved = 0;
+function watchLoad() { if (watch) return watch; try { watch = JSON.parse(fs.readFileSync(WATCH_FILE, 'utf8')); } catch { watch = {}; } return watch; }
+function watchAdd(c, s, it, mins) {
+  const all = watchLoad(), w = all[c.id] || (all[c.id] = { sr: {}, d: {} }), t = today();
+  const d = w.d[t] || (w.d[t] = { m: 0, mv: {}, sr: {}, e: [] });
+  d.m += mins;
+  if (it.Type === 'Movie') { const k = String(it.Name || '').slice(0, 80); if (k) d.mv[k] = (d.mv[k] || 0) + mins; }
+  else if (it.Type === 'Episode') {
+    const n = String(it.SeriesName || '').slice(0, 80), eid = String(it.Id || '');
+    if (n) d.sr[n] = (d.sr[n] || 0) + mins;
+    if (eid && !d.e.includes(eid) && d.e.length < 200) d.e.push(eid);
+    const key = String(it.SeriesId || n); if (key) w.sr[key] = { n, sid: s.id, last: t };
+  }
+  watchDirty = true;
+}
+function saveWatch(force) {
+  if (FROZEN || !watch || !watchDirty || (!force && Date.now() - watchSaved < 120000)) return;
+  try {
+    const lim = addDays(today(), -40), limS = addDays(today(), -60);
+    for (const k of Object.keys(watch)) {
+      if (!db.clients.some((c) => String(c.id) === k)) { delete watch[k]; continue; }
+      const w = watch[k];
+      for (const d of Object.keys(w.d || {})) if (d < lim) delete w.d[d];
+      for (const x of Object.keys(w.sr || {})) if (w.sr[x].last < limS) delete w.sr[x];
+    }
+    fs.writeFileSync(WATCH_FILE + '.tmp', JSON.stringify(watch)); fs.renameSync(WATCH_FILE + '.tmp', WATCH_FILE);
+    watchDirty = false; watchSaved = Date.now();
+  } catch (e) { console.error('Visto:', e.message); }
+}
+/* ---------- v291: uso del bot (lo que se usa y lo que buscan y no tenemos), 60 días ---------- */
+function botStat(k, c) {
+  const st = db.botStats || (db.botStats = { days: {}, miss: {} }), t = today(), d = st.days[t] || (st.days[t] = {});
+  d[k] = (d[k] || 0) + 1;
+  if (c) { d.u = d.u || []; if (!d.u.includes(c.id) && d.u.length < 2000) d.u.push(c.id); }
+  const keys = Object.keys(st.days); if (keys.length > 62) for (const x of keys.sort().slice(0, keys.length - 62)) delete st.days[x];
+}
+function botStatSum(ks, days = 30) {
+  const st = db.botStats || { days: {} }, from = addDays(today(), -(days - 1)), out = {}, users = new Set();
+  for (const k of ks) out[k] = 0;
+  for (const [d, x] of Object.entries(st.days)) if (d >= from) { for (const k of ks) out[k] += x[k] || 0; for (const u of x.u || []) users.add(u); }
+  out.users = users.size; return out;
+}
+const missNorm = (q) => String(q).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ]+/g, ' ').trim();
+function botMiss(q, c) {
+  const st = db.botStats || (db.botStats = { days: {}, miss: {} }), k = missNorm(q).slice(0, 60); if (k.length < 2) return;
+  const m = st.miss[k] || (st.miss[k] = { q: String(q).slice(0, 60), n: 0, first: new Date().toISOString(), last: '', cl: [] });
+  m.n++; m.last = new Date().toISOString(); if (c && !m.cl.includes(c.id) && m.cl.length < 50) m.cl.push(c.id);
+  const ks = Object.keys(st.miss); if (ks.length > 400) { const old = ks.sort((a, b) => String(st.miss[a].last).localeCompare(String(st.miss[b].last))).slice(0, ks.length - 400); for (const x of old) delete st.miss[x]; }
+}
+/* ---------- v291: «🔔 Capítulo nuevo de tu serie»: a cada cliente, solo de las series que está viendo ---------- */
+let epBusy = false;
+async function epAlertTick() {
+  const ea = (db.settings.grow || {}).epAlert;
+  if (epBusy || !ea || !ea.on || !db.settings.notices.telegram.token || !db.settings.notices.telegram.on) return;
+  const h = new Date().getHours(); if (!process.env.TG_ANYTIME && (h < 10 || h >= 22)) return; // de noche no: se mandan por la mañana
+  epBusy = true;
+  try {
+    const all = watchLoad(), settle = Date.now() - 10 * 60000;
+    let sent = 0;
+    for (const s of db.servers) {
+      if (s.off || s.kind === 'iptv') continue;
+      const since = Date.parse(s.epSeen || 0) || Date.now() - 3600000;
+      let items; try { items = await newItemsOf(s, 600000); } catch { continue; }
+      const fresh = items.filter((x) => x.t === 's' && x.at > since && x.at <= settle);
+      s.epSeen = new Date(settle).toISOString();
+      if (!fresh.length) continue;
+      const by = new Map();
+      for (const x of fresh.sort((a, b) => a.at - b.at)) { const g = by.get(x.key) || { name: x.name, pid: x.pid, ids: x.ids, eps: [] }; g.eps.push(x); by.set(x.key, g); }
+      for (const c of db.clients) {
+        if (c.serverId !== s.id || !c.tgChat || c.status !== 'active' || c.off || c.demo || c.epOff) continue;
+        const w = all[c.id]; if (!w || !w.sr) continue;
+        let n = 0;
+        for (const [key, g] of by) {
+          const ws = w.sr[key]; if (!ws || diffDays(today(), ws.last) > 45 || (c.epMute || []).includes(key) || !feedCanSee(c, g.ids)) continue;
+          if (++n > 3) break;
+          const tag = (e) => `${e.se != null ? 'T' + e.se : ''}${e.ep != null ? 'E' + String(e.ep).padStart(2, '0') : ''}`;
+          const cap = [`🔔 <b>¡Capítulo nuevo de ${hEsc(g.name)}!</b>`, '', ...g.eps.slice(0, 4).map((e) => `🆕 ${tag(e) || 'Capítulo nuevo'}${e.en ? ` · ${hEsc(String(e.en).slice(0, 50))}` : ''}`), ...(g.eps.length > 4 ? [`<i>…y ${g.eps.length - 4} más</i>`] : []),
+            '', `Como estás viendo esta serie, te aviso en cuanto llega. ▶️ Ya lo tienes en tu app. ¡A disfrutarlo! 🍿`].join('\n');
+          const kb = { inline_keyboard: [[{ text: '🔕 No avisarme de esta serie', callback_data: ('em:' + key).slice(0, 64) }], [{ text: '🍿 Más novedades', callback_data: 'bm:novedades' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] };
+          try {
+            let pic = null; if (g.pid) { try { pic = await posterBytes(s, g.pid); } catch { /* sin carátula */ } }
+            if (pic) await tgPhoto(c.tgChat, pic.buf, cap, kb, true, pic.type); else await tg('sendMessage', { chat_id: c.tgChat, text: cap, parse_mode: 'HTML', reply_markup: kb });
+            botStat('ep'); sent++;
+          } catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) break; }
+          await new Promise((r) => setTimeout(r, 80));
+        }
+      }
+    }
+    await lock(async () => saveDb());
+    if (sent) console.log(`Capítulos nuevos: ${sent} avisos enviados`);
+  } finally { epBusy = false; }
+}
+/* ---------- v291: «🎬 Tu mes en …»: unos días antes de caducar, lo que ha visto en el último mes ---------- */
+function wrapData(c) {
+  const w = watchLoad()[c.id]; if (!w) return null;
+  const from = addDays(today(), -30), mv = {}, sr = {}; let m = 0, eps = 0;
+  for (const [d, x] of Object.entries(w.d || {})) {
+    if (d < from) continue;
+    m += x.m || 0; eps += (x.e || []).length;
+    for (const [k, v] of Object.entries(x.mv || {})) mv[k] = (mv[k] || 0) + v;
+    for (const [k, v] of Object.entries(x.sr || {})) sr[k] = (sr[k] || 0) + v;
+  }
+  const movies = Object.entries(mv).filter(([, v]) => v >= 30).sort((a, b) => b[1] - a[1]), series = Object.entries(sr).sort((a, b) => b[1] - a[1]);
+  return { m, eps, movies, series };
+}
+function wrapTg(c, x) {
+  const nm = botName(), name = String(c.panelName || '').split(/\s+/)[0], hrs = Math.round(x.m / 60), left = diffDays(c.expires, today());
+  const L = [`🎬 <b>Tu mes en ${hEsc(nm)}${name ? `, ${hEsc(name)}` : ''}</b>`, ''];
+  L.push(`⏱️ Has visto <b>${hrs >= 2 ? hrs + ' horas' : Math.round(x.m) + ' minutos'}</b>`);
+  const parts = [x.movies.length && `🎞️ <b>${x.movies.length}</b> ${x.movies.length === 1 ? 'película' : 'películas'}`, x.eps && `📺 <b>${x.eps}</b> ${x.eps === 1 ? 'capítulo' : 'capítulos'}`].filter(Boolean);
+  if (parts.length) L.push(parts.join('  ·  '));
+  if (x.series.length) L.push('', `⭐ Tu serie del mes: <b>${hEsc(x.series[0][0])}</b>`);
+  if (x.movies.length) L.push(`🍿 Tu película del mes: <b>${hEsc(x.movies[0][0])}</b>`);
+  L.push('', `📅 Tu cuenta vence ${left <= 0 ? '<b>hoy</b>' : left === 1 ? '<b>mañana</b>' : `en <b>${left} días</b>`} (${c.expires.split('-').reverse().join('/')}).`, '¡Que no se te corte a mitad de temporada! 😉');
+  const pay = !c.demo && cpEligible(c) && siteBase() ? { text: '💳 Renovar ahora', url: cpLink(c) } : { text: '💳 Cómo renovar', callback_data: 'bm:renovar' };
+  return { chat_id: c.tgChat, text: L.join('\n'), parse_mode: 'HTML', reply_markup: { inline_keyboard: [[pay], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } };
+}
+async function wrapSend() {
+  const wr = (db.settings.grow || {}).wrap; if (!wr || !wr.on) return;
+  const t = today(), days = Number(wr.days) || 5; let n = 0;
+  for (const c of db.clients) {
+    if (n >= 20) break;
+    if (!c.tgChat || c.demo || c.off || c.status !== 'active') continue;
+    const left = diffDays(c.expires, t);
+    if (left > days || left < 1 || (c.tgSent || []).includes(c.expires + ':wrap')) continue;
+    const x = wrapData(c); if (!x || x.m < 120) continue; // con menos de 2 horas vistas no merece la pena
+    try { await tg('sendMessage', wrapTg(c, x)); c.tgSent = [...(c.tgSent || []), c.expires + ':wrap'].slice(-12); botStat('wrap'); addLog('aviso', c, '«Tu mes» enviado por Telegram (lo que ha visto en el último mes)', null); n++; }
+    catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) { delete c.tgChat; } else break; }
+  }
+  if (n) saveDb();
+}
 const CONN_FILE = path.join(DATA_DIR, 'conexiones.json');
 let conn = null, connDirty = false, connSaved = 0;
 function connLoad() { if (conn) return conn; try { conn = JSON.parse(fs.readFileSync(CONN_FILE, 'utf8')); } catch { conn = {}; } return conn; }
@@ -11175,7 +11357,7 @@ function watchTakeover() {
     if (m && m.id && m.id !== INSTANCE) {
       SUPERSEDED = true;
       console.log('Ha arrancado la versión nueva del panel: este panel termina lo pendiente y deja de guardar.');
-      chain.then(() => { try { saveConn(true); } catch { /* nada */ } try { saveSessions(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } FROZEN = true; beat(true); });
+      chain.then(() => { try { saveConn(true); } catch { /* nada */ } try { saveWatch(true); } catch { /* nada */ } try { saveSessions(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } FROZEN = true; beat(true); });
       return;
     }
     beat(false);
@@ -11357,7 +11539,7 @@ server.listen(PORT, HOST, () => {
   setInterval(() => { if (++ticks % 60 === 0) { backupDb(); lock(async () => pruneRecords()).catch(() => {}); } if (live()) runLifecycle(); }, CHECK_EVERY_MS);
   if (LIC_CLIENT) { const lLoop = () => { licCheck().finally(() => { const s = licStatus(); setTimeout(lLoop, Number(process.env.LICENSE_MS) || (s && s.state !== 'ok' ? 5 * 60000 : 3600e3)); }); }; setTimeout(lLoop, 2000); }
   // Al apagar (Redeploy en Coolify) se guarda lo pendiente del historial de conexiones
-  for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveSessions(true); } catch { /* nada */ } try { saveConn(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } process.exit(0); });
+  for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { saveSessions(true); } catch { /* nada */ } try { saveConn(true); } catch { /* nada */ } try { saveWatch(true); } catch { /* nada */ } try { saveAgents(true); } catch { /* nada */ } process.exit(0); });
   const dLoop = () => { try { licDaily(); } catch (e) { console.error('Licencias:', e.message); } if (live()) try { vpayDaily(); } catch (e) { console.error('Cobros:', e.message); } if (live()) try { dailySummary(); } catch (e) { console.error('Resumen diario:', e.message); } if (live()) try { vendorDaily(); } catch (e) { console.error('Resumen de vendedores:', e.message); } try { expDaily(); } catch (e) { console.error('Gastos:', e.message); } setTimeout(dLoop, Number(process.env.DAILY_MS) || 60000); };
   setTimeout(dLoop, Number(process.env.DAILY_MS) || 30000);
   const qLoop = () => { (live() ? qualityDaily() : Promise.resolve()).catch((e) => console.error('Revisión de calidad:', e.message)).finally(() => setTimeout(qLoop, Number(process.env.QDAILY_MS) || 60000)); };
@@ -11375,5 +11557,6 @@ server.listen(PORT, HOST, () => {
   setTimeout(watchLoop, 5000);
   setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000);
   setInterval(() => { if (live()) weeklySend(false).catch((e) => console.error('Resumen semanal:', e.message)); }, Number(process.env.WEEKLY_MS) || 10 * 60000);
-  setInterval(() => { if (live()) feedTick().catch((e) => console.error('Canal de contenidos:', e.message)); }, Number(process.env.FEED_MS) || 10 * 60000); // mensajes que llegan al bot de Telegram
+  setInterval(() => { if (live()) feedTick().catch((e) => console.error('Canal de contenidos:', e.message)); }, Number(process.env.FEED_MS) || 10 * 60000);
+  setInterval(() => { if (live()) epAlertTick().catch((e) => console.error('Capítulos nuevos:', e.message)); }, Number(process.env.EP_MS) || 15 * 60000); // v291 // mensajes que llegan al bot de Telegram
 });
