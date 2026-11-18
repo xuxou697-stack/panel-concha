@@ -3145,7 +3145,11 @@ function navGroups() {
   g.push({ k: 'cta', t: 'Mi cuenta', i: 'shield', items: cta });
   if (sy.length) g.push({ k: 'sys', t: 'Sistema', i: 'sliders', items: sy });
   if (sys) g.push({ k: 'guia', items: [{ v: 'guia', t: 'Guía de inicio rápido', i: 'note' }] });
-  return g;
+  // v294: lo que más se usa, arriba: Clientes, Demos, Dinero, Equipo y Bot; después lo demás
+  const ORDER = ['cli', 'demo', 'din', 'ven', 'bot', 'mon', 'msg', 'emby', 'cta', 'sys', 'guia'];
+  const pos = (k) => { const i = ORDER.indexOf(k); return i < 0 ? -1 : i; };
+  const first = g.filter((x) => pos(x.k) < 0), rest = g.filter((x) => pos(x.k) >= 0).sort((a, b) => pos(a.k) - pos(b.k));
+  return [...first, ...rest];
 }
 const navItems = () => navGroups().flatMap((g) => g.items);
 function stage(c) {
@@ -8193,6 +8197,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 294, d: '2026-11-18', team: ['🧭 Menú reordenado: lo que más se usa, arriba (Clientes, Demos, Dinero, Equipo y Bot)'], items: ['🧭 Menú reordenado: Clientes, Demos, Dinero, Equipo y Bot arriba; después En directo, Mensajes, Servidores, Mi cuenta y Sistema'] },
   { v: 293, d: '2026-11-18', items: ['👆 Bot › Uso del bot: toca cualquier cifra y te dice qué clientes son (quién ha usado el bot, quién está apuntado a las novedades, quién ha buscado…), con un botón para abrir su ficha'] },
   { v: 292, d: '2026-11-18', team: ['🖥️ En Bot › Mis novedades ya puedes elegir de qué servidores quieres recibir las novedades: toca ✕ para quitar uno y ＋ para volver a ponerlo'], items: ['🖥️ Mis novedades (vendedores): cada vendedor elige de qué servidores le llegan las novedades, a su Telegram y a su canal (✕ quitar · ＋ volver a poner)'] },
   { v: 291, d: '2026-11-17', team: ['🔔 El bot avisa a cada cliente cuando llega un capítulo nuevo de la serie que está viendo', '🎬 Unos días antes de caducar, el bot le manda «Tu mes»: lo que ha visto en el último mes', '🔥 En Novedades del bot, nuevo botón «Lo más visto de la semana»'], items: ['🔔 Capítulo nuevo de su serie: si un cliente está viendo una serie y llega un capítulo nuevo, el bot le avisa solo a él, con la carátula (Bot › Automáticos)', '🎬 «Tu mes»: unos días antes de caducar le llega lo que ha visto en el último mes (horas, películas, capítulos, su serie favorita) con el botón de renovar (Bot › Automáticos)', '🔎 Nuevo Bot › Uso del bot: cuánto usan Novedades y la lupa, y la lista de lo que buscan y no tenemos', '🔥 En Novedades del bot, «Lo más visto de la semana» con su ficha y tráiler'] },
