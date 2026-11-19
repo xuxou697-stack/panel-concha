@@ -148,7 +148,8 @@ function loadDb() {
   { const g = db.settings.grow || {};
     db.settings.grow = { winback: { on: false, d7: true, d30: true, offer: '', ...(g.winback || {}) }, weekly: { on: true, day: 1, hour: 10, last: '', ...(g.weekly || {}) },
       outage: { on: false, chat: '', thread: 0, delay: 3, name: true, ...(g.outage || {}) }, survey: { on: false, days: 30, since: '', ...(g.survey || {}) },
-      epAlert: { on: true, ...(g.epAlert || {}) }, wrap: { on: true, days: 5, ...(g.wrap || {}) } }; }
+      epAlert: { on: true, ...(g.epAlert || {}) }, wrap: { on: true, days: 5, ...(g.wrap || {}) },
+      demoFollow: { on: true, d1: true, d3: true, ...(g.demoFollow || {}) }, bye: { on: true, ...(g.bye || {}) } }; } // v309
   if (!db.botStats || typeof db.botStats !== 'object') db.botStats = { days: {}, miss: {} };
   db.settings.selfDemo = { on: false, hours: 4, servers: [], quality: 'basico', perDay: 20, perHour: 5, userPrefix: 'prueba', userSuffix: '', passMode: 'random', links: [{ code: 'forobeta', name: 'Forobeta', on: true }, { code: 'canal', name: 'Mi canal de Telegram', on: true }], ...(db.settings.selfDemo || {}) }; // v295/v296
   if (!db.selfDemoUsed || typeof db.selfDemoUsed !== 'object') db.selfDemoUsed = {};
@@ -1043,6 +1044,7 @@ function lockDown(pol, client) {
   pol.EnableLiveTvManagement = false;
   pol.EnableVideoPlaybackTranscoding = false; // ningun cliente puede transcodificar video: es lo que mas carga el servidor
   pol.RemoteClientBitrateLimit = 0; // sin tope de velocidad en el servidor: un tope bajo obliga a convertir el video
+  if (db.settings.hideUsers !== false) { pol.IsHidden = true; pol.IsHiddenRemotely = true; } // v309: que nadie vea la lista de usuarios en la pantalla de entrada
   if (noDl() || (client && client.demo)) { pol.EnableContentDownloading = false; pol.EnableSyncTranscoding = false; pol.EnableMediaConversion = false; } // sin descargas (v296: las demos, siempre)
   else if (client && pol.EnableContentDownloading === false) pol.EnableContentDownloading = true; // v296: era demo y ya es cliente
   return pol;
@@ -1093,6 +1095,26 @@ function dlApplyAll(me) {
     job.finished = true;
     lock(async () => { addLog('ajustes', null, `Descargas de los clientes ${want ? 'bloqueadas' : 'permitidas'} en las cuentas: ${job.changed} ${job.changed === 1 ? 'cambiada' : 'cambiadas'} de ${job.total}${job.failed ? `, ${job.failed} con error (servidor sin respuesta)` : ''}`, me || null); saveDb(); }).catch(() => {});
     if (job.changed || job.failed) notifyStaff('payments', `⬇️ Descargas de los clientes ${want ? 'bloqueadas 🚫' : 'permitidas ✅'}: ${job.changed} ${job.changed === 1 ? 'cuenta cambiada' : 'cuentas cambiadas'} de ${job.total}${job.failed ? `. ${job.failed} no se pudieron cambiar (servidor sin respuesta): se arreglan solas al renovar o con «Reparar»` : ''}.`);
+  })();
+  return job;
+}
+/** v309: oculta (o vuelve a mostrar) en la pantalla de entrada a todos los usuarios que ya existen. Plex e IPTV no tienen esa pantalla */
+let hideJob = null;
+function hideApplyAll(me) {
+  if (hideJob && !hideJob.finished) return hideJob;
+  const want = db.settings.hideUsers !== false, list = db.clients.filter((c) => c.embyId && db.servers.some((x) => x.id === c.serverId && !x.off && ['emby', 'jellyfin'].includes(kindOf(x))));
+  const job = (hideJob = { total: list.length, done: 0, changed: 0, failed: 0, want, finished: false, at: new Date().toISOString() });
+  (async () => {
+    for (const c of list) {
+      const s = db.servers.find((x) => x.id === c.serverId);
+      try { await lock(async () => { if (!s) return; const pol = await readPolicy(s, c.embyId);
+        if (!!pol.IsHidden !== want || ('IsHiddenRemotely' in pol && !!pol.IsHiddenRemotely !== want)) { pol.IsHidden = want; if (kindOf(s) === 'emby' || 'IsHiddenRemotely' in pol) pol.IsHiddenRemotely = want; await emby(s, 'POST', `/Users/${c.embyId}/Policy`, pol); job.changed++; } }); }
+      catch (e) { if (e.embyStatus !== 404) job.failed++; }
+      job.done++; await new Promise((ok) => setTimeout(ok, 120));
+    }
+    job.finished = true;
+    lock(async () => { addLog('ajustes', null, `Usuarios ${want ? 'ocultados' : 'visibles'} en la pantalla de entrada: ${job.changed} de ${job.total}${job.failed ? `, ${job.failed} con error` : ''}`, me); saveDb(); }).catch(() => {});
+    if (job.changed || job.failed) notifyStaff('payments', `🙈 Pantalla de entrada: ${job.changed} ${job.changed === 1 ? 'usuario' : 'usuarios'} ${want ? 'ocultados' : 'visibles otra vez'} de ${job.total}${job.failed ? `. ${job.failed} no se pudieron (servidor sin respuesta)` : ''}`);
   })();
   return job;
 }
@@ -1172,7 +1194,7 @@ async function lifecycle() {
     try {
       if (c.demo && c.status === 'active' && now >= Date.parse(c.expiresAt)) {
         await removeAccess(c, true);
-        c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Demo terminada'; delete c.off; delete c.offBy;
+        c.status = 'trash'; c.trashedAt = t; c.trashReason = 'Demo terminada'; c.demoEndAt = new Date().toISOString(); delete c.off; delete c.offBy;
         addFollowup(c);
         addLog('papelera', c, 'Demo terminada: cuenta desactivada');
         demoEndTg(c);
@@ -1190,7 +1212,8 @@ async function lifecycle() {
       }
       if (c.status === 'trash') {
         const days = diffDays(t, c.trashedAt || t);
-        if (c.demo ? days >= demoPurgeDays : (purgeDays > 0 && days >= purgeDays)) {
+        const dfKeep = c.demo && c.tgChat && c.demoEndAt && dfOn() && !(c.dfSent || []).includes('f3') && Date.now() - Date.parse(c.demoEndAt) < 5 * 86400000 ? 4 : 0; // v309: se guarda hasta su 2.º mensaje
+        if (c.demo ? days >= Math.max(demoPurgeDays, dfKeep) : (purgeDays > 0 && days >= purgeDays)) {
           await deleteEmbyUser(c);
           db.clients = db.clients.filter((x) => x.id !== c.id);
           addLog('eliminada', c, c.demo ? 'Demo eliminada de Emby' : `Eliminada definitivamente tras ${purgeDays} días en la papelera`);
@@ -3120,17 +3143,20 @@ route('PUT', '/api/tv-notice', '*', ({ me, body }) => lock(async () => {
   return { ok: true };
 }));
 /* 2) Telegram: un bot propio. Cada cliente se enlaza abriendo su enlace personal */
-async function tg(method, body, token) {
+async function tg(method, body, token, ms = 15000) {
   const tk = token || db.settings.notices.telegram.token;
   let res;
-  try { res = await fetch(`${TG_API}/bot${tk}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(15000) }); }
+  try { res = await fetch(`${TG_API}/bot${tk}/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(ms) }); }
   catch (e) { throw new Error('No se pudo conectar con Telegram. Revisa la conexión a internet de este equipo.'); }
   const j = await res.json().catch(() => ({}));
   if (!j.ok && !token && body && body.chat_id && /blocked by the user|user is deactivated/i.test(j.description || '')) setImmediate(() => lock(async () => tgGone(body.chat_id, 'block')).catch(() => {})); // v304: nos ha bloqueado
   if (!j.ok) throw new Error(res.status === 401 || res.status === 404 ? 'Telegram no reconoce ese token. Cópialo de nuevo desde BotFather.' : `Telegram respondió: ${j.description || res.status}`);
   return j.result;
 }
-let tgBusy = false, tgLastErr = '';
+let tgBusy = false, tgLastErr = '', tgChain = Promise.resolve(), tgNext = null; // v310: escucha continua (las respuestas salen al momento)
+const TG_WAIT = Number(process.env.TG_WAIT_S != null ? process.env.TG_WAIT_S : 25);
+/** v310: «escribiendo…» arriba del chat mientras el bot prepara la respuesta */
+const tgTyping = (chat, action = 'typing') => { if (chat) tg('sendChatAction', { chat_id: chat, action }).catch(() => {}); };
 /** v304: el cliente ha bloqueado el bot: lo quitamos de los avisos y lo apuntamos como baja */
 function tgGone(chat, why) {
   let n = 0;
@@ -3142,10 +3168,13 @@ async function telegramPoll() {
   const cfg = db.settings.notices.telegram;
   // Tambien con los avisos a clientes apagados: el bot sirve para los avisos de seguridad del equipo
   if (!cfg.token || tgBusy) return;
-  tgBusy = true;
+  tgBusy = true; const t0 = Date.now(); let ok = false;
   try {
-    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: 0, allowed_updates: ['message', 'callback_query', 'my_chat_member', 'channel_post'] });
+    // v310: Telegram nos avisa en cuanto alguien toca un botón (antes se miraba cada 5 segundos)
+    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: TG_WAIT, allowed_updates: ['message', 'callback_query', 'my_chat_member', 'channel_post'] }, undefined, (TG_WAIT + 10) * 1000);
+    ok = true;
     if (!ups.length) return;
+    for (const u of ups) { const cq = u.callback_query, m = u.message; if (cq && cq.message && cq.message.chat) tgTyping(cq.message.chat.id); else if (m && m.chat && m.chat.type === 'private' && typeof m.text === 'string') tgTyping(m.chat.id); }
     const jobs = []; // respuestas del bot que consultan Emby: se hacen después, sin bloquear el panel
     await lock(async () => {
       for (const u of ups) {
@@ -3203,7 +3232,9 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
         const um = /^(?:\/start\s+)?(u(\d+)_[0-9a-f]{10})$/i.exec(text); // con /start o pegando solo el codigo
         if (/^\/stop\b/i.test(text)) {
           let n = 0;
-          for (const c of db.clients) if (c.tgChat === chat) { delete c.tgChat; n++; if (!c.demo) { c.tgOffAt = new Date().toISOString(); c.tgOffWhy = 'stop'; } } // v304: se ha dado de baja
+          const byeIds = [];
+          for (const c of db.clients) if (c.tgChat === chat) { delete c.tgChat; n++; if (!c.demo) { c.tgOffAt = new Date().toISOString(); c.tgOffWhy = 'stop'; c.tgOffChat = chat; byeIds.push(c.id); } } // v304: se ha dado de baja (v309: y le preguntamos por qué)
+          if (byeIds.length && (db.settings.grow.bye || {}).on !== false) jobs.push(() => tg('sendMessage', { chat_id: chat, text: '😢 Vaya… ¿nos dices por qué te vas? Es solo un toque y nos ayuda a mejorar:', reply_markup: byeKb(byeIds.slice(0, 3).join('.')) }).catch(() => {}));
           for (const x of db.users) {
             if ((x.tgExtra || []).includes(chat)) { x.tgExtra = x.tgExtra.filter((v) => v !== chat); n++; }
             if (x.tgChat === chat) { delete x.tgChat; if ((x.tgExtra || []).length) x.tgChat = x.tgExtra.shift(); n++; }
@@ -3246,9 +3277,14 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
       }
       saveDb();
     });
-    for (const j of jobs) { try { await j(); } catch (e) { console.error('Bot:', e.message); } }
+    // v310: las respuestas se preparan aparte (en orden), sin frenar la escucha de los siguientes toques
+    const run = jobs.slice(); tgChain = tgChain.then(async () => { for (const j of run) { try { await j(); } catch (e) { console.error('Bot:', e.message); } } });
   } catch (e) { if (tgLastErr !== e.message) console.error('Telegram:', e.message); tgLastErr = e.message; }
-  finally { tgBusy = false; }
+  finally {
+    tgBusy = false;
+    // seguir escuchando enseguida (si ha fallado, lo reintenta el reloj de cada 5 s)
+    if (ok && !SUPERSEDED && !tgNext) tgNext = setTimeout(() => { tgNext = null; if (!licLocked()) telegramPoll(); }, Date.now() - t0 < 1000 ? 1000 : 30);
+  }
 }
 /* ---------- Regalo por activar el bot (v249) ----------
    El superadministrador elige cuántos días (cuentas) y horas (demos) se regalan. Solo una vez por cuenta y solo si está activa */
@@ -3359,6 +3395,7 @@ async function telegramNotices() {
       const ago = diffDays(t, c.expires);
       for (const d of [7, 30]) if (wb['d' + d] !== false && ago >= d && ago <= d + 3 && !sent(c, 'w' + d)) { due.push([c, 'w' + d]); break; }
     } }
+  demoFollowSend().catch((e) => console.error('Demo (seguimiento):', e.message)); // v309
   for (const [c, k] of due.slice(0, 25)) {
     try {
       await tg('sendMessage', k === 'r' ? rescueTg(c) : k[0] === 'w' ? await winbackTg(c, +k.slice(1)) : expiringTg(c));
@@ -3576,6 +3613,37 @@ async function winbackTg(c, d) {
   if (c.status !== 'trash' && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Volver ahora', url: cpLink(c) }], [{ text: '🙋 Quiero volver, escríbeme', callback_data: 'wb:' + c.id }]] } };
   return { chat_id: c.tgChat, text, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🙋 Quiero volver, escríbeme', callback_data: 'wb:' + c.id }]] } };
 }
+/** v309: segunda oportunidad para las demos: al día siguiente y a los 3 días de terminar, con lo nuevo y el botón para quedarse */
+const dfOn = () => { const f = (db.settings.grow || {}).demoFollow; return !f || f.on !== false; };
+async function demoFollowTg(c, k) {
+  const nm = botName(), first = String(c.panelName || '').split(/\s+/)[0], w = demoWatch(c);
+  const n = await newSince({ ...c, expires: String(c.createdAt || today()).slice(0, 10) });
+  const fresh = newSinceText(n).replace('Desde que te fuiste', 'Desde tu prueba');
+  const pay = cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase();
+  const L = k === 'f1'
+    ? [`🍿 <b>${first ? hEsc(first) + ', ¿te' : '¿Te'} quedaste con ganas?</b>`, '', `Ayer terminó tu prueba en ${hEsc(nm)}. Tu usuario <b>${hEsc(c.embyName)}</b> sigue guardado${w.top ? `, y también por dónde ibas con <b>«${hEsc(w.top)}»</b>` : ', con todo como lo dejaste'}.`]
+    : [`🎬 <b>${first ? hEsc(first) + ', mira' : 'Mira'} lo que te estás perdiendo</b>`, '', `⏳ Tu usuario <b>${hEsc(c.embyName)}</b> se borra pronto. Si vuelves hoy, lo tienes todo como lo dejaste.`];
+  if (fresh) L.push('', hEsc(fresh));
+  L.push('', pay ? '🚀 <b>Vuelve en 1 minuto:</b> pagas con el enlace y sigues al momento ⚡' : '🙋 ¿Quieres volver? Pulsa el botón y te escribimos.');
+  const kb = [...(pay ? [[{ text: k === 'f1' ? '🚀 Quiero volver' : '🚀 Volver hoy', url: cpLink(c) }]] : []), [{ text: '🙋 Prefiero que me escribas', callback_data: 'wb:' + c.id }]];
+  return { chat_id: c.tgChat, text: L.join('\n'), parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: { inline_keyboard: kb } };
+}
+async function demoFollowSend() {
+  if (!dfOn()) return; const f = db.settings.grow.demoFollow; let n = 0;
+  for (const c of db.clients) {
+    if (n >= 15) break;
+    if (!c.demo || c.status !== 'trash' || c.trashReason !== 'Demo terminada' || !c.tgChat || !c.demoEndAt) continue;
+    const h = (Date.now() - Date.parse(c.demoEndAt)) / 3600000, sent = c.dfSent || [];
+    const k = f.d1 !== false && h >= 20 && h < 60 && !sent.includes('f1') ? 'f1' : f.d3 !== false && h >= 68 && h < 110 && !sent.includes('f3') ? 'f3' : '';
+    if (!k) continue;
+    try { await tg('sendMessage', await demoFollowTg(c, k)); c.dfSent = [...sent, k]; n++; addLog('aviso', c, k === 'f1' ? 'Demo: mensaje del día siguiente enviado' : 'Demo: mensaje de los 3 días enviado', null); }
+    catch (e) { if (/blocked|chat not found|deactivated/i.test(e.message)) delete c.tgChat; else break; }
+  }
+  if (n) saveDb();
+}
+/** v309: ¿por qué se va? Un toque, al escribir /stop o en el mensaje de rescate cuando no renueva */
+const BYE = [['precio', '💸 Es caro'], ['contenido', '📺 Falta contenido'], ['cortes', '🐢 Cortes o va lento'], ['nouso', '😴 No lo uso'], ['otro', '🤷 Otro motivo']];
+const byeKb = (ids) => ({ inline_keyboard: [BYE.slice(0, 2), BYE.slice(2, 4), BYE.slice(4)].map((r) => r.map(([k, t]) => ({ text: t, callback_data: `by:${k}:${ids}` }))) });
 /** Encuesta: «¿Qué tal el servicio?» unos días después del alta (solo a los dados de alta después de activarla) */
 async function surveySend() {
   const sv = db.settings.grow.survey;
@@ -3982,7 +4050,7 @@ function payCard(c, o) {
   cv.text('Válida hasta', W - 88, by + 14, 'r22', soft, 0.9, 'right'); cv.text(after, W - 88, by + 40, 'b40', cardMix(green, white, 0.5), 1, 'right');
   if (left >= 0) cv.text(cardTxt(`${left} ${left === 1 ? 'día' : 'días'} por delante`), W / 2 - 34, by + 70, 'r22', cardMix(amber, white, 0.4), 1, 'center');
   // Datos
-  const scr = rcScr(o), boxes = [['Plan', `${o.months} ${o.months === 1 ? 'mes' : 'meses'}`], ['Pantallas', String(scr)], ['Forma de pago', cardTxt(MANUAL[o.method] ? MANUAL[o.method].t : 'Tarjeta')], ['Nº de recibo', cardTxt(o.num || o.id)]];
+  const scr = rcScr(o), boxes = [['Plan', `${o.months} ${o.months === 1 ? 'mes' : 'meses'}`], ['Pantallas', String(scr)], ['Forma de pago', cardTxt(o.usdc ? 'USDC Polygon' : MANUAL[o.method] ? MANUAL[o.method].t : 'Tarjeta')], ['Nº de recibo', cardTxt(o.num || o.id)]];
   const gap = 16, bw = (W - 120 - gap * 3) / 4, cols = [sky, [139, 92, 246], pink, amber];
   boxes.forEach(([lb, v], i) => { const x = 60 + i * (bw + gap); cv.rect(x, 444, bw, 112, cols[i], 0.13, 20); cv.rect(x, 464, 5, 72, cols[i], 1, 3);
     cv.text(lb, x + 22, 462, 'r22', cardMix(cols[i], white, 0.55), 1); const vk = cv.measure(v, 'b28') <= bw - 36 ? 'b28' : 'r22'; cv.text(cv.fit(v, vk, bw - 36), x + 22, vk === 'b28' ? 500 : 504, vk, white); });
@@ -4516,7 +4584,7 @@ async function botCallback(cq) {
     return tg('sendMessage', { chat_id: chat, text: on ? '▶️ Demo automática reanudada: el enlace vuelve a crear demos.' : '⏸️ Demo automática pausada: el enlace ya no crea demos hasta que la reanudes.', reply_markup: { inline_keyboard: [[on ? { text: '⏸️ Pausar otra vez', callback_data: 'sdx:off' } : { text: '▶️ Reanudar', callback_data: 'sdx:on' }]] } }).catch(() => {});
   }
   if (data === 'sd:pr') return sdPrices(chat);
-  if (data.startsWith('dv:')) { // v300: pasos de la demo según el aparato
+  if (data === 'dv:list' || SD_DEV.some((x) => data === 'dv:' + x[0])) { // v300: pasos de la demo según el aparato (v309: sin pisar «Mis aparatos»)
     const c = db.clients.filter((x) => x.tgChat === chat && x.status === 'active' && !x.off).sort((a, b) => (b.demo ? 1 : 0) - (a.demo ? 1 : 0))[0]; if (!c) return;
     const k = data.slice(3);
     if (k === 'list') return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: '📲 <b>¿Dónde lo vas a ver?</b>\nElige tu aparato 👇', reply_markup: sdDevKb(c) });
@@ -4579,6 +4647,19 @@ async function botCallback(cq) {
       for (const u of to) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt }).catch(() => {});
     }
     return tg('sendMessage', { chat_id: chat, text: '🙌 ¡Gracias! Ya lo hemos avisado. Lo comprobamos y te activamos la cuenta enseguida. Te avisamos por aquí.' }).catch(() => {});
+  }
+  if (data.startsWith('by:')) { // v309: motivo de baja (de /stop o de «No voy a renovar»)
+    const [, k, idsRaw] = data.split(':'), ids = String(idsRaw || '').split('.').map(Number).filter(Boolean);
+    const mine = db.clients.filter((c) => ids.includes(c.id) && (String(c.tgChat) === String(chat) || String(c.tgOffChat) === String(chat)));
+    if (!mine.length) return;
+    if (k === 'q') return tg('sendMessage', { chat_id: chat, text: '😕 ¡Qué pena! ¿Nos dices por qué? Es solo un toque y nos ayuda a mejorar:', reply_markup: byeKb(mine.map((c) => c.id).join('.')) });
+    const r = BYE.find((x) => x[0] === k); if (!r) return;
+    const first = !mine.some((c) => c.leftWhy);
+    await lock(async () => { for (const c of mine) { c.leftWhy = { k, at: new Date().toISOString(), how: c.tgOffChat && !c.tgChat ? 'stop' : 'renew' }; addLog('aviso', c, `Motivo de la baja: ${r[1]}`, null); } saveDb(); });
+    if (first) { const c = mine[0], ow = db.users.find((u) => u.id === c.ownerId), txt = `🤔 ${c.panelName} (${c.embyName}) se va. Motivo: ${r[1]}`;
+      for (const u of db.users.filter((x) => x.role === 'super' || (ow && x.id === ow.id))) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt }).catch(() => {}); }
+    const more = k === 'cortes' ? '\n\nSi quieres, escríbenos y lo miramos: muchas veces se arregla cambiando de app o de ajuste.' : k === 'contenido' ? '\n\nSi echas algo en falta, dínoslo: añadimos novedades cada semana.' : '';
+    return tg('sendMessage', { chat_id: chat, text: `🙏 Gracias por decírnoslo, lo tendremos en cuenta.${more}\n\nSi un día quieres volver, aquí estaremos 💛` });
   }
   if (data.startsWith('wb:')) { // v263: «quiero volver» desde el mensaje de recuperación
     const c = db.clients.find((x) => x.id === Number(data.slice(3)));
@@ -4741,9 +4822,10 @@ function demoEndCard(c, w, from, pay) {
 }
 /** Mensaje de rescate: la cuenta caducó hace unos días; con el botón para volver si tiene pago online */
 function rescueTg(c) {
-  const text = fillText(tplFor(c.ownerId, 'rescue'), c);
-  if (cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) return { chat_id: c.tgChat, text: text + '\n\n👇 Renueva en 1 minuto con el botón de abajo y vuelve a ver al momento.', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Volver a ver ahora', url: cpLink(c) }]] } };
-  return { chat_id: c.tgChat, text: text + '\n\nEscríbeme y te la activo en un momento.', disable_web_page_preview: true };
+  const text = fillText(tplFor(c.ownerId, 'rescue'), c), byeOn = (db.settings.grow.bye || {}).on !== false; // v309: botón «No voy a renovar»
+  const byeRow = byeOn ? [[{ text: '🙊 No voy a renovar', callback_data: 'by:q:' + c.id }]] : [];
+  if (cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) return { chat_id: c.tgChat, text: text + '\n\n👇 Renueva en 1 minuto con el botón de abajo y vuelve a ver al momento.', disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '💳 Volver a ver ahora', url: cpLink(c) }], ...byeRow] } };
+  return { chat_id: c.tgChat, text: text + '\n\nEscríbeme y te la activo en un momento.', disable_web_page_preview: true, ...(byeRow.length ? { reply_markup: { inline_keyboard: byeRow } } : {}) };
 }
 route('PUT', '/api/notices', SUPER, ({ me, body }) => lock(async () => {
   const cur = db.settings.notices;
@@ -5384,7 +5466,7 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   if (before.demo) for (const f of db.followups) if (f.clientId === c.id && f.status !== 'bought') { f.status = 'bought'; f.doneAt = new Date().toISOString(); }
   if (cost > 0) { c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: me.id, credits: cost, from: base, to: c.expires, kind: before.demo ? 'alta' : 'renovacion' }].slice(-24); }
   if (!before.demo) addChurn(c.ownerId, 'ren');
-  addLog('renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
+  addLog(before.demo ? 'alta' : 'renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
   const soc = socAccount(me, c, plan.months, plan.screens, body, before.demo ? 'alta' : 'renovación');
   libCheckLater(c);
   saveDb();
@@ -7257,6 +7339,17 @@ route('GET', '/api/referral/img', SUPER, () => {
   return { __raw: fs.readFileSync(REF_IMG), headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } };
 });
 /* v295: pantalla «Demo automática» */
+function sdFunnel(cf, mine) {
+  const paidBy = new Map(); for (const o of db.orders || []) if (o.status === 'paid') paidBy.set(o.clientId, (paidBy.get(o.clientId) || 0) + (Number(o.amount) || 0));
+  const conv = new Set((db.orders || []).filter((o) => o.status === 'paid' && o.wasDemo).map((o) => o.clientId));
+  const rows = new Map(), add = (code, cid) => { const r = rows.get(code) || { n: 0, bought: 0, money: 0 }; r.n++; const c = db.clients.find((x) => x.id === cid);
+    if (conv.has(cid) || (c && !c.demo && c.status !== 'trash')) { r.bought++; r.money += paidBy.get(cid) || 0; } rows.set(code, r); };
+  const seen = new Set();
+  for (const u of Object.values(db.selfDemoUsed || {})) { if (!u || !u.clientId) continue; seen.add(u.clientId); const c = db.clients.find((x) => x.id === u.clientId); add(u.src != null ? u.src : c ? (c.sdGift ? 'regalo' : c.sdSrc || '') : '', u.clientId); }
+  for (const c of mine) if (!seen.has(c.id)) add(c.sdGift ? 'regalo' : c.sdSrc || '', c.id);
+  const name = (k) => (k === '' ? 'Enlace general' : k === 'regalo' ? '🎟️ Regalos de tus clientes' : ((cf.links || []).find((l) => l.code === k) || {}).name || k);
+  return [...rows.entries()].map(([k, r]) => ({ k, name: name(k), n: r.n, bought: r.bought, pct: r.n ? Math.round((r.bought / r.n) * 100) : 0, money: Math.round(r.money * 100) / 100 })).sort((a, b) => b.money - a.money || b.bought - a.bought || b.n - a.n);
+}
 route('GET', '/api/self-demo', SUPER, () => {
   const cf = sdCfg(), bot = db.settings.notices.telegram.bot || '';
   const mine = db.clients.filter((c) => c.selfDemo);
@@ -7265,6 +7358,7 @@ route('GET', '/api/self-demo', SUPER, () => {
   return { ...cf, passFixedEnc: undefined, passSet: !!cf.passFixedEnc, sel: cf.servers || [], bot, link: bot ? `https://t.me/${bot}?start=demo` : '', hasBot: !!db.settings.notices.telegram.token,
     servers: db.servers.filter((s) => !s.off && ['emby', 'jellyfin'].includes(kindOf(s))).map((s) => ({ id: s.id, name: s.name, kind: kindOf(s), free: srvMax(s) ? srvMax(s) - srvLoad(s) : null })),
     gifts: { n: mine.filter((c) => c.sdGift).length, bought: mine.filter((c) => c.sdGift && (paid.has(c.id) || (!c.demo && c.status === 'active'))).length },
+    funnel: sdFunnel(cf, mine), // v309: de dónde vienen tus clientes (%, y lo que te han pagado)
     devs: SD_DEV.map(([k, t]) => [t, mine.filter((c) => (c.sdDevs || []).includes(k)).length]), // v301: qué aparatos eligen
     pay: !!ctx, payAuto: !!(ctx && (ctx.key || ctx.pp)), today: sdToday(), total: mine.length, live: mine.filter((c) => c.demo && c.status === 'active').length,
     bought: mine.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length,
@@ -7361,10 +7455,14 @@ route('GET', '/api/grow', SUPER, () => {
   const sleepy = live.filter(sleepyC).length;
   const expired = db.clients.filter((c) => !c.demo && (c.status === 'expired' || (c.status === 'trash' && c.trashReason === 'Sin renovar'))).length;
   return { cfg: g, bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
+    df: { f1: db.clients.filter((c) => (c.dfSent || []).includes('f1')).length, f3: db.clients.filter((c) => (c.dfSent || []).includes('f3')).length, back: db.clients.filter((c) => (c.dfSent || []).length && !c.demo).length },
+    bye: BYE.map(([k, t]) => [t, db.clients.filter((c) => c.leftWhy && c.leftWhy.k === k).length]), byeList: db.clients.filter((c) => c.leftWhy).sort((a, b) => b.leftWhy.at.localeCompare(a.leftWhy.at)).slice(0, 20).map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, why: (BYE.find((x) => x[0] === c.leftWhy.k) || [])[1] || '', at: c.leftWhy.at, how: c.leftWhy.how, whatsapp: c.whatsapp || '', telegram: c.telegram || '' })),
     tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, watching: Object.keys(watchLoad()).length };
 });
 route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   const g = db.settings.grow, b = body || {};
+  if (b.demoFollow) { const w = b.demoFollow; g.demoFollow.on = !!w.on; g.demoFollow.d1 = w.d1 !== false; g.demoFollow.d3 = w.d3 !== false; } // v309
+  if (b.bye) g.bye.on = !!b.bye.on;
   if (b.winback) { const w = b.winback; g.winback.on = !!w.on; g.winback.d7 = w.d7 !== false; g.winback.d30 = w.d30 !== false; if (typeof w.offer === 'string') g.winback.offer = w.offer.trim().slice(0, 300); }
   if (b.weekly) { const w = b.weekly; g.weekly.on = !!w.on; if ([0, 1, 2, 3, 4, 5, 6].includes(Number(w.day))) g.weekly.day = Number(w.day); if (Number(w.hour) >= 8 && Number(w.hour) <= 22) g.weekly.hour = Number(w.hour); }
   if (b.outage) { const o = b.outage; g.outage.on = !!o.on; if (typeof o.chat === 'string') g.outage.chat = o.chat.trim().slice(0, 200); g.outage.thread = Math.max(0, Math.min(1e9, Number(o.thread) || 0)); if ([1, 2, 3, 5, 10, 15].includes(Number(o.delay))) g.outage.delay = Number(o.delay); g.outage.name = o.name !== false; }
@@ -7746,7 +7844,7 @@ async function sdCreate(chat, from, src = '') {
       await createInEmby(c, password);
       c.password = password;
       db.clients.push(c);
-      db.selfDemoUsed[uid] = { at: new Date().toISOString(), clientId: c.id };
+      db.selfDemoUsed[uid] = { at: new Date().toISOString(), clientId: c.id, src: ln ? ln.code : gv ? 'regalo' : '' }; // v309: de dónde viene (aunque la demo se borre)
       if (gv) gv.sdGifts = [...(gv.sdGifts || []), new Date().toISOString()].slice(-30); // v303
       addLog('demo', c, `🤖 Demo automática de ${sdHoursText(hours)} creada desde el bot de Telegram (${s.name})${ln ? ` · viene de «${ln.name}»` : ''}`, null);
       libCheckLater(c);
@@ -8278,7 +8376,7 @@ const cpLink = (c) => `${siteBase()}/pagar/${c.id}-${payKeyOf(c)}`;
    con un botón (Telegram o el panel). Al confirmarlo, la cuenta se renueva sola, igual que con Stripe */
 const MANUAL = { bizum: { t: 'Bizum', i: '📱' }, paypal: { t: 'PayPal', i: '🅿️' }, revolut: { t: 'Revolut', i: '🔵' } };
 const cpManual = (cfg) => { const m = (cfg && cfg.manual) || {}; return Object.keys(MANUAL).filter((k) => m[k]); };
-const payMethodTxt = (o) => (MANUAL[o.method] ? MANUAL[o.method].t : 'Tarjeta · pago online seguro');
+const payMethodTxt = (o) => (o.usdc ? 'USDC · red Polygon' : MANUAL[o.method] ? MANUAL[o.method].t : 'Tarjeta · pago online seguro');
 function cleanManual(b) {
   const out = {}, user = (x) => String(x || '').trim().replace(/^https?:\/\//i, '').replace(/^(www\.)?(paypal\.me|revolut\.me)\/?/i, '').replace(/^@/, '').replace(/\/.*$/, '');
   const bz = String(b.bizum || '').replace(/[\s.-]/g, '');
@@ -8346,7 +8444,7 @@ async function cpRemindTick() {
     if (rm.client && !o.claimed && !o.remC && age >= 15 * 60000 && age < 86400000 && c.tgChat && db.settings.notices.telegram.token) {
       o.remC = new Date().toISOString();
       const money = Number(o.amount).toLocaleString('es-ES', { style: 'currency', currency: o.currency || 'EUR' }), link = siteBase() && c.payKey ? `${siteBase()}/pagar/${c.id}-${c.payKey}?o=${o.id}` : '';
-      tg('sendMessage', { chat_id: c.tgChat, text: `👋 ¿Ya has hecho el pago de ${money} por ${MANUAL[o.method].t}?\n\nSi ya lo has enviado, pulsa el botón y lo confirmamos enseguida. Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto nos llegue.`,
+      tg('sendMessage', { chat_id: c.tgChat, text: `👋 ¿Ya has hecho el pago de ${money} por ${(MANUAL[o.method] || { t: 'USDC' }).t}?\n\nSi ya lo has enviado, pulsa el botón y lo confirmamos enseguida. Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto nos llegue.`,
         reply_markup: { inline_keyboard: [[{ text: '✅ Ya he pagado', callback_data: 'mc:' + o.id }], ...(/^https:\/\//.test(link) ? [[{ text: '💳 Ver cómo pagar', url: link }]] : [])] } }).catch(() => {});
     }
     const late = age >= 24 * 3600000 ? 2 : age >= 3 * 3600000 ? 1 : 0;
@@ -8359,7 +8457,7 @@ function cpCtx(c) {
   const o = db.users.find((u) => u.id === c.ownerId);
   if (!o || o.role === 'super' || o.role === 'admin') {
     const cfg = cpCfg();
-    return cfg.on && (cpStripeOk() || cpManual(cfg).length || ppOf(null)) ? { cfg, key: cpStripeOk() ? db.payCfg.stripe.key : null, pp: ppOf(null), vendor: null } : null;
+    return cfg.on && (cpStripeOk() || cpManual(cfg).length || ppOf(null) || usdcOk()) ? { cfg, key: cpStripeOk() ? db.payCfg.stripe.key : null, pp: ppOf(null), usdc: usdcOk(), vendor: null } : null;
   }
   const v = o.clientPay;
   if (!cpCfg().vendors || o.disabled || !v || !v.on || !(v.key || cpManual(v).length || ppOf(o))) return null;
@@ -8385,7 +8483,7 @@ async function mpAsk(o, early) {
 }
 /** Confirma (ok) o rechaza un pago a mano. Se llama dentro de lock() */
 async function mpDecide(o, ok, u, chat) {
-  if (!o || o.kind !== 'client' || !o.manual) throw new HttpError(404, 'Ese pago no existe.');
+  if (!o || o.kind !== 'client' || !(o.manual || o.usdc)) throw new HttpError(404, 'Ese pago no existe.');
   if (o.status !== 'pending') return o.status === 'paid' ? 'Este pago ya estaba confirmado ✅' : 'Este pago ya estaba marcado como no recibido.';
   const c = db.clients.find((x) => x.id === o.clientId);
   if (ok) {
@@ -8395,11 +8493,11 @@ async function mpDecide(o, ok, u, chat) {
     return c ? `✅ Confirmado. La cuenta de ${c.panelName} ya está renovada hasta el ${rcFmtD(c.expires)} y le ha llegado su recibo.` : '✅ Confirmado.';
   }
   o.status = 'rejected'; o.rejectedBy = u.name; o.rejectedAt = new Date().toISOString();
-  if (c) addLog('cobro', c, `Pago por ${MANUAL[o.method].t} de ${Number(o.amount).toFixed(2)} ${o.currency} marcado como no recibido por ${u.name} (concepto ${o.ref})`, u);
+  if (c) addLog('cobro', c, `Pago por ${(MANUAL[o.method] || { t: 'USDC' }).t} de ${Number(o.amount).toFixed(2)} ${o.currency} marcado como no recibido por ${u.name} (concepto ${o.ref})`, u);
   saveDb();
   if (c && c.tgChat) {
     const money = Number(o.amount).toLocaleString('es-ES', { style: 'currency', currency: o.currency || 'EUR' });
-    tg('sendMessage', { chat_id: c.tgChat, disable_web_page_preview: true, text: `😕 No hemos podido confirmar tu pago de ${money} por ${MANUAL[o.method].t} (concepto ${o.ref}).\n\nSi ya lo enviaste, no te preocupes: ${o.vendorId ? 'habla con tu proveedor y lo revisáis juntos.' : (botContact() ? 'escríbenos y lo revisamos:\n\n' + botContact() : 'escríbenos y lo revisamos.')}` }).catch(() => {});
+    tg('sendMessage', { chat_id: c.tgChat, disable_web_page_preview: true, text: `😕 No hemos podido confirmar tu pago de ${money} por ${(MANUAL[o.method] || { t: 'USDC' }).t} (concepto ${o.ref}).\n\nSi ya lo enviaste, no te preocupes: ${o.vendorId ? 'habla con tu proveedor y lo revisáis juntos.' : (botContact() ? 'escríbenos y lo revisamos:\n\n' + botContact() : 'escríbenos y lo revisamos.')}` }).catch(() => {});
   }
   return c ? `❌ Marcado como no recibido. A ${c.panelName} se le ha avisado.` : '❌ Marcado como no recibido.';
 }
@@ -8445,8 +8543,8 @@ async function cpPaid(o, via) {
     if (cost > 0) c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: vend.id, credits: cost, from: base, to: c.expires, kind: 'renovacion' }].slice(-24);
     notifyUser(vend, `💳 Tu cliente ${c.panelName} ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola hasta el ${c.expires.split('-').reverse().join('/')}.${cost ? `\nSe han descontado ${cost} créditos. Saldo: ${vend.credits}.` : ''}${vend.credits < 0 ? '\n⚠️ Tu saldo está en negativo: pide una recarga.' : ''}`);
   }
-  addLog('renovacion', c, `${o.wasDemo ? 'Demo convertida en cuenta pagando online' : o.cycle ? 'Renovada sola (renovación automática)' : 'Renovada pagando online'} (${what})${o.bonusDays ? ` + ${o.bonusDays} días de regalo por comprar en la prueba` : ''}: ${o.amount.toFixed(2)} ${o.currency}. Vence el ${c.expires}`, null);
-  addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
+  addLog(o.wasDemo ? 'alta' : 'renovacion', c, `${o.wasDemo ? 'Demo convertida en cuenta pagando online' : o.cycle ? 'Renovada sola (renovación automática)' : 'Renovada pagando online'} (${what})${o.bonusDays ? ` + ${o.bonusDays} días de regalo por comprar en la prueba` : ''}: ${o.amount.toFixed(2)} ${o.currency}. Vence el ${c.expires}`, null);
+  addLog('cobro', c, `Cobro online de ${c.panelName}: ${o.amount.toFixed(2)} ${o.currency} con ${o.usdc ? `USDC por Polygon (${usdcFmt(o.usdc.got || o.usdc.micro)} ${o.usdc.token || 'USDC'})` : MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
   let soc = null;
@@ -8470,7 +8568,7 @@ function receiptTg(c, o) {
   const s = db.servers.find((x) => x.id === c.serverId) || {}, brand = db.settings.brand.name || 'Panel';
   const auto = !!(o.subId || o.cycle) && c.sub && c.sub.status === 'active' && !c.sub.cancelAt;
   const text = `🧾 <b>RECIBO DE PAGO</b> · ${hEsc(brand)}\n<code>Nº ${hEsc(o.num || o.id)}  ·  ${hEsc(rcWhen(o.paidAt))}</code>\n\n`
-    + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 ${MANUAL[o.method] ? 'Pagado por ' + hEsc(MANUAL[o.method].t) : 'Pago online con tarjeta · seguro'}\n👤 ${hEsc(c.panelName)}\n\n`
+    + `✅ <b>Pagado: ${hEsc(rcMoney(o))}</b>\n💳 ${o.usdc ? `Pagado con ${usdcFmt(o.usdc.got || o.usdc.micro)} USDC (red Polygon)` : MANUAL[o.method] ? 'Pagado por ' + hEsc(MANUAL[o.method].t) : 'Pago online con tarjeta · seguro'}\n👤 ${hEsc(c.panelName)}\n\n`
     + `📦 <b>Tu plan</b>${db.servers.some((x) => x.kind === 'jellyfin' || x.kind === 'plex' || x.kind === 'iptv') ? `\n▫️ Plataforma: <b>${hEsc(srvKind(s))}</b>` : ''}\n▫️ ${o.wasDemo ? 'Alta' : 'Renovación'}: ${hEsc(rcPlan(o))}\n▫️ Válida hasta: <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`
     + (o.bonusDays ? `\n🎁 Incluye <b>${o.bonusDays} ${o.bonusDays === 1 ? 'día' : 'días'} de regalo</b> por comprar en tu prueba` : '')
     + (o.expiresBefore && !o.wasDemo ? `\n▫️ <i>Antes vencía el ${hEsc(rcFmtD(o.expiresBefore))}</i>` : '')
@@ -8572,6 +8670,88 @@ function cpFind(token) {
   if (!c || !c.payKey || c.payKey.length !== m[2].length || !crypto.timingSafeEqual(Buffer.from(c.payKey), Buffer.from(m[2]))) return null;
   return c;
 }
+/* ---------- v311: cobro en USDC por la red Polygon, directo a la cartera del dueño (sin intermediarios) ----------
+   Cada pedido tiene una cantidad única (p. ej. 8,743 USDC). El panel mira la red pública cada medio minuto y,
+   cuando llega esa cantidad a la dirección, renueva la cuenta y manda el recibo. Solo se guarda la dirección PÚBLICA. */
+const USDC_TOKENS = { '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359': 'USDC', '0x2791bca1f2de4661ed88a30c99a7a9449aa84174': 'USDC.e' };
+const USDC_RPCS = (process.env.USDC_RPC || 'https://polygon-bor-rpc.publicnode.com,https://polygon-rpc.com,https://polygon.drpc.org').split(',').map((x) => x.trim()).filter(Boolean);
+const ERC20_TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+const usdcCfg = () => (cpCfg().usdc || {});
+const usdcOk = () => { const u = usdcCfg(); return u.on && /^0x[0-9a-fA-F]{40}$/.test(u.addr || '') ? { addr: u.addr } : null; };
+const usdcFmt = (micro) => { const n = BigInt(micro || 0), w = n / 1000000n, f = String(n % 1000000n).padStart(6, '0').replace(/0+$/, ''); return `${w}${f ? ',' + (f.length < 2 ? f + '0' : f) : ',00'}`; };
+let usdcRate = { v: 0, at: 0 }, usdcState = { at: '', err: '', block: 0 };
+async function usdcQuote(price, cur) {
+  const u = usdcCfg(); let rate = Number(u.rate) || 0;
+  if (!rate) {
+    if (cur === 'USD') rate = 1;
+    else if (usdcRate.v && Date.now() - usdcRate.at < 30 * 60000) rate = usdcRate.v;
+    else {
+      try { const r = await fetch(`https://api.coinbase.com/v2/exchange-rates?currency=${encodeURIComponent(cur)}`, { signal: AbortSignal.timeout(8000) }); const j = await r.json(); rate = Number(((j.data || {}).rates || {}).USDC) || 0; }
+      catch { rate = 0; }
+      if (rate > 0.2 && rate < 5) usdcRate = { v: rate, at: Date.now() }; else if (usdcRate.v) rate = usdcRate.v; else throw new Error('No hemos podido consultar el cambio a USDC.');
+    }
+  }
+  const cents = Math.ceil(Number(price) * rate * 100); // redondeo hacia arriba al céntimo
+  return { rate, micro: BigInt(cents) * 10000n };
+}
+/** Le suma unas milésimas (0,001 a 0,099) para que la cantidad sea única entre los pedidos abiertos */
+function usdcUnique(base) {
+  const taken = new Set(db.orders.filter((o) => o.usdc && o.status === 'pending' && Date.now() - Date.parse(o.created) < 48 * 3600000).map((o) => o.usdc.micro));
+  for (let i = 0; i < 400; i++) { const k = BigInt(1 + Math.floor(Math.random() * 99)), m = (base + k * 1000n).toString(); if (!taken.has(m)) return m; }
+  for (let k = 1n; k < 1000n; k++) { const m = (base + k * 100n).toString(); if (!taken.has(m)) return m; }
+  throw new HttpError(429, 'Hay muchos pagos en USDC abiertos. Prueba en unos minutos.');
+}
+function usdcSave(c, b, me) {
+  const u = { ...(c.usdc || {}) };
+  if (b.addr !== undefined) { const a = String(b.addr || '').trim(); if (a && !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new HttpError(400, 'Esa dirección no parece de Polygon: empieza por 0x y tiene 42 caracteres. Copia la de «Recibir» USDC en Polygon de tu cartera.'); if (a !== u.addr) { u.addr = a; delete u.block; } }
+  if (b.rate !== undefined) { const r = Number(String(b.rate || '').replace(',', '.')) || 0; if (r && (r < 0.2 || r > 5)) throw new HttpError(400, 'El cambio fijo tiene que estar entre 0,2 y 5.'); u.rate = r; }
+  if (b.on !== undefined) { if (b.on && !/^0x[0-9a-fA-F]{40}$/.test(u.addr || '')) throw new HttpError(400, 'Primero pega tu dirección de Polygon.'); u.on = !!b.on; }
+  c.usdc = u;
+  addLog('ajustes', null, `Cobro en USDC (Polygon): ${u.on ? 'activado' : 'apagado'}${u.addr ? ' · dirección ' + u.addr.slice(0, 6) + '…' + u.addr.slice(-4) : ''}`, me);
+}
+const usdcPublic = () => { const u = usdcCfg(); return { on: !!u.on, addr: u.addr || '', rate: Number(u.rate) || 0, auto: usdcRate.v || 0, last: usdcState.at, err: usdcState.err, unmatched: (db.usdcStray || []).slice(0, 10), pending: db.orders.filter((o) => o.usdc && o.status === 'pending' && Date.now() - Date.parse(o.created) < 48 * 3600000).length }; };
+async function usdcRpc(method, params) {
+  let last;
+  for (const url of USDC_RPCS) {
+    try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(12000) }); const j = await r.json(); if (j.error) throw new Error(j.error.message || 'error'); return j.result; }
+    catch (e) { last = e; }
+  }
+  throw new Error('La red Polygon no responde ahora mismo' + (last ? ` (${String(last.message).slice(0, 80)})` : ''));
+}
+let usdcBusy = false;
+async function usdcWatch() {
+  const ok = usdcOk(); if (!ok || usdcBusy || SUPERSEDED) return;
+  const open = db.orders.filter((o) => o.usdc && o.status === 'pending' && Date.now() - Date.parse(o.created) < 48 * 3600000);
+  if (!open.length) return; // solo se mira mientras hay pagos esperando
+  usdcBusy = true;
+  try {
+    const u = usdcCfg(), head = parseInt(await usdcRpc('eth_blockNumber', []), 16), safe = head - 6; // unos segundos de margen
+    let from = Number(u.block) ? Number(u.block) + 1 : safe - 1800; // la primera vez: la última hora
+    from = Math.max(from, safe - 30000);
+    const topic = '0x' + '0'.repeat(24) + ok.addr.toLowerCase().slice(2);
+    while (from <= safe) {
+      const to = Math.min(safe, from + 1999);
+      const logs = await usdcRpc('eth_getLogs', [{ fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16), address: Object.keys(USDC_TOKENS), topics: [ERC20_TRANSFER, null, topic] }]);
+      for (const lg of logs || []) await usdcGot(lg);
+      await lock(async () => { cpCfg().usdc.block = to; saveDb(); });
+      from = to + 1;
+    }
+    usdcState = { at: new Date().toISOString(), err: '', block: safe };
+  } catch (e) { usdcState = { ...usdcState, at: new Date().toISOString(), err: e.message }; }
+  finally { usdcBusy = false; }
+}
+async function usdcGot(lg) {
+  const tx = String(lg.transactionHash || ''), val = BigInt(lg.data && lg.data !== '0x' ? lg.data : 0).toString(), tok = USDC_TOKENS[String(lg.address || '').toLowerCase()] || 'USDC';
+  if (!tx || db.orders.some((o) => o.usdc && o.usdc.tx === tx) || (db.usdcStray || []).some((x) => x.tx === tx)) return;
+  await lock(async () => {
+    const v = BigInt(val);
+    const o = db.orders.find((x) => x.usdc && x.status === 'pending' && Date.now() - Date.parse(x.created) < 48 * 3600000 && v >= BigInt(x.usdc.micro) && v - BigInt(x.usdc.micro) < 1000n);
+    if (o) { o.usdc.tx = tx; o.usdc.got = val; o.usdc.token = tok; if (await cpPaid(o, `pago en USDC por Polygon (${tx.slice(0, 10)}…)`)) saveDb(); return; }
+    if (v < 500000n) return; // menos de 0,50: ni se avisa
+    db.usdcStray = [{ tx, amount: val, token: tok, at: new Date().toISOString() }, ...(db.usdcStray || [])].slice(0, 50); saveDb();
+    notifyStaff('payments', `🪙 Han llegado ${usdcFmt(val)} ${tok} a tu cartera, pero no coinciden con ningún pago abierto (quizá el exchange del cliente le quitó la comisión).\n\nMira en Dinero › Cobro a clientes › «Pagos por confirmar» y confírmalo a mano si sabes de quién es.\n\nhttps://polygonscan.com/tx/${tx}`);
+  });
+}
 /** Las páginas públicas /pagar/… (sin sesión: el enlace secreto de cada cliente es la llave) */
 async function cpRoute(req, res, pathname) {
   const rm = /^\/pagar\/(\d+-[0-9a-f]{18})\/recibo\/([A-Z0-9]{4,40})$/.exec(pathname);
@@ -8622,12 +8802,18 @@ async function cpRoute(req, res, pathname) {
     if (ctx.vendor) { const cost = costFor(ctx.vendor, months, scr, kindOfClient(c)); if (cost > ctx.vendor.credits && !ctx.vendor.allowNegative) { notifyUser(ctx.vendor, `⚠️ Tu cliente ${c.panelName} ha intentado pagar su renovación online, pero no tienes créditos suficientes (hacen falta ${cost}, tienes ${ctx.vendor.credits}). Recarga para que pueda pagar.`); return cpPage(res, 200, 'Pago no disponible', '<h1>Ahora mismo no se puede</h1><p class="sub">El pago online no está disponible en este momento. Inténtalo más tarde o habla con tu proveedor.</p>'); } }
     if (open.length >= 5) return cpPage(res, 429, 'Espera un poco', '<h1>Espera un momento</h1><p class="sub">Tienes varios pagos sin terminar. Prueba de nuevo en un rato.</p>');
     const pay = String(fp.get('pay') || ''), mans = cpManual(ctx.cfg).filter((k) => !(k === 'paypal' && ctx.pp)), MT0 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
-    if (!pay && (mans.length || ctx.pp) && !auto) { // elegir cómo pagar
+    if (!pay && (mans.length || ctx.pp || ctx.usdc) && !auto) { // elegir cómo pagar
       const hid = `<input type="hidden" name="m" value="${months}"><input type="hidden" name="s" value="${scr}">`;
       const bt = (v, ic0, t, sm) => `<button class="op" name="pay" value="${v}"><span style="font-size:26px">${ic0}</span><span><b>${t}</b><small>${sm}</small></span></button>`;
       return cpPage(res, 200, 'Cómo pagar', `<h1>¿Cómo quieres pagar?</h1><p class="sub">${MT0[months]} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'} · <b>${H(money(op.price))}</b></p>
-        <form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${hid}${ctx.key ? bt('stripe', '💳', 'Tarjeta', 'Apple Pay, Google Pay… Se renueva al momento') : ''}${ctx.pp ? bt('ppapi', '🅿️', 'PayPal', 'Con tu cuenta PayPal o tarjeta. Se renueva al momento') : ''}${mans.map((k) => bt(k, MANUAL[k].i, MANUAL[k].t, 'Se renueva en cuanto confirmemos tu pago')).join('')}</form>
+        <form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${hid}${ctx.key ? bt('stripe', '💳', 'Tarjeta', 'Apple Pay, Google Pay… Se renueva al momento') : ''}${ctx.pp ? bt('ppapi', '🅿️', 'PayPal', 'Con tu cuenta PayPal o tarjeta. Se renueva al momento') : ''}${ctx.usdc ? bt('usdc', '🪙', 'USDC (red Polygon)', 'Desde tu cartera o tu exchange. Se renueva solo en 1-2 minutos') : ''}${mans.map((k) => bt(k, MANUAL[k].i, MANUAL[k].t, 'Se renueva en cuanto confirmemos tu pago')).join('')}</form>
         <p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">← Volver</a></p>`);
+    }
+    if (pay === 'usdc' && ctx.usdc) { // v311: USDC en Polygon, directo a tu cartera; el panel lo ve llegar y renueva solo
+      let q; try { q = await usdcQuote(op.price, cur); } catch (e) { return cpPage(res, 503, 'No disponible', `<h1>Ahora mismo no se puede pagar con USDC</h1><p class="sub">${H(e.message)} Prueba en unos minutos o elige otra forma de pago.</p><p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">← Volver</a></p>`); }
+      const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: 'usdc', usdc: { micro: '', addr: ctx.usdc.addr, rate: q.rate, exp: new Date(Date.now() + 60 * 60000).toISOString() }, status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}`, wasDemo: !!c.demo };
+      await lock(async () => { o.usdc.micro = usdcUnique(q.micro); o.ref = o.id.slice(-6); db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000; saveDb(); });
+      res.writeHead(303, { Location: `/pagar/${c.id}-${c.payKey}?o=${o.id}`, 'Cache-Control': 'no-store' }); return res.end();
     }
     if (MANUAL[pay] && mans.includes(pay)) {
       const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: pay, manual: true, status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}` };
@@ -8678,6 +8864,21 @@ async function cpRoute(req, res, pathname) {
         if (ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (ss.subscription) o.subId = String(ss.subscription); if (await cpPaid(o, 'comprobado al volver')) saveDb(); });
       } catch { /* se mira otra vez al recargar */ }
     }
+    if (o && o.usdc && o.status === 'pending') { // v311: instrucciones del pago en USDC (la página se actualiza sola)
+      const MT1 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' }, amt = usdcFmt(o.usdc.micro), late = Date.now() > Date.parse(o.usdc.exp);
+      const plan = `<div class="acc"><div class="acc-r"><div><small>Plan</small><b>${MT1[o.months] || o.months + ' meses'}</b></div><div><small>Pantallas</small><b>${o.screens || 1}</b></div><div><small>Precio</small><b>${H(money(o.amount))}</b></div></div></div>`;
+      if (late) return cpPage(res, 200, 'Pago caducado', `<div class="big">⌛</div><h1>Este pago ha caducado</h1><p class="sub">Han pasado más de 60 minutos. Si ya enviaste los USDC, no te preocupes: en cuanto lleguen se renueva tu cuenta igual. Si no, vuelve a empezar para tener el precio al día.</p>${plan}<meta http-equiv="refresh" content="30"><p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">← Volver a empezar</a></p>`);
+      const mins = Math.max(1, Math.round((Date.parse(o.usdc.exp) - Date.now()) / 60000));
+      return cpPage(res, 200, 'Paga con USDC', `<h1>🪙 Paga con USDC</h1>${plan}
+        <p class="sub">1️⃣ En tu cartera o exchange elige <b>USDC</b> y la red <b style="color:#c4b5fd">Polygon</b> (en algunos sitios sale como «MATIC» o «POL»).</p>
+        <p class="sub">2️⃣ Envía <b>exactamente</b> esta cantidad (con todos sus decimales):</p><p style="text-align:center;margin:6px 0 4px"><b class="code" style="font-size:30px">${H(amt)} USDC</b></p>
+        <p class="sub" style="font-size:13px;opacity:.8;text-align:center">Si tu exchange cobra comisión, que a la dirección <b>le llegue</b> esta cantidad exacta: así sabemos que es tu pago.</p>
+        <p class="sub">3️⃣ A esta dirección (cópiala o escanea el código):</p><div style="background:#fff;border-radius:14px;padding:10px;width:200px;margin:8px auto">${qrSvg(o.usdc.addr)}</div>
+        <p style="text-align:center;margin:6px 0 14px"><b class="code" style="font-size:14px;word-break:break-all">${H(o.usdc.addr)}</b></p>
+        <p class="sub">⚠️ Solo <b>USDC</b> y solo por la red <b>Polygon</b>. Otra moneda u otra red no llega y se pierde.</p>
+        <p class="sub">4️⃣ Listo: esta página se actualiza sola. En 1-2 minutos de enviarlo, tu cuenta se ${c.demo ? 'activa' : 'renueva'} y te llega el recibo por Telegram ✅</p>
+        <p class="foot">⏳ Tienes ${mins} min para enviarlo con este precio · Pedido ${H(o.ref)}</p><meta http-equiv="refresh" content="20">`);
+    }
     if (o && o.manual && o.status === 'pending') {
       const mc = mpCfg(o), amt = H(money(o.amount)), ref = `<b class="code">${H(o.ref)}</b>`, MT1 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
       const plan = `<div class="acc"><div class="acc-r"><div><small>Plan</small><b>${MT1[o.months] || o.months + ' meses'}</b></div><div><small>Pantallas</small><b>${o.screens || 1}</b></div><div><small>A pagar</small><b>${amt}</b></div></div></div>`;
@@ -8714,7 +8915,7 @@ async function cpRoute(req, res, pathname) {
     const list = sopts.length ? `<p class="lbl">¿Cuánto tiempo?</p><input type="hidden" name="s" value="${sel}">${autoBox}` + sopts.map((x) => `<button class="op${best && x === best && x.m > 1 ? ' best' : ''}" name="m" value="${x.m}"><span><b>${MT[x.m]}${best && x === best && x.m > 1 ? '<span class="tag">MEJOR PRECIO</span>' : ''}</b><small>${sel} ${sel === 1 ? 'pantalla' : 'pantallas'}${x.m > 1 ? ' · ' + money(x.price / x.m) + ' al mes' : ''}</small></span><span class="p">${money(x.price)}</span></button>`).join('')
       : '<p class="sub">Todavía no hay precios para tu plan. Habla con tu proveedor.</p>';
     const subBox = subOn ? `<div class="subbox">🔁 <b>Renovación automática ${c.sub.cancelAt ? 'cancelada' : 'activa'}</b><br><small>${c.sub.cancelAt ? `No se te cobrará más. Tu cuenta sigue hasta el ${H(fmtD(c.expires))}.` : `Cada ${c.sub.months === 1 ? 'mes' : c.sub.months + ' meses'}, ${c.sub.screens || cur0} ${c.sub.screens === 1 ? 'pantalla' : 'pantallas'}. Se cobra sola cuando toca.`}</small>${c.sub.cancelAt ? '' : `<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/cancelar"><button class="lnk">Cancelar la renovación automática</button></form>`}</div>` : '';
-    renew = `<h2>${c.demo ? '🚀 Activa tu cuenta' : '💳 Renovar'}</h2>${subBox}${tabs}${change}<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 ${[ctx.key ? 'Tarjeta, Apple Pay, Google Pay' : '', ctx.pp ? 'PayPal' : '', ...cpManual(ctx.cfg).filter((k) => !(k === 'paypal' && ctx.pp)).map((k) => MANUAL[k].t)].filter(Boolean).join(' · ')}<br>Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto se confirma el pago.</p>`;
+    renew = `<h2>${c.demo ? '🚀 Activa tu cuenta' : '💳 Renovar'}</h2>${subBox}${tabs}${change}<form method="post" action="/pagar/${c.id}-${H(c.payKey)}/checkout">${list}</form><p class="foot">🔒 ${[ctx.key ? 'Tarjeta, Apple Pay, Google Pay' : '', ctx.pp ? 'PayPal' : '', ctx.usdc ? 'USDC (Polygon)' : '', ...cpManual(ctx.cfg).filter((k) => !(k === 'paypal' && ctx.pp)).map((k) => MANUAL[k].t)].filter(Boolean).join(' · ')}<br>Tu cuenta se ${c.demo ? 'activa' : 'renueva'} sola en cuanto se confirma el pago.</p>`;
   } else renew = `<p class="sub">${c.demo ? 'Para activar tu cuenta' : 'Para renovar'}, habla con tu proveedor.</p>`;
   const owner = db.users.find((u) => u.id === c.ownerId), ap = db.settings.app || {};
   const appOk = ap.file && (ap.public || !owner || owner.role === 'super' || owner.role === 'admin');
@@ -8803,7 +9004,8 @@ route('PUT', '/api/client-pay', SUPER, async ({ me, body }) => { const ppNew = a
   if (ppNew) db.payCfg.ppcli = ppNew;
   if (body.pp && body.pp.remove) db.payCfg.ppcli = null;
   if (body.remind && typeof body.remind === 'object') c.remind = { client: body.remind.client !== false, vendor: body.remind.vendor !== false };
-  if (body.on !== undefined) { if (body.on && !cpStripeOk() && !cpManual(c).length && !ppOf(null)) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online, conecta PayPal, o pon tu Bizum, PayPal o Revolut.'); c.on = !!body.on; }
+  if (body.usdc && typeof body.usdc === 'object') usdcSave(c, body.usdc, me); // v311
+  if (body.on !== undefined) { if (body.on && !cpStripeOk() && !cpManual(c).length && !ppOf(null) && !usdcOk()) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online, conecta PayPal, o pon tu Bizum, PayPal o Revolut.'); c.on = !!body.on; }
   if (body.desc !== undefined) c.desc = str(body.desc, 60).trim() || 'Suscripción';
   if (body.vendors !== undefined) c.vendors = !!body.vendors;
   if (body.subs !== undefined) c.subs = !!body.subs;
@@ -8827,8 +9029,8 @@ async function ppCheck(b) {
   await ppCall(pp, 'GET', '/v1/identity/oauth2/userinfo?schema=paypalv1.1').catch((e) => { if (/no acepta esas claves|conectar/.test(e.message)) throw e; });
   return pp;
 }
-route('GET', '/api/client-pay', SUPER, () => ({ cfg: { ...cpCfg(), remind: cpRemind(cpCfg()) }, pp: ppOf(null) ? { on: true, mode: ppOf(null).mode || 'live', id: ppOf(null).id.slice(0, 6) + '…' } : { on: false }, stripe: { on: !!(db.payCfg.stripe.on && db.payCfg.stripe.key), wh: !!db.payCfg.stripe.whsec }, base: siteBase(),
-  orders: db.orders.filter((o) => o.kind === 'client').slice(0, 60).map((o) => ({ id: o.id, clientId: o.clientId, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', ppapi: !!o.ppapi, manual: !!o.manual, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1, vendor: o.vendorId ? ((db.users.find((u) => u.id === o.vendorId) || {}).name || 'un vendedor borrado') : '' })) }));
+route('GET', '/api/client-pay', SUPER, () => ({ usdc: usdcPublic(), cfg: { ...cpCfg(), usdc: undefined, remind: cpRemind(cpCfg()) }, pp: ppOf(null) ? { on: true, mode: ppOf(null).mode || 'live', id: ppOf(null).id.slice(0, 6) + '…' } : { on: false }, stripe: { on: !!(db.payCfg.stripe.on && db.payCfg.stripe.key), wh: !!db.payCfg.stripe.whsec }, base: siteBase(),
+  orders: db.orders.filter((o) => o.kind === 'client').slice(0, 60).map((o) => ({ id: o.id, clientId: o.clientId, user: o.user, months: o.months, amount: o.amount, currency: o.currency, status: o.status, created: o.created, paidAt: o.paidAt || null, after: o.expiresAfter || '', method: o.method || 'stripe', ppapi: !!o.ppapi, manual: !!o.manual, usdc: o.usdc ? { amt: usdcFmt(o.usdc.micro), tx: o.usdc.tx || '' } : null, claimed: !!o.claimed, ref: o.ref || '', screens: o.screens || 1, vendor: o.vendorId ? ((db.users.find((u) => u.id === o.vendorId) || {}).name || 'un vendedor borrado') : '' })) }));
 
 route('POST', '/api/client-pay/orders/:id/decide', ['super', 'admin', 'reseller', 'sub'], ({ me, params, body }) => lock(async () => {
   const o = db.orders.find((x) => x.id === String(params.id) && x.kind === 'client');
@@ -10825,12 +11027,18 @@ route('POST', '/api/clients/:id/iptv/kill', '*', async ({ me, params, body }) =>
 });
 /* ---------- Descargas de los clientes: rutas ---------- */
 route('GET', '/api/nodownload', SUPER, () => ({ on: noDl(), job: dlJob }));
+route('PUT', '/api/hideusers', SUPER, ({ me, body }) => lock(async () => { db.settings.hideUsers = !!body.on; addLog('ajustes', null, `Usuarios en la pantalla de entrada de Emby: ${body.on ? 'ocultos' : 'visibles'}`, me); saveDb(); return { ok: true, job: hideApplyAll(me) }; })); // v309
+route('GET', '/api/hideusers', SUPER, () => ({ on: db.settings.hideUsers !== false, job: hideJob }));
 route('PUT', '/api/nodownload', SUPER, ({ me, body }) => lock(async () => {
   db.settings.noDownload = !!body.on;
   addLog('ajustes', null, `Descargas de los clientes: ${body.on ? 'bloqueadas' : 'permitidas'}`, me); saveDb();
   return { ok: true, on: noDl() };
 }));
 route('POST', '/api/nodownload/apply', SUPER, ({ me }) => ({ ok: true, job: dlApplyAll(me) }));
+// v313: las demos convertidas en cliente cuentan como alta nueva (antes salían como renovación); se corrigen también las de antes
+setTimeout(() => { if (db.settings.conv313) return; let n = 0; for (const l of db.log) if (l.type === 'renovacion' && /^Demo convertida/.test(l.text || '')) { l.type = 'alta'; l.demo = false; n++; } db.settings.conv313 = true; saveDb(); if (n) console.log(`Demos convertidas pasadas a altas: ${n}`); }, 3000);
+// v309: la primera vez, se ocultan solos los usuarios que ya existen en la pantalla de entrada
+setTimeout(() => { if (!db.settings.hide309 && db.settings.hideUsers !== false && !SUPERSEDED) { db.settings.hide309 = true; saveDb(); hideApplyAll(null); } }, 120000);
 // La primera vez con esta versión: se bloquean solas las descargas en todas las cuentas que ya existen
 setTimeout(() => { if (!db.settings.noDl223 && noDl() && !SUPERSEDED) { db.settings.noDl223 = true; dlApplyAll(null); } }, 90000);
 /* ---------- Vendedores: resumen de cada mañana y aviso de pocos créditos ----------
@@ -12017,6 +12225,7 @@ server.listen(PORT, HOST, () => {
   const watchLoop = () => { (live() ? watchServers() : Promise.resolve()).catch((e) => console.error('Vigilancia de servidores:', e.message)).finally(() => setTimeout(watchLoop, Number(process.env.WATCH_MS) || 60000)); };
   setTimeout(watchLoop, 5000);
   setInterval(() => live() && telegramPoll(), Number(process.env.TG_POLL_MS) || 5000);
+  setInterval(() => { if (live()) usdcWatch().catch(() => {}); }, Number(process.env.USDC_MS) || 30000); // v311
   setInterval(() => { if (live()) weeklySend(false).catch((e) => console.error('Resumen semanal:', e.message)); }, Number(process.env.WEEKLY_MS) || 10 * 60000);
   setInterval(() => { if (live()) feedTick().catch((e) => console.error('Canal de contenidos:', e.message)); }, Number(process.env.FEED_MS) || 10 * 60000);
   setInterval(() => { if (live()) sdTick().then(() => lock(async () => saveDb())).catch((e) => console.error('Demo automática (avisos):', e.message)); }, Number(process.env.SD_MS) || 2 * 60000); // v301

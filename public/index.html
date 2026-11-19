@@ -1975,8 +1975,13 @@ textarea.typing{caret-color:transparent}
 .fztg:hover{border-color:#2aa1de}.fztg-i{font-size:26px;flex:none}.fztg-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .fztg-k{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#2aa1de}.fztg-n{font-size:14px}.fztg-n b{font-size:22px;color:#2aa1de;margin-right:2px}.fztg-n small{margin-left:4px}
 .fztg-who{display:flex;flex-wrap:wrap;gap:4px}.fztg-p{font-size:12px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,#2aa1de 18%,transparent)}.fztg-p.more{opacity:.8}
+.sd-fun{display:grid;gap:10px}.sd-ft{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px}.sd-ft span{color:var(--muted)}.sd-ft em{font-style:normal;font-weight:800;padding:1px 8px;border-radius:999px;background:rgba(148,163,184,.15);color:var(--muted)}.sd-ft em.mid{background:rgba(234,179,8,.15);color:#facc15}.sd-ft em.ok{background:rgba(34,197,94,.15);color:#4ade80}.sd-ft .mny{color:#4ade80}
+.sd-fb{position:relative;height:9px;border-radius:9px;background:rgba(148,163,184,.12);margin-top:5px;overflow:hidden}.sd-fb i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:rgba(56,189,248,.4)}.sd-fb i.b{background:#22c55e}
+.by-dist{display:grid;gap:8px;margin:4px 0 12px}.by-r{display:grid;grid-template-columns:150px 1fr 28px;align-items:center;gap:10px;font-size:13.5px}.by-r b{text-align:right}@media(max-width:520px){.by-r{grid-template-columns:118px 1fr 24px;font-size:12.5px}}
 .mn-privq{margin:-4px 0 12px;font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:8px}.mn-priv{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 14px;border-radius:12px;background:rgba(34,197,94,.12);color:#86efac;font-weight:600;margin:0 0 12px}
 .mn-code{display:flex;gap:10px;align-items:center;margin:12px 0}.mn-code code{flex:1;font-size:22px;font-weight:800;letter-spacing:1px;padding:12px 16px;border-radius:12px;background:rgba(56,189,248,.12);color:#7dd3fc;text-align:center}.mn-wait{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}.mn-wait .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(125,211,252,.3);border-top-color:#7dd3fc;animation:gspin 1s linear infinite;flex:none}
+.fztg-kr{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.fztg-q{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;padding:4px 11px;border-radius:999px;background:rgba(42,161,222,.16);color:#7dd3fc;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(42,161,222,.35)}.fztg-q:hover{background:rgba(42,161,222,.28)}
+.fztg-s{display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg2,rgba(255,255,255,.04));margin:0 0 10px;position:sticky;top:0;z-index:2}.fztg-s input{flex:1;border:0;background:transparent;padding:11px 0;font-size:15px;color:inherit;outline:none;min-width:0}.fztg-s small{color:var(--muted);white-space:nowrap}
 .fztg-off{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 10px;border-radius:999px;background:rgba(248,113,113,.12);color:#fca5a5;font-size:12.5px;font-weight:600;width:max-content}.fztg-off small{color:var(--muted);font-weight:500}.fztg-r.off b{color:#fca5a5}
 .fztg-t{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:110px}.fztg-t b{font-size:26px;line-height:1}.fztg-t small{font-size:11px;color:var(--muted)}
 .fztg-bar{width:100%;height:6px;border-radius:9px;background:var(--raised);overflow:hidden}.fztg-bar i{display:block;height:100%;background:#2aa1de;border-radius:9px}
@@ -2703,6 +2708,7 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
   .cpb-k:nth-child(3){grid-column:1/-1;flex-direction:row;align-items:center;gap:10px}.cpb-k:nth-child(3) b{font-size:20px}
   .fztg{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"i k t" "m m m";align-items:center;gap:8px 10px;padding:12px 14px}
   .fztg-i{grid-area:i;font-size:22px}.fztg-m{display:contents}.fztg-k{grid-area:k}
+  .fztg-kr{grid-area:k;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}.fztg-q{font-size:12.5px;padding:3px 10px}.fztg-off{grid-column:1/-1} /* v312 */
   .fztg-t{grid-area:t;min-width:0;flex-direction:column;align-items:flex-end;gap:0}.fztg-t small{font-size:10.5px}.fztg-t .fztg-bar,.fztg-t small:last-child{display:none}.fztg-t b{font-size:22px}
   .fztg-k{white-space:nowrap;font-size:11.5px}.fztg-t small{white-space:nowrap}
   .fztg-n{grid-column:1/-1;font-size:13.5px}.fztg-n b{font-size:20px}.fztg-n small{display:block;margin:2px 0 0}
@@ -4179,13 +4185,13 @@ function fzTgHtml(d, t, y) {
   const who = x.today.slice(0, 4).map((c) => `<span class="fztg-p">${esc(c.panelName)}</span>`).join('') + (x.today.length > 4 ? `<span class="fztg-p more">+${x.today.length - 4}</span>` : '');
   return `<button type="button" class="fztg" style="--tgp:${x.pct}%" data-act="tg-stats" aria-label="Clientes con el bot de Telegram: ver quiénes">
     <span class="fztg-i" aria-hidden="true">📲</span>
-    <span class="fztg-m"><span class="fztg-k">Bot de Telegram</span>
+    <span class="fztg-m"><span class="fztg-kr"><span class="fztg-k">Bot de Telegram</span><span class="fztg-q" role="button" tabindex="0" data-act="tg-find" aria-label="Buscar un cliente con el bot">🔍 Buscar</span></span>
       <span class="fztg-n"><b>${x.today.length ? '+' + x.today.length : 0}</b> ${x.today.length === 1 ? 'lo ha aceptado hoy' : 'lo han aceptado hoy'} <small class="fzt-c ${df > 0 ? 'up' : df < 0 ? 'down' : ''}">${cmp}</small></span>
       ${who ? `<span class="fztg-who">${who}</span>` : ''}${x.gone30.length ? `<span class="fztg-off">👋 ${plural(x.gone30.length, 'se ha dado de baja', 'se han dado de baja')} <small>· 30 días</small></span>` : ''}</span>
     <span class="fztg-t"><b>${x.linked.length}</b><small>lo tienen en total</small><span class="fztg-bar" title="${x.pct}% de tus cuentas"><i style="width:${x.pct}%"></i></span><small>${x.pct}% de ${plural(x.base, 'cuenta', 'cuentas')}</small></span>
   </button>`;
 }
-function dTgStats() {
+function dTgStats(find) {
   const ymd = (x) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`, now = new Date();
   const x = tgStats(S.d, ymd(now), ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)));
   const team = S.d.users.length > 1;
@@ -4193,11 +4199,24 @@ function dTgStats() {
   const when = (c) => c.tgAt ? new Date(c.tgAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'hace tiempo';
   openDlg({ title: 'Bot de Telegram', submit: 'Cerrar',
     body: `<p class="muted small" style="margin:0 0 10px">${plural(x.linked.length, 'cliente lo tiene', 'clientes lo tienen')} enlazado (${x.pct}% de tus cuentas). Les llegan solos los avisos antes de caducar. Los más recientes, arriba.</p>
-      <div class="fztg-list">${list.slice(0, 200).map((c) => `<div class="fztg-r"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)}${team && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small><time>${when(c)}</time></div>`).join('') || '<p class="muted">Todavía nadie lo ha aceptado. Al crear una cuenta, en el mensaje para el cliente puedes añadir su enlace de Telegram.</p>'}</div>`,
+      <label class="fztg-s"><span aria-hidden="true">🔍</span><input type="search" id="tgFind" placeholder="Buscar por nombre, usuario${team ? ' o vendedor' : ''}…" autocomplete="off" spellcheck="false"><small id="tgFindN"></small></label>
+      <p class="muted small" id="tgFind0" style="display:none;margin:6px 0">No hay nadie con el bot que se llame así.</p>
+      <div class="fztg-list">${list.map((c, i) => `<div class="fztg-r" data-q="${esc((c.panelName + ' ' + c.embyName + ' ' + (team ? userName(c.ownerId) || '' : '') + ' ' + (c.telegram || '')).toLowerCase())}"${i >= 200 ? ' hidden' : ''}><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)}${team && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small><time>${when(c)}</time></div>`).join('') || '<p class="muted">Todavía nadie lo ha aceptado. Al crear una cuenta, en el mensaje para el cliente puedes añadir su enlace de Telegram.</p>'}</div>`,
     onSubmit: async () => '' });
   if (x.gone.length) { // v304: quién se ha dado de baja del bot
     const box = document.querySelector('.fztg-list'); const wOff = (c) => new Date(c.tgOffAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    if (box) box.insertAdjacentHTML('afterend', `<h4 class="iv-h" style="margin-top:14px">👋 Se han dado de baja del bot · ${x.gone.length}</h4><p class="muted small" style="margin:0 0 8px">Ya no les llegan los avisos. Escríbeles para saber por qué; si vuelven a abrir su enlace, se activan otra vez.</p><div class="fztg-list">${x.gone.slice(0, 200).map((c) => `<div class="fztg-r off"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)} · ${c.tgOffWhy === 'block' ? '🚫 bloqueó el bot' : '🔕 escribió /stop'}${team && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small><time>${wOff(c)}</time></div>`).join('')}</div>`);
+    if (box) box.insertAdjacentHTML('afterend', `<h4 class="iv-h" style="margin-top:14px">👋 Se han dado de baja del bot · ${x.gone.length}</h4><p class="muted small" style="margin:0 0 8px">Ya no les llegan los avisos. Escríbeles para saber por qué; si vuelven a abrir su enlace, se activan otra vez.</p><div class="fztg-list">${x.gone.slice(0, 200).map((c) => `<div class="fztg-r off" data-q="${esc((c.panelName + ' ' + c.embyName).toLowerCase())}"><b>${esc(c.panelName)}</b><small>@${esc(c.embyName)} · ${c.tgOffWhy === 'block' ? '🚫 bloqueó el bot' : '🔕 escribió /stop'}${c.leftWhy ? ' · ' + esc(({ precio: '💸 Es caro', contenido: '📺 Falta contenido', cortes: '🐢 Cortes o va lento', nouso: '😴 No lo uso', otro: '🤷 Otro motivo' })[c.leftWhy.k] || '') : ''}${team && c.ownerId !== me().id ? ' · ' + esc(userName(c.ownerId) || '') : ''}</small><time>${wOff(c)}</time></div>`).join('')}</div>`);
+  }
+  // v312: buscador de clientes con el bot (sin acentos ni mayúsculas)
+  const inp = document.getElementById('tgFind'), cnt = document.getElementById('tgFindN'), none = document.getElementById('tgFind0');
+  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^@/, '');
+  if (inp) {
+    const rows = [...document.querySelectorAll('.fztg-r[data-q]')]; rows.forEach((r) => { r.dataset.n = norm(r.dataset.q); });
+    const run = () => { const q = norm(inp.value.trim()); let n = 0, shown = 0;
+      rows.forEach((r, i) => { const hit = !q || r.dataset.n.includes(q); if (hit) n++; const show = q ? hit : !r.classList.contains('off') ? i < 200 : true; r.hidden = !show; if (show) shown++; });
+      cnt.textContent = q ? plural(n, 'encontrado', 'encontrados') : ''; none.style.display = q && !n ? '' : 'none'; };
+    inp.addEventListener('input', run);
+    if (find) setTimeout(() => inp.focus(), 60);
   }
 }
 /** Pantalla «Hoy en tu negocio»: cada alta, demo y renovación de hoy (o de ayer) con sus datos */
@@ -5605,7 +5624,7 @@ function vCrecer(mode = 'crecer') {
   // v278: «Crecer» (para ti: resumen semanal, plazas, quién no ve) y «Mensajes automáticos» del Bot (para tus clientes)
   const isBot = mode === 'bot', TT = isBot ? 'Mensajes automáticos' : 'Crecer';
   const sub = isBot ? 'Mensajes que el bot manda solo a tus clientes para no perderlos. Enciende los que quieras.' : 'Lo que te ayuda a ver cómo va el negocio y a tener sitio para clientes nuevos.';
-  const show = (k) => (isBot ? ['winback', 'epAlert', 'wrap', 'survey', 'outage'] : ['weekly']).includes(k);
+  const show = (k) => (isBot ? ['winback', 'demoFollow', 'bye', 'epAlert', 'wrap', 'survey', 'outage'] : ['weekly']).includes(k);
   const g = S.grow;
   if (!g || (g.at && Date.now() - g.at > 20000)) { loadGrow(); return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
   if (g.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
@@ -5617,6 +5636,7 @@ function vCrecer(mode = 'crecer') {
       <div class="gr-h"><span class="gr-i">${icon}</span><div><h3>${title}</h3><p>${desc}</p></div><span class="gr-st">${on ? 'Encendido' : 'Apagado'}</span></div>
       <div class="gr-b">${inner}</div></form>`;
   const save = (k) => `<button type="button" class="btn primary gr-save" data-act="grow-save" data-k="${k}">Guardar</button>`;
+  const df = c.demoFollow || { on: true, d1: true, d3: true }, by = c.bye || { on: true };
   const wb = c.winback, wk = c.weekly, ou = c.outage, sv = c.survey, ea = c.epAlert || { on: true }, wr = c.wrap || { on: true, days: 5 };
   const offerEx = 'Si vuelves esta semana, te regalamos 7 días extra.';
   const preview = `👋 Hola Laura, te echamos de menos en ${esc(BRAND.name)}\n\nTu cuenta caducó hace unos días y ya no puedes ver nada.${wb.offer ? '\n\n🎁 ' + esc(wb.offer) : ''}\n\n👉 Si quieres volver, se activa al momento y lo tienes todo como lo dejaste.`;
@@ -5636,6 +5656,24 @@ function vCrecer(mode = 'crecer') {
       ${g.winback.want.length ? `<div class="gr-list"><h4>🙋 Quieren volver: escríbeles</h4>${g.winback.want.map((x) => `<div class="gr-li"><div><b>${esc(x.name)}</b><small>@${esc(x.emby)} · ${fmtTs(x.at, true)}</small></div><div class="gr-li-a">${contact(x)}</div></div>`).join('')}</div>` : ''}
       <p class="gr-note">ℹ️ Solo llega a quien tiene el bot enlazado (${g.tgLinked} clientes). Sigue funcionando también el aviso de «rescate» a los pocos días de caducar.</p>
       ${save('winback')}`)}
+    ${card('demoFollow', 'c2', '🎬', 'Segunda oportunidad para las demos', '<span class="aud c">👥 Le llega a quien probó y no compró</span> Al día siguiente de terminar su prueba y a los 3 días, el bot le escribe con lo nuevo que ha llegado y el botón para quedarse.', df.on, `${noBot}
+      ${sw('on', df.on, 'Escribir a las demos que no han comprado')}
+      <div class="gr-chips"><span>Cuándo:</span><label class="gr-chip"><input type="checkbox" name="d1"${df.d1 !== false ? ' checked' : ''}><span>Al día siguiente</span></label><label class="gr-chip"><input type="checkbox" name="d3"${df.d3 !== false ? ' checked' : ''}><span>A los 3 días</span></label></div>
+      <div class="gr-prev"><small>Así le llega (al día siguiente):</small><pre>🍿 Laura, ¿te quedaste con ganas?
+
+Ayer terminó tu prueba en ${esc(BRAND.name)}. Tu usuario sigue guardado, con todo como lo dejaste.
+
+🍿 Desde tu prueba han llegado 3 pelis y 2 series nuevas…
+
+🚀 Vuelve en 1 minuto: pagas con el enlace y sigues al momento ⚡</pre><div class="gr-prev-b">🚀 Quiero volver</div><div class="gr-prev-b">🙋 Prefiero que me escribas</div></div>
+      <div class="gr-kpis"><div><b>${(g.df || {}).f1 || 0}</b><span>al día siguiente</span></div><div><b>${(g.df || {}).f3 || 0}</b><span>a los 3 días</span></div><div class="ok"><b>${(g.df || {}).back || 0}</b><span>se han quedado 🎉</span></div></div>
+      <p class="gr-note">ℹ️ Mientras tanto la demo se guarda (desactivada) unos días más, para que pueda volver con su mismo usuario.</p>
+      ${save('demoFollow')}`)}
+    ${card('bye', 'c5', '🤔', '¿Por qué se van?', '<span class="aud c">👥 Le llega a quien se va</span> Si escribe /stop, o pulsa «No voy a renovar» en el mensaje de rescate, el bot le pregunta el motivo con un toque. Te avisa a ti.', by.on, `
+      ${sw('on', by.on, 'Preguntar el motivo')}
+      ${(g.bye || []).some((x) => x[1]) ? `<div class="by-dist">${(() => { const tot = g.bye.reduce((n, x) => n + x[1], 0) || 1; return g.bye.map((x) => `<div class="by-r"><span>${esc(x[0])}</span><div class="gr-bar"><i style="width:${Math.round(x[1] / tot * 100)}%;background:#f97316"></i></div><b>${x[1]}</b></div>`).join(''); })()}</div>` : '<p class="muted small">Todavía nadie ha dicho por qué se va. ¡Buena señal! 😊</p>'}
+      ${(g.byeList || []).length ? `<div class="gr-list"><h4>Los últimos</h4>${g.byeList.map((x) => `<div class="gr-li"><div><b>${esc(x.name)}</b><small>@${esc(x.emby)} · ${esc(x.why)} · ${x.how === 'stop' ? 'escribió /stop' : 'no renueva'} · ${fmtTs(x.at, true)}</small></div><div class="gr-li-a">${contact(x)}</div></div>`).join('')}</div>` : ''}
+      ${save('bye')}`)}
     ${card('epAlert', 'c7', '🔔', 'Capítulo nuevo de su serie', '<span class="aud c">👥 Le llega a tus clientes</span> Si un cliente está viendo una serie y llega un capítulo nuevo, el bot le avisa solo a él, con la carátula. Puede decir «no avisarme de esta serie».', ea.on, `
       ${sw('on', ea.on, 'Avisar de los capítulos nuevos')}
       <div class="gr-prev"><small>Así le llega:</small><pre>🔔 ¡Capítulo nuevo de The Last of Us!\n\n🆕 T2E05 · Sentir su amor\n\nComo estás viendo esta serie, te aviso en cuanto llega. ▶️ Ya lo tienes en tu app. ¡A disfrutarlo! 🍿</pre><div class="gr-prev-b">🔕 No avisarme de esta serie</div></div>
@@ -5756,7 +5794,7 @@ function vAutoDemo() {
         <div class="gr-b"><ul class="sd-lns">${links}</ul>
           <div class="sd-add"><input id="sdNew" maxlength="40" placeholder="Nuevo enlace: Instagram, WhatsApp…"><button type="button" class="btn sm primary" data-act="sd-ln-add">＋ Añadir</button></div></div></div>
       <div class="gr-card iv-c"><div class="gr-h"><span class="gr-i">📊</span><div><h3>Cómo va</h3><p><b>${r.today}</b> hoy · <b>${r.total}</b> en total · <b>${r.live}</b> probando ahora · <b>${r.bought}</b> ya son clientes${r.total ? ` (${Math.round(r.bought / r.total * 100)} %)` : ''}</p></div></div>
-        <div class="gr-b"><ul class="bw-l">${last}</ul>${(r.devs || []).some((x) => x[1]) ? `<h4 class="iv-h" style="margin-top:12px">📺 Qué aparatos eligen</h4><div class="sd-devs">${r.devs.filter((x) => x[1]).sort((a, b) => b[1] - a[1]).map((x) => `<span class="chip">${esc(x[0])} · <b>${x[1]}</b></span>`).join(' ')}</div>` : ''}</div></div>
+        <div class="gr-b">${(r.funnel || []).length ? `<h4 class="iv-h" style="margin-top:0">📈 De dónde vienen tus clientes</h4><div class="sd-fun">${r.funnel.map((x) => { const top = Math.max(1, ...r.funnel.map((y) => y.n)); return `<div class="sd-fr"><div class="sd-ft"><b>${esc(x.name)}</b><span>${plural(x.n, 'prueba', 'pruebas')} → <b>${plural(x.bought, 'cliente', 'clientes')}</b> <em class="${x.pct >= 20 ? 'ok' : x.pct ? 'mid' : ''}">${x.pct} %</em>${x.money ? ` · <b class="mny">${eur(x.money)}</b>` : ''}</span></div><div class="sd-fb"><i style="width:${Math.round(x.n / top * 100)}%"></i><i class="b" style="width:${Math.round(x.bought / top * 100)}%"></i></div></div>`; }).join('')}<p class="muted small" style="margin:6px 0 0">Barra clara: pruebas · barra verde: los que se han hecho clientes · € = todo lo que te han pagado desde entonces.</p></div><h4 class="iv-h" style="margin-top:14px">🕒 Últimas pruebas</h4>` : ''}<ul class="bw-l">${last}</ul>${(r.devs || []).some((x) => x[1]) ? `<h4 class="iv-h" style="margin-top:12px">📺 Qué aparatos eligen</h4><div class="sd-devs">${r.devs.filter((x) => x[1]).sort((a, b) => b[1] - a[1]).map((x) => `<span class="chip">${esc(x[0])} · <b>${x[1]}</b></span>`).join(' ')}</div>` : ''}</div></div>
     </div></div>
   <div class="gr-card iv-c" style="margin-top:16px"><div class="gr-h"><span class="gr-i">🧭</span><div><h3>Así funciona, paso a paso</h3></div></div><div class="gr-b"><ol class="sd-steps">
     <li>Alguien abre tu enlace y le sale el bot: «Pruébalo gratis ${esc(r.hours >= 24 ? (r.hours / 24) + (r.hours === 24 ? ' día' : ' días') : r.hours + (r.hours === 1 ? ' hora' : ' horas'))}».</li>
@@ -7006,7 +7044,7 @@ function vServidores() {
     </div>`;
   };
   const legend = `<div class="sv-legend"><span>${ic('power')}ON/OFF: admite cuentas nuevas o está pausado</span><span>${ic('refresh')}Comprobar</span>${sup ? `<span>${ic('bolt')}Reiniciar Emby</span><span>${ic('power')}Reiniciar VPS (con agente)</span>` : ''}<span>${ic('info')}Detalles</span>${can ? `<span>${ic('trash')}Quitar</span>` : ''}</div>`;
-  return head('Servidores Emby', 'Tus servidores de un vistazo. En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', can ? `<button class="btn primary" data-act="server-new">${ic('plus')}Conectar otro servidor</button>` : '') + tiles + svDlBox() + legend + `<div class="sv-list">${rows.map(card).join('')}</div>`;
+  return head('Servidores Emby', 'Tus servidores de un vistazo. En «Contenido» eliges qué bibliotecas incluye el paquete Básico y cuáles el 4K.', can ? `<button class="btn primary" data-act="server-new">${ic('plus')}Conectar otro servidor</button>` : '') + tiles + svDlBox() + svHideBox() + legend + `<div class="sv-list">${rows.map(card).join('')}</div>`;
 }
 /** Descargas de los clientes: un interruptor para bloquearlas en todas las cuentas (Emby, Jellyfin y Plex) */
 function svDlBox() {
@@ -7014,6 +7052,13 @@ function svDlBox() {
   const on = !S.d.settings || S.d.settings.noDownload !== false;
   return `<div class="dlbox${on ? ' on' : ''}"><span class="dl-ic" aria-hidden="true">${on ? '🚫' : '⬇️'}</span><div class="dl-t"><b>Descargas de los clientes</b><small>${on ? 'Bloqueadas: los clientes no pueden descargar películas ni series en Emby, Jellyfin ni Plex. Las cuentas nuevas y renovadas ya salen así.' : 'Permitidas: los clientes pueden descargar el contenido en sus aparatos.'}</small></div>
     <button type="button" class="ap-big${on ? ' on' : ''}" data-act="dl-tog" aria-pressed="${on}" aria-label="Bloquear descargas"><i></i></button></div>`;
+}
+/** v309: ocultar los usuarios en la pantalla de entrada de Emby/Jellyfin (nadie ve la lista de tus clientes) */
+function svHideBox() {
+  if (!isSuper()) return '';
+  const on = !S.d.settings || S.d.settings.hideUsers !== false;
+  return `<div class="dlbox${on ? ' on' : ''}"><span class="dl-ic" aria-hidden="true">${on ? '🙈' : '👀'}</span><div class="dl-t"><b>Usuarios en la pantalla de entrada</b><small>${on ? 'Ocultos: quien abre tu servidor no ve la lista de usuarios; cada cliente escribe su usuario y contraseña. Las cuentas nuevas y renovadas ya salen así.' : 'Visibles: en la pantalla de entrada de Emby y Jellyfin se ve la lista de usuarios con sus nombres.'}</small></div>
+    <button type="button" class="ap-big${on ? ' on' : ''}" data-act="hide-tog" aria-pressed="${on}" aria-label="Ocultar usuarios"><i></i></button></div>`;
 }
 /** Máximo de clientes de un servidor: chip con la ocupación (se pulsa para cambiarlo) */
 function svMaxChip(s, can) {
@@ -8039,7 +8084,7 @@ async function rqSet(id, status) { try { await api('POST', `/api/requests/${id}`
 /* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
 async function loadCp() { S.cpBusy = true; try { S.cp = await api('GET', isSuper() ? '/api/client-pay' : '/api/my-client-pay'); S.cpAt = Date.now(); } catch (e) { S.cp = { error: e.message }; } S.cpBusy = false; if (S.view === 'cobrocli') render(); }
 /* Bizum, PayPal y Revolut: el cliente paga y pulsa «Ya he pagado»; aquí (o en Telegram) se confirma */
-const MP_T = { bizum: '📱 Bizum', paypal: '🅿️ PayPal', revolut: '🔵 Revolut', stripe: '💳 Tarjeta' };
+const MP_T = { bizum: '📱 Bizum', paypal: '🅿️ PayPal', revolut: '🔵 Revolut', stripe: '💳 Tarjeta', usdc: '🪙 USDC' };
 const cpUrl = () => (isSuper() ? '/api/client-pay' : '/api/my-client-pay');
 function cpManualCard(m) {
   m = m || {};
@@ -8049,6 +8094,21 @@ function cpManualCard(m) {
     <label class="f">🅿️ PayPal: tu usuario de paypal.me<input name="paypal" autocomplete="off" value="${esc(m.paypal || '')}" placeholder="tuusuario (de paypal.me/tuusuario)"><small class="muted">Se abre PayPal con el importe ya puesto.</small></label>
     <label class="f">🔵 Revolut: tu usuario de revolut.me<input name="revolut" autocomplete="off" value="${esc(m.revolut || '')}" placeholder="tuusuario (de revolut.me/tuusuario)"></label>
     <div class="ap-save"><button class="btn primary" type="submit">💾 Guardar formas de pago</button></div></form>`;
+}
+/* v311: cobro en USDC por Polygon, directo a tu cartera (Ledger) */
+function cpUsdcCard(u) {
+  u = u || {}; const short = u.addr ? u.addr.slice(0, 6) + '…' + u.addr.slice(-4) : '';
+  const stray = (u.unmatched || []).map((x) => `<div class="ap-h"><b>🪙 ${esc((Number(x.amount) / 1e6).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 6 }))} ${esc(x.token)}</b><span>${fmtTs(x.at, true)} · <a href="https://polygonscan.com/tx/${esc(x.tx)}" target="_blank" rel="noopener">ver en Polygonscan ↗</a></span></div>`).join('');
+  return `<form id="cpUsdc" class="ap-card ap-pub${u.on ? ' on' : ''}"><h2>🪙 USDC (red Polygon) ${u.on ? '<span class="pillst on">Activado</span>' : '<span class="pillst off">Apagado</span>'}</h2>
+    <p class="muted small" style="margin:-4px 0 12px">El cliente te paga en <b>USDC por la red Polygon</b> desde su cartera o su exchange, <b>directo a tu cartera</b> (tu Ledger), sin intermediarios ni comisiones. A cada pago le damos una cantidad única (por ejemplo <b>8,743 USDC</b>): cuando llega, <b>su cuenta se renueva sola</b> y le llega el recibo.</p>
+    ${u.on ? `<p class="small">✅ Cobrando en <b class="code">${esc(short)}</b>${u.last ? ` · red comprobada ${fmtTs(u.last, true)}` : ''}${u.pending ? ` · <b>${u.pending}</b> ${u.pending === 1 ? 'pago esperando' : 'pagos esperando'}` : ''}${u.err ? `<br><span style="color:#fca5a5">⚠️ ${esc(u.err)}</span>` : ''}</p>` : ''}
+    <label class="f">Tu dirección pública de Polygon (la de «Recibir» USDC en Ledger Live)<input name="addr" autocomplete="off" spellcheck="false" maxlength="42" value="${esc(u.addr || '')}" placeholder="0x…"></label>
+    <p class="muted small" style="margin:-6px 0 10px">🔒 Solo la dirección para <b>recibir</b> (empieza por 0x). <b>Nunca</b> pongas aquí ni en ningún sitio las 24 palabras de tu Ledger.</p>
+    <label class="f">Cambio de euros a USDC<select name="rmode"><option value="auto"${!u.rate ? ' selected' : ''}>Automático, al cambio del día${u.auto ? ` (ahora 1 € = ${String(u.auto).replace('.', ',').slice(0, 5)} USDC)` : ''}</option><option value="fix"${u.rate ? ' selected' : ''}>Fijo, lo pongo yo</option></select></label>
+    <label class="f">Cambio fijo (1 € = … USDC)<input name="rate" inputmode="decimal" value="${u.rate ? String(u.rate).replace('.', ',') : ''}" placeholder="1,08"></label>
+    <div class="ap-acts"><button class="btn primary" type="submit" name="go" value="${u.on ? 'save' : 'on'}">${u.on ? 'Guardar' : '🪙 Activar USDC'}</button>${u.on ? '<button class="btn ghost" type="submit" name="go" value="off">Apagar</button>' : ''}</div>
+    <details style="margin-top:10px"><summary class="small"><b>Cómo copiar tu dirección de Ledger (1 minuto)</b></summary><ol class="steps small"><li>Abre <b>Ledger Live</b> y conecta tu Ledger.</li><li>Pulsa <b>Recibir</b>, elige <b>USDC</b> y la red <b>Polygon</b>.</li><li>Comprueba en la pantalla del Ledger que la dirección es la misma y cópiala aquí.</li><li>Prueba: haz tú un pago pequeño desde tu enlace de cliente y mira que se renueva solo.</li></ol></details>
+    ${stray ? `<h4 class="iv-h" style="margin-top:12px">⚠️ Pagos que no coinciden</h4><p class="muted small" style="margin:-4px 0 6px">Han llegado a tu cartera pero con otra cantidad (normalmente porque el exchange del cliente le quitó la comisión). Si sabes de quién es, confírmalo en «Pagos por confirmar».</p>${stray}` : ''}</form>`;
 }
 /* Opciones de cobro de cada uno: PayPal automático y recordatorios */
 function cpPayPalCard(pp) {
@@ -8073,10 +8133,10 @@ function cpRemindCard(r) {
     ${row('vendor', r.vendor !== false, '⏰ A ti', 'Si un pago sigue sin confirmar a las 3 horas (y otra vez a las 24), te lo vuelve a recordar con los botones.')}</section>`;
 }
 function cpPendingCard(orders, money) {
-  const pend = (orders || []).filter((o) => o.manual && o.status === 'pending').sort((a, b) => (b.claimed ? 1 : 0) - (a.claimed ? 1 : 0));
+  const pend = (orders || []).filter((o) => (o.manual || (o.usdc && Date.now() - Date.parse(o.created) > 20 * 60000)) && o.status === 'pending').sort((a, b) => (b.claimed ? 1 : 0) - (a.claimed ? 1 : 0));
   if (!pend.length) return '';
   return `<section class="ap-card" style="border-color:#f59e0b"><h2>⏳ Pagos por confirmar</h2><p class="muted small" style="margin:-4px 0 10px">Mira si te ha llegado el dinero y confirma (aunque el cliente no haya pulsado «Ya he pagado»). También puedes hacerlo desde Telegram.</p>
-    ${pend.map((o) => `<div class="ap-h" style="flex-wrap:wrap;gap:8px"><b>${esc(o.user)}</b><span>${MP_T[o.method] || ''} · <b>${money(o.amount)}</b> · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens} ${o.screens === 1 ? 'pantalla' : 'pant.'} · concepto <b>${esc(o.ref)}</b> · ${fmtTs(o.created, true)}${o.vendor ? ` · cliente de <b>${esc(o.vendor)}</b>` : ''}${o.claimed ? ' · <b style="color:#16a34a">dice que ya ha pagado</b>' : ' · <i>aún no ha pulsado «Ya he pagado»</i>'}</span>
+    ${pend.map((o) => `<div class="ap-h" style="flex-wrap:wrap;gap:8px"><b>${esc(o.user)}</b><span>${MP_T[o.method] || ''} · <b>${o.usdc ? esc(o.usdc.amt) + ' USDC' : money(o.amount)}</b> · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${o.screens} ${o.screens === 1 ? 'pantalla' : 'pant.'} · concepto <b>${esc(o.ref)}</b> · ${fmtTs(o.created, true)}${o.vendor ? ` · cliente de <b>${esc(o.vendor)}</b>` : ''}${o.claimed ? ' · <b style="color:#16a34a">dice que ya ha pagado</b>' : ' · <i>aún no ha pulsado «Ya he pagado»</i>'}</span>
       <span style="display:flex;gap:6px;margin-left:auto"><button type="button" class="btn sm primary" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="1">✅ Ha llegado</button><button type="button" class="btn sm ghost" data-act="cp-dec" data-id="${esc(o.id)}" data-ok="0">❌ No ha llegado</button><button type="button" class="btn sm ghost" data-act="cp-drop" data-id="${esc(o.id)}" title="Quitar de la lista" aria-label="Quitar de la lista">🗑️</button></span></div>`).join('')}</section>`;
 }
 const cpSt = (o) => (o.status === 'pending' && o.manual ? (o.claimed ? ['⏳', 'Por confirmar'] : ['🕐', 'Sin confirmar']) : ({ paid: ['✅', 'Pagado'], pending: ['⏳', 'Sin terminar'], expired: ['⌛', 'Caducado'], failed: ['❌', 'Fallido'], rejected: ['❌', 'No recibido'], cancelled: ['🗑️', 'Quitado'] }[o.status] || ['•', o.status]));
@@ -8103,7 +8163,7 @@ function vCobroCli() {
     <p><b>5.</b> Su enlace es también su página <b>«Mi cuenta»</b>: su fecha, sus pantallas, la app, la guía de calidad y tu contacto.</p></div>
     <p class="muted small">Solo para <b>tus clientes</b> (y los de tus administradores). Los de resellers y subresellers no, porque el dinero te llegaría a ti. También puedes copiar el enlace de cualquier cliente desde su menú ⋯ › «Enlace de pago», o añadirlo al copiar su mensaje.</p></section>`;
   const list = `<section class="ap-card"><h2>🧾 Últimos pagos de clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${cpSt(o)[0]} ${esc(o.user)}</b><span>${MP_T[o.method] || ''} · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}${o.after ? ' · vence ' + fmt(o.after) : ''}</span><em style="color:${o.status === 'paid' ? '#16a34a' : 'var(--muted)'}">${cpSt(o)[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
-  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${cpPayPalCard(d.pp)}${cpManualCard(c.manual)}${cpRemindCard(c.remind)}${subs}${vend}${how}${list}</div>`;
+  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${cpPayPalCard(d.pp)}${cpUsdcCard(d.usdc)}${cpManualCard(c.manual)}${cpRemindCard(c.remind)}${subs}${vend}${how}${list}</div>`;
 }
 function cpTable(pr, desc, note) {
   const M = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '1 año']], SC = [1, 2, 3, 4];
@@ -8146,6 +8206,13 @@ document.addEventListener('submit', async (e) => {
   if (!pp.id || !pp.secret) return toast('Pega el Client ID y el Secret', true);
   const b = f.querySelector('button[type=submit]'); if (b) { b.disabled = true; b.textContent = 'Comprobando…'; }
   try { await api('PUT', cpUrl(), { pp }); toast('PayPal conectado ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); if (b) { b.disabled = false; b.textContent = 'Conectar PayPal'; } }
+});
+document.addEventListener('submit', async (e) => { // v311: USDC en Polygon
+  if (!e.target || e.target.id !== 'cpUsdc') return;
+  e.preventDefault();
+  const f = e.target, go = (e.submitter && e.submitter.value) || 'save', usdc = { addr: f.elements.addr.value.trim(), rate: f.elements.rmode.value === 'fix' ? f.elements.rate.value.trim() : '' };
+  if (go === 'on') usdc.on = true; if (go === 'off') usdc.on = false;
+  try { await api('PUT', '/api/client-pay', { usdc }); toast(go === 'off' ? 'USDC apagado' : go === 'on' ? '🪙 USDC activado ✓' : 'Guardado ✓'); S.cp = null; loadCp(); } catch (ex) { toast(ex.message, true); }
 });
 document.addEventListener('submit', async (e) => {
   if (!e.target || e.target.id !== 'cpMan') return;
@@ -8278,6 +8345,11 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 313, d: '2026-11-19', team: ['🔧 Arreglado: cuando conviertes una demo en cliente, ahora cuenta como alta nueva en las estadísticas (antes salía como renovación). Las de antes también se corrigen solas'], items: ['🔧 Demo convertida en cliente = alta nueva en estadísticas (a mano y pagando online); se corrigen solas las de antes'] },
+  { v: 312, d: '2026-11-19', team: ['🔍 Resumen › Bot de Telegram: lupa para buscar al momento quién tiene el bot (por nombre o usuario)'], items: ['🔍 Tarjeta del bot de Telegram: botón «Buscar» y buscador dentro de la lista (también en los que se han dado de baja)'] },
+  { v: 311, d: '2026-11-19', items: ['🪙 Cobro a clientes: pago en USDC por la red Polygon, directo a tu cartera (Ledger). Cada pago tiene una cantidad única; cuando llega, la cuenta se renueva sola y le llega el recibo. Se activa en Dinero › Cobro a clientes'] },
+  { v: 310, d: '2026-11-19', team: ['⚡ Bot de Telegram mucho más rápido: responde al momento al tocar un botón y enseña «escribiendo…» mientras prepara la respuesta'], items: ['⚡ Bot: escucha continua (responde al instante en vez de mirar cada 5 segundos), «escribiendo…» mientras prepara la respuesta y las respuestas lentas ya no frenan a los demás'] },
+  { v: 309, d: '2026-11-19', team: ['🤔 Bot: si un cliente escribe /stop o pulsa «No voy a renovar», el bot le pregunta por qué con un toque (caro, contenido, cortes, no lo uso…) y te avisa. Lo ves en los clientes que se han dado de baja', '🔧 Arreglado: en «Mis aparatos» del bot, el botón para cerrar un aparato no hacía nada'], items: ['🎬 Bot › Mensajes automáticos: «Segunda oportunidad para las demos» (al día siguiente y a los 3 días, con lo nuevo y el botón para quedarse)', '🤔 Bot › Mensajes automáticos: «¿Por qué se van?» con el resumen de motivos', '📈 Demo automática: «De dónde vienen tus clientes», con el % de cada enlace y lo que te han pagado', '🙈 Servidores: interruptor para ocultar los usuarios en la pantalla de entrada de Emby y Jellyfin (encendido)', '🔧 Arreglado: en «Mis aparatos» del bot, cerrar un aparato no hacía nada'] },
   { v: 308, d: '2026-11-19', team: ['🔧 Arreglado: el botón «Conectar grupo o canal privado» daba «Formato no admitido»'], items: ['🔧 Arreglado «Formato no admitido» al conectar un grupo o canal privado'] },
   { v: 307, d: '2026-11-19', team: ['🔒 Mis novedades: ya puedes publicar en tu grupo o canal PRIVADO. Pulsa «Conectar grupo o canal privado», haz administrador al bot y escribe allí el código que te sale. Si tu grupo tiene temas, escríbelo en el tema donde las quieres'], items: ['🔒 Mis novedades de los vendedores: se pueden conectar grupos y canales privados (con un código /conectar), también en un tema concreto'] },
   { v: 306, d: '2026-11-18', team: ['💶 Fin de la prueba: el precio que se enseña es el real de 1 mes (antes salía «desde» con el plan más largo dividido entre los meses)'], items: ['💶 Fin de la prueba: precio real de 1 mes, sin «desde»'] },
@@ -11163,7 +11235,7 @@ document.addEventListener('click', (e) => {
   if (a === 'fd-test') { el.disabled = true; api('POST', `/api/feed/${el.dataset.id}/test`, {}).then((r) => toast(r.note), (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
   if (a === 'grow-save') {
     const f = el.closest('form'), k = el.dataset.k, fd = new FormData(f), on = fd.get('on') === 'on';
-    const body = k === 'winback' ? { winback: { on, d7: fd.get('d7') === 'on', d30: fd.get('d30') === 'on', offer: fd.get('offer') || '' } }
+    const body = k === 'demoFollow' ? { demoFollow: { on, d1: fd.get('d1') === 'on', d3: fd.get('d3') === 'on' } } : k === 'bye' ? { bye: { on } } : k === 'winback' ? { winback: { on, d7: fd.get('d7') === 'on', d30: fd.get('d30') === 'on', offer: fd.get('offer') || '' } }
       : k === 'weekly' ? { weekly: { on, day: +fd.get('day'), hour: +fd.get('hour') } }
       : k === 'outage' ? { outage: { on, chat: fd.get('chat') || '', delay: +fd.get('delay'), name: fd.get('name') === '1' } }
       : k === 'epAlert' ? { epAlert: { on } } : k === 'wrap' ? { wrap: { on, days: +fd.get('days') } }
@@ -11461,6 +11533,9 @@ document.addEventListener('click', (e) => {
         () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { ok }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), ok ? 'Confirmado' : 'Marcado como no recibido'); } break;
     case 'cp-drop': dConfirm('¿Quitar este pago de la lista?', 'Se quita sin renovar la cuenta y sin avisar al cliente. Úsalo para pagos viejos u olvidados.', '🗑️ Quitar',
         () => api('POST', `/api/client-pay/orders/${encodeURIComponent(el.dataset.id)}/decide`, { drop: true }).then((r) => { toast(r.msg); S.cp = null; loadCp(); return reload(); }), 'Quitado'); break;
+    case 'hide-tog': { const on = !(!S.d.settings || S.d.settings.hideUsers !== false);
+      dConfirm(on ? '¿Ocultar los usuarios?' : '¿Mostrar los usuarios?', on ? 'Nadie verá la lista de usuarios en la pantalla de entrada de tu servidor: cada cliente escribe su usuario y contraseña (como en las guías del bot). Se cambia ahora en todas las cuentas y te aviso por Telegram al terminar. Tu usuario administrador ocúltalo tú en Emby.' : 'En la pantalla de entrada se volverá a ver la lista de usuarios con sus nombres. Se cambia ahora en todas las cuentas.', on ? '🙈 Ocultar' : '👀 Mostrar',
+        () => api('PUT', '/api/hideusers', { on }).then(() => reload()), on ? 'Ocultando en todas las cuentas…' : 'Mostrando en todas las cuentas…'); } break;
     case 'dl-tog': { const on = !(!S.d.settings || S.d.settings.noDownload !== false);
       dConfirm(on ? '¿Bloquear las descargas?' : '¿Permitir las descargas?', on ? 'Los clientes no podrán descargar películas ni series. Se cambia ahora en todas las cuentas (tarda unos minutos) y te aviso por Telegram al terminar.' : 'Los clientes podrán volver a descargar el contenido. Se cambia ahora en todas las cuentas y te aviso por Telegram al terminar.', on ? '🚫 Bloquear' : '⬇️ Permitir',
         () => api('PUT', '/api/nodownload', { on }).then(() => api('POST', '/api/nodownload/apply', {})).then(() => reload()), on ? 'Bloqueando en todas las cuentas…' : 'Permitiendo en todas las cuentas…'); } break;
@@ -11496,6 +11571,7 @@ document.addEventListener('click', (e) => {
     case 'al-csv': alertsCsv(S.view); break;
     case 'al-clear': { const t = AL[S.view].type; dConfirm('Vaciar historial de alertas', t ? `Se borran todas las alertas de ${AL_TYPE[t].toLowerCase()}. No se puede deshacer.` : 'Se borran todas las alertas. No se puede deshacer.', 'Vaciar historial', async () => { await api('POST', '/api/alerts/clear', t ? { type: t } : {}); S.al.data = null; }, 'Historial vaciado'); break; }
     case 'tg-stats': dTgStats(); break;
+    case 'tg-find': dTgStats(true); break; // v312: la lupa de la tarjeta del bot
     case 'kind': setKind(el.dataset.k); break;
     case 'sf-domain': { const sv = S.d.servers.find((x) => x.id === +el.dataset.id); if (sv) dDomainNotice(sv); break; }
     case 'hoy': S.view = 'hoy'; S.hoyK = el.dataset.k || 'all'; if (el.dataset.day != null) S.hoyDay = +el.dataset.day; else S.hoyDay = 0; render(); if (!el.closest('.hoy-bar')) window.scrollTo(0, 0); break;
