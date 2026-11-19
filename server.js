@@ -8226,7 +8226,7 @@ function markPaid(o, via) {
   if (!u) { o.status = 'failed'; o.note = 'El usuario ya no existe'; return false; }
   o.status = 'paid'; o.paidAt = new Date().toISOString();
   u.credits += o.credits;
-  const how = o.method === 'stripe' ? 'tarjeta' : 'criptomonedas';
+  const how = o.method === 'stripe' ? 'tarjeta' : o.method === 'usdc' ? 'USDC (Polygon)' : 'criptomonedas';
   addLedger(u, o.credits, `Compra online con ${how}${o.pack ? ' (' + o.pack + ')' : ''}: ${o.amount.toFixed(2)} ${o.currency}`, null, 'credito', { amount: o.amount, currency: o.currency, method: o.method, order: o.id });
   addLog('cobro', null, `${u.name} compró ${o.credits} créditos con ${how} por ${o.amount.toFixed(2)} ${o.currency} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   db.vpay.unshift({ id: crypto.randomBytes(5).toString('hex'), at: o.paidAt, userId: u.id, user: u.name, credits: o.credits, amount: o.amount, method: o.method === 'stripe' ? 'Tarjeta (online)' : 'Cripto (online)', ref: o.id, status: 'paid', paidAt: o.paidAt, by: 'Compra online', byId: null, online: true });
@@ -8237,13 +8237,17 @@ function markPaid(o, via) {
   else notifyUser(u, `✅ Pago recibido: se han sumado ${o.credits} créditos a tu cuenta. Saldo: ${u.credits}.`);
   return true;
 }
+route('PUT', '/api/pay/usdc', SUPER, ({ me, body }) => lock(async () => { // v315
+  if (body.on && !usdcOk()) throw new HttpError(400, 'Primero activa USDC en Dinero › Cobro a clientes (allí pegas la dirección de tu Ledger).');
+  db.payCfg.usdc = !!body.on; addLog('ajustes', null, `Compra de créditos con USDC (Polygon): ${body.on ? 'activada' : 'apagada'}`, me); saveDb(); return { ok: true };
+}));
 route('GET', '/api/pay', '*', ({ me }) => {
   const c = db.payCfg, price = buyerPrice(me), cur = db.settings.currency || 'EUR';
-  const methods = [c.stripe.on && c.stripe.key ? 'stripe' : null, c.nowpay.on && c.nowpay.key ? 'nowpay' : null].filter(Boolean);
+  const methods = [c.stripe.on && c.stripe.key ? 'stripe' : null, c.nowpay.on && c.nowpay.key ? 'nowpay' : null, c.usdc && usdcOk() ? 'usdc' : null].filter(Boolean); // v315: USDC directo
   const mine = db.orders.filter((o) => o.userId === me.id).slice(0, 30).map(pubOrder);
   const out = { canBuy: canBuy(me), methods, price, currency: cur, min: c.min, own: Number(me.creditPrice) > 0, tiers: Number(me.creditPrice) > 0 ? [] : priceTiers(), packs: (db.settings.creditPacks || []).map((p, i) => ({ i, name: p.name, credits: p.credits, fixed: Number(p.price) > 0, amount: buyAmount(me, p.credits, p) })), orders: mine };
   if (me.role === 'super') {
-    out.cfg = { stripe: { on: c.stripe.on, hasKey: !!c.stripe.key, test: /^sk_test_/.test(c.stripe.key), hasWh: !!c.stripe.whsec }, nowpay: { on: c.nowpay.on, hasKey: !!c.nowpay.key, hasIpn: !!c.nowpay.ipn }, min: c.min };
+    out.cfg = { stripe: { on: c.stripe.on, hasKey: !!c.stripe.key, test: /^sk_test_/.test(c.stripe.key), hasWh: !!c.stripe.whsec }, nowpay: { on: c.nowpay.on, hasKey: !!c.nowpay.key, hasIpn: !!c.nowpay.ipn }, usdc: { on: !!c.usdc, ready: !!usdcOk() }, min: c.min };
     out.all = db.orders.filter((o) => o.kind !== 'client').slice(0, 100).map(pubOrder);
   }
   return out;
@@ -8271,7 +8275,8 @@ route('PUT', '/api/pay/config', SUPER, async ({ me, body }) => {
 });
 route('POST', '/api/pay/checkout', '*', async ({ me, body, req }) => {
   if (!canBuy(me)) throw new HttpError(403, 'Solo los resellers y subresellers compran créditos aquí.');
-  const c = db.payCfg, method = body.method === 'nowpay' ? 'nowpay' : 'stripe';
+  const c = db.payCfg, method = body.method === 'nowpay' ? 'nowpay' : body.method === 'usdc' ? 'usdc' : 'stripe';
+  if (method === 'usdc' && !(c.usdc && usdcOk())) throw new HttpError(400, 'El pago con USDC no está activado.');
   if (method === 'stripe' && !(c.stripe.on && c.stripe.key)) throw new HttpError(400, 'El pago con tarjeta no está activado.');
   if (method === 'nowpay' && !(c.nowpay.on && c.nowpay.key)) throw new HttpError(400, 'El pago con criptomonedas no está activado.');
   const packs = db.settings.creditPacks || [];
@@ -8288,6 +8293,12 @@ route('POST', '/api/pay/checkout', '*', async ({ me, body, req }) => {
   const o = { id: 'P' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), userId: me.id, user: me.name, credits, amount, currency: cur, method, status: 'pending', created: new Date().toISOString(), pack: packName };
   const base = panelBase(req), back = `${base}/?pago=`;
   const desc = `${credits} créditos · ${db.settings.brand.name || 'Concha'}`;
+  if (method === 'usdc') { // v315: USDC por Polygon directo a la cartera del dueño; el vigilante de la red suma los créditos solo
+    const q = await usdcQuote(amount, cur).catch((e) => { throw new HttpError(503, e.message); });
+    o.usdc = { micro: '', addr: usdcOk().addr, rate: q.rate, exp: new Date(Date.now() + 60 * 60000).toISOString() }; o.payKey = crypto.randomBytes(9).toString('hex');
+    await lock(async () => { o.usdc.micro = usdcUnique(q.micro); o.url = `${base}/cripto/${o.id}-${o.payKey}`; db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000; saveDb(); });
+    return { url: o.url };
+  }
   if (method === 'stripe') {
     const ss = await stripeCall('POST', '/v1/checkout/sessions', {
       mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': cur.toLowerCase(), 'line_items[0][price_data][unit_amount]': String(Math.round(amount * 100)),
@@ -8755,11 +8766,31 @@ async function usdcGot(lg) {
   await lock(async () => {
     const v = BigInt(val);
     const o = db.orders.find((x) => x.usdc && x.status === 'pending' && Date.now() - Date.parse(x.created) < 48 * 3600000 && v >= BigInt(x.usdc.micro) && v - BigInt(x.usdc.micro) < 1000n);
-    if (o) { o.usdc.tx = tx; o.usdc.got = val; o.usdc.token = tok; if (await cpPaid(o, `pago en USDC por Polygon (${tx.slice(0, 10)}…)`)) saveDb(); return; }
+    if (o) { o.usdc.tx = tx; o.usdc.got = val; o.usdc.token = tok; if (o.kind === 'client' ? await cpPaid(o, `pago en USDC por Polygon (${tx.slice(0, 10)}…)`) : markPaid(o, 'USDC por Polygon')) saveDb(); return; }
     if (v < 500000n) return; // menos de 0,50: ni se avisa
     db.usdcStray = [{ tx, amount: val, token: tok, at: new Date().toISOString() }, ...(db.usdcStray || [])].slice(0, 50); saveDb();
     notifyStaff('payments', `🪙 Han llegado ${usdcFmt(val)} ${tok} a tu cartera, pero no coinciden con ningún pago abierto (quizá el exchange del cliente le quitó la comisión).\n\nMira en Dinero › Cobro a clientes › «Pagos por confirmar» y confírmalo a mano si sabes de quién es.\n\nhttps://polygonscan.com/tx/${tx}`);
   });
+}
+/** v315: página para pagar créditos con USDC (la de los revendedores); se actualiza sola hasta que llega */
+function usdcCreditPage(res, pathname) {
+  const m = /^\/cripto\/([A-Z0-9]+)-([a-f0-9]{18})$/.exec(pathname), o = m && db.orders.find((x) => x.id === m[1] && x.usdc && x.payKey && x.payKey.length === m[2].length && crypto.timingSafeEqual(Buffer.from(x.payKey), Buffer.from(m[2])));
+  if (!o) return cpPage(res, 404, 'No encontrado', '<h1>Este pago no existe</h1><p class="sub">Vuelve al panel y empieza otra vez.</p>');
+  const H = hEsc, back = `<p class="foot"><a href="/?pago=${o.status === 'paid' ? 'ok' : 'cancelado'}&o=${o.id}" style="color:#7dd3fc">← Volver al panel</a></p>`;
+  const plan = `<div class="acc"><div class="acc-r"><div><small>Créditos</small><b>+${o.credits}</b></div><div><small>Precio</small><b>${H(Number(o.amount).toFixed(2).replace('.', ','))} ${H(o.currency === 'EUR' ? '€' : o.currency)}</b></div></div></div>`;
+  if (o.status === 'paid') return cpPage(res, 200, 'Créditos sumados', `<div class="big">✅</div><h1 class="ok">¡Pago recibido!</h1><p class="sub">Ya tienes tus <b>${o.credits} créditos</b> en el panel.</p>${plan}${back}`);
+  const amt = usdcFmt(o.usdc.micro), late = Date.now() > Date.parse(o.usdc.exp);
+  if (late) return cpPage(res, 200, 'Pago caducado', `<div class="big">⌛</div><h1>Este pago ha caducado</h1><p class="sub">Han pasado más de 60 minutos. Si ya enviaste los USDC, tranquilo: en cuanto lleguen se suman los créditos. Si no, vuelve a empezar para tener el precio al día.</p>${plan}<meta http-equiv="refresh" content="30">${back}`);
+  const mins = Math.max(1, Math.round((Date.parse(o.usdc.exp) - Date.now()) / 60000));
+  return cpPage(res, 200, 'Paga con USDC', `<h1>🪙 Paga con USDC</h1>${plan}
+    <p class="sub">1️⃣ En tu cartera o exchange elige <b>USDC</b> y la red <b style="color:#c4b5fd">Polygon</b> (en algunos sitios sale como «MATIC» o «POL»).</p>
+    <p class="sub">2️⃣ Envía <b>exactamente</b> esta cantidad (con todos sus decimales):</p><p style="text-align:center;margin:6px 0 4px"><b class="code" style="font-size:30px">${H(amt)} USDC</b></p>
+    <p class="sub" style="font-size:13px;opacity:.8;text-align:center">Si tu exchange cobra comisión, que a la dirección <b>le llegue</b> esta cantidad exacta.</p>
+    <p class="sub">3️⃣ A esta dirección (cópiala o escanea el código):</p><div style="background:#fff;border-radius:14px;padding:10px;width:200px;margin:8px auto">${qrSvg(o.usdc.addr)}</div>
+    <p style="text-align:center;margin:6px 0 14px"><b class="code" style="font-size:14px;word-break:break-all">${H(o.usdc.addr)}</b></p>
+    <p class="sub">⚠️ Solo <b>USDC</b> y solo por la red <b>Polygon</b>. Otra moneda u otra red no llega y se pierde.</p>
+    <p class="sub">4️⃣ Listo: esta página se actualiza sola. En 1-2 minutos los créditos se suman a tu panel ✅</p>
+    <p class="foot">⏳ Tienes ${mins} min para enviarlo con este precio · Pedido ${H(o.id.slice(-6))}</p><meta http-equiv="refresh" content="20">${back}`);
 }
 /** Las páginas públicas /pagar/… (sin sesión: el enlace secreto de cada cliente es la llave) */
 async function cpRoute(req, res, pathname) {
@@ -11964,6 +11995,7 @@ const server = http.createServer(async (req, res) => {
     // Mientras la versión nueva toma el relevo, este panel viejo no acepta cambios (se reintentan en la nueva)
     if (SUPERSEDED && req.method !== 'GET' && req.method !== 'HEAD') return send(res, 503, { error: 'El panel se está actualizando. Espera unos segundos y vuelve a intentarlo.' });
     if (pathname.startsWith('/pagar/') && (req.method === 'GET' || req.method === 'POST')) return await cpRoute(req, res, pathname);
+    if (pathname.startsWith('/cripto/') && req.method === 'GET') return usdcCreditPage(res, pathname); // v315
     if (req.method === 'POST' && pathname === '/api/app-upload') return await appUpload(req, res);
     if ((req.method === 'GET' || req.method === 'HEAD') && /^\/app(\/|\.apk$|$)/.test(pathname) && (pathname === '/app' || pathname === '/app/' || pathname === '/app.apk' || pathname === '/app/version.json' || /^\/app\/[\w.-]+\.apk$/.test(pathname))) return appDownload(req, res, pathname);
     if (!pathname.startsWith('/api/')) return send(res, 404, { error: 'No encontrado.' });
