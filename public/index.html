@@ -5851,7 +5851,7 @@ function vMisNov() {
         <ol class="fd-steps"><li><b>Crea tu canal en Telegram</b><span>✏️ › Nuevo canal. Ponle tu nombre, por ejemplo «Novedades de ${esc(me().name)}».</span></li>
           <li><b>Haz administrador a ${esc(bot)}</b><span>Canal › Administradores › Añadir administrador › busca ${esc(bot)} › con <i>Publicar mensajes</i>.</span></li>
           <li><b>Pega aquí su enlace o @usuario</b><span>Y pulsa <i>Probar</i>: publicará una peli de ejemplo.</span></li></ol>
-        ${/^-\d+$/.test(f.chan || '') ? `<p class="mn-priv">🔒 Conectado a tu ${esc(f.chanTitle || 'grupo privado')}<input type="hidden" name="chan" value="${esc(f.chan)}"><button type="button" class="btn sm ghost" data-act="mn-unlink">Cambiar</button></p>` : `<label class="f">Enlace o @usuario del canal<input name="chan" maxlength="200" value="${esc(f.chan || '')}" placeholder="https://t.me/minovedades  ·  @minovedades"></label>
+        ${/^-\d+$/.test(f.chan || '') ? `<p class="mn-priv">🔒 Conectado a «${esc(f.chanTitle || 'tu grupo privado')}»<input type="hidden" name="chan" value="${esc(f.chan)}"><button type="button" class="btn sm ghost" data-act="mn-unlink">Cambiar</button></p>` : `<label class="f">Enlace o @usuario del canal<input name="chan" maxlength="200" value="${esc(f.chan || '')}" placeholder="https://t.me/minovedades  ·  @minovedades"></label>
         <p class="mn-privq">🔒 ¿Tu grupo o canal es <b>privado</b> (enlace t.me/+…)? <button type="button" class="btn sm" data-act="mn-link">Conectar grupo o canal privado</button></p>`}
         <div class="row2"><label class="f">Cabecera<input name="header" maxlength="80" value="${esc(f.header || '')}" placeholder="— Novedades —"></label><label class="f">Firma al final<input name="footer" maxlength="80" value="${esc(f.footer || '')}" placeholder="🍿 ${esc(me().name)}"></label></div>
         <label class="gr-sw"><input type="checkbox" name="on"${f.on ? ' checked' : ''}><span class="sw"></span><b>Publicar en mi canal</b></label>
@@ -8278,6 +8278,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 308, d: '2026-11-19', team: ['🔧 Arreglado: el botón «Conectar grupo o canal privado» daba «Formato no admitido»'], items: ['🔧 Arreglado «Formato no admitido» al conectar un grupo o canal privado'] },
   { v: 307, d: '2026-11-19', team: ['🔒 Mis novedades: ya puedes publicar en tu grupo o canal PRIVADO. Pulsa «Conectar grupo o canal privado», haz administrador al bot y escribe allí el código que te sale. Si tu grupo tiene temas, escríbelo en el tema donde las quieres'], items: ['🔒 Mis novedades de los vendedores: se pueden conectar grupos y canales privados (con un código /conectar), también en un tema concreto'] },
   { v: 306, d: '2026-11-18', team: ['💶 Fin de la prueba: el precio que se enseña es el real de 1 mes (antes salía «desde» con el plan más largo dividido entre los meses)'], items: ['💶 Fin de la prueba: precio real de 1 mes, sin «desde»'] },
   { v: 305, d: '2026-11-18', team: ['🎬 Fin de la prueba: el mensaje que le llega al cliente es nuevo, con una tarjeta de colores (lo que ha visto en su prueba y desde cuánto al mes) y el botón «🚀 Quiero quedarme»'], items: ['🎬 Fin de la prueba: mensaje moderno con tarjeta de colores (lo que ha visto, desde cuánto al mes) y botones «🚀 Quiero quedarme», «💶 Ver precios» y «💬 Tengo una duda»'] },
@@ -11113,7 +11114,7 @@ document.addEventListener('click', (e) => {
     const body = k === 'tg' ? { tg: fd.get('tg') === 'on', tgMode: fd.get('tgMode'), tgHour: +fd.get('tgHour') } : { chan: fd.get('chan') || '', header: fd.get('header') || '', footer: fd.get('footer') || '', on: fd.get('on') === 'on' };
     el.disabled = true; api('PUT', '/api/my-feed', body).then(() => { toast('✅ Guardado'); S.mynov = null; render(); }, (e) => { toast(e.message, true); el.disabled = false; }); return; }
   if (a === 'mn-unlink') { api('PUT', '/api/my-feed', { chan: '', on: false }).then(() => { toast('Desconectado: pon otro canal o grupo'); S.mynov = null; render(); }, (e) => toast(e.message, true)); return; }
-  if (a === 'mn-link') { el.disabled = true; api('POST', '/api/my-feed/link-code').then((r) => { // v307: grupos y canales privados
+  if (a === 'mn-link') { el.disabled = true; api('POST', '/api/my-feed/link-code', {}).then((r) => { // v307: grupos y canales privados
       const bot = r.bot ? '@' + r.bot : 'el bot', cmd = '/conectar ' + r.code;
       openDlg({ title: '🔒 Conectar grupo o canal privado', submit: null, body: `<ol class="fd-steps"><li><b>Añade ${esc(bot)} a tu grupo o canal</b><span>Hazlo <b>administrador</b> (en un canal, con permiso para <i>Publicar mensajes</i>).</span></li>
         <li><b>Escribe esto allí</b><span>Si tu grupo tiene temas, escríbelo en el tema donde quieres las novedades.</span></li></ol>
