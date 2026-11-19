@@ -8345,6 +8345,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 314, d: '2026-11-19', team: ['🔧 Arreglado: si un cliente tenía en su Telegram una demo vieja de otra persona, el bot podía enseñarle los precios equivocados. Ahora siempre usa su cuenta activa (la tuya)'], items: ['🔧 Bot: los precios, novedades e invitaciones usan siempre la cuenta activa del chat (antes podía coger una demo vieja de la papelera de otro vendedor y enseñar sus precios)', '💶 Bot: los botones de precios enseñan el precio real de 1 mes (sin «desde» con el plan largo dividido)'] },
   { v: 313, d: '2026-11-19', team: ['🔧 Arreglado: cuando conviertes una demo en cliente, ahora cuenta como alta nueva en las estadísticas (antes salía como renovación). Las de antes también se corrigen solas'], items: ['🔧 Demo convertida en cliente = alta nueva en estadísticas (a mano y pagando online); se corrigen solas las de antes'] },
   { v: 312, d: '2026-11-19', team: ['🔍 Resumen › Bot de Telegram: lupa para buscar al momento quién tiene el bot (por nombre o usuario)'], items: ['🔍 Tarjeta del bot de Telegram: botón «Buscar» y buscador dentro de la lista (también en los que se han dado de baja)'] },
   { v: 311, d: '2026-11-19', items: ['🪙 Cobro a clientes: pago en USDC por la red Polygon, directo a tu cartera (Ledger). Cada pago tiene una cantidad única; cuando llega, la cuenta se renueva sola y le llega el recibo. Se activa en Dinero › Cobro a clientes'] },

@@ -4144,7 +4144,7 @@ const searchCount = new Map(); // "chat:día" -> búsquedas hechas hoy
 const SEARCH_MAX = 60;
 /** Botones del menú (2 por fila). «Renovar» abre su enlace de pago si lo tiene */
 function botMenuKb(list) {
-  const c = list.find((x) => !x.demo) || list[0];
+  const c = bestAcc(list);
   if (c && c.demo && list.every((x) => x.demo)) { // v299: en la demo, menú corto y «Comprar» bien a la vista
     const b2 = (t, k) => ({ text: t, callback_data: 'bm:' + k });
     const buy = cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar mi cuenta', url: cpLink(c) } : b2('🛒 Comprar mi cuenta', 'precios');
@@ -4165,7 +4165,7 @@ async function sendCard(chat, c, caption, kb, html) {
   catch (e) { console.error('Bot (tarjeta):', e.message); return tg('sendMessage', { chat_id: chat, text: caption, disable_web_page_preview: true, ...(html ? { parse_mode: 'HTML' } : {}), ...(kb ? { reply_markup: kb } : {}) }); }
 }
 async function botMenu(chat, list) {
-  const c = list.find((x) => !x.demo) || list[0], name = String(c.panelName || '').split(/\s+/)[0];
+  const c = bestAcc(list), name = String(c.panelName || '').split(/\s+/)[0];
   const left = c.demo && c.expiresAt ? Date.parse(c.expiresAt) - Date.now() : 0, lh = Math.floor(left / 3600000), lm = Math.floor((left % 3600000) / 60000);
   const cap = c.demo && list.every((x) => x.demo) && left > 0 // v299: en la demo, cuánto le queda y cómo comprar
     ? `👋 ¡Hola${name ? ', ' + name : ''}! Estás probando ${botName()} 🍿\n\n⏳ Te ${lh === 1 && !lm ? 'queda' : 'quedan'} ${lh ? lh + (lh === 1 ? ' hora' : ' horas') + (lm ? ' y ' : '') : ''}${lm ? lm + ' min' : ''} de prueba.\n\n🛒 ¿Te gusta? Toca «Comprar mi cuenta», eliges pantallas y tiempo y sigues viendo sin cortes.`
@@ -4214,7 +4214,7 @@ async function botSearch(chat, list, text) {
   const live = list.filter((c) => c.status === 'active' && c.embyId && !cliTv(c));
   if (!live.length && list.some((c) => cliTv(c) && c.status === 'active')) return tg('sendMessage', { chat_id: chat, text: '📺 Tu cuenta es de canales de TV (IPTV): el buscador es para películas y series.\n\nPara ver tus canales, abre tu app de IPTV. Si necesitas ayuda, escribe /instalar.', reply_markup: menu });
   if (!live.length) {
-    const c = list.find((x) => !x.demo) || list[0], pay = c && !c.demo && cpEligible(c) && siteBase() ? [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] : [];
+    const c = bestAcc(list), pay = c && !c.demo && cpEligible(c) && siteBase() ? [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] : [];
     return tg('sendMessage', { chat_id: chat, text: '🔒 Tu cuenta no está activa ahora mismo.\n\nRenuévala y podrás buscar y ver todo el contenido.', reply_markup: { inline_keyboard: [...pay, ...menu.inline_keyboard] } });
   }
   let found = [], failed = 0;
@@ -4338,7 +4338,7 @@ function botContact() {
 /** v279: el bot solo funciona del todo con una cuenta activa. Caducada, en la papelera o en pausa: solo puede renovar o pagar */
 const botAlive = (list) => list.some((c) => c.status === 'active' && !c.off);
 async function botExpired(chat, list) {
-  const c = list.find((x) => !x.demo) || list[0], paused = list.some((x) => x.status === 'active' && x.off);
+  const c = bestAcc(list), paused = list.some((x) => x.status === 'active' && x.off);
   const pay = c && !c.demo && c.status !== 'trash' && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '💳 Renovar ahora', url: cpLink(c) } : { text: '💳 Cómo renovar', callback_data: 'bm:renovar' };
   const text = paused
     ? `⏸️ Tu cuenta está en pausa${c && c.panelName ? ', ' + String(c.panelName).split(/\s+/)[0] : ''}.\n\nPara volver a usarla y a usar el bot, solo tienes que ponerte al día con el pago. 👇`
@@ -4436,13 +4436,14 @@ function pricesSimple(c) {
   const P = (m, sc) => Number(pr[`${m}-${sc}`]) || 0;
   const scs = [1, 2, 3, 4].filter((sc) => [1, 3, 6, 12].some((m) => P(m, sc) >= 0.5));
   if (!scs.length) return null;
-  const from = (sc) => { const ms = [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5); return ms.length ? Math.min(...ms.map((m) => P(m, sc) / m)) : 0; };
+  // v314: el precio real de 1 mes (nada de «desde» con el plan largo dividido); si no hay de 1 mes, el plan más corto que tenga
+  const lbl = (sc) => { if (P(1, sc) >= 0.5) return `${money(P(1, sc))}/mes`; const m = [3, 6, 12].find((x) => P(x, sc) >= 0.5); return m ? `${money(P(m, sc))} · ${m} meses` : ''; };
   const canPay = !!(c.id && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()), payScr = canPay ? cpScreens(c, cpCtx(c)) : [];
   const L = [`💶 <b>${c.demo || !c.id ? 'Elige tu plan' : 'Renueva tu cuenta'}</b>`, ''];
   L.push(canPay ? '1️⃣ Toca cuántas <b>pantallas</b> quieres\n<i>(pantallas = aparatos viendo a la vez)</i>\n2️⃣ Eliges el <b>tiempo</b> y pagas en 1 minuto 💳\n3️⃣ ¡Listo! Se activa al momento ✅'
-    : `📺 <i>Pantallas = aparatos viendo a la vez.</i>\n\n${scs.map((sc) => `📺 <b>${sc === 1 ? '1 pantalla' : sc + ' pantallas'}</b> · desde <b>${money(Math.round(from(sc) * 100) / 100)}/mes</b>`).join('\n')}`);
+    : `📺 <i>Pantallas = aparatos viendo a la vez.</i>\n\n${scs.map((sc) => `📺 <b>${sc === 1 ? '1 pantalla' : sc + ' pantallas'}</b> · <b>${lbl(sc)}</b>`).join('\n')}`);
   const kb = [];
-  if (canPay) for (const sc of scs.filter((x) => payScr.includes(x))) kb.push([{ text: `📺 ${sc === 1 ? '1 pantalla' : sc + ' pantallas'} · desde ${money(Math.round(from(sc) * 100) / 100)}/mes`, url: `${cpLink(c)}?s=${sc}` }]);
+  if (canPay) for (const sc of scs.filter((x) => payScr.includes(x))) kb.push([{ text: `📺 ${sc === 1 ? '1 pantalla' : sc + ' pantallas'} · ${lbl(sc)}`, url: `${cpLink(c)}?s=${sc}` }]);
   if (!c.id && sdCfg().on) kb.push([{ text: '🎁 Pruébalo gratis primero', callback_data: 'sd:go' }]);
   kb.push([{ text: '📋 Ver todos los precios', callback_data: 'pr:all' }]);
   if (c.id) kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
@@ -4469,6 +4470,14 @@ function pricesMsg(c, scr) { // v298: todas las pantallas a la vez, cada una en 
   if (c.id && cpEligible(c) && siteBase()) kb.push([{ text: `💳 ${c.demo ? 'Activar mi cuenta' : 'Renovar ahora'} (eliges pantallas y tiempo)`, url: cpLink(c) }]);
   kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
   return { text: L.join('\n'), kb: { inline_keyboard: kb } };
+}
+/** v314: de todas las cuentas de un chat, la que manda (precios, novedades, invitar…): primero las activas de verdad,
+ *  luego demos activas, luego caducadas, y lo de la papelera lo último; a igualdad, la más reciente.
+ *  Antes cogía la primera de la lista, que podía ser una demo vieja de otro vendedor en la papelera (y salían sus precios). */
+function bestAcc(list) {
+  const rank = (c) => (c.status === 'trash' ? 3 : c.status === 'active' ? (c.demo ? 1 : 0) : 2);
+  const t = (c) => String(c.lastAction || c.tgAt || c.createdAt || '');
+  return [...(list || [])].sort((a, b) => rank(a) - rank(b) || t(b).localeCompare(t(a)))[0];
 }
 async function botReply(chat, kind, list) {
   if (list.length && !botAlive(list) && !['renovar', 'precios'].includes(kind)) return botExpired(chat, list);
@@ -4542,12 +4551,12 @@ async function botReply(chat, kind, list) {
     return send(parts.join('\n\n— — —\n\n') + tip, { inline_keyboard: kb }, true);
   }
   if (kind === 'precios') {
-    const r = pricesSimple(accs.find((x) => !x.demo) || accs[0]); // v299
+    const r = pricesSimple(bestAcc(accs)); // v299
     return r ? send(r.text, r.kb, true) : send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
   }
-  if (kind === 'invitar') return refBot(chat, accs.find((x) => !x.demo) || accs[0]);
+  if (kind === 'invitar') return refBot(chat, bestAcc(accs));
   if (kind === 'regalo') return sdGiftBot(chat, accs.find((x) => sdGiftOk(x)) || accs[0]); // v303
-  if (kind === 'novedades') return botNews(chat, accs.find((x) => !x.demo) || accs[0]);
+  if (kind === 'novedades') return botNews(chat, bestAcc(accs));
   return send(botAnswer('ayuda', list).text);
 }
 async function botRequest(chat, list, text) {
@@ -4573,7 +4582,7 @@ async function botCallback(cq) {
   if (/^nd:\d{4}-\d{2}-\d{2}(:\d{1,3})?$/.test(data)) { // v287/v289: novedades, cambiar de día o de página (se cambia el mismo mensaje)
     const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length) return;
     const [, d, pg] = data.split(':');
-    return botNews(chat, mine.find((x) => !x.demo) || mine[0], d, cq.message && cq.message.message_id, Number(pg) || 0);
+    return botNews(chat, bestAcc(mine), d, cq.message && cq.message.message_id, Number(pg) || 0);
   }
   if (/^sd:go(:[a-z0-9-]{1,30})?$/.test(data)) return sdCreate(chat, cq.from || {}, data.split(':')[2] || ''); // v295/v296 (sdBusy evita dobles)
   if (data === 'sdx:off' || data === 'sdx:on') { // v296: pausar o reanudar desde el aviso (solo un superadministrador)
@@ -4593,7 +4602,7 @@ async function botCallback(cq) {
     return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: sdDevText(k, c), reply_markup: sdDevKb(c, true) });
   }
   if (data === 'nx') return;
-  if (data === 'nt') { const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length || botTooFast(chat)) return; if (!botAlive(mine)) return botExpired(chat, mine); return botNewsTop(chat, mine.find((x) => !x.demo) || mine[0]); } // v291
+  if (data === 'nt') { const mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length || botTooFast(chat)) return; if (!botAlive(mine)) return botExpired(chat, mine); return botNewsTop(chat, bestAcc(mine)); } // v291
   if (data.startsWith('em:')) { // v291: no avisar más de una serie
     const key = data.slice(3), mine = db.clients.filter((c) => c.tgChat === chat); if (!mine.length) return;
     await lock(async () => { for (const c of mine) c.epMute = [...new Set([...(c.epMute || []), key])].slice(-100); saveDb(); });
@@ -4603,7 +4612,7 @@ async function botCallback(cq) {
   if (/^na:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsAlbum(chat, data.slice(3)); } // v289: carátulas del día
   if (/^pr:([1-4]|all)$/.test(data)) { // v282/v299: tabla completa de precios (también para quien todavía no es cliente)
     const mine = db.clients.filter((c) => c.tgChat === chat);
-    const r = pricesMsg(mine.find((x) => !x.demo) || mine[0] || { id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }); if (!r) return;
+    const r = pricesMsg(bestAcc(mine) || { id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }); if (!r) return;
     if (!mine.length) r.kb = { inline_keyboard: sdCfg().on ? [[{ text: '🎁 Pruébalo gratis primero', callback_data: 'sd:go' }]] : [] };
     return tg('editMessageText', { chat_id: chat, message_id: cq.message.message_id, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb })
       .catch(() => tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb }).catch(() => {}));
@@ -10982,7 +10991,7 @@ route('POST', '/api/bot/announce', SUPER, ({ me }) => {
     for (const chat of chats) {
       const list = db.clients.filter((c) => c.tgChat === chat && c.status !== 'trash');
       if (list.length) {
-        const c = list.find((x) => !x.demo) || list[0], n = String(c.panelName || '').split(/\s+/)[0];
+        const c = bestAcc(list), n = String(c.panelName || '').split(/\s+/)[0];
         const cap = `🆕 ¡Hola${n ? ', ' + n : ''}! Hemos renovado tu asistente de ${botName()} ✨\n\nAquí tienes tu tarjeta con los días que te quedan y un menú nuevo con botones:\n📋 Tu cuenta · 💳 Renovar en 1 minuto · 🔎 Buscar pelis y series · 🛠️ Ayuda\n\nToca un botón para probarlo 👇`;
         try { await tgPhoto(chat, accountCard(c), cap, botMenuKb(list)); job.ok++; }
         catch (e) { job.failed++; if (/blocked|chat not found|deactivated/i.test(e.message)) await lock(async () => { for (const x of list) { delete x.tgChat; addLog('aviso', x, 'Telegram desenlazado: el cliente bloqueó el bot', null); } saveDb(); }); }
