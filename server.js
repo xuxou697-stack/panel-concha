@@ -3144,7 +3144,7 @@ async function telegramPoll() {
   if (!cfg.token || tgBusy) return;
   tgBusy = true;
   try {
-    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: 0, allowed_updates: ['message', 'callback_query', 'my_chat_member'] });
+    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: 0, allowed_updates: ['message', 'callback_query', 'my_chat_member', 'channel_post'] });
     if (!ups.length) return;
     const jobs = []; // respuestas del bot que consultan Emby: se hacen después, sin bloquear el panel
     await lock(async () => {
@@ -3152,6 +3152,8 @@ async function telegramPoll() {
         cfg.offset = u.update_id + 1;
         if (u.callback_query) { const cq = u.callback_query; jobs.push(() => botCallback(cq)); continue; }
         if (u.my_chat_member) { const mc = u.my_chat_member; if ((mc.chat || {}).type === 'private') { if ((mc.new_chat_member || {}).status === 'kicked') tgGone(mc.chat.id, 'block'); continue; } feedSeeChat(mc); continue; } // v274: el bot entra (o sale) de un canal o grupo
+        const gm = u.message || u.channel_post; // v307: «/conectar CÓDIGO» en un grupo o canal privado de un vendedor
+        if (gm && gm.chat && gm.chat.type !== 'private') { const lm = typeof gm.text === 'string' && /^\/conectar(?:@\w+)?\s+([A-Za-z0-9]{6})\s*$/.exec(gm.text.trim()); if (lm) feedLinkCode(gm, lm[1].toUpperCase(), jobs); continue; }
         const msg = u.message;
         if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') continue;
         const chat = msg.chat.id, text = msg.text.trim();
@@ -7068,7 +7070,7 @@ async function feedVendorPost(s, f, v, p) {
   const vf = v.feed, poster = feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null;
   const cap = feedCaption(p, { header: vf.header, fields: f.fields, footer: vf.footer || '' });
   if (vf.on && vf.chan) {
-    try { await feedSend(s, { chat: vf.chan }, cap, poster); vf.error = ''; vf.posts = (vf.posts || 0) + 1; vf.lastPost = new Date().toISOString(); }
+    try { await feedSend(s, { chat: vf.chan, thread: vf.thread || 0 }, cap, poster); vf.error = ''; vf.posts = (vf.posts || 0) + 1; vf.lastPost = new Date().toISOString(); }
     catch (e) { vf.error = /not found|kicked|rights|forbidden|administrator/i.test(e.message) ? 'El bot no puede publicar en tu canal: revisa que siga siendo administrador.' : e.message; }
   }
   if (vf.tg) {
@@ -7092,15 +7094,41 @@ async function feedVendorDigests() {
     vf.digest = []; vf.digestDay = day;
   }
 }
+/** v307: un vendedor conecta su grupo o canal PRIVADO (los enlaces t.me/+… no sirven para el bot): escribe «/conectar CÓDIGO» allí */
+function feedLinkCode(gm, code, jobs) {
+  const ch = gm.chat, v = db.users.find((u) => VEND_ROLES.includes(u.role) && !u.disabled && u.feed && u.feed.linkCode === code && Date.parse(u.feed.linkExp || 0) > Date.now());
+  if (!v) { jobs.push(() => tg('sendMessage', { chat_id: ch.id, ...(gm.message_thread_id ? { message_thread_id: gm.message_thread_id } : {}), text: '⚠️ Ese código no vale o ha caducado. Pide uno nuevo en el panel (Mis novedades).' }).catch(() => {})); return; }
+  const f = v.feed;
+  f.chan = String(ch.id); f.thread = gm.is_topic_message && gm.message_thread_id ? gm.message_thread_id : 0;
+  f.chanTitle = String(ch.title || 'Grupo privado').slice(0, 80); f.error = ''; delete f.linkCode; delete f.linkExp;
+  addLog('ajustes', null, `Novedades: ${v.name} ha conectado su ${ch.type === 'channel' ? 'canal' : 'grupo'} privado «${f.chanTitle}»`, v);
+  saveDb();
+  jobs.push(async () => {
+    await tg('deleteMessage', { chat_id: ch.id, message_id: gm.message_id }).catch(() => {});
+    await tg('sendMessage', { chat_id: ch.id, ...(f.thread ? { message_thread_id: f.thread } : {}), text: '✅ ¡Conectado! Aquí saldrán las novedades 🍿' }).catch(() => {});
+    for (const c of userChats(v)) tg('sendMessage', { chat_id: c, text: `✅ Tu ${ch.type === 'channel' ? 'canal' : 'grupo'} «${f.chanTitle}» ya está conectado a tus novedades.` }).catch(() => {});
+  });
+}
+route('POST', '/api/my-feed/link-code', VEND_ROLES, ({ me }) => lock(async () => {
+  if (db.settings.feedVend === false) throw new HttpError(403, 'Tu administrador no tiene activadas las novedades para vendedores.');
+  if (!db.settings.notices.telegram.token) throw new HttpError(400, 'El bot de Telegram no está configurado.');
+  const f = vfeedOf(me), A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  f.linkCode = Array.from(crypto.randomBytes(6), (b) => A[b % A.length]).join(''); f.linkExp = new Date(Date.now() + 30 * 60000).toISOString();
+  saveDb();
+  return { code: f.linkCode, bot: db.settings.notices.telegram.bot || '' };
+}));
 route('GET', '/api/my-feed', VEND_ROLES, ({ me }) => {
   if (db.settings.feedVend === false) throw new HttpError(403, 'Tu administrador no tiene activadas las novedades para vendedores.');
   const f = vfeedOf(me);
-  return { ...f, digest: undefined, bot: db.settings.notices.telegram.bot || '', hasBot: !!db.settings.notices.telegram.token, myTg: userChats(me).length > 0, servers: vendServers(me).map((s) => s.name), srv: vendServers(me).map((s) => ({ id: s.id, name: s.name, on: !(f.skip || []).includes(s.id) })) };
+  return { ...f, digest: undefined, linkCode: undefined, linkExp: undefined, bot: db.settings.notices.telegram.bot || '', hasBot: !!db.settings.notices.telegram.token, myTg: userChats(me).length > 0, servers: vendServers(me).map((s) => s.name), srv: vendServers(me).map((s) => ({ id: s.id, name: s.name, on: !(f.skip || []).includes(s.id) })) };
 });
 route('PUT', '/api/my-feed', VEND_ROLES, ({ me, body }) => lock(async () => {
   if (db.settings.feedVend === false) throw new HttpError(403, 'Tu administrador no tiene activadas las novedades para vendedores.');
   const f = vfeedOf(me), b = body || {};
-  if (typeof b.chan === 'string') { const v = b.chan.trim().slice(0, 200); if (v && !feedTarget({ chat: v }).chat) throw new HttpError(400, 'Pega el enlace del canal (https://t.me/…) o su @usuario.'); f.chan = v; f.chanTitle = String(b.chanTitle || v).slice(0, 80); }
+  if (typeof b.chan === 'string') { const v = b.chan.trim().slice(0, 200);
+    if (/t\.me\/(\+|joinchat)/i.test(v)) throw new HttpError(400, 'Ese es el enlace de un grupo o canal privado: pulsa «🔒 Conectar grupo o canal privado» justo debajo.'); // v307
+    if (v && !feedTarget({ chat: v }).chat) throw new HttpError(400, 'Pega el enlace del canal (https://t.me/…) o su @usuario.');
+    if (v !== f.chan) { f.chan = v; f.chanTitle = String(b.chanTitle || v).slice(0, 80); f.thread = 0; } }
   if (typeof b.header === 'string') f.header = b.header.trim().slice(0, 80);
   if (typeof b.footer === 'string') f.footer = b.footer.trim().slice(0, 80);
   if (b.on !== undefined) { f.on = !!b.on; if (f.on && !f.chan) throw new HttpError(400, 'Pon primero tu canal.'); }
@@ -7120,8 +7148,8 @@ route('POST', '/api/my-feed/test', VEND_ROLES, async ({ me, body }) => {
   if (s) { try { const posts = await feedNew(s, { ...(s.feed || {}), since: new Date(Date.now() - 60 * 86400000).toISOString(), sent: [] }); p = posts.filter((x) => x.kind === 'movie').pop() || posts[posts.length - 1] || null; } catch { /* nada */ } }
   const sf = (s && s.feed) || {};
   try {
-    if (p) await feedSend(s, { chat: chan }, '🧪 Prueba de tu canal\n\n' + feedCaption(p, { header: b.header ?? f.header, fields: sf.fields, footer: b.footer ?? f.footer ?? '' }), feedFields(sf).find((x) => x.k === 'poster').on ? p.poster : null);
-    else await feedSend(s || {}, { chat: chan }, '🧪 Prueba de tu canal de novedades\n\nAquí saldrán las pelis y series nuevas.', null);
+    if (p) await feedSend(s, { chat: chan, thread: chan === f.chan ? f.thread || 0 : 0 }, '🧪 Prueba de tu canal\n\n' + feedCaption(p, { header: b.header ?? f.header, fields: sf.fields, footer: b.footer ?? f.footer ?? '' }), feedFields(sf).find((x) => x.k === 'poster').on ? p.poster : null);
+    else await feedSend(s || {}, { chat: chan, thread: chan === f.chan ? f.thread || 0 : 0 }, '🧪 Prueba de tu canal de novedades\n\nAquí saldrán las pelis y series nuevas.', null);
   } catch (e) { throw new HttpError(400, /not found/i.test(e.message) ? 'No encuentro ese canal. Revisa el enlace y que el bot sea administrador.' : /rights|administrator|forbidden|not enough/i.test(e.message) ? 'El bot no puede publicar: hazlo administrador con permiso para publicar.' : e.message); }
   return { ok: true, note: 'Prueba publicada: mírala en tu canal.' };
 });
