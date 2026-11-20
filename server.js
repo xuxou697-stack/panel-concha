@@ -149,7 +149,8 @@ function loadDb() {
     db.settings.grow = { winback: { on: false, d7: true, d30: true, offer: '', ...(g.winback || {}) }, weekly: { on: true, day: 1, hour: 10, last: '', ...(g.weekly || {}) },
       outage: { on: false, chat: '', thread: 0, delay: 3, name: true, ...(g.outage || {}) }, survey: { on: false, days: 30, since: '', ...(g.survey || {}) },
       epAlert: { on: true, ...(g.epAlert || {}) }, wrap: { on: true, days: 5, ...(g.wrap || {}) },
-      demoFollow: { on: true, d1: true, d3: true, ...(g.demoFollow || {}) }, bye: { on: true, ...(g.bye || {}) } }; } // v309
+      demoFollow: { on: true, d1: true, d3: true, ...(g.demoFollow || {}) }, bye: { on: true, ...(g.bye || {}) },
+      biz: { on: true, group: '', quiet: 3, ...(g.biz || {}) } }; } // v309 · v324: asistente en tu chat privado
   if (!db.botStats || typeof db.botStats !== 'object') db.botStats = { days: {}, miss: {} };
   db.settings.selfDemo = { on: false, hours: 4, servers: [], quality: 'basico', perDay: 20, perHour: 5, userPrefix: 'prueba', userSuffix: '', passMode: 'random', links: [{ code: 'forobeta', name: 'Forobeta', on: true }, { code: 'canal', name: 'Mi canal de Telegram', on: true }], ...(db.settings.selfDemo || {}) }; // v295/v296
   if (!db.selfDemoUsed || typeof db.selfDemoUsed !== 'object') db.selfDemoUsed = {};
@@ -3175,15 +3176,17 @@ async function telegramPoll() {
   tgBusy = true; const t0 = Date.now(); let ok = false;
   try {
     // v310: Telegram nos avisa en cuanto alguien toca un botón (antes se miraba cada 5 segundos)
-    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: TG_WAIT, allowed_updates: ['message', 'callback_query', 'my_chat_member', 'channel_post'] }, undefined, (TG_WAIT + 10) * 1000);
+    const ups = await tg('getUpdates', { offset: cfg.offset || 0, timeout: TG_WAIT, allowed_updates: ['message', 'callback_query', 'my_chat_member', 'channel_post', 'business_connection', 'business_message'] }, undefined, (TG_WAIT + 10) * 1000);
     ok = true;
     if (!ups.length) return;
-    for (const u of ups) { const cq = u.callback_query, m = u.message; if (cq && cq.message && cq.message.chat) tgTyping(cq.message.chat.id); else if (m && m.chat && m.chat.type === 'private' && typeof m.text === 'string') tgTyping(m.chat.id); }
+    for (const u of ups) { const cq = u.callback_query, m = u.message; if (cq && cq.message && cq.message.chat && !cq.message.business_connection_id) tgTyping(cq.message.chat.id); else if (m && m.chat && m.chat.type === 'private' && typeof m.text === 'string') tgTyping(m.chat.id); }
     const jobs = []; // respuestas del bot que consultan Emby: se hacen después, sin bloquear el panel
     await lock(async () => {
       for (const u of ups) {
         cfg.offset = u.update_id + 1;
         if (u.callback_query) { const cq = u.callback_query; jobs.push(() => botCallback(cq)); continue; }
+        if (u.business_connection) { bizConn(u.business_connection, jobs); continue; } // v324: el bot conectado a tu chat privado (Telegram Business)
+        if (u.business_message) { bizMsg(u.business_message, jobs); continue; }
         if (u.my_chat_member) { const mc = u.my_chat_member; if ((mc.chat || {}).type === 'private') { if ((mc.new_chat_member || {}).status === 'kicked') tgGone(mc.chat.id, 'block'); continue; } feedSeeChat(mc); continue; } // v274: el bot entra (o sale) de un canal o grupo
         const gm = u.message || u.channel_post; // v307: «/conectar CÓDIGO» en un grupo o canal privado de un vendedor
         if (gm && gm.chat && gm.chat.type !== 'private') { const lm = typeof gm.text === 'string' && /^\/conectar(?:@\w+)?\s+([A-Za-z0-9]{6})\s*$/.exec(gm.text.trim()); if (lm) feedLinkCode(gm, lm[1].toUpperCase(), jobs); continue; }
@@ -4581,6 +4584,7 @@ async function botCallback(cq) {
   const chat = cq.message && cq.message.chat && cq.message.chat.id, data = String(cq.data || '');
   await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   if (!chat) return;
+  if (cq.message.business_connection_id || data.startsWith('bz:')) return bizCallback(cq); // v324: botones del asistente de tu chat privado
   // v279: con la cuenta caducada o en pausa, el bot solo deja renovar o pagar
   if (/^(dv|gd|ga|pb|pt|nv|nd|ni|na):/.test(data)) { const mine0 = db.clients.filter((c) => c.tgChat === chat); if (mine0.length && !botAlive(mine0)) { searchWait.delete(chat); return botExpired(chat, mine0); } }
   if (/^nd:\d{4}-\d{2}-\d{2}(:\d{1,3})?$/.test(data)) { // v287/v289: novedades, cambiar de día o de página (se cambia el mismo mensaje)
@@ -6973,7 +6977,10 @@ async function feedNew(s, f) {
         if (!(at > since && at < settle) || sent.has(id) || seen.has(id)) continue; seen.add(id);
         const ppl = (t) => (it.People || []).filter((x) => x.Type === t).map((x) => x.Name);
         if (it.Type === 'Movie') out.push({ id, type: 'Movie', lib: lib.name, libIds: [lib.id, lib.guid], name: it.Name, year: it.ProductionYear, overview: it.Overview, rating: it.CommunityRating, genres: it.Genres || [], mins: it.RunTimeTicks ? Math.round(it.RunTimeTicks / 6e8) : 0, studio: ((it.Studios || [])[0] || {}).Name || '', director: ppl('Director'), cast: ppl('Actor'), poster: id, at });
-        else if (it.Type === 'Episode') out.push({ id, type: 'Episode', lib: lib.name, libIds: [lib.id, lib.guid], name: it.Name, series: it.SeriesName, seriesId: String(it.SeriesId || ''), season: it.ParentIndexNumber, ep: it.IndexNumber, poster: String(it.SeriesId || it.Id), at });
+        else if (it.Type === 'Episode') {
+          if (epRaw(it.Name, it.SeriesName) && at > Date.now() - 2 * 3600000) continue; // v323: Emby aún no tiene sus datos: se publica en otra vuelta
+          out.push({ id, type: 'Episode', lib: lib.name, libIds: [lib.id, lib.guid], name: it.Name, series: it.SeriesName, seriesId: String(it.SeriesId || ''), season: it.ParentIndexNumber, ep: it.IndexNumber, poster: String(it.SeriesId || it.Id), at });
+        }
       }
     }
   }
@@ -6983,7 +6990,39 @@ async function feedNew(s, f) {
     if (x.type === 'Movie') posts.push({ kind: 'movie', items: [x], poster: x.poster });
     else { const k = x.seriesId || x.series; if (!bySeries.has(k)) { const p = { kind: 'series', items: [], poster: x.poster }; bySeries.set(k, p); posts.push(p); } bySeries.get(k).items.push(x); }
   }
+  for (const p of posts) if (p.kind === 'series') { p.alt = p.items.map((x) => x.id).slice(0, 3); p.info = await feedSeriesInfo(s, p.items[0].seriesId).catch(() => null); }
   return posts;
+}
+/** v323: nombre de capítulo que todavía es el del archivo («Serie - 04x03 - Título», «S04E03»…) */
+function epRaw(name, series) {
+  const n = String(name || '');
+  return /\b\d{1,2}x\d{1,3}\b|\bS\d{1,2}\s?E\d{1,3}\b/i.test(n) || (!!series && n.toLowerCase().startsWith(String(series).toLowerCase() + ' -'));
+}
+/** v323: título limpio del capítulo (sin la serie ni «04x03»; nada si es solo «Episodio 3») */
+function epName(x) {
+  let n = String(x.name || '').trim();
+  if (x.series && n.toLowerCase().startsWith(String(x.series).toLowerCase())) n = n.slice(String(x.series).length);
+  n = n.replace(/^[\s\-–·.:_]*(\d{1,2}x\d{1,3}|S\d{1,2}\s?E\d{1,3})[\s\-–·.:_]*/i, '').replace(/^[\s\-–·.:_]+/, '').trim();
+  if (/^(episod(e|io)|cap[ií]tulo|ep\.?)\s*\d+$/i.test(n) || /^\d+$/.test(n)) return '';
+  if (epRaw(n)) return ''; // sigue pareciendo un nombre de archivo
+  return n;
+}
+/** v323: año, nota, género, sinopsis… de la serie (para que el aviso de un capítulo se vea como el de una película) */
+async function feedSeriesInfo(s, id) {
+  if (!id) return null;
+  if (s.kind === 'plex') {
+    const m = [].concat(pxMC(await pxLocal(s, `/library/metadata/${encodeURIComponent(id)}`)).Metadata || [])[0]; if (!m) return null;
+    const people = (k) => [].concat(m[k] || []).map((x) => x.tag).filter(Boolean);
+    return { year: m.year, rating: m.audienceRating || m.rating, genres: people('Genre'), overview: m.summary, studio: m.studio || '', cast: people('Role'), director: [] };
+  }
+  const r = await emby(s, 'GET', `/Items?Ids=${encodeURIComponent(id)}&Fields=Overview,ProductionYear,Genres,CommunityRating,Studios,People&EnableImages=false`);
+  const it = ((r && r.Items) || [])[0]; if (!it) return null;
+  return { year: it.ProductionYear, rating: it.CommunityRating, genres: it.Genres || [], overview: it.Overview, studio: ((it.Studios || [])[0] || {}).Name || '', cast: (it.People || []).filter((x) => x.Type === 'Actor').map((x) => x.Name), director: [] };
+}
+/** v323: carátula de la serie y, si falla, la del capítulo */
+async function feedPic(s, p, poster) {
+  for (const id of [poster, ...((poster && p && p.alt) || [])]) { if (!id) continue; const pic = await posterBytes(s, id).catch(() => null); if (pic) return pic; }
+  return null;
 }
 /** Datos que salen en cada publicación y su orden (como los elija el dueño del canal) */
 const FEED_FIELDS = [['poster', 'Carátula'], ['library', 'Biblioteca'], ['year', 'Año'], ['rating', 'Valoración'], ['genre', 'Género'], ['runtime', 'Duración'], ['studio', 'Estudio'], ['director', 'Director'], ['cast', 'Reparto'], ['overview', 'Sinopsis']];
@@ -6999,9 +7038,7 @@ function feedCaption(p, f = {}) {
   const head = String(f.header || '').trim(), foot = f.footer != null ? String(f.footer) : `🍿 ${botName()}`;
   const lines = [];
   if (head) lines.push(head);
-  if (p.kind === 'movie') {
-    const m = p.items[0];
-    lines.push('🎬 Una nueva película se ha añadido', '', `🎞️ ${m.name}`);
+  const rows = (m) => {
     const row = {
       library: () => m.lib && `📚 Biblioteca: ${m.lib}`, year: () => m.year && `📅 Año: ${m.year}`,
       rating: () => m.rating && `⭐ Valoración: ${Number(m.rating).toFixed(1).replace('.', ',')}`, genre: () => (m.genres || []).length && `🎭 Género: ${m.genres.slice(0, 3).join(', ')}`,
@@ -7010,13 +7047,19 @@ function feedCaption(p, f = {}) {
       overview: () => { const ov = String(m.overview || '').replace(/\s+/g, ' ').trim(); return ov && `📝 Sinopsis: ${ov.length > 380 ? ov.slice(0, 377).replace(/\s+\S*$/, '') + '…' : ov}`; },
     };
     for (const x of fields) if (x.on && row[x.k]) { const v = row[x.k](); if (v) lines.push(v); }
+  };
+  if (p.kind === 'movie') {
+    const m = p.items[0];
+    lines.push('🎬 Una nueva película se ha añadido', '', `🎞️ ${m.name}`);
+    rows(m);
   } else {
     const it = p.items, s0 = it[0], n = it.reduce((k, x) => k + (x.count || 1), 0);
-    const tags = it.filter((x) => x.ep != null).map(epTag);
+    const tags = it.filter((x) => x.ep != null).map(epTag), nm = epName(s0);
     lines.push(n === 1 ? '📺 Nuevo capítulo' : `📺 ${n} capítulos nuevos`, '', `🎞️ ${s0.series}`);
-    if (n === 1 && s0.ep != null) lines.push(`▶️ ${epTag(s0)}${s0.name ? ' · ' + s0.name : ''}`);
+    if (n === 1 && s0.ep != null) lines.push(`▶️ ${epTag(s0)}${nm ? ' · ' + nm : ''}`);
     else if (tags.length) lines.push(`▶️ ${tags.length > 1 ? tags[0] + ' – ' + tags[tags.length - 1] : tags[0]}`);
-    if (on('library') && s0.lib) lines.push(`📚 Biblioteca: ${s0.lib}`);
+    if (p.info) { lines.push(''); rows({ ...p.info, lib: s0.lib }); } // v323: con los datos de la serie, como las películas
+    else if (on('library') && s0.lib) lines.push(`📚 Biblioteca: ${s0.lib}`);
   }
   if (foot) lines.push('', foot);
   return lines.join('\n');
@@ -7029,10 +7072,10 @@ function feedTarget(f) {
   if ((m = raw.match(/^@?([A-Za-z0-9_]{4,})$/))) return { chat: '@' + m[1], thread: 0 };
   return { chat: '', thread: 0 };
 }
-async function feedSend(s, f, caption, poster) {
+async function feedSend(s, f, caption, poster, p) {
   const { chat, thread } = feedTarget(f);
   if (!chat) throw new Error('Falta el canal.');
-  const pic = poster ? await posterBytes(s, poster).catch(() => null) : null;
+  const pic = poster ? await feedPic(s, p, poster) : null;
   if (pic) {
     const cfg = db.settings.notices.telegram, form = new FormData();
     form.append('chat_id', chat); if (thread) form.append('message_thread_id', String(thread));
@@ -7060,7 +7103,7 @@ function feedLine(p) {
 }
 async function feedBotNow(s, f, p) {
   const ids = p.items.flatMap((x) => x.libIds || []), poster = feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null;
-  const pic = poster ? await posterBytes(s, poster).catch(() => null) : null, cap = feedCaption(p, f);
+  const pic = poster ? await feedPic(s, p, poster) : null, cap = feedCaption(p, f);
   for (const c of feedSubs(s)) {
     if (!feedCanSee(c, ids)) continue;
     try { if (pic) await tgPhoto(c.tgChat, pic.buf, cap, null, false, pic.type); else await tg('sendMessage', { chat_id: c.tgChat, text: cap, disable_web_page_preview: true }); }
@@ -7124,7 +7167,7 @@ async function feedTick() {
       for (const p of posts) {
         if (n >= 8) break; // el resto, en la siguiente vuelta
         if (toChannel) {
-          try { await feedSend(s, f, feedCaption(p, f), feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null); f.error = ''; f.posts = (f.posts || 0) + 1; f.lastPost = new Date().toISOString(); }
+          try { await feedSend(s, f, feedCaption(p, f), feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null, p); f.error = ''; f.posts = (f.posts || 0) + 1; f.lastPost = new Date().toISOString(); }
           catch (e) { f.error = /not found|kicked|rights|forbidden|administrator/i.test(e.message) ? 'El bot no puede publicar en el canal: revisa que siga siendo administrador.' : e.message; break; }
         }
         if (toBot) {
@@ -7178,12 +7221,12 @@ async function feedVendorPost(s, f, v, p) {
   const vf = v.feed, poster = feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null;
   const cap = feedCaption(p, { header: vf.header, fields: f.fields, footer: vf.footer || '' });
   if (vf.on && vf.chan) {
-    try { await feedSend(s, { chat: vf.chan, thread: vf.thread || 0 }, cap, poster); vf.error = ''; vf.posts = (vf.posts || 0) + 1; vf.lastPost = new Date().toISOString(); }
+    try { await feedSend(s, { chat: vf.chan, thread: vf.thread || 0 }, cap, poster, p); vf.error = ''; vf.posts = (vf.posts || 0) + 1; vf.lastPost = new Date().toISOString(); }
     catch (e) { vf.error = /not found|kicked|rights|forbidden|administrator/i.test(e.message) ? 'El bot no puede publicar en tu canal: revisa que siga siendo administrador.' : e.message; }
   }
   if (vf.tg) {
     if (vf.tgMode === 'now') {
-      const pic = poster ? await posterBytes(s, poster).catch(() => null) : null;
+      const pic = poster ? await feedPic(s, p, poster) : null;
       for (const ch of userChats(v)) { try { if (pic) await tgPhoto(ch, pic.buf, cap, null, false, pic.type); else await tg('sendMessage', { chat_id: ch, text: cap, disable_web_page_preview: true }); } catch { /* sin chat */ } }
     } else vf.digest = [...(vf.digest || []), { kind: p.kind, line: feedLine(p), srv: s.name }].slice(-200);
   }
@@ -7436,7 +7479,8 @@ route('GET', '/api/bot-stats', SUPER, () => {
   for (let i = 29; i >= 0; i--) { const d = addDays(today(), -i), x = st.days[d] || {}; series.push({ d, n: (x.news || 0) + (x.item || 0) + (x.album || 0) + (x.top || 0) + (x.hit || 0) + (x.miss || 0) }); }
   const miss = Object.entries(st.miss).filter(([, m]) => String(m.last).slice(0, 10) >= from).map(([k, m]) => ({ k, q: m.q, n: m.n, people: (m.cl || []).length, last: m.last })).sort((a, b) => b.people - a.people || b.n - a.n).slice(0, 60);
   const live = db.clients.filter((c) => !c.demo && c.status === 'active');
-  return { sum, series, miss, linked: live.filter((c) => c.tgChat).length, live: live.length, subs: live.filter((c) => c.feedSub).length, watching: Object.keys(watchLoad()).length };
+  return { sum, series, miss, linked: live.filter((c) => c.tgChat).length, live: live.length, subs: live.filter((c) => c.feedSub).length, watching: Object.keys(watchLoad()).length,
+    biz: { conn: g.biz.conn ? { on: g.biz.conn.on, can: g.biz.conn.can, at: g.biz.conn.at, name: g.biz.conn.name } : null, n: botStatSum(['biz'], 30).biz || 0, chats: Object.keys(bizSt()).length, wants: Object.values(bizSt()).filter((x) => x.wants && Date.now() - Date.parse(x.wants) < 30 * 86400000).length, botUser: db.settings.notices.telegram.bot || '' } };
 });
 /* v293: al tocar una cifra de «Uso del bot», qué clientes son */
 route('GET', '/api/bot-stats/who', SUPER, ({ req }) => {
@@ -7483,7 +7527,8 @@ route('GET', '/api/grow', SUPER, () => {
   return { cfg: g, bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
     df: { f1: db.clients.filter((c) => (c.dfSent || []).includes('f1')).length, f3: db.clients.filter((c) => (c.dfSent || []).includes('f3')).length, back: db.clients.filter((c) => (c.dfSent || []).length && !c.demo).length },
     bye: BYE.map(([k, t]) => [t, db.clients.filter((c) => c.leftWhy && c.leftWhy.k === k).length]), byeList: db.clients.filter((c) => c.leftWhy).sort((a, b) => b.leftWhy.at.localeCompare(a.leftWhy.at)).slice(0, 20).map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, why: (BYE.find((x) => x[0] === c.leftWhy.k) || [])[1] || '', at: c.leftWhy.at, how: c.leftWhy.how, whatsapp: c.whatsapp || '', telegram: c.telegram || '' })),
-    tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, watching: Object.keys(watchLoad()).length };
+    tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, watching: Object.keys(watchLoad()).length,
+    biz: { conn: g.biz.conn ? { on: g.biz.conn.on, can: g.biz.conn.can, at: g.biz.conn.at, name: g.biz.conn.name } : null, n: botStatSum(['biz'], 30).biz || 0, chats: Object.keys(bizSt()).length, wants: Object.values(bizSt()).filter((x) => x.wants && Date.now() - Date.parse(x.wants) < 30 * 86400000).length, botUser: db.settings.notices.telegram.bot || '' } };
 });
 route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   const g = db.settings.grow, b = body || {};
@@ -7494,6 +7539,7 @@ route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   if (b.outage) { const o = b.outage; g.outage.on = !!o.on; if (typeof o.chat === 'string') g.outage.chat = o.chat.trim().slice(0, 200); g.outage.thread = Math.max(0, Math.min(1e9, Number(o.thread) || 0)); if ([1, 2, 3, 5, 10, 15].includes(Number(o.delay))) g.outage.delay = Number(o.delay); g.outage.name = o.name !== false; }
   if (b.survey) { const v = b.survey; const was = g.survey.on; g.survey.on = !!v.on; if ([7, 15, 30, 60].includes(Number(v.days))) g.survey.days = Number(v.days); if (g.survey.on && (!was || !g.survey.since)) g.survey.since = today(); }
   if (b.epAlert) g.epAlert.on = !!b.epAlert.on;
+  if (b.biz) { g.biz.on = !!b.biz.on; if (typeof b.biz.group === 'string') { const gl = b.biz.group.trim().slice(0, 200); if (gl && !/^https:\/\/t\.me\/[\w+\-/]+$/.test(gl)) throw new HttpError(400, 'El enlace del grupo tiene que empezar por https://t.me/'); g.biz.group = gl; } if ([1, 3, 6, 12, 24].includes(Number(b.biz.quiet))) g.biz.quiet = Number(b.biz.quiet); } // v324
   if (b.wrap) { g.wrap.on = !!b.wrap.on; if ([3, 5, 7].includes(Number(b.wrap.days))) g.wrap.days = Number(b.wrap.days); }
   addLog('ajustes', null, 'Ajustes de «Crecer» cambiados', me);
   saveDb();
@@ -7772,6 +7818,101 @@ async function sdGiftBot(chat, c) {
     '1️⃣ Toca <b>«📤 Enviar a un amigo»</b>', '2️⃣ Elige a quién se lo mandas', '3️⃣ Tu amigo lo abre y empieza a ver al momento 🍿', '',
     '🔔 Te aviso cuando empiece a probar.', left ? `👥 Puedes regalar <b>${max}</b> al mes · te ${left === 1 ? 'queda <b>1</b>' : `quedan <b>${left}</b>`}` : `✅ Este mes ya has regalado tus ${max} pruebas. ¡Gracias por recomendarnos${first ? ', ' + hEsc(first) : ''}! 💛`].join('\n');
   return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text, reply_markup: { inline_keyboard: [...(left ? [[{ text: '📤 Enviar a un amigo', url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(share)}` }]] : []), menu] } });
+}
+/* ---------- v324: asistente en tu chat privado (Telegram Business). Conectas el bot del panel a tu cuenta de Telegram
+   y, cuando alguien te escribe, le contesta con botones (precios, renovar, instalar, prueba gratis, novedades…).
+   Si es cliente, le enseña su cuenta. En cuanto escribes tú (o pide hablar contigo), se calla en ese chat. ---------- */
+const bizCfg = () => db.settings.grow.biz;
+const bizSt = () => { if (!db.bizChats || typeof db.bizChats !== 'object') db.bizChats = {}; return db.bizChats; };
+const bizOwner = (chatId) => db.users.find((u) => u.role === 'super' && !u.disabled && userChats(u).map(String).includes(String(chatId)));
+function bizConn(bc, jobs) {
+  const b = bizCfg(), who = bizOwner(bc.user_chat_id);
+  if (!who) { jobs.push(() => tg('sendMessage', { chat_id: bc.user_chat_id, text: '🔒 Este bot es privado: solo puede conectarlo el dueño del panel (con su Telegram enlazado al panel).' }).catch(() => {})); return; }
+  const can = bc.rights ? !!bc.rights.can_reply : bc.can_reply !== false;
+  b.conn = { id: bc.id, user: bc.user && bc.user.id, name: (bc.user && bc.user.first_name) || '', chat: bc.user_chat_id, can, on: bc.is_enabled !== false, at: new Date().toISOString() };
+  saveDb();
+  const ok = b.conn.on && can;
+  jobs.push(() => tg('sendMessage', { chat_id: bc.user_chat_id, parse_mode: 'HTML', text: !b.conn.on ? '👋 Has desconectado el asistente de tu chat privado. Ya no contestará a nadie.'
+    : !can ? '⚠️ El asistente está conectado, pero <b>sin permiso para responder</b>.\n\nEn Telegram: <b>Ajustes › Telegram Business › Chatbots</b> y activa <b>«Responder a los mensajes»</b>.'
+    : `✅ <b>¡Asistente conectado a tu chat!</b>\n\nCuando alguien te escriba, le contestaré con un menú de botones (precios, renovar, cómo instalar, prueba gratis…).\n\n🤫 En cuanto escribas tú en un chat, me callo ahí durante ${b.quiet || 3} horas.\n💬 Si alguien pulsa «Hablar contigo», te aviso por aquí.` }).catch(() => {}));
+  if (ok) addLog('ajustes', null, 'Asistente de Telegram conectado al chat privado', null);
+}
+function bizMsg(m, jobs) {
+  const b = bizCfg(), cn = b.conn;
+  if (!b.on || !cn || !cn.on || !cn.can || m.business_connection_id !== cn.id || !m.chat || m.chat.type !== 'private') return;
+  if (m.sender_business_bot) return; // lo hemos mandado nosotros
+  const st = bizSt(), k = String(m.chat.id), x = st[k] || (st[k] = {}), now = Date.now();
+  if (m.from && String(m.from.id) === String(cn.user)) { x.ownerAt = now; return; } // escribes tú: el asistente se calla en este chat
+  if (m.from && m.from.is_bot) return;
+  const text = String(m.text || m.caption || '').trim();
+  const force = /^\/?(men[uú]|start|info|ayuda|hola)\b/i.test(text) && text.length < 25;
+  if (!force) {
+    if (x.muteUntil && x.muteUntil > now) return;
+    if (x.ownerAt && now - x.ownerAt < (Number(b.quiet) || 3) * 3600000) return;
+    if (x.menuAt && now - x.menuAt < 12 * 3600000) return;
+  } else if (x.muteUntil && x.muteUntil > now) return;
+  x.menuAt = now; x.n = (x.n || 0) + 1;
+  const keys = Object.keys(st); if (keys.length > 3000) for (const kk of keys.sort((a, c) => (st[a].menuAt || 0) - (st[c].menuAt || 0)).slice(0, 500)) delete st[kk];
+  botStat('biz');
+  jobs.push(() => bizMenu(m.chat.id, m.from));
+}
+const bizClient = (chat) => { const mine = db.clients.filter((c) => c.tgChat != null && String(c.tgChat) === String(chat) && c.status !== 'trash'); return mine.length ? bestAcc(mine) : null; };
+function bizSend(chat, text, kb, edit) {
+  const cn = bizCfg().conn; if (!cn) return null;
+  const body = { business_connection_id: cn.id, chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb };
+  if (edit) return tg('editMessageText', { ...body, message_id: edit }).catch((e) => (/not modified/i.test(e.message) ? null : tg('sendMessage', body)));
+  return tg('sendMessage', body).catch((e) => console.error('Asistente:', e.message));
+}
+function bizMenu(chat, from, edit) {
+  const b = bizCfg(), c = bizClient(chat), bot = db.settings.notices.telegram.bot, nm = botName();
+  const first = from && from.first_name ? ' ' + hEsc(String(from.first_name).split(/\s+/)[0].slice(0, 20)) : (c && c.panelName ? ' ' + hEsc(String(c.panelName).split(/\s+/)[0]) : '');
+  const L = [`👋 <b>¡Hola${first}!</b> Gracias por escribir a <b>${hEsc(nm)}</b> 🎬`, '', `<b>${hEsc(nm)}</b> te contesta en cuanto pueda 🙂`];
+  if (c) {
+    const left = Math.ceil((Date.parse(c.expiresAt) - Date.now()) / 86400000), when = new Date(c.expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+    L.push('', `📺 <b>Tu cuenta</b> · <code>${hEsc(c.embyName)}</code>`, c.status === 'active' && left > 0 ? `${left <= 5 ? '⏳' : '✅'} Activa hasta el <b>${when}</b> · ${left === 1 ? 'queda 1 día' : `quedan ${left} días`}` : '❌ <b>Caducada</b> · renuévala y vuelve al momento');
+  }
+  L.push('', 'Mientras tanto, toca lo que necesites 👇');
+  const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase();
+  const kb = [];
+  if (pay) kb.push([{ text: c.status === 'active' && Date.parse(c.expiresAt) > Date.now() ? '🔄 Renovar mi cuenta' : '🚀 Volver ahora', url: cpLink(c) }]);
+  kb.push([{ text: '💶 Precios', callback_data: 'bz:pr' }, { text: '📲 Cómo instalar', callback_data: 'bz:in' }]);
+  if (!c && bot && sdCfg().on) kb.push([{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]);
+  const row = [];
+  if (/^https:\/\/t\.me\//.test(b.group || '')) row.push({ text: '📢 Novedades', url: b.group });
+  if (bot) row.push({ text: c ? '🤖 Mi cuenta en el bot' : '🤖 Abrir el bot', url: `https://t.me/${bot}` });
+  if (row.length) kb.push(row);
+  kb.push([{ text: '💬 Prefiero hablar contigo', callback_data: 'bz:yo' }]);
+  return bizSend(chat, L.join('\n'), { inline_keyboard: kb }, edit);
+}
+async function bizCallback(cq) {
+  const m = cq.message, chat = m.chat.id, mid = m.message_id, data = String(cq.data || ''), b = bizCfg();
+  if (!b.conn || (m.business_connection_id && m.business_connection_id !== b.conn.id)) return;
+  const back = [{ text: '⬅️ Volver al menú', callback_data: 'bz:menu' }], c = bizClient(chat), bot = db.settings.notices.telegram.bot;
+  if (data === 'bz:menu') return bizMenu(chat, cq.from, mid);
+  if (data === 'bz:pr') {
+    const r = pricesSimple(c || {}); if (!r) return bizSend(chat, '💶 Escríbeme y te paso los precios 🙂', { inline_keyboard: [back] }, mid);
+    const urls = (r.kb.inline_keyboard || []).filter((row) => row.every((x) => x.url));
+    const extra = !c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : [];
+    return bizSend(chat, r.text.replace(/\n\n💬 Para contratar[\s\S]*$/, ''), { inline_keyboard: [...urls, ...extra, back] }, mid);
+  }
+  if (data === 'bz:in') {
+    const rows = []; SD_DEV.forEach(([k, t], i) => { if (i % 2 === 0) rows.push([]); rows[rows.length - 1].push({ text: t, callback_data: 'bz:d:' + k }); });
+    return bizSend(chat, '📲 <b>¿En qué aparato lo quieres ver?</b>\n\nToca el tuyo y te explico paso a paso 👇', { inline_keyboard: [...rows, back] }, mid);
+  }
+  if (data.startsWith('bz:d:')) {
+    const k = data.slice(5), sv = db.servers.find((x) => x.id === ((sdCfg().servers || [])[0])) || db.servers.find((x) => !x.off && ['emby', 'jellyfin'].includes(kindOf(x))) || {};
+    const who = c || { serverId: sv.id, embyName: 'tu usuario', password: 'tu contraseña' };
+    let t = sdDevText(k, who); if (!c) t = t.replace('\n\n<i>👆 Toca cada dato para copiarlo</i>', '\n\n<i>🔑 Tu usuario y contraseña te llegan al darte de alta (o al pedir la prueba gratis).</i>');
+    const kb = [[{ text: '⬅️ Otro aparato', callback_data: 'bz:in' }], ...(!c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : []), back];
+    return bizSend(chat, t, { inline_keyboard: kb }, mid);
+  }
+  if (data === 'bz:yo') {
+    const x = bizSt()[String(chat)] || (bizSt()[String(chat)] = {}); x.muteUntil = Date.now() + 12 * 3600000; x.wants = new Date().toISOString(); saveDb();
+    await bizSend(chat, '👍 <b>¡Perfecto!</b> Ahora te escribo yo. Dame un momento 🙂', { inline_keyboard: [] }, mid);
+    const name = [cq.from && cq.from.first_name, cq.from && cq.from.last_name].filter(Boolean).join(' ') || 'Alguien', user = cq.from && cq.from.username ? ' (@' + cq.from.username + ')' : '';
+    const cl = c ? `\n📺 Es cliente: <b>${hEsc(c.panelName || c.embyName)}</b> · <code>${hEsc(c.embyName)}</code>` : '\n🆕 No es cliente todavía';
+    return tg('sendMessage', { chat_id: b.conn.chat, parse_mode: 'HTML', text: `💬 <b>${hEsc(name)}${hEsc(user)}</b> quiere hablar contigo en tu chat privado.${cl}`, ...(cq.from && cq.from.username ? { reply_markup: { inline_keyboard: [[{ text: '💬 Abrir su chat', url: `https://t.me/${cq.from.username}` }]] } } : {}) }).catch(() => {});
+  }
 }
 async function sdOffer(chat, src = '', from = null) {
   const cf = sdCfg(), nm = botName(), gv = sdGiver(src), ln = src && !gv ? sdLink(src) : null;
@@ -8586,7 +8727,8 @@ async function cpPaid(o, via) {
   libCheckLater(c);
   let soc = null;
   if (!vend && socOn() && socCfg().auto.clients) soc = socAdd({ kind: 'cobro', amount: o.amount, who: o.manual ? socWho(db.users.find((x) => x.id === o.confirmedById), o.confirmedChat) : socCfg().online, desc: `${c.panelName} · ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'}${o.cycle ? ' (renovación automática)' : ''}`, src: 'cliente', ref: o.id, at: o.paidAt });
-  if (!vend) notifyStaff('payments', `💳 ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`);
+  const howPaid = o.usdc ? `🪙 Pagado con ${usdcFmt(o.usdc.got || o.usdc.micro)} USDC (red Polygon) → a tu dirección ${String(o.usdc.addr || '').slice(0, 6)}…${String(o.usdc.addr || '').slice(-4)}` : MANUAL[o.method] ? `${MANUAL[o.method].i || '💶'} Pagado por ${MANUAL[o.method].t}` : o.ppapi ? '🅿️ Pagado con PayPal' : '💳 Pagado con tarjeta (Stripe)'; // v321: dónde te ha llegado el dinero
+  if (!vend) notifyStaff('payments', `${o.usdc ? '🪙' : '💳'} ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${howPaid}\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`);
   o.screensAfter = c.screens || 1; o.expiresFrom = base;
   if (c.tgChat) receiptTg(c, o);
   if (o.wasDemo && c.sdGift) { const g = db.clients.find((x) => x.id === c.sdGift); // v303: el amigo al que regaló la prueba se ha hecho cliente
@@ -8738,9 +8880,13 @@ function usdcUnique(base) {
   for (let k = 1n; k < 1000n; k++) { const m = (base + k * 100n).toString(); if (!taken.has(m)) return m; }
   throw new HttpError(429, 'Hay muchos pagos en USDC abiertos. Prueba en unos minutos.');
 }
-function usdcSave(c, b, me) {
+/** v322: direcciones de CONTRATOS de monedas (no son carteras): si alguien las pega, los pagos se perderían para siempre */
+const NOT_WALLETS = new Set(['0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', '0x2791bca1f2de4661ed88a30c99a7a9449aa84174', '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063', '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270', '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0xdac17f958d2ee523a2206206994597c13d831ec7', '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xaf88d065e77c8cc2239327c5edb3a432268e5831', '0x0b2c639c533813f4aa9d7837caf62653d097ff85', '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e', '0x176211869ca2b568f2a7d4ee941e073a821ee1ff', '0x0000000000000000000000000000000000000000']);
+async function usdcSave(c, b, me) {
   const u = { ...(c.usdc || {}) };
-  if (b.addr !== undefined) { const a = String(b.addr || '').trim(); if (a && !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new HttpError(400, 'Esa dirección no parece de Polygon: empieza por 0x y tiene 42 caracteres. Copia la de «Recibir» USDC en Polygon de tu cartera.'); if (a !== u.addr) { const was = u.addr; u.addr = a; delete u.block; u.addrAt = new Date().toISOString(); // v317: aviso si cambia la dirección de cobro
+  if (b.addr !== undefined) { const a = String(b.addr || '').trim(); if (a && !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new HttpError(400, 'Esa dirección no parece de Polygon: empieza por 0x y tiene 42 caracteres. Copia la de «Recibir» USDC en Polygon de tu cartera.');
+    if (a && NOT_WALLETS.has(a.toLowerCase())) throw new HttpError(400, '⚠️ Esa es la dirección de la MONEDA USDC (su contrato), no la de tu cartera. Si la pones, los pagos se perderían para siempre. Copia la de «Recibir» o «Depositar» de tu cartera o tu exchange.');
+    if (a && a !== u.addr) { let code = '0x'; try { code = await usdcRpc('eth_getCode', [a, 'latest']); } catch { /* sin red: no se comprueba */ } if (code && code !== '0x') throw new HttpError(400, '⚠️ Esa dirección es un contrato, no una cartera normal. Para no perder pagos, usa la dirección de «Recibir» o «Depositar» USDC en Polygon de tu cartera o tu exchange.'); } if (a !== u.addr) { const was = u.addr; u.addr = a; delete u.block; u.addrAt = new Date().toISOString(); // v317: aviso si cambia la dirección de cobro
       const sh = (x) => (x ? x.slice(0, 6) + '…' + x.slice(-4) : '(ninguna)');
       for (const su of db.users.filter((x) => x.role === 'super' && !x.disabled)) for (const ch of userChats(su)) tg('sendMessage', { chat_id: ch, text: `🔐 Se ha cambiado la dirección de cobro en USDC\n\nAntes: ${sh(was)}\nAhora: ${sh(a)}\nPor: ${me ? me.name : 'el panel'}\n\nSi no has sido tú, entra en el panel ya, cámbiala por la tuya y cambia tu contraseña.` }).catch(() => {}); } }
   if (b.rate !== undefined) { const r = Number(String(b.rate || '').replace(',', '.')) || 0; if (r && (r < 0.2 || r > 5)) throw new HttpError(400, 'El cambio fijo tiene que estar entre 0,2 y 5.'); u.rate = r; }
@@ -9065,7 +9211,7 @@ route('PUT', '/api/client-pay', SUPER, async ({ me, body }) => { const ppNew = a
   if (ppNew) db.payCfg.ppcli = ppNew;
   if (body.pp && body.pp.remove) db.payCfg.ppcli = null;
   if (body.remind && typeof body.remind === 'object') c.remind = { client: body.remind.client !== false, vendor: body.remind.vendor !== false };
-  if (body.usdc && typeof body.usdc === 'object') usdcSave(c, body.usdc, me); // v311
+  if (body.usdc && typeof body.usdc === 'object') await usdcSave(c, body.usdc, me); // v311
   if (body.on !== undefined) { if (body.on && !cpStripeOk() && !cpManual(c).length && !ppOf(null) && !usdcOk()) throw new HttpError(400, 'Primero activa Stripe en Ajustes › Pagos online, conecta PayPal, o pon tu Bizum, PayPal o Revolut.'); c.on = !!body.on; }
   if (body.desc !== undefined) c.desc = str(body.desc, 60).trim() || 'Suscripción';
   if (body.vendors !== undefined) c.vendors = !!body.vendors;
