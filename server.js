@@ -4584,7 +4584,7 @@ async function botCallback(cq) {
   const chat = cq.message && cq.message.chat && cq.message.chat.id, data = String(cq.data || '');
   await tg('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   if (!chat) return;
-  if (cq.message.business_connection_id || data.startsWith('bz:')) return bizCallback(cq); // v324: botones del asistente de tu chat privado
+  if (cq.message.business_connection_id || data.startsWith('bz:')) { bizCallback(cq).catch((e) => console.error('Asistente:', e.message)); return; } // v324: botones del asistente de tu chat privado
   // v279: con la cuenta caducada o en pausa, el bot solo deja renovar o pagar
   if (/^(dv|gd|ga|pb|pt|nv|nd|ni|na):/.test(data)) { const mine0 = db.clients.filter((c) => c.tgChat === chat); if (mine0.length && !botAlive(mine0)) { searchWait.delete(chat); return botExpired(chat, mine0); } }
   if (/^nd:\d{4}-\d{2}-\d{2}(:\d{1,3})?$/.test(data)) { // v287/v289: novedades, cambiar de día o de página (se cambia el mismo mensaje)
@@ -7877,27 +7877,43 @@ function bizMsg(m, jobs, again) {
   x.menuAt = now; x.n = (x.n || 0) + 1;
   const keys = Object.keys(st); if (keys.length > 3000) for (const kk of keys.sort((a, c) => (st[a].menuAt || 0) - (st[c].menuAt || 0)).slice(0, 500)) delete st[kk];
   botStat('biz');
-  jobs.push(() => bizMenu(m.chat.id, m.from));
+  jobs.push(() => { bizMenu(m.chat.id, m.from).catch((e) => console.error('Asistente:', e.message)); });
 }
 const bizClient = (chat) => { const mine = db.clients.filter((c) => c.tgChat != null && String(c.tgChat) === String(chat) && c.status !== 'trash'); return mine.length ? bestAcc(mine) : null; };
-function bizSend(chat, text, kb, edit) {
+/** v328: como una persona: «escribiendo…» un momento (según lo largo del texto) y un mensaje nuevo en la conversación */
+const bizWait = (ms) => new Promise((r) => setTimeout(r, ms));
+async function bizTyping(chat, text) {
+  const cn = bizCfg().conn; if (!cn) return;
+  tg('sendChatAction', { business_connection_id: cn.id, chat_id: chat, action: 'typing' }).catch(() => {});
+  const plain = String(text || '').replace(/<[^>]+>/g, '');
+  await bizWait(Math.min(2400, 700 + plain.length * 2.5));
+}
+async function bizSend(chat, text, kb, edit, opt = {}) {
   const cn = bizCfg().conn; if (!cn) return null;
   const body = { business_connection_id: cn.id, chat_id: chat, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb };
-  if (edit) return tg('editMessageText', { ...body, message_id: edit }).catch((e) => (/not modified/i.test(e.message) ? null : tg('sendMessage', body)));
+  if (opt.inPlace && edit) return tg('editMessageText', { ...body, message_id: edit }).catch((e) => (/not modified/i.test(e.message) ? null : tg('sendMessage', body)));
+  if (!opt.fast) await bizTyping(chat, text);
   return tg('sendMessage', body).catch((e) => console.error('Asistente:', e.message));
 }
-function bizMenu(chat, from, edit) {
+/** v328: el mensaje anterior se queda con lo que eligió marcado (✓ Precios), como en una conversación */
+function bizPicked(cq) {
+  const cn = bizCfg().conn, m = cq.message; if (!cn || !m) return;
+  const btn = ((m.reply_markup || {}).inline_keyboard || []).flat().find((x) => x.callback_data === cq.data);
+  const label = btn ? btn.text : '';
+  tg('editMessageReplyMarkup', { business_connection_id: cn.id, chat_id: m.chat.id, message_id: m.message_id, reply_markup: { inline_keyboard: label ? [[{ text: '✓ ' + label, callback_data: 'bz:nop' }]] : [] } }).catch(() => {});
+}
+async function bizMenu(chat, from, again) {
   const b = bizCfg(), c = bizClient(chat), bot = db.settings.notices.telegram.bot, nm = botName();
   const first = from && from.first_name ? ' ' + hEsc(String(from.first_name).split(/\s+/)[0].slice(0, 20)) : (c && c.panelName ? ' ' + hEsc(String(c.panelName).split(/\s+/)[0]) : '');
-  const L = [`👋 <b>¡Hola${first}!</b> Gracias por escribir a <b>${hEsc(nm)}</b> 🎬`, '', `<b>${hEsc(nm)}</b> te contesta en cuanto pueda 🙂`];
+  const L = again ? [`😊 <b>¿Te ayudo con algo más${first ? ',' + first : ''}?</b>`] : [`<b>¡Hola${first}!</b> Gracias por escribir a <b>${hEsc(nm)}</b> 🎬`, '', `<b>${hEsc(nm)}</b> te contesta en cuanto pueda 🙂`];
   if (c) {
     const left = Math.ceil((Date.parse(c.expiresAt) - Date.now()) / 86400000), when = new Date(c.expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
     L.push('', `📺 <b>Tu cuenta</b> · <code>${hEsc(c.embyName)}</code>`, c.status === 'active' && left > 0 ? `${left <= 5 ? '⏳' : '✅'} Activa hasta el <b>${when}</b> · ${left === 1 ? 'queda 1 día' : `quedan ${left} días`}` : '❌ <b>Caducada</b> · renuévala y vuelve al momento');
   }
-  L.push('', 'Mientras tanto, toca lo que necesites 👇');
+  L.push('', again ? 'Toca lo que necesites 👇' : 'Mientras tanto, toca lo que necesites 👇');
   const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase();
   const kb = [];
-  if (pay) kb.push([{ text: c.status === 'active' && Date.parse(c.expiresAt) > Date.now() ? '🔄 Renovar mi cuenta' : '🚀 Volver ahora', url: cpLink(c) }]);
+  if (pay) kb.push([{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }]);
   kb.push([{ text: '💶 Precios', callback_data: 'bz:pr' }, { text: '📲 Cómo instalar', callback_data: 'bz:in' }]);
   if (!c && bot && sdCfg().on) kb.push([{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]);
   const row = [];
@@ -7905,18 +7921,21 @@ function bizMenu(chat, from, edit) {
   if (bot) row.push({ text: c ? '🤖 Mi cuenta en el bot' : '🤖 Abrir el bot', url: `https://t.me/${bot}` });
   if (row.length) kb.push(row);
   kb.push([{ text: '💬 Prefiero hablar contigo', callback_data: 'bz:yo' }]);
-  return bizSend(chat, L.join('\n'), { inline_keyboard: kb }, edit);
+  if (!again) { await bizSend(chat, '👋', undefined, null, { fast: true }); await bizWait(900); } // v328: el saludo grande y animado de Telegram, como una persona
+  return bizSend(chat, L.join('\n'), { inline_keyboard: kb });
 }
 async function bizCallback(cq) {
   const m = cq.message, chat = m.chat.id, mid = m.message_id, data = String(cq.data || ''), b = bizCfg();
   if (!b.conn || (m.business_connection_id && m.business_connection_id !== b.conn.id)) return;
   const back = [{ text: '⬅️ Volver al menú', callback_data: 'bz:menu' }], c = bizClient(chat), bot = db.settings.notices.telegram.bot;
-  if (data === 'bz:menu') return bizMenu(chat, cq.from, mid);
+  if (data === 'bz:nop') return;
+  bizPicked(cq);
+  if (data === 'bz:menu') return bizMenu(chat, cq.from, true);
   if (data === 'bz:pr') {
-    const r = pricesSimple(c || {}); if (!r) return bizSend(chat, '💶 Escríbeme y te paso los precios 🙂', { inline_keyboard: [back] }, mid);
-    const urls = (r.kb.inline_keyboard || []).filter((row) => row.every((x) => x.url));
+    const r = pricesMsg(c || {}); if (!r) return bizSend(chat, '💶 Escríbeme y te paso los precios 🙂', { inline_keyboard: [back] }, mid); // v327: las mismas tarifas que en el bot (1, 3, 6 meses y 1 año)
+    const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? [[{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }]] : [];
     const extra = !c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : [];
-    return bizSend(chat, r.text.replace(/\n\n💬 Para contratar[\s\S]*$/, ''), { inline_keyboard: [...urls, ...extra, back] }, mid);
+    return bizSend(chat, r.text, { inline_keyboard: [...pay, ...extra, back] }, mid);
   }
   if (data === 'bz:in') {
     const rows = []; SD_DEV.forEach(([k, t], i) => { if (i % 2 === 0) rows.push([]); rows[rows.length - 1].push({ text: t, callback_data: 'bz:d:' + k }); });
@@ -7931,7 +7950,7 @@ async function bizCallback(cq) {
   }
   if (data === 'bz:yo') {
     const x = bizSt()[String(chat)] || (bizSt()[String(chat)] = {}); x.muteUntil = Date.now() + 12 * 3600000; x.wants = new Date().toISOString(); saveDb();
-    await bizSend(chat, '👍 <b>¡Perfecto!</b> Ahora te escribo yo. Dame un momento 🙂', { inline_keyboard: [] }, mid);
+    await bizSend(chat, '👍 <b>¡Perfecto!</b> Ahora te escribo yo. Dame un momento 🙂');
     const name = [cq.from && cq.from.first_name, cq.from && cq.from.last_name].filter(Boolean).join(' ') || 'Alguien', user = cq.from && cq.from.username ? ' (@' + cq.from.username + ')' : '';
     const cl = c ? `\n📺 Es cliente: <b>${hEsc(c.panelName || c.embyName)}</b> · <code>${hEsc(c.embyName)}</code>` : '\n🆕 No es cliente todavía';
     return tg('sendMessage', { chat_id: b.conn.chat, parse_mode: 'HTML', text: `💬 <b>${hEsc(name)}${hEsc(user)}</b> quiere hablar contigo en tu chat privado.${cl}`, ...(cq.from && cq.from.username ? { reply_markup: { inline_keyboard: [[{ text: '💬 Abrir su chat', url: `https://t.me/${cq.from.username}` }]] } } : {}) }).catch(() => {});
