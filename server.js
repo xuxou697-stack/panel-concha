@@ -7480,7 +7480,7 @@ route('GET', '/api/bot-stats', SUPER, () => {
   const miss = Object.entries(st.miss).filter(([, m]) => String(m.last).slice(0, 10) >= from).map(([k, m]) => ({ k, q: m.q, n: m.n, people: (m.cl || []).length, last: m.last })).sort((a, b) => b.people - a.people || b.n - a.n).slice(0, 60);
   const live = db.clients.filter((c) => !c.demo && c.status === 'active');
   return { sum, series, miss, linked: live.filter((c) => c.tgChat).length, live: live.length, subs: live.filter((c) => c.feedSub).length, watching: Object.keys(watchLoad()).length,
-    biz: { conn: g.biz.conn ? { on: g.biz.conn.on, can: g.biz.conn.can, at: g.biz.conn.at, name: g.biz.conn.name } : null, n: botStatSum(['biz'], 30).biz || 0, chats: Object.keys(bizSt()).length, wants: Object.values(bizSt()).filter((x) => x.wants && Date.now() - Date.parse(x.wants) < 30 * 86400000).length, botUser: db.settings.notices.telegram.bot || '' } };
+    biz: { conn: g.biz.conn ? { on: g.biz.conn.on, can: g.biz.conn.can, at: g.biz.conn.at, name: g.biz.conn.name } : null, pending: g.biz.pending ? { name: g.biz.pending.name, username: g.biz.pending.username, at: g.biz.pending.at } : null, diag: g.biz.diag || '', lastMsg: g.biz.lastMsg || '', n: botStatSum(['biz'], 30).biz || 0, chats: Object.keys(bizSt()).length, wants: Object.values(bizSt()).filter((x) => x.wants && Date.now() - Date.parse(x.wants) < 30 * 86400000).length, botUser: db.settings.notices.telegram.bot || '' } };
 });
 /* v293: al tocar una cifra de «Uso del bot», qué clientes son */
 route('GET', '/api/bot-stats/who', SUPER, ({ req }) => {
@@ -7528,7 +7528,7 @@ route('GET', '/api/grow', SUPER, () => {
     df: { f1: db.clients.filter((c) => (c.dfSent || []).includes('f1')).length, f3: db.clients.filter((c) => (c.dfSent || []).includes('f3')).length, back: db.clients.filter((c) => (c.dfSent || []).length && !c.demo).length },
     bye: BYE.map(([k, t]) => [t, db.clients.filter((c) => c.leftWhy && c.leftWhy.k === k).length]), byeList: db.clients.filter((c) => c.leftWhy).sort((a, b) => b.leftWhy.at.localeCompare(a.leftWhy.at)).slice(0, 20).map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, why: (BYE.find((x) => x[0] === c.leftWhy.k) || [])[1] || '', at: c.leftWhy.at, how: c.leftWhy.how, whatsapp: c.whatsapp || '', telegram: c.telegram || '' })),
     tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, watching: Object.keys(watchLoad()).length,
-    biz: { conn: g.biz.conn ? { on: g.biz.conn.on, can: g.biz.conn.can, at: g.biz.conn.at, name: g.biz.conn.name } : null, n: botStatSum(['biz'], 30).biz || 0, chats: Object.keys(bizSt()).length, wants: Object.values(bizSt()).filter((x) => x.wants && Date.now() - Date.parse(x.wants) < 30 * 86400000).length, botUser: db.settings.notices.telegram.bot || '' } };
+    biz: { conn: g.biz.conn ? { on: g.biz.conn.on, can: g.biz.conn.can, at: g.biz.conn.at, name: g.biz.conn.name } : null, pending: g.biz.pending ? { name: g.biz.pending.name, username: g.biz.pending.username, at: g.biz.pending.at } : null, diag: g.biz.diag || '', lastMsg: g.biz.lastMsg || '', n: botStatSum(['biz'], 30).biz || 0, chats: Object.keys(bizSt()).length, wants: Object.values(bizSt()).filter((x) => x.wants && Date.now() - Date.parse(x.wants) < 30 * 86400000).length, botUser: db.settings.notices.telegram.bot || '' } };
 });
 route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   const g = db.settings.grow, b = body || {};
@@ -7544,6 +7544,14 @@ route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   addLog('ajustes', null, 'Ajustes de «Crecer» cambiados', me);
   saveDb();
   return { ok: true };
+}));
+route('POST', '/api/grow/biz-accept', SUPER, ({ me, body }) => lock(async () => { // v326
+  const b = db.settings.grow.biz, p = b.pending; if (!p) throw new HttpError(400, 'No hay ninguna conexión esperando.');
+  if (body && body.no) { delete b.pending; b.diag = ''; saveDb(); return { ok: true, note: 'Conexión rechazada' }; }
+  b.conn = { id: p.id, user: p.user, name: String(p.name || '').split(/\s+/)[0], chat: p.chat, can: p.can, on: p.on, at: new Date().toISOString() }; delete b.pending; b.diag = '';
+  addLog('ajustes', null, `Asistente de Telegram conectado (${p.name || p.username || p.user})`, me); saveDb();
+  tg('sendMessage', { chat_id: p.chat, parse_mode: 'HTML', text: '✅ <b>¡Asistente conectado a tu chat!</b>\n\nCuando alguien te escriba, le contestaré con el menú de botones. En cuanto escribas tú en un chat, me callo ahí.' }).catch(() => {});
+  return { ok: true, note: '✅ Conectado: ya contesta en tu chat' };
 }));
 route('POST', '/api/grow/test-outage', SUPER, async ({ body }) => {
   const prev = db.settings.grow.outage.chat;
@@ -7827,19 +7835,34 @@ const bizSt = () => { if (!db.bizChats || typeof db.bizChats !== 'object') db.bi
 const bizOwner = (chatId) => db.users.find((u) => u.role === 'super' && !u.disabled && userChats(u).map(String).includes(String(chatId)));
 function bizConn(bc, jobs) {
   const b = bizCfg(), who = bizOwner(bc.user_chat_id);
-  if (!who) { jobs.push(() => tg('sendMessage', { chat_id: bc.user_chat_id, text: '🔒 Este bot es privado: solo puede conectarlo el dueño del panel (con su Telegram enlazado al panel).' }).catch(() => {})); return; }
   const can = bc.rights ? !!bc.rights.can_reply : bc.can_reply !== false;
+  if (!who && !(b.conn && String(b.conn.user) === String(bc.user && bc.user.id))) { // v326: no es la cuenta enlazada al panel: lo confirmas tú desde el panel
+    b.pending = { id: bc.id, user: bc.user && bc.user.id, name: [bc.user && bc.user.first_name, bc.user && bc.user.last_name].filter(Boolean).join(' '), username: (bc.user && bc.user.username) || '', chat: bc.user_chat_id, can, on: bc.is_enabled !== false, at: new Date().toISOString() };
+    b.diag = 'Una cuenta de Telegram ha conectado el bot y espera que la aceptes en el panel.'; saveDb();
+    jobs.push(() => tg('sendMessage', { chat_id: bc.user_chat_id, parse_mode: 'HTML', text: '🔐 <b>Casi listo.</b> Para que el asistente conteste en tu chat, entra en el panel: <b>Bot › Mensajes automáticos › 🤖 Asistente en tu chat privado</b> y pulsa <b>«Sí, es mi cuenta»</b>.' }).catch(() => {}));
+    return;
+  }
   b.conn = { id: bc.id, user: bc.user && bc.user.id, name: (bc.user && bc.user.first_name) || '', chat: bc.user_chat_id, can, on: bc.is_enabled !== false, at: new Date().toISOString() };
-  saveDb();
+  delete b.pending; b.diag = ''; saveDb();
   const ok = b.conn.on && can;
   jobs.push(() => tg('sendMessage', { chat_id: bc.user_chat_id, parse_mode: 'HTML', text: !b.conn.on ? '👋 Has desconectado el asistente de tu chat privado. Ya no contestará a nadie.'
     : !can ? '⚠️ El asistente está conectado, pero <b>sin permiso para responder</b>.\n\nEn Telegram: <b>Ajustes › Telegram Business › Chatbots</b> y activa <b>«Responder a los mensajes»</b>.'
     : `✅ <b>¡Asistente conectado a tu chat!</b>\n\nCuando alguien te escriba, le contestaré con un menú de botones (precios, renovar, cómo instalar, prueba gratis…).\n\n🤫 En cuanto escribas tú en un chat, me callo ahí durante ${b.quiet || 3} horas.\n💬 Si alguien pulsa «Hablar contigo», te aviso por aquí.` }).catch(() => {}));
   if (ok) addLog('ajustes', null, 'Asistente de Telegram conectado al chat privado', null);
 }
-function bizMsg(m, jobs) {
+function bizMsg(m, jobs, again) {
   const b = bizCfg(), cn = b.conn;
-  if (!b.on || !cn || !cn.on || !cn.can || m.business_connection_id !== cn.id || !m.chat || m.chat.type !== 'private') return;
+  b.lastMsg = new Date().toISOString();
+  if (!m.chat || m.chat.type !== 'private') return;
+  if (!b.on) { b.diag = 'Ha llegado un mensaje, pero el interruptor «Contestar con el menú» está apagado.'; return; }
+  if ((!cn || m.business_connection_id !== cn.id) && !again) { // v326: no teníamos esa conexión (se perdió el aviso): se la pedimos a Telegram
+    jobs.push(async () => { try { const bc = await tg('getBusinessConnection', { business_connection_id: m.business_connection_id }); const j2 = []; await lock(async () => { bizConn(bc, j2); if (bizCfg().conn && bizCfg().conn.id === m.business_connection_id) bizMsg(m, j2, true); }); for (const f of j2) await f(); } catch (e) { b.diag = 'No se pudo leer la conexión de Telegram: ' + e.message; } });
+    return;
+  }
+  if (!cn || m.business_connection_id !== cn.id) return;
+  if (!cn.on) { b.diag = 'Lo tienes desconectado en Telegram Business › Chatbots.'; return; }
+  if (!cn.can) { b.diag = 'Falta el permiso «Responder mensajes» en Telegram Business › Chatbots.'; return; }
+  b.diag = '';
   if (m.sender_business_bot) return; // lo hemos mandado nosotros
   const st = bizSt(), k = String(m.chat.id), x = st[k] || (st[k] = {}), now = Date.now();
   if (m.from && String(m.from.id) === String(cn.user)) { x.ownerAt = now; return; } // escribes tú: el asistente se calla en este chat
