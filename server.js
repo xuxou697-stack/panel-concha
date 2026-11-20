@@ -6129,6 +6129,10 @@ route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, bo
   if (name) u.name = name;
   if (typeof body.password === 'string' && body.password) { setPassword(u, readNewPassword(body.password)); u.mustPw = true; dropSessions(u.id); }
   if (body.disabled !== undefined) { u.disabled = !!body.disabled; if (u.disabled) dropSessions(u.id); else { delete u.offBy; delete u.offAt; } }
+  if (body.lite !== undefined && ['reseller', 'sub'].includes(u.role)) { // v320: panel completo / básico (solo el superadministrador)
+    if (me.role !== 'super') throw new HttpError(403, 'Solo el superadministrador puede cambiar el panel completo o básico.');
+    u.lite = !!body.lite; if (u.lite && u.feed) u.feed.on = false; addLog('ajustes', null, `${u.name} tiene ahora el panel ${u.lite ? 'básico' : 'completo'}`, me);
+  }
   if (isStaff(me) && u.role === 'sub' && body.parentId !== undefined && Number(body.parentId) !== u.parentId) {
     const parent = userById(body.parentId);
     if (parent.role !== 'reseller') throw new HttpError(400, 'Un subreseller solo puede depender de un reseller.');
