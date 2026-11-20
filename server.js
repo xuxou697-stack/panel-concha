@@ -7123,7 +7123,7 @@ async function feedTick() {
           if (f.botMode === 'now') { await feedBotNow(s, f, p); f.botSent = (f.botSent || 0) + 1; }
           else { f.digest = [...(f.digest || []), { kind: p.kind, line: feedLine(p), ids: p.items.flatMap((x) => x.libIds || []) }].slice(-200); }
         }
-        for (const v of vend) await feedVendorPost(s, f, v, p);
+        for (const v of vend) if (vendCanSee(s, v, p)) await feedVendorPost(s, f, v, p); // v316: solo de las bibliotecas que tienen sus clientes
         n++;
         f.sent = [...p.items.map((x) => x.id), ...(f.sent || [])].slice(0, 600);
         await new Promise((r) => setTimeout(r, 1500));
@@ -7156,6 +7156,13 @@ function feedVendors(s) {
   return db.users.filter((u) => VEND_ROLES.includes(u.role) && !u.disabled && u.feed && ((u.feed.on && u.feed.chan) || u.feed.tg)
     && !(u.feed.skip || []).includes(s.id) // v292: el vendedor elige de qué servidores las quiere
     && db.clients.some((c) => c.ownerId === u.id && c.serverId === s.id && c.status === 'active' && !c.demo));
+}
+/** v316: al vendedor solo le llega una novedad si alguno de sus clientes activos de ese servidor tiene esa biblioteca
+ *  (si un revendedor no vende «Series 4K», no le salen las series 4K). Sin datos de biblioteca, se manda como antes. */
+function vendCanSee(s, v, p) {
+  const ids = [...new Set(p.items.flatMap((x) => x.libIds || []).map(String))];
+  if (!ids.length) return true;
+  return db.clients.some((c) => c.ownerId === v.id && c.serverId === s.id && c.status === 'active' && !c.demo && feedCanSee(c, ids));
 }
 async function feedVendorPost(s, f, v, p) {
   const vf = v.feed, poster = feedFields(f).find((x) => x.k === 'poster').on ? p.poster : null;
