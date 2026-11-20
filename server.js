@@ -3996,6 +3996,40 @@ function demoCard(c, s, hours, until) {
   cv.text(cardTxt('Elige tu aparato abajo y te digo los pasos'), W / 2, H - 42, 'r22', soft, 0.7, 'center');
   return cv.png();
 }
+/** v329: las tarifas en una imagen grande y clara: un recuadro de color por pantallas, el ahorro marcado */
+function pricesCard(c) {
+  const ctx = c && c.id ? cpCtx(c) : null, o = c && db.users.find((u) => u.id === c.ownerId);
+  const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
+  const P = (m, sc) => Number(pr[`${m}-${sc}`]) || 0;
+  const scs = [1, 2, 3, 4].filter((sc) => [1, 3, 6, 12].some((m) => P(m, sc) >= 0.5)); if (!scs.length) return null;
+  const eur = (n) => cardTxt(`${(Math.round(n * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })} €`);
+  const NAME = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' }, cols = [[56, 189, 248], [139, 92, 246], [236, 72, 153], [249, 115, 22]], green = [34, 197, 94], amber = [250, 204, 21];
+  const mine = c && c.id && !c.demo ? Number(c.screens) || 1 : 0;
+  const rowsN = Math.max(...scs.map((sc) => [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5).length)), boxH = 92 + rowsN * 62 + 14;
+  const W = 1000, gap = 20, perRow = scs.length === 1 ? 1 : 2, bw = (W - 120 - gap * (perRow - 1)) / perRow, gridY = 236, lines = Math.ceil(scs.length / perRow);
+  const H = gridY + lines * boxH + (lines - 1) * gap + 96;
+  const { cv, white, soft } = cardBase(W, H, [139, 92, 246], 'Elige tu plan', 'TARIFAS', amber);
+  cv.glow(W * 0.5, H * 0.55, 420, [56, 189, 248], 0.12); cv.glow(W - 60, H - 40, 360, [249, 115, 22], 0.16);
+  cv.text('Precios', 60, 150, 'b40', white); cv.text(cardTxt('Cuanto más tiempo, más ahorras'), 62, 198, 'r22', cardMix(amber, white, 0.45), 1);
+  scs.forEach((sc, i) => {
+    const col = cols[(sc - 1) % 4], x = 60 + (i % perRow) * (bw + gap), y = gridY + Math.floor(i / perRow) * (boxH + gap);
+    cv.rect(x, y, bw, boxH, (xx) => cardMix(col, [11, 16, 32], 0.55 + 0.25 * Math.min(1, (xx - x) / bw)), 0.55, 26);
+    cv.rect(x, y, bw, 76, col, 0.28, 26);
+    cv.text(sc === 1 ? '1 pantalla' : `${sc} pantallas`, x + 28, y + 20, 'b28', white);
+    if (sc === mine) { const t = 'tu plan', tw = cv.measure(t, 'r22') + 30; cv.rect(x + bw - 24 - tw, y + 20, tw, 36, white, 0.18, 18); cv.text(t, x + bw - 24 - tw / 2, y + 26, 'r22', white, 1, 'center'); }
+    const base = P(1, sc); let yy = y + 92;
+    for (const m of [1, 3, 6, 12].filter((mm) => P(mm, sc) >= 0.5)) {
+      const v = P(m, sc), off = base >= 0.5 && m > 1 ? Math.round((1 - v / (base * m)) * 100) : 0, best = m === 12;
+      if (best) cv.rect(x + 14, yy - 6, bw - 28, 56, amber, 0.12, 16);
+      cv.text(cardTxt(NAME[m]), x + 30, yy + 8, 'r22', best ? cardMix(amber, white, 0.35) : soft, 1);
+      cv.text(eur(v), x + bw - 30, yy, 'b28', best ? cardMix(amber, white, 0.2) : white, 1, 'right');
+      if (off >= 1) { const t = `-${off}%`, tw = cv.measure(t, 'r22') + 22, px = x + bw - 30 - cv.measure(eur(v), 'b28') - 16 - tw; cv.rect(px, yy + 4, tw, 32, green, 0.25, 16); cv.text(t, px + tw / 2, yy + 8, 'r22', cardMix(green, white, 0.45), 1, 'center'); }
+      yy += 62;
+    }
+  });
+  cv.text(cardTxt('Pantallas = aparatos viendo a la vez · Se activa al momento'), W / 2, H - 62, 'r22', soft, 0.75, 'center');
+  return cv.png();
+}
 /** Cabecera común de las tarjetas: fondo, logo, marca y una etiqueta a la derecha */
 function cardBase(W, H, tint, sub, pill, pillCol) {
   const cv = new CardCanvas(W, H), white = [255, 255, 255], soft = [203, 213, 225];
@@ -7895,6 +7929,18 @@ async function bizSend(chat, text, kb, edit, opt = {}) {
   if (!opt.fast) await bizTyping(chat, text);
   return tg('sendMessage', body).catch((e) => console.error('Asistente:', e.message));
 }
+/** v329: foto en tu chat privado (con «enviando foto…» antes) */
+async function bizPhoto(chat, buf, caption, kb) {
+  const cn = bizCfg().conn, cfg = db.settings.notices.telegram; if (!cn) return null;
+  tg('sendChatAction', { business_connection_id: cn.id, chat_id: chat, action: 'upload_photo' }).catch(() => {}); await bizWait(1200);
+  const form = new FormData(); form.append('business_connection_id', cn.id); form.append('chat_id', String(chat));
+  if (caption) { form.append('caption', caption.slice(0, 1024)); form.append('parse_mode', 'HTML'); }
+  if (kb) form.append('reply_markup', JSON.stringify(kb));
+  form.append('photo', new Blob([buf], { type: 'image/png' }), 'tarifas.png');
+  const res = await fetch(`${TG_API}/bot${cfg.token}/sendPhoto`, { method: 'POST', body: form, signal: AbortSignal.timeout(30000) });
+  const j = await res.json().catch(() => ({})); if (!j.ok) throw new Error(j.description || `Telegram ${res.status}`);
+  return j.result;
+}
 /** v328: el mensaje anterior se queda con lo que eligió marcado (✓ Precios), como en una conversación */
 function bizPicked(cq) {
   const cn = bizCfg().conn, m = cq.message; if (!cn || !m) return;
@@ -7918,7 +7964,7 @@ async function bizMenu(chat, from, again) {
   if (!c && bot && sdCfg().on) kb.push([{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]);
   const row = [];
   if (/^https:\/\/t\.me\//.test(b.group || '')) row.push({ text: '📢 Novedades', url: b.group });
-  if (bot) row.push({ text: c ? '🤖 Mi cuenta en el bot' : '🤖 Abrir el bot', url: `https://t.me/${bot}` });
+  if (bot) row.push({ text: '🤖 Abrir el bot', url: `https://t.me/${bot}` }); // v329: corto y claro (antes «Mi cuenta en el bot» salía cortado)
   if (row.length) kb.push(row);
   kb.push([{ text: '💬 Prefiero hablar contigo', callback_data: 'bz:yo' }]);
   if (!again) { await bizSend(chat, '👋', undefined, null, { fast: true }); await bizWait(900); } // v328: el saludo grande y animado de Telegram, como una persona
@@ -7935,7 +7981,9 @@ async function bizCallback(cq) {
     const r = pricesMsg(c || {}); if (!r) return bizSend(chat, '💶 Escríbeme y te paso los precios 🙂', { inline_keyboard: [back] }, mid); // v327: las mismas tarifas que en el bot (1, 3, 6 meses y 1 año)
     const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? [[{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }]] : [];
     const extra = !c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : [];
-    return bizSend(chat, r.text, { inline_keyboard: [...pay, ...extra, back] }, mid);
+    const kbP = { inline_keyboard: [...pay, ...extra, back] };
+    try { const png = pricesCard(c || {}); if (png) return await bizPhoto(chat, png, `💶 <b>Nuestras tarifas</b>\n\n${c ? 'Toca <b>«Renovar mi cuenta»</b> y eliges pantallas y tiempo. Se activa al momento ⚡' : 'Si quieres, <b>pruébalo gratis</b> antes de decidir 😉'}`, kbP); } catch (e) { console.error('Asistente (tarifas):', e.message); }
+    return bizSend(chat, r.text, kbP, mid);
   }
   if (data === 'bz:in') {
     const rows = []; SD_DEV.forEach(([k, t], i) => { if (i % 2 === 0) rows.push([]); rows[rows.length - 1].push({ text: t, callback_data: 'bz:d:' + k }); });

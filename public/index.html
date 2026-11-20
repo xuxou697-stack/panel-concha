@@ -5669,7 +5669,7 @@ ${esc(BRAND.name)} te contesta en cuanto pueda 🙂
 📺 Tu cuenta · laura.123
 ✅ Activa hasta el 12 de diciembre · quedan 22 días
 
-Mientras tanto, toca lo que necesites 👇</pre><div class="gr-prev-b">🔄 Renovar mi cuenta</div><div class="gr-prev-b">💶 Precios · 📲 Cómo instalar</div><div class="gr-prev-b">📢 Novedades · 🤖 Mi cuenta en el bot</div><div class="gr-prev-b">💬 Prefiero hablar contigo</div></div>
+Mientras tanto, toca lo que necesites 👇</pre><div class="gr-prev-b">🔄 Renovar mi cuenta</div><div class="gr-prev-b">💶 Precios · 📲 Cómo instalar</div><div class="gr-prev-b">📢 Novedades · 🤖 Abrir el bot</div><div class="gr-prev-b">💬 Prefiero hablar contigo</div></div>
       <div class="gr-kpis"><div><b>${bi.n || 0}</b><span>menús en 30 días</span></div><div><b>${bi.chats || 0}</b><span>personas atendidas</span></div><div class="ok"><b>${bi.wants || 0}</b><span>pidieron hablar contigo</span></div></div>
       <div class="gr-note"><b>Cómo conectarlo (una sola vez):</b><br>1️⃣ En Telegram abre <b>@BotFather</b> › <b>/mybots</b> › ${bi.botUser ? '<b>@' + esc(bi.botUser) + '</b>' : 'tu bot'} › <b>Bot Settings</b> › <b>Business Mode</b> › <b>Turn on</b>.<br>2️⃣ En tu Telegram (con Premium): <b>Ajustes › Telegram Business › Chatbots</b>, escribe <b>@${esc(bi.botUser || 'tubot')}</b> y activa <b>«Responder a los mensajes»</b>.<br>3️⃣ Te llegará «✅ Asistente conectado». ¡Listo!<br><br>ℹ️ Si lo conectas desde una cuenta de Telegram que no está enlazada al panel, aquí arriba te preguntará «¿Es tu cuenta?». Si usas el mensaje de bienvenida de Telegram, apágalo: este menú lo sustituye. Si alguien escribe «menú», le sale otra vez.</div>
       ${save('biz')}`)}
@@ -8375,6 +8375,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 329, d: '2026-11-20', items: ['🤖 Asistente del chat privado: «💶 Precios» ahora llega como una imagen grande y de colores (un recuadro por pantallas, con el ahorro de cada plan), y el botón del bot se llama «🤖 Abrir el bot» para que no salga cortado'] },
   { v: 328, d: '2026-11-20', items: ['🤖 Asistente del chat privado, más humano: saluda con la mano 👋 animada, sale «escribiendo…» antes de cada respuesta y cada paso llega como un mensaje nuevo, dejando marcado lo que el cliente eligió (✓ Precios), como en una conversación de verdad'] },
   { v: 327, d: '2026-11-20', items: ['🤖 Asistente del chat privado: el botón de pago dice siempre «🔄 Renovar mi cuenta» y «💶 Precios» enseña las mismas tarifas que el bot (1, 3, 6 meses y 1 año por pantallas, con el ahorro)'] },
   { v: 326, d: '2026-11-20', items: ['🤖 Asistente del chat privado: si conectas el bot desde una cuenta de Telegram que no está enlazada al panel, ahora te pregunta en el panel «¿Es tu cuenta?» y lo aceptas con un toque. Si se perdió el aviso de conexión, lo recupera solo con el primer mensaje, y te dice por qué no contesta si falta algo'] },
