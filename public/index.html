@@ -1978,6 +1978,8 @@ textarea.typing{caret-color:transparent}
 .sd-fun{display:grid;gap:10px}.sd-ft{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px}.sd-ft span{color:var(--muted)}.sd-ft em{font-style:normal;font-weight:800;padding:1px 8px;border-radius:999px;background:rgba(148,163,184,.15);color:var(--muted)}.sd-ft em.mid{background:rgba(234,179,8,.15);color:#facc15}.sd-ft em.ok{background:rgba(34,197,94,.15);color:#4ade80}.sd-ft .mny{color:#4ade80}
 .sd-fb{position:relative;height:9px;border-radius:9px;background:rgba(148,163,184,.12);margin-top:5px;overflow:hidden}.sd-fb i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:rgba(56,189,248,.4)}.sd-fb i.b{background:#22c55e}
 .by-dist{display:grid;gap:8px;margin:4px 0 12px}.by-r{display:grid;grid-template-columns:150px 1fr 28px;align-items:center;gap:10px;font-size:13.5px}.by-r b{text-align:right}@media(max-width:520px){.by-r{grid-template-columns:118px 1fr 24px;font-size:12.5px}}
+body.lite .newsbtn,body.lite .newsm{display:none!important}
+.vlite{border:1px solid rgba(139,92,246,.45);background:rgba(139,92,246,.12);color:#c4b5fd;border-radius:999px;padding:6px 10px;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap}@media(max-width:480px){.vlite{padding:5px 8px;font-size:12px}}.vlite.on{border-color:rgba(249,115,22,.55);background:rgba(249,115,22,.15);color:#fdba74}.vlite:hover{filter:brightness(1.15)}
 .mn-privq{margin:-4px 0 12px;font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:8px}.mn-priv{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 14px;border-radius:12px;background:rgba(34,197,94,.12);color:#86efac;font-weight:600;margin:0 0 12px}
 .mn-code{display:flex;gap:10px;align-items:center;margin:12px 0}.mn-code code{flex:1;font-size:22px;font-weight:800;letter-spacing:1px;padding:12px 16px;border-radius:12px;background:rgba(56,189,248,.12);color:#7dd3fc;text-align:center}.mn-wait{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}.mn-wait .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(125,211,252,.3);border-top-color:#7dd3fc;animation:gspin 1s linear infinite;flex:none}
 .fztg-kr{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.fztg-q{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;padding:4px 11px;border-radius:999px;background:rgba(42,161,222,.16);color:#7dd3fc;font-size:13px;font-weight:700;cursor:pointer;border:1px solid rgba(42,161,222,.35)}.fztg-q:hover{background:rgba(42,161,222,.28)}
@@ -3165,7 +3167,11 @@ function navGroups() {
   const ORDER = ['cli', 'demo', 'din', 'ven', 'bot', 'mon', 'msg', 'emby', 'cta', 'sys', 'guia'];
   const pos = (k) => { const i = ORDER.indexOf(k); return i < 0 ? -1 : i; };
   const first = g.filter((x) => pos(x.k) < 0), rest = g.filter((x) => pos(x.k) >= 0).sort((a, b) => pos(a.k) - pos(b.k));
-  return [...first, ...rest];
+  const out = [...first, ...rest];
+  // v318: modo reducido: solo lo básico (clientes, demos, créditos y su cuenta)
+  if (me().lite) { const keep = { cli: ['cuentas', 'nuevo', 'movimientos', 'papelera'], demo: ['demonueva', 'cuentas', 'demosvencidas'], din: ['cobros', 'creditos', 'cobrosven'], ven: ['equipo', 'equipooff', 'equipodel'], cta: ['perfil', 'seguridad'] };
+    return out.filter((x) => x.k === 'ini' || keep[x.k]).map((x) => (x.k === 'ini' ? { ...x, items: x.items.filter((i) => i.v === 'resumen') } : { ...x, items: x.items.filter((i) => keep[x.k].includes(i.v)).map((i) => ({ ...i, sec: undefined })) })).filter((x) => x.items.length); }
+  return out;
 }
 const navItems = () => navGroups().flatMap((g) => g.items);
 function stage(c) {
@@ -3545,6 +3551,8 @@ function pageTabs() {
 
 /* ---------- Pintado ---------- */
 function render() {
+  // v318: modo reducido: fuera el botón de Novedades y las pantallas que no tiene
+  if (S.d && S.d.me) { document.body.classList.toggle('lite', !!S.d.me.lite); if (S.d.me.lite && ['monitor', 'altrans', 'alses', 'alhist', 'inactivos', 'uso', 'mensajecli', 'avisotv', 'plantillas', 'bot', 'avisos', 'seguimiento', 'canales', 'misnov', 'cobrocli', 'calendario', 'compartidas', 'stats', 'mensajeeq', 'atencion', 'accesos', 'appinst', 'appcli', 'estado', 'servidores', 'hoy', 'crecer', 'botstats'].includes(S.view)) S.view = 'resumen'; }
   // pantallas que se juntaron con otras: los enlaces antiguos siguen funcionando
   if (S.view === 'directo') S.view = 'monitor';
   if (S.view === 'movdemos') { S.view = 'movimientos'; S.logF = 'demo'; }
@@ -6329,7 +6337,7 @@ function ordersTable(list, who) {
   if (!list.length) return '<div class="panel"><div class="empty">Todavía no hay compras.</div></div>';
   return `<div class="panel"><table class="cards"><thead><tr><th>Fecha</th>${who ? '<th>Vendedor</th>' : ''}<th>Créditos</th><th>Importe</th><th>Forma de pago</th><th>Estado</th></tr></thead><tbody>${list.map((o) => { const st = ORDER_ST[o.status] || [o.status, '']; return `<tr>
     <td>${fmtTs(o.created, true)}<div class="small muted">${esc(o.id)}</div></td>${who ? `<td>${esc(o.user)}</td>` : ''}<td><b>+${o.credits}</b>${o.pack ? `<div class="small muted">${esc(o.pack)}</div>` : ''}</td>
-    <td>${money(o.amount, o.currency)}</td><td>${payName(o.method)}</td><td><span class="pillst ${st[1]}">${st[0]}</span></td></tr>`; }).join('')}</tbody></table></div>`;
+    <td>${money(o.amount, o.currency)}${o.usdcAmt ? `<div class="small muted">${esc(o.usdcAmt)} USDC</div>` : ''}</td><td>${payName(o.method)}</td><td><span class="pillst ${st[1]}">${st[0]}</span>${o.url ? `<div><a class="small" href="${esc(o.url)}" target="_blank" rel="noopener">Ver cómo pagar ↗</a></div>` : ''}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
 /** Importe de «Otra cantidad» con los precios por tramos */
 function buyCalc(p, n) {
@@ -6495,6 +6503,7 @@ function vActs(u, compact) {
   const can = canManage(u);
   const ib = (act, icon, label, cls = '') => `<button type="button" class="vib ${cls}" data-act="${act}" data-id="${u.id}" title="${label}" aria-label="${label}">${ic(icon)}${compact ? '' : `<span>${label}</span>`}</button>`;
   return `${can && hasCredits(u) ? `<button type="button" class="btn sm primary" data-act="user-credits" data-id="${u.id}">${ic('coins')}Créditos</button>` : ''}
+    ${isSuper() && ['reseller', 'sub'].includes(u.role) ? `<button type="button" class="vlite${u.lite ? ' on' : ''}" data-act="user-lite" data-id="${u.id}" title="${u.lite ? 'Tiene el panel básico: toca para darle el completo' : 'Tiene el panel completo: toca para dejarle el básico'}" aria-pressed="${!!u.lite}">${u.lite ? '🔒 Básico' : '✨ Completo'}</button>` : ''}
     ${ib('user-stats', 'chart', 'Estadísticas')}${hasCredits(u) ? ib('user-ledger', 'history', 'Historial') : ''}
     ${can ? ib('user-edit', 'edit', 'Editar') + ib('user-power', u.disabled ? 'play' : 'power', u.disabled ? 'Activar' : 'Desactivar', u.disabled ? '' : 'warn') + ib('user-more', 'more', 'Más') : ''}`;
 }
@@ -6792,7 +6801,7 @@ async function dUserStats(u) {
     ${kids.length ? fact('Subresellers', kids.map((x) => esc(x.name)).join(', ')) : ''}
     ${fact('Alta en el panel', fmt(u.createdAt))}
   </dl>`;
-  const foot = `<div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button type="button" class="btn" data-act="user-clients" data-id="${u.id}">Ver sus clientes</button>${hasCredits(u) ? `<button type="button" class="btn ghost" data-act="user-ledger" data-id="${u.id}">${ic('history')}Todos sus movimientos</button>` : ''}</div>`;
+  const foot = `<div class="dfoot" style="justify-content:flex-start;flex-wrap:wrap"><button type="button" class="btn" data-act="user-clients" data-id="${u.id}">Ver sus clientes</button>${isSuper() && ['reseller', 'sub'].includes(u.role) ? `<button type="button" class="btn ${u.lite ? 'primary' : 'ghost'}" data-act="user-lite" data-id="${u.id}">${u.lite ? '✨ Darle el panel completo' : '🔒 Dejarle el panel básico'}</button>` : ''}${hasCredits(u) ? `<button type="button" class="btn ghost" data-act="user-ledger" data-id="${u.id}">${ic('history')}Todos sus movimientos</button>` : ''}</div>`;
   const title = `Estadísticas de ${u.name}`;
   if (!hasCredits(u)) return showDlg(title, facts + foot);
   showDlg(title, facts + '<p class="muted small">Cargando recargas…</p>' + foot);
@@ -8348,6 +8357,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 319, d: '2026-11-20', items: ['🎛️ Equipo: cada revendedor tiene su botón «✨ Completo / 🔒 Básico» para cambiarle el panel con un toque'] },
+  { v: 318, d: '2026-11-20', items: ['🔒 Modo reducido para un vendedor (solo el superadministrador): sigue entrando con sus clientes, demos y créditos, pero no ve las Novedades ni las funciones avanzadas (bot, monitor, mensajes, cobro a clientes, mis novedades…). Sus clientes siguen igual. Se activa en Equipo › el vendedor › Estadísticas'] },
+  { v: 317, d: '2026-11-20', team: ['🪙 Créditos con USDC: en «Mis compras» puedes volver a abrir un pago pendiente («Ver cómo pagar») y ves la cantidad exacta en USDC'], items: ['🔐 USDC: te avisa por Telegram si alguien cambia la dirección de cobro', '🧹 USDC: los pagos que nunca llegaron pasan solos a «Caducado» a las 48 h', '🪙 USDC: los vendedores pueden volver a abrir un pago pendiente de créditos; el cliente puede volver atrás y elegir otra forma de pago'] },
   { v: 316, d: '2026-11-20', team: ['🍿 Mis novedades: ahora solo te llegan las novedades de las bibliotecas que tienen tus clientes (si no vendes, por ejemplo, Series 4K, ya no te salen)'], items: ['🍿 Novedades de los vendedores: solo de las bibliotecas que tienen sus clientes activos en ese servidor'] },
   { v: 315, d: '2026-11-19', team: ['🪙 Comprar créditos: ahora también puedes pagar con USDC por la red Polygon (si tu administrador lo activa). Los créditos se suman solos en 1-2 minutos'], items: ['🪙 Compra de créditos de tus vendedores con USDC (Polygon), directo a tu Ledger: se activa en Ajustes › Pagos online'] },
   { v: 314, d: '2026-11-19', team: ['🔧 Arreglado: si un cliente tenía en su Telegram una demo vieja de otra persona, el bot podía enseñarle los precios equivocados. Ahora siempre usa su cuenta activa (la tuya)'], items: ['🔧 Bot: los precios, novedades e invitaciones usan siempre la cuenta activa del chat (antes podía coger una demo vieja de la papelera de otro vendedor y enseñar sus precios)', '💶 Bot: los botones de precios enseñan el precio real de 1 mes (sin «desde» con el plan largo dividido)'] },
@@ -11520,7 +11532,7 @@ document.addEventListener('click', (e) => {
     case 'import': needServer(dImport); break;
     case 'renew': if (c) dRenew(c); break;
     case 'renew-same': if (c) dRenewSame(c); break;
-    case 'news': if (S.d) dNews(); break;
+    case 'news': if (S.d && !me().lite) dNews(); break;
     case 'ui-update': location.reload(); break;
     case 'ui-check': uiCheckNow(); break;
     case 'app-free': if (c) { const free = !c.appFree; dConfirm(free ? 'Permitir cualquier app' : 'Solo la app oficial', free ? `${esc(c.panelName)} podrá ver con cualquier app aunque «Solo mi app» esté activado.` : `${esc(c.panelName)} tendrá que usar ${esc(appName())}.`, 'Cambiar', () => api('POST', `/api/clients/${c.id}/app-free`, { free }), 'Cambiado'); } break;
@@ -11745,6 +11757,9 @@ document.addEventListener('click', (e) => {
     case 'adm-tech': if (usr) act(() => api('PUT', `/api/users/${usr.id}`, { tech: !usr.tech }), usr.tech ? `${usr.name} ya no es técnico` : `${usr.name} marcado como técnico`); break;
     case 'adm-on': case 'adm-off': if (usr) dUserPower(usr); break;
     case 'user-transfer': if (usr) dUserTransfer(usr); break;
+    case 'user-lite': if (usr) { const on = !usr.lite; // v318
+      dConfirm(on ? `¿Dejar a ${usr.name} con el panel básico?` : `¿Devolver a ${usr.name} el panel completo?`, on ? 'Seguirá entrando y trabajando con sus clientes, demos y créditos, pero <b>no verá las Novedades del panel ni las funciones avanzadas</b> (bot, monitor, mensajes, cobro a clientes, mis novedades, estadísticas…). <b>Sus clientes no notan nada.</b> Puedes quitarlo cuando quieras.' : 'Volverá a ver todo el panel, con las novedades y todas las funciones.', on ? '🔒 Panel básico' : '✨ Panel completo',
+        () => api('PUT', `/api/users/${usr.id}`, { lite: on }).then(() => { if (dlg.open) dlg.close(); return reload(); }), on ? `${usr.name} tiene ahora el panel básico` : `${usr.name} tiene ahora el panel completo`); } break;
     case 'user-clients': if (usr) { if (dlg.open) dlg.close(); S.view = 'cuentas'; S.filter = 'all'; S.q = ''; S.fServer = 0; S.fOwner = usr.id; S.page = 1; render(); window.scrollTo(0, 0); } break;
     case 'user-toggle': case 'user-power': if (usr) dUserPower(usr); break;
     case 'user-credits': if (usr) dCredits(usr); break;

@@ -2493,7 +2493,7 @@ function assertEmbyNameFree(server, embyName) {
 const pubUser = (u) => ({
   id: u.id, username: u.username, name: u.name, role: u.role, mustPw: !!u.mustPw, parentId: u.parentId, credits: u.credits, disabled: !!u.disabled, offBy: u.offBy || null, offAt: u.offAt || null, createdAt: u.createdAt,
   lastLogin: u.lastLogin || null, lastSeen: u.lastSeen || null, online: !!u.lastSeen && Date.now() - Date.parse(u.lastSeen) < 3 * 60000 && !(u.lastOut && u.lastOut >= u.lastSeen), renew: u.role === 'reseller' || u.role === 'sub' ? renewRate([u.id]) : null, debt: u.role === 'reseller' || u.role === 'sub' ? debtOf(u).amount : 0,
-  creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [], platforms: kindsOf(u),
+  lite: !!u.lite, creditPrice: u.creditPrice || 0, allowNegative: !!u.allowNegative, allowDemos: u.allowDemos !== false, serverIds: u.serverIds || [], platforms: kindsOf(u),
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
   twoFa: !!(u.totp && u.totp.on), tgLinked: !!u.tgChat, home: u.home || '',
   perms: permsOf(u), owner: isOwner(u), useCredits: u.role === 'admin' && !!u.useCredits, tech: !!u.tech, email: u.email || '', currency: u.currency || 'EUR', xtreme: u.xtreme || null,
@@ -2513,6 +2513,10 @@ function readAdminOptions(me, body, u) {
   }
   if (body.tech !== undefined) u.tech = !!body.tech;
   if (body.useCredits !== undefined) u.useCredits = !!body.useCredits;
+  if (body.lite !== undefined) { // v318: modo reducido (solo el superadministrador)
+    if (me.role !== 'super') throw new HttpError(403, 'Solo el superadministrador puede cambiar el modo reducido.');
+    u.lite = !!body.lite; if (u.lite) { if (u.feed) u.feed.on = false; } addLog('ajustes', null, `Modo reducido ${u.lite ? 'activado' : 'quitado'} para ${u.name}`, me);
+  }
   if (body.perms !== undefined && body.perms && typeof body.perms === 'object') {
     const mine = permsOf(me), next = {};
     for (const k of PERMS) {
@@ -7151,9 +7155,11 @@ async function feedTick() {
 const VEND_ROLES = ['reseller', 'sub'];
 function vfeedOf(u) { if (!u.feed) u.feed = { chan: '', chanTitle: '', header: '', footer: '', on: false, tg: false, tgMode: 'day', tgHour: 20, digest: [], digestDay: '', error: '', posts: 0 }; return u.feed; }
 const vendServers = (u) => db.servers.filter((s) => s.kind !== 'iptv' && !s.off && db.clients.some((c) => c.ownerId === u.id && c.serverId === s.id && c.status === 'active' && !c.demo));
+/** v318: lo que un vendedor en «modo reducido» ya no puede usar (sus clientes siguen igual: pagos, bot, avisos) */
+const LITE_BLOCK = /^\/api\/(my-feed|my-client-pay|bot-stats|broadcast|monitor|alerts|transcode)(\/|$)/;
 function feedVendors(s) {
   if (db.settings.feedVend === false) return [];
-  return db.users.filter((u) => VEND_ROLES.includes(u.role) && !u.disabled && u.feed && ((u.feed.on && u.feed.chan) || u.feed.tg)
+  return db.users.filter((u) => VEND_ROLES.includes(u.role) && !u.disabled && !u.lite && u.feed && ((u.feed.on && u.feed.chan) || u.feed.tg)
     && !(u.feed.skip || []).includes(s.id) // v292: el vendedor elige de qué servidores las quiere
     && db.clients.some((c) => c.ownerId === u.id && c.serverId === s.id && c.status === 'active' && !c.demo));
 }
@@ -8225,7 +8231,7 @@ async function nowpayCall(method, p, body) {
   if (!res.ok) throw new HttpError(502, `NOWPayments: ${j.message || res.status}`);
   return j;
 }
-const pubOrder = (o) => ({ id: o.id, userId: o.userId, user: o.user, credits: o.credits, amount: o.amount, currency: o.currency, method: o.method, status: o.status, created: o.created, paidAt: o.paidAt || null, pack: o.pack || '' });
+const pubOrder = (o) => ({ id: o.id, userId: o.userId, user: o.user, credits: o.credits, amount: o.amount, currency: o.currency, method: o.method, status: o.status, created: o.created, paidAt: o.paidAt || null, pack: o.pack || '', ...(o.usdc && o.status === 'pending' && o.url ? { url: o.url, usdcAmt: usdcFmt(o.usdc.micro) } : {}) });
 /** Pedido pagado: suma los creditos una sola vez y avisa */
 function markPaid(o, via) {
   if (o.status === 'paid') return false;
@@ -8730,7 +8736,9 @@ function usdcUnique(base) {
 }
 function usdcSave(c, b, me) {
   const u = { ...(c.usdc || {}) };
-  if (b.addr !== undefined) { const a = String(b.addr || '').trim(); if (a && !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new HttpError(400, 'Esa dirección no parece de Polygon: empieza por 0x y tiene 42 caracteres. Copia la de «Recibir» USDC en Polygon de tu cartera.'); if (a !== u.addr) { u.addr = a; delete u.block; } }
+  if (b.addr !== undefined) { const a = String(b.addr || '').trim(); if (a && !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new HttpError(400, 'Esa dirección no parece de Polygon: empieza por 0x y tiene 42 caracteres. Copia la de «Recibir» USDC en Polygon de tu cartera.'); if (a !== u.addr) { const was = u.addr; u.addr = a; delete u.block; u.addrAt = new Date().toISOString(); // v317: aviso si cambia la dirección de cobro
+      const sh = (x) => (x ? x.slice(0, 6) + '…' + x.slice(-4) : '(ninguna)');
+      for (const su of db.users.filter((x) => x.role === 'super' && !x.disabled)) for (const ch of userChats(su)) tg('sendMessage', { chat_id: ch, text: `🔐 Se ha cambiado la dirección de cobro en USDC\n\nAntes: ${sh(was)}\nAhora: ${sh(a)}\nPor: ${me ? me.name : 'el panel'}\n\nSi no has sido tú, entra en el panel ya, cámbiala por la tuya y cambia tu contraseña.` }).catch(() => {}); } }
   if (b.rate !== undefined) { const r = Number(String(b.rate || '').replace(',', '.')) || 0; if (r && (r < 0.2 || r > 5)) throw new HttpError(400, 'El cambio fijo tiene que estar entre 0,2 y 5.'); u.rate = r; }
   if (b.on !== undefined) { if (b.on && !/^0x[0-9a-fA-F]{40}$/.test(u.addr || '')) throw new HttpError(400, 'Primero pega tu dirección de Polygon.'); u.on = !!b.on; }
   c.usdc = u;
@@ -8748,6 +8756,8 @@ async function usdcRpc(method, params) {
 let usdcBusy = false;
 async function usdcWatch() {
   const ok = usdcOk(); if (!ok || usdcBusy || SUPERSEDED) return;
+  const stale = db.orders.filter((o) => o.usdc && o.status === 'pending' && Date.now() - Date.parse(o.created) >= 48 * 3600000); // v317: los que nunca se pagaron, a caducados
+  if (stale.length) await lock(async () => { for (const o of stale) { o.status = 'expired'; o.note = 'No llegó el pago en 48 h'; } saveDb(); });
   const open = db.orders.filter((o) => o.usdc && o.status === 'pending' && Date.now() - Date.parse(o.created) < 48 * 3600000);
   if (!open.length) return; // solo se mira mientras hay pagos esperando
   usdcBusy = true;
@@ -8924,7 +8934,7 @@ async function cpRoute(req, res, pathname) {
         <p style="text-align:center;margin:6px 0 14px"><b class="code" style="font-size:14px;word-break:break-all">${H(o.usdc.addr)}</b></p>
         <p class="sub">⚠️ Solo <b>USDC</b> y solo por la red <b>Polygon</b>. Otra moneda u otra red no llega y se pierde.</p>
         <p class="sub">4️⃣ Listo: esta página se actualiza sola. En 1-2 minutos de enviarlo, tu cuenta se ${c.demo ? 'activa' : 'renueva'} y te llega el recibo por Telegram ✅</p>
-        <p class="foot">⏳ Tienes ${mins} min para enviarlo con este precio · Pedido ${H(o.ref)}</p><meta http-equiv="refresh" content="20">`);
+        <p class="foot">⏳ Tienes ${mins} min para enviarlo con este precio · Pedido ${H(o.ref)}</p><p class="foot"><a href="/pagar/${c.id}-${H(c.payKey)}" style="color:#7dd3fc">← Prefiero pagar de otra forma</a></p><meta http-equiv="refresh" content="20">`);
     }
     if (o && o.manual && o.status === 'pending') {
       const mc = mpCfg(o), amt = H(money(o.amount)), ref = `<b class="code">${H(o.ref)}</b>`, MT1 = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
@@ -12022,6 +12032,7 @@ const server = http.createServer(async (req, res) => {
         if (need && ![].concat(need).some((p) => can(me, p))) return send(res, 403, { error: 'Tu usuario de administrador no tiene este permiso. Pídeselo al superadministrador.' });
         if (r.roles !== '*' && !r.roles.includes(me.role) && !need) return send(res, 403, { error: 'Tu nivel de usuario no permite hacer esto.' });
         if (maintOn(me) && pathname !== '/api/logout') return send(res, 503, { error: maintMsg(), maint: true });
+        if (me && me.lite && LITE_BLOCK.test(pathname)) return send(res, 403, { error: 'Esta opción no está disponible en tu panel.' }); // v318: modo reducido
         if (me.mustPw && !['/api/my-password', '/api/data', '/api/logout'].includes(pathname)) return send(res, 403, { error: 'Antes de seguir, cambia la contraseña que te dieron.', mustPw: true });
       }
       if (DEMO && demoBlocked(req.method, pathname)) return send(res, 403, { error: '🧪 Esto es una demo: esta opción está desactivada. En tu panel funciona.' });
