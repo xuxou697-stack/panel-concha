@@ -4012,7 +4012,7 @@ function pricesCard(c) {
   const rowsN = Math.max(...scs.map((sc) => [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5).length)), boxH = 92 + rowsN * 62 + 14;
   const W = 1000, gap = 20, perRow = scs.length === 1 ? 1 : 2, bw = (W - 120 - gap * (perRow - 1)) / perRow, gridY = 236, lines = Math.ceil(scs.length / perRow);
   const H = gridY + lines * boxH + (lines - 1) * gap + 96;
-  const { cv, white, soft } = cardBase(W, H, [139, 92, 246], 'Elige tu plan', 'TARIFAS', amber);
+  const { cv, white, soft } = cardBase(W, H, [139, 92, 246], `Cuentas ${bizPlat()} · Elige tu plan`, 'TARIFAS', amber);
   cv.glow(W * 0.5, H * 0.55, 420, [56, 189, 248], 0.12); cv.glow(W - 60, H - 40, 360, [249, 115, 22], 0.16);
   cv.text('Precios', 60, 150, 'b40', white); cv.text(cardTxt('Cuanto más tiempo, más ahorras'), 62, 198, 'r22', cardMix(amber, white, 0.45), 1);
   scs.forEach((sc, i) => {
@@ -4034,13 +4034,21 @@ function pricesCard(c) {
   cv.text(cardTxt('Pantallas = aparatos viendo a la vez · Se activa al momento'), W / 2, H - 62, 'r22', soft, 0.75, 'center');
   return cv.png();
 }
+/** v339: para qué plataforma es el servicio (Emby, Jellyfin, Plex), según tus servidores */
+function bizPlat() {
+  const name = { emby: 'Emby', jellyfin: 'Jellyfin', plex: 'Plex' }, demo = (sdCfg().servers || []).map((id) => db.servers.find((x) => x.id === id)).filter(Boolean);
+  const list = (demo.length ? demo : db.servers.filter((x) => !x.off)).map((x) => name[kindOf(x)]).filter(Boolean);
+  const u = [...new Set(list)]; return u.length ? (u.length > 1 ? u.slice(0, -1).join(', ') + ' y ' + u[u.length - 1] : u[0]) : 'Emby';
+}
 /** v331: la tarjeta de bienvenida del asistente de tu chat privado: saludo grande, estado de su cuenta o lo que ofreces */
 function bizHelloCard(name, c, out, open) {
   const W = 1000, H = 600, sky = [56, 189, 248], violet = [139, 92, 246], pink = [236, 72, 153], green = [34, 197, 94], amber = [250, 204, 21], red = [239, 68, 68], orange = [249, 115, 22];
   const { cv, white, soft } = cardBase(W, H, violet, out ? 'Fuera de horario' : 'Te atendemos al momento', out ? 'FUERA DE HORARIO' : 'EN LÍNEA', out ? amber : green);
   cv.glow(W * 0.62, 300, 420, sky, 0.16); cv.glow(W - 40, H - 30, 380, orange, 0.2); cv.glow(80, 330, 280, pink, 0.16);
-  const nm = cardTxt(name);
-  cv.text(cv.fit(nm ? `¡Hola, ${nm}!` : '¡Hola!', 'b40', W - 120), 60, 158, 'b40', white);
+  const nm = cardTxt(name), plat = cardTxt(`Cuentas ${bizPlat()}`), embyG = [82, 181, 75], pw = cv.measure(plat, 'b28') + 64; // v339: se ve para qué plataforma es
+  cv.rect(W - 60 - pw, 150, pw, 56, embyG, 0.22, 28); cv.circle(W - 60 - pw + 30, 178, 9, embyG, 1);
+  cv.text(plat, W - 60 - pw + 48, 160, 'b28', cardMix(embyG, white, 0.55));
+  cv.text(cv.fit(nm ? `¡Hola, ${nm}!` : '¡Hola!', 'b40', W - 180 - pw), 60, 158, 'b40', white);
   cv.text(cv.fit(cardTxt(out ? `Ahora estamos fuera: te contestamos a partir de las ${open}` : `Gracias por escribir a ${botName()}`), 'r22', W - 120), 62, 212, 'r22', cardMix(out ? amber : sky, white, 0.45), 1);
   if (c) {
     const left = Math.ceil((Date.parse(c.expiresAt) - Date.now()) / 86400000), ok = c.status === 'active' && left > 0, col = !ok ? red : left <= 5 ? amber : green;
@@ -4078,7 +4086,7 @@ function bizTalkCard(name) {
   cv.circle(100, 300, 38, pink, 1); cv.circle(160, 300, 38, sky, 1); cv.circle(220, 300, 38, green, 1);
   cv.circle(100, 300, 14, white, 0.85); cv.circle(160, 300, 14, white, 0.85);
   cv.line(204, 302, 216, 314, 7, white); cv.line(216, 314, 238, 288, 7, white);
-  cv.text(cardTxt('Ya les hemos avisado'), 284, 286, 'r22', soft, 0.95);
+  cv.text(cardTxt('Mientras tanto, te ayudo yo'), 284, 286, 'r22', soft, 0.95);
   const y = 372; cv.rect(60, y, W - 120, 86, (x) => cardMix(cardMix(blue, [11, 16, 32], 0.3), cardMix(violet, [11, 16, 32], 0.35), Math.min(1, (x - 60) / (W - 120))), 0.7, 22);
   cv.circle(110, y + 43, 22, white, 0.18); cv.line(110, y + 43, 110, y + 29, 5, white); cv.line(110, y + 43, 121, y + 50, 5, white);
   const e = cv.text(cardTxt('Te escribimos'), 150, y + 26, 'b28', white, 0.9); cv.text(cardTxt('en unos minutos'), e + 12, y + 26, 'b28', cardMix(green, white, 0.35));
@@ -7972,9 +7980,10 @@ function bizMsg(m, jobs, again) {
   b.diag = '';
   if (m.sender_business_bot) return; // lo hemos mandado nosotros
   const st = bizSt(), k = String(m.chat.id), x = st[k] || (st[k] = {}), now = Date.now(); x.cid = cn.id; // v336: por qué Telegram (tuyo o de tu socio) ha llegado
-  if (m.from && String(m.from.id) === String(cn.user)) { x.ownerAt = now; return; } // escribes tú: el asistente se calla en este chat
+  if (m.from && String(m.from.id) === String(cn.user)) { x.ownerAt = now; if (x.wait && x.wait.k === 'note') delete x.wait; return; } // escribes tú: el asistente se calla en este chat
   if (m.from && m.from.is_bot) return;
   const text = String(m.text || m.caption || '').trim();
+  if (x.wait && x.wait.k === 'note' && x.wait.exp > now && (text || m.photo)) { jobs.push(() => { bizSeq(m.chat.id, () => bizNote(m.chat.id, m.from, text || '📸 (ha mandado una foto)')); }); return; } // v341: los detalles que nos da
   if (x.wait && x.wait.k === 'link' && x.wait.exp > now && text) { jobs.push(() => { bizSeq(m.chat.id, () => bizLinkTry(m.chat.id, m.from, text)); }); return; } // v330: nos da su usuario y contraseña
   if (b.fix !== false && BIZ_FIX.test(text) && !(x.muteUntil && x.muteUntil > now) && !(x.ownerAt && now - x.ownerAt < (Number(b.quiet) || 3) * 3600000) && !(x.fixAt && now - x.fixAt < 2 * 3600000)) {
     x.fixAt = now; x.menuAt = now; botStat('bizfix'); jobs.push(() => { bizSeq(m.chat.id, () => bizFix(m.chat.id, m.from)); }); return; // v331
@@ -7983,7 +7992,10 @@ function bizMsg(m, jobs, again) {
   if (!force) {
     if (x.muteUntil && x.muteUntil > now) return;
     if (x.ownerAt && now - x.ownerAt < (Number(b.quiet) || 3) * 3600000) return;
-    if (x.menuAt && now - x.menuAt < 12 * 3600000) return;
+    if (x.menuAt && now - x.menuAt < 12 * 3600000) { // v342: escribe sin tocar botones: le pedimos (como mucho 1 vez por hora) que nos diga sobre qué es
+      if (text && (!x.nudgeAt || now - x.nudgeAt > 3600000)) { x.nudgeAt = now; jobs.push(() => { bizSeq(m.chat.id, () => bizSend(m.chat.id, '😊 ¡Te leo! Para atenderte lo mejor posible, ¿me dices <b>sobre qué es</b>? Así vamos directos a ayudarte 👇', BIZ_TRI_KB())); }); }
+      return;
+    }
   } else if (x.muteUntil && x.muteUntil > now) return;
   x.menuAt = now; x.n = (x.n || 0) + 1; if (!x.first) x.first = now;
   const keys = Object.keys(st); if (keys.length > 3000) for (const kk of keys.sort((a, c) => (st[a].menuAt || 0) - (st[c].menuAt || 0)).slice(0, 500)) delete st[kk];
@@ -8045,14 +8057,12 @@ async function bizMenu(chat, from, again) {
   if (!c && bot && sdCfg().on) kb.push([{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]);
   if (!c && bot) kb.push([{ text: '🔑 Ya soy cliente: quiero mi bot', callback_data: 'bz:link' }]); // v330: le damos su bot personal
   if (!c && bizWork().length) kb.push([{ text: '💼 Trabaja con nosotros', callback_data: 'bz:biz' }]); // v335: revendedor, alquiler de panel y montaje, juntos en un botón
-  const row = [];
-  if (/^https:\/\/t\.me\//.test(b.group || '')) row.push({ text: '📢 Novedades', url: b.group });
-  if (c && bot) row.push({ text: '🤖 Abrir mi bot', url: `https://t.me/${bot}` });
-  if (row.length) kb.push(row);
+  if (/^https:\/\/t\.me\//.test(b.group || '')) kb.push([{ text: '📢 Canal de novedades', url: b.group }]); // v340: en su fila, para que no salga cortado
+  if (c && bot) kb.push([{ text: '🤖 Abrir mi bot', url: `https://t.me/${bot}` }]);
   kb.push([{ text: '💬 Prefiero hablar contigo', callback_data: 'bz:yo' }]);
   if (!again) {
     await bizSend(chat, '👋', undefined, null, { fast: true }); await bizWait(900); // v328: el saludo grande y animado de Telegram, como una persona
-    const hr = bizHours(), cap = [`<b>¡Hola${first}!</b> 👋 Gracias por escribir a <b>${hEsc(nm)}</b>.`, '', hr && hr.out ? `🌙 Ahora estamos <b>fuera de horario</b>: te contestamos a partir de las <b>${hr.open}</b>. Pero aquí tienes casi todo al momento:` : `<b>${hEsc(nm)}</b> te contesta en cuanto pueda 🙂 Mientras tanto, toca lo que necesites:`].join('\n');
+    const hr = bizHours(), cap = [`<b>¡Hola${first}!</b> 👋 Gracias por escribir a <b>${hEsc(nm)}</b>, tu servicio de <b>cuentas ${hEsc(bizPlat())}</b> 📺`, '', hr && hr.out ? `🌙 Ahora estamos <b>fuera de horario</b>: te contestamos a partir de las <b>${hr.open}</b>. Pero aquí tienes casi todo al momento:` : `<b>${hEsc(nm)}</b> te contesta en cuanto pueda 🙂 Mientras tanto, toca lo que necesites:`].join('\n');
     try { return await bizPhoto(chat, bizHelloCard(String((from && from.first_name) || (c && c.panelName) || '').split(/\s+/)[0], c, hr && hr.out, hr && hr.open), cap, { inline_keyboard: kb }, 'hola.png'); } // v331: tarjeta de bienvenida
     catch (e) { console.error('Asistente (tarjeta):', e.message); }
   }
@@ -8077,15 +8087,15 @@ async function bizLinkTry(chat, from, text) {
   const x = bizSt()[String(chat)] || {}, w = x.wait; if (!w) return;
   const back = { inline_keyboard: [[{ text: '⬅️ Volver al menú', callback_data: 'bz:menu' }]] }, bot = db.settings.notices.telegram.bot, b = bizCfg();
   const t = text.replace(/\s+/g, ' ').trim(), sp = t.indexOf(' ');
-  if (sp < 1) return bizSend(chat, '✍️ Escríbemelo en un solo mensaje, con un espacio en medio:\n\n<code>usuario contraseña</code>', back);
+  if (sp < 1) return bizSend(chat, '😊 ¡Sin problema! Escríbemelo en un solo mensaje, con un espacio en medio, así:\n\n<code>usuario contraseña</code>', back);
   const user = t.slice(0, sp).toLowerCase(), pass = t.slice(sp + 1);
   const c = db.clients.filter((y) => y.status !== 'trash' && [y.embyName, y.email].filter(Boolean).map((v) => String(v).toLowerCase()).includes(user)).find((y) => String(y.password || '') === pass);
   const tell = (why) => tg('sendMessage', { chat_id: bizCn(chat).chat, parse_mode: 'HTML', text: `🔑 <b>${hEsc([from && from.first_name, from && from.last_name].filter(Boolean).join(' ') || 'Alguien')}</b>${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''} ha pedido su bot personal en tu chat privado.\n${why}`, ...(from && from.username ? { reply_markup: { inline_keyboard: [[{ text: '💬 Abrir su chat', url: `https://t.me/${from.username}` }]] } } : {}) }).catch(() => {});
   if (!c) {
     w.tries = (w.tries || 0) + 1; x.linkFails = (x.linkFails || 0) + 1;
-    if (w.tries >= 3) { delete x.wait; x.muteUntil = Date.now() + 12 * 3600000; saveDb(); tell('❌ No acertó el usuario y la contraseña 3 veces. Escríbele tú.'); return bizSend(chat, '😕 No consigo encontrar tu cuenta.\n\nNo te preocupes: <b>ahora te escribo yo</b> y lo arreglamos juntos 🙂'); }
+    if (w.tries >= 3) { delete x.wait; x.muteUntil = Date.now() + 12 * 3600000; saveDb(); tell('❌ No acertó el usuario y la contraseña 3 veces. Escríbele tú.'); return bizSend(chat, '🤗 No consigo encontrar tu cuenta, pero <b>no te preocupes</b>: ahora te escribimos nosotros y lo arreglamos juntos en un momento 🙂'); }
     saveDb();
-    return bizSend(chat, `❌ <b>No coincide.</b> Revisa el usuario y la contraseña (mayúsculas y minúsculas cuentan) y escríbemelo otra vez:\n\n<code>usuario contraseña</code>\n\n<i>Te quedan ${3 - w.tries} ${3 - w.tries === 1 ? 'intento' : 'intentos'}.</i>`, back);
+    return bizSend(chat, `😅 <b>Vaya, no me coincide.</b> Nos pasa a todos: revisa el usuario y la contraseña (las mayúsculas cuentan) y escríbemelo otra vez, sin prisa:\n\n<code>usuario contraseña</code>\n\n<i>Te quedan ${3 - w.tries} ${3 - w.tries === 1 ? 'intento' : 'intentos'}.</i>`, back);
   }
   delete x.wait; saveDb();
   if (c.tgChat != null && String(c.tgChat) !== String(chat)) { x.muteUntil = Date.now() + 12 * 3600000; tell(`⚠️ La cuenta <code>${hEsc(c.embyName)}</code> ya tiene otro Telegram conectado. Escríbele tú.`); return bizSend(chat, '🔒 Tu cuenta ya tiene otro Telegram conectado.\n\nPor seguridad, <b>ahora te escribo yo</b> y lo cambiamos juntos 🙂'); }
@@ -8149,6 +8159,81 @@ async function bizMount(chat, cq, data) {
 }
 /** v335: las opciones de negocio que tienes encendidas */
 function bizWork() { const b = bizCfg(); return [b.rsOn !== false && String(b.rs || '').trim() && [{ text: '💼 Ser revendedor', callback_data: 'bz:rs' }], b.pnOn !== false && [{ text: '⚙️ Alquilar mi propio panel', callback_data: 'bz:pn' }], b.smOn !== false && [{ text: '🛠️ Montaje de servidores', callback_data: 'bz:sm' }]].filter(Boolean); }
+/** v341: «Prefiero hablar contigo»: mientras llegas, le preguntamos qué necesita (con botones) y te pasamos el resumen */
+const BIZ_TRI = {
+  fix: { l: '🔧 Algo no me funciona', q: '🔧 <b>Vamos a ver qué pasa.</b>\n\n¿En qué aparato lo ves? 👇', a: () => SD_DEV, q2: '¿Y qué te pasa exactamente? 👇', b: [['nc', '⏳ No carga o no abre'], ['sc', '✂️ Se corta o se para'], ['ne', '🔒 No me deja entrar'], ['pn', '⬛ Pantalla negra o sin sonido'], ['ot', '❓ Otra cosa']] },
+  pay: { l: '💳 Pagos o renovación', q: '💳 <b>Pagos y renovación.</b>\n\n¿Qué necesitas? 👇', a: () => [['ren', '🔄 Renovar mi cuenta'], ['paid', '⌛ He pagado y no se activa'], ['scr', '📺 Cambiar de pantallas'], ['rec', '🧾 Un recibo o justificante'], ['ot', '❓ Otra cosa']] },
+  new: { l: '🆕 Quiero contratar', q: '🆕 <b>¡Genial!</b>\n\n¿Cuántas <b>pantallas</b> quieres? <i>(aparatos viendo a la vez)</i> 👇', a: () => [['1', '1 pantalla'], ['2', '2 pantallas'], ['3', '3 pantallas'], ['4', '4 pantallas']], q2: '¿Por cuánto <b>tiempo</b>? 👇', b: [['1', '📅 1 mes'], ['3', '🗓️ 3 meses'], ['6', '⭐ 6 meses'], ['12', '🏆 1 año']] },
+  ins: { l: '📲 Ayuda para instalar', q: '📲 <b>Te ayudamos a instalarlo.</b>\n\n¿En qué aparato? 👇', a: () => SD_DEV },
+  biz: { l: '💼 Revendedor o negocio', q: '💼 <b>¡Hablemos de negocio!</b>\n\n¿Qué te interesa? 👇', a: () => [['rs', '💼 Ser revendedor'], ['pn', '⚙️ Alquilar un panel'], ['sm', '🛠️ Montaje de servidores'], ['ot', '❓ Otra cosa']] },
+  ot: { l: '✍️ Otra cosa' },
+};
+const BIZ_TRI_KB = () => ({ inline_keyboard: Object.keys(BIZ_TRI).map((t) => [{ text: BIZ_TRI[t].l, callback_data: 'bz:t:' + t }]) }); // una por fila: que no se corten
+const bizTriLbl = (list, v) => { const it = (typeof list === 'function' ? list() : list || []).find(([k]) => k === v); return it ? it[1] : ''; };
+/** v342: al terminar de preguntar, intentamos resolverlo solos; solo te avisamos cuando de verdad te necesita */
+function bizTriWho(chat, from) { const c = bizClient(chat), f = from || {}; let acc = '🆕 No es cliente todavía';
+  if (c) { const left = Math.ceil((Date.parse(c.expiresAt) - Date.now()) / 86400000); acc = `📺 Cliente <code>${hEsc(c.embyName)}</code> · ${c.status === 'active' && left > 0 ? `activa, quedan ${left} días` : '<b>caducada</b>'} · ${c.screens || 1} pantalla${(c.screens || 1) > 1 ? 's' : ''}`; }
+  return { c, f, name: [f.first_name, f.last_name].filter(Boolean).join(' ') || 'Alguien', user: f.username ? ' (@' + f.username + ')' : '', acc }; }
+function bizTriParts(x) { const t = x && x.tri; if (!t || !BIZ_TRI[t.t]) return []; const T = BIZ_TRI[t.t]; return [T.l, t.a ? bizTriLbl(T.a, t.a) : '', t.b ? bizTriLbl(T.b, t.b) : '', t.extra || ''].filter(Boolean); }
+/** te avisa con todo lo que sabemos (una sola vez por petición) */
+function bizTell(chat, from, why, note) {
+  const x = bizSt()[String(chat)] || (bizSt()[String(chat)] = {}), w = bizTriWho(chat, from), parts = bizTriParts(x);
+  x.told = new Date().toISOString(); saveDb();
+  const txt = [`📋 <b>${hEsc(w.name)}${hEsc(w.user)} te necesita</b>${why ? ' · ' + why : ''}`, '', ...(parts.length ? parts.map((p) => '• ' + hEsc(p)) : ['• Quiere hablar contigo']), ...(note ? ['', `📝 <i>${hEsc(String(note).slice(0, 600))}</i>`] : []), '', w.acc].join('\n');
+  return tg('sendMessage', { chat_id: bizCn(chat).chat, parse_mode: 'HTML', text: txt, ...(w.f.username ? { reply_markup: { inline_keyboard: [[{ text: '💬 Abrir su chat', url: `https://t.me/${w.f.username}` }]] } } : {}) }).catch(() => {});
+}
+/** «no consigo arreglarlo / necesito ayuda / lo quiero»: le pedimos el último detalle y te avisamos */
+async function bizHandoff(chat, from, why) {
+  const x = bizSt()[String(chat)] || (bizSt()[String(chat)] = {}); x.wait = { k: 'note', exp: Date.now() + 60 * 60000 }; x.muteUntil = Date.now() + 12 * 3600000; saveDb();
+  const hr = bizHours();
+  await bizSend(chat, '🤝', undefined, null, { fast: true }); await bizWait(700);
+  await bizSend(chat, [`🙌 <b>¡Perfecto, gracias por contármelo!</b> Se lo paso ahora mismo al equipo con todo lo que me has dicho.`, '', hr && hr.out ? `🌙 Te escribimos <b>${hr.when} a partir de las ${hr.open}</b>.` : '⏱️ <b>Te escribimos en unos minutos.</b>', '', '✍️ Si quieres, añade cualquier detalle en un mensaje (o una <b>captura</b> 📸).'].join('\n'));
+  return bizTell(chat, from, why);
+}
+const BIZ_FIXSTEP = {
+  nc: ['1️⃣ <b>Cierra la app del todo</b> y vuelve a abrirla', '2️⃣ <b>Desenchufa el aparato</b> 30 segundos y enciéndelo', '3️⃣ Comprueba que tienes <b>internet</b> (abre YouTube)', '4️⃣ Si sigue igual, <b>borra la caché</b> de la app o reinstálala'],
+  sc: ['1️⃣ Mira tu <b>internet</b>: si puedes, conecta por <b>cable</b> o acerca el aparato al router', '2️⃣ Comprueba que no haya <b>otros aparatos descargando</b> a la vez', '3️⃣ En la app, baja la <b>calidad</b> a 1080p o «Automática»', '4️⃣ <b>Reinicia el router</b> y el aparato'],
+  ne: ['1️⃣ Revisa el <b>usuario y la contraseña</b>: mayúsculas y minúsculas cuentan', '2️⃣ Comprueba que la <b>dirección del servidor</b> está bien escrita', '3️⃣ Si te sale «demasiados aparatos», cierra sesión en alguno que no uses', '4️⃣ Cierra sesión y vuelve a entrar'],
+  pn: ['1️⃣ Prueba <b>otra peli</b>: si las otras van, avísanos cuál falla', '2️⃣ En la app, cambia la <b>pista de audio</b> o los subtítulos', '3️⃣ Sube el volumen del aparato y de la tele (¡pasa más de lo que parece! 😅)', '4️⃣ Reinicia la app y el aparato'],
+};
+async function bizTri(chat, cq, data) {
+  const [, , t, a, b] = data.split(':'), T = BIZ_TRI[t]; if (!T) return;
+  const x = bizSt()[String(chat)] || (bizSt()[String(chat)] = {}), rows = (list, pre) => { const L = typeof list === 'function' ? list() : list, two = L.every(([, l]) => [...l].length <= 18), r = []; L.forEach(([k, l], i) => { if (!two || i % 2 === 0) r.push([]); r[r.length - 1].push({ text: l, callback_data: pre + k }); }); return r; };
+  if (!a && T.a) return bizSend(chat, T.q, { inline_keyboard: rows(T.a, `bz:t:${t}:`) });
+  if (a && !b && T.q2) return bizSend(chat, T.q2, { inline_keyboard: rows(T.b, `bz:t:${t}:${a}:`) });
+  x.tri = { t, a: a || '', b: b || '', at: new Date().toISOString() }; saveDb();
+  const c = bizClient(chat), bot = db.settings.notices.telegram.bot, ok = [{ text: '✅ ¡Solucionado, gracias!', callback_data: 'bz:ok' }], help = (l) => [{ text: l, callback_data: 'bz:tn' }];
+  const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase(), demo = !c && bot && sdCfg().on ? [{ text: `🎁 Probar gratis ${sdHoursText(sdCfg().hours)} antes`, url: `https://t.me/${bot}?start=demo` }] : null;
+  if (t === 'fix') {
+    if (c) { const left = Math.ceil((Date.parse(c.expiresAt) - Date.now()) / 86400000), sv = db.servers.find((y) => y.id === c.serverId), h = sv && health.get(sv.id);
+      if (!(c.status === 'active' && left > 0)) return bizSend(chat, `🔎 <b>Ya lo he mirado por ti:</b> tu cuenta <code>${hEsc(c.embyName)}</code> está <b>caducada</b>, por eso no puedes ver.\n\n😊 ¡Pero no te preocupes, se arregla en 1 minuto! Renuévala y vuelves al momento, con todo como lo dejaste 🍿`, { inline_keyboard: [...(pay ? [[{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }]] : []), help('💬 Necesito ayuda con esto')] });
+      if (h && h.down) { x.muteUntil = Date.now() + 6 * 3600000; saveDb(); return bizSend(chat, '🛠️ <b>Tienes toda la razón, y perdona las molestias 🙏</b>\n\nAhora mismo el servidor tiene un problema y <b>ya lo estamos arreglando</b>. No tienes que hacer nada: en cuanto vuelva, podrás ver como siempre 💙', { inline_keyboard: [ok] }); } }
+    return bizSend(chat, [`🔧 <b>¡Vamos a arreglarlo juntos!</b> (${hEsc(bizTriLbl(T.a, a))})`, '', 'Siento mucho las molestias 🙏 Prueba esto, casi siempre se soluciona así:', '', ...(BIZ_FIXSTEP[b] || BIZ_FIXSTEP.nc), '', '¿Ya funciona? 👇'].join('\n'), { inline_keyboard: [ok, help('❌ Sigue igual: que me escriban')] });
+  }
+  if (t === 'ins') return bizSend(chat, sdDevText(a, c || { serverId: ((sdCfg().servers || [])[0]) || (db.servers[0] || {}).id, embyName: 'tu usuario', password: '' }, !c), { inline_keyboard: [[{ text: '✅ ¡Ya lo tengo!', callback_data: 'bz:ok' }], help('❌ No me aclaro: que me ayuden'), ...(demo ? [demo] : [])] });
+  if (t === 'new') {
+    const pr = cpCfg().prices || {}, v = Number(pr[`${b}-${a}`]) || 0, mm = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' }[b] || b + ' meses';
+    x.tri.extra = v ? `${v} €` : ''; saveDb();
+    return bizSend(chat, [`🧾 <b>Tu plan</b>`, '', `📺 ${a} pantalla${a > 1 ? 's' : ''} · 📅 ${mm}`, v ? `💶 <b>${String(v).replace('.', ',')} €</b>` : '', '', '¿Cómo seguimos? 👇'].filter((l, i) => l || i !== 3).join('\n'), { inline_keyboard: [...(demo ? [demo] : []), help('💳 ¡Lo quiero! Que me escriban'), [{ text: '💶 Ver todos los precios', callback_data: 'bz:pr' }]] });
+  }
+  if (t === 'pay') {
+    if (a === 'ren' && pay) return bizSend(chat, `🔄 <b>Renovar es muy fácil:</b> toca el botón, eliges pantallas y tiempo, pagas y <b>se activa al momento</b> ✅`, { inline_keyboard: [[{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }], help('💬 Prefiero que me ayuden')] });
+    if (a === 'scr' && pay) return bizSend(chat, `📺 <b>Cambiar de pantallas:</b> al renovar eliges las pantallas que quieras y se cambian al momento.`, { inline_keyboard: [[{ text: '🔄 Renovar con otras pantallas', url: cpLink(c) }], help('💬 Prefiero que me ayuden')] });
+    x.wait = { k: 'note', exp: Date.now() + 60 * 60000 }; x.muteUntil = Date.now() + 12 * 3600000; x.needTell = true; saveDb();
+    return bizSend(chat, a === 'paid' ? '📸 <b>Mándame una captura del pago</b> (o dime cómo y cuándo pagaste) y lo revisamos enseguida.' : '✍️ <b>Cuéntame en un mensaje</b> qué necesitas y se lo paso al equipo.');
+  }
+  if (t === 'biz') { if (['rs', 'pn', 'sm'].includes(a)) return bizCallback({ ...cq, data: 'bz:' + a }); }
+  // otra cosa: que lo escriba
+  x.wait = { k: 'note', exp: Date.now() + 60 * 60000 }; x.muteUntil = Date.now() + 12 * 3600000; x.needTell = true; saveDb();
+  return bizSend(chat, '✍️ <b>Cuéntame en un mensaje qué necesitas</b> y se lo paso al equipo con todo detalle 🙂');
+}
+async function bizNote(chat, from, text) {
+  const x = bizSt()[String(chat)] || {}; delete x.wait; const first = !x.told || x.needTell; x.needTell = false; saveDb();
+  await bizSend(chat, '💙 <b>¡Muchas gracias!</b> Ya lo tiene el equipo y te escribimos enseguida. Gracias por tu paciencia 🙂', undefined, null, { effect: '5159385139981059251' });
+  if (first) return bizTell(chat, from, '', text);
+  const name = [from && from.first_name, from && from.last_name].filter(Boolean).join(' ') || 'Alguien';
+  return tg('sendMessage', { chat_id: bizCn(chat).chat, parse_mode: 'HTML', text: `📝 <b>${hEsc(name)}</b> añade:\n<blockquote>${hEsc(String(text).slice(0, 600))}</blockquote>` }).catch(() => {});
+}
 async function bizCallback(cq) {
   const m = cq.message, chat = m.chat.id, mid = m.message_id, data = String(cq.data || ''), b = bizCfg();
   if (m.business_connection_id && !bizConns()[m.business_connection_id]) return;
@@ -8177,6 +8262,8 @@ async function bizCallback(cq) {
     const kb = [[{ text: '⬅️ Otro aparato', callback_data: 'bz:in' }], ...(!c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : []), back];
     return bizSend(chat, t, { inline_keyboard: kb }, mid);
   }
+  if (data.startsWith('bz:t:')) return bizTri(chat, cq, data); // v341
+  if (data === 'bz:tn') return bizHandoff(chat, cq.from, ''); // v342: ya no se apaña solo: te avisamos
   if (data === 'bz:biz') return bizSend(chat, '💼 <b>Trabaja con nosotros</b>\n\nMonta tu propio negocio con nuestra ayuda. ¿Qué te interesa? 👇', { inline_keyboard: [...bizWork(), back] }); // v335
   if (data === 'bz:sm' || data.startsWith('bz:sm:')) return bizMount(chat, cq, data); // v334
   if (data === 'bz:pn' || data.startsWith('bz:pp:') || data.startsWith('bz:pt:') || data.startsWith('bz:pk:')) return bizPanel(chat, cq, data, mid); // v333
@@ -8190,7 +8277,7 @@ async function bizCallback(cq) {
     const name = [cq.from && cq.from.first_name, cq.from && cq.from.last_name].filter(Boolean).join(' ') || 'Alguien', user = cq.from && cq.from.username ? ' (@' + cq.from.username + ')' : '';
     return tg('sendMessage', { chat_id: bizCn(chat).chat, parse_mode: 'HTML', text: `💼 <b>${hEsc(name)}${hEsc(user)}</b> quiere ser <b>revendedor</b>.\n\nHa leído la información y espera que le escribas en tu chat privado.`, ...(cq.from && cq.from.username ? { reply_markup: { inline_keyboard: [[{ text: '💬 Abrir su chat', url: `https://t.me/${cq.from.username}` }]] } } : {}) }).catch(() => {});
   }
-  if (data === 'bz:ok') return bizSend(chat, '🎉 <b>¡Genial!</b> Que lo disfrutes 🍿\n\nSi vuelve a fallar, escríbeme y lo miramos.', undefined, null, { effect: '5107584321108051014' });
+  if (data === 'bz:ok') return bizSend(chat, '🎉 <b>¡Qué bien, me alegro mucho!</b> Que lo disfrutes 🍿\n\nSi alguna vez vuelve a fallar, escríbeme y lo miramos juntos. ¡Aquí estamos! 💙', undefined, null, { effect: '5107584321108051014' });
   if (data === 'bz:link') { // v330: pedir su bot personal (antes comprobamos que es él con su usuario y contraseña)
     const x = bizSt()[String(chat)] || (bizSt()[String(chat)] = {});
     if ((x.linkFails || 0) >= 6) return bizSend(chat, '🙋 Ahora te escribo yo y lo vemos juntos, dame un momento 🙂');
@@ -8201,18 +8288,16 @@ async function bizCallback(cq) {
     const x = bizSt()[String(chat)] || (bizSt()[String(chat)] = {}); x.muteUntil = Date.now() + 12 * 3600000; x.wants = new Date().toISOString(); saveDb();
     { // v337: de día, tarjeta «Te pasamos con una persona del equipo»; de noche, aviso de fuera de horario con la hora
       const hr = bizHours(), nm = String((cq.from && cq.from.first_name) || (c && c.panelName) || '').split(/\s+/)[0], first = nm ? ', ' + hEsc(nm) : '';
-      const kbB = { inline_keyboard: [[{ text: '⬅️ Volver al menú', callback_data: 'bz:menu' }]] };
       if (hr && hr.out) {
         await bizSend(chat, '🌙', undefined, null, { fast: true }); await bizWait(800);
-        await bizSend(chat, [`<b>¡Claro que sí${first}!</b> 😊`, '', `Ahora mismo estamos <b>fuera de horario</b>, pero ya hemos dejado aviso al equipo.`, '', `⏰ <b>Te escribimos ${hr.when} a partir de las ${hr.open}</b>, eres de las primeras personas en la lista ✅`, '', `Si quieres, déjanos ya escrito qué necesitas (y en qué aparato), así ${hr.when} vamos directos al grano 🚀`, '', '¡Que descanses! 💙'].join('\n'), kbB);
+        await bizSend(chat, [`<b>¡Claro que sí${first}!</b> 😊`, '', `Ahora mismo estamos <b>fuera de horario</b>, pero te apuntamos en la lista.`, '', `⏰ <b>Te escribimos ${hr.when} a partir de las ${hr.open}</b>, eres de las primeras personas en la lista ✅`, '', 'Mientras tanto, dime <b>sobre qué es</b> y así mañana vamos directos al grano 🚀 👇'].join('\n'), BIZ_TRI_KB());
       } else {
-        const cap = [`<b>¡Perfecto${first}!</b> Ya hemos avisado al equipo y <b>te escribimos en un momento</b> 💙`, '', 'Para ayudarte más rápido, cuéntanos en un mensaje <b>qué necesitas</b> y, si es un problema, <b>en qué aparato</b> lo ves (una captura 📸 ayuda mucho).', '', 'Gracias por tu paciencia 🙏'].join('\n');
-        try { await bizPhoto(chat, bizTalkCard(nm), cap, kbB, 'equipo.png'); } catch (e) { console.error('Asistente (tarjeta):', e.message); await bizSend(chat, '🤝 ' + cap, kbB); }
+        const cap = [`<b>¡Perfecto${first}!</b> Enseguida te atiende <b>una persona del equipo</b> 💙`, '', 'Mientras tanto, ayúdame a adelantar (a lo mejor lo solucionamos ya): <b>¿sobre qué es?</b> 👇'].join('\n');
+        try { await bizPhoto(chat, bizTalkCard(nm), cap, BIZ_TRI_KB(), 'equipo.png'); } catch (e) { console.error('Asistente (tarjeta):', e.message); await bizSend(chat, '🤝 ' + cap, BIZ_TRI_KB()); }
       }
     }
-    const name = [cq.from && cq.from.first_name, cq.from && cq.from.last_name].filter(Boolean).join(' ') || 'Alguien', user = cq.from && cq.from.username ? ' (@' + cq.from.username + ')' : '';
-    const cl = c ? `\n📺 Es cliente: <b>${hEsc(c.panelName || c.embyName)}</b> · <code>${hEsc(c.embyName)}</code>` : '\n🆕 No es cliente todavía';
-    return tg('sendMessage', { chat_id: bizCn(chat).chat, parse_mode: 'HTML', text: `💬 <b>${hEsc(name)}${hEsc(user)}</b> quiere hablar contigo en tu chat privado.${cl}`, ...(cq.from && cq.from.username ? { reply_markup: { inline_keyboard: [[{ text: '💬 Abrir su chat', url: `https://t.me/${cq.from.username}` }]] } } : {}) }).catch(() => {});
+    x.told = ''; saveDb(); // v342: no te avisamos aún: primero averiguamos qué necesita (y si se arregla solo, ni te molesta)
+    return;
   }
 }
 async function sdOffer(chat, src = '', from = null) {

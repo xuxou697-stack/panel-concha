@@ -5682,7 +5682,7 @@ ${esc(BRAND.name)} te contesta en cuanto pueda 🙂
 📺 Tu cuenta · laura.123
 ✅ Activa hasta el 12 de diciembre · quedan 22 días
 
-Mientras tanto, toca lo que necesites 👇</pre><div class="gr-prev-b">🔄 Renovar mi cuenta</div><div class="gr-prev-b">💶 Precios · 📲 Cómo instalar</div><div class="gr-prev-b">📢 Novedades · 🤖 Abrir mi bot</div><div class="gr-prev-b">💬 Prefiero hablar contigo</div></div>
+Mientras tanto, toca lo que necesites 👇</pre><div class="gr-prev-b">🔄 Renovar mi cuenta</div><div class="gr-prev-b">💶 Precios · 📲 Cómo instalar</div><div class="gr-prev-b">📢 Canal de novedades</div><div class="gr-prev-b">🤖 Abrir mi bot</div><div class="gr-prev-b">💬 Prefiero hablar contigo</div></div>
       <div class="gr-kpis"><div><b>${bi.chats || 0}</b><span>personas atendidas</span></div><div><b>${bi.fix || 0}</b><span>«no me funciona» resueltos</span></div><div><b>${bi.wants || 0}</b><span>pidieron hablar contigo</span></div></div>
       <div class="gr-kpis"><div class="ok"><b>${bi.demos || 0}</b><span>demos que salieron de tu chat</span></div><div class="ok"><b>${bi.pays || 0}</b><span>pagos después de escribirte</span></div><div class="ok"><b>${bi.money || 0} €</b><span>cobrado así</span></div></div>
       <div class="gr-kpis"><div><b>${bi.rsRead || 0}</b><span>leyeron lo de revendedor</span></div><div class="ok"><b>${bi.rsWant || 0}</b><span>quieren ser revendedor</span></div></div>
@@ -8392,6 +8392,11 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 343, d: '2026-11-21', items: ['💙 Asistente del chat privado, más amable: todos los mensajes se han repasado para que sean cercanos y educados («Siento mucho las molestias», «Tienes toda la razón», «¡Me alegro mucho!»…), con más animaciones (🤝 al pasarte con el equipo, corazones al dar las gracias, confeti al solucionarse)'] },
+  { v: 342, d: '2026-11-21', items: ['🧠 Asistente del chat privado, más listo: cuando alguien pide hablar contigo, primero averigua qué necesita y lo intenta resolver solo (pasos según el problema y el aparato, enlace para renovar, guía de instalación, precio del plan que quiere…). Solo te avisa cuando de verdad te necesita, con el resumen completo. Y si alguien escribe sin tocar botones, le pide amablemente que diga sobre qué es'] },
+  { v: 341, d: '2026-11-21', items: ['📋 Asistente del chat privado: cuando alguien pulsa «Prefiero hablar contigo», mientras llegas le pregunta con botones qué necesita (no le funciona, pagos, contratar, instalar, negocio…) y en qué aparato o qué le pasa. A ti te llega el resumen («Ya sé lo que necesita…») con su cuenta, y lo que escriba después'] },
+  { v: 340, d: '2026-11-21', items: ['📢 Asistente del chat privado: el botón «Novedades» ahora se llama «Canal de novedades», para que se entienda que lleva a tu canal'] },
+  { v: 339, d: '2026-11-21', items: ['📺 Asistente del chat privado: la tarjeta de bienvenida, el saludo y los precios dicen ahora para qué plataforma es («Cuentas Emby»), para que nadie se equivoque. Sale solo según tus servidores (Emby, Jellyfin o Plex)'] },
   { v: 338, d: '2026-11-21', items: ['🔒 Asistente del chat privado: en «Cómo instalar», a quien todavía no es cliente ya no se le enseña la dirección del servidor; se le dice que el servidor, el usuario y la contraseña se los dais al darse de alta o al pedir la prueba gratis'] },
   { v: 337, d: '2026-11-20', items: ['🤝 Asistente del chat privado: cuando alguien pulsa «Prefiero hablar contigo», de día le llega una tarjeta «¡Claro! Te pasamos con una persona del equipo · Te escribimos en unos minutos» con un mensaje amable; de noche, una 🌙 y a qué hora le contestáis'] },
   { v: 336, d: '2026-11-20', items: ['👥 Asistente del chat privado para los dos: tu socio (superadministrador) puede conectar también su propio Telegram. Cada uno tiene su asistente y le llegan los avisos de su chat. Sigue siendo solo para superadministradores: los revendedores no lo tienen ni lo ven'] },
