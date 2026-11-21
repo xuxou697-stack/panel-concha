@@ -8173,7 +8173,7 @@ async function bizCallback(cq) {
   if (data.startsWith('bz:d:')) {
     const k = data.slice(5), sv = db.servers.find((x) => x.id === ((sdCfg().servers || [])[0])) || db.servers.find((x) => !x.off && ['emby', 'jellyfin'].includes(kindOf(x))) || {};
     const who = c || { serverId: sv.id, embyName: 'tu usuario', password: 'tu contraseña' };
-    let t = sdDevText(k, who); if (!c) t = t.replace('\n\n<i>👆 Toca cada dato para copiarlo</i>', '\n\n<i>🔑 Tu usuario y contraseña te llegan al darte de alta (o al pedir la prueba gratis).</i>');
+    const t = sdDevText(k, who, !c); // v338: sin servidor ni datos para quien aún no es cliente
     const kb = [[{ text: '⬅️ Otro aparato', callback_data: 'bz:in' }], ...(!c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : []), back];
     return bizSend(chat, t, { inline_keyboard: kb }, mid);
   }
@@ -8237,9 +8237,9 @@ const SD_DEV = [['tv', '📺 Samsung / LG'], ['fire', '🔥 Fire TV'], ['atv', '
 const sdDevKb = (c, back) => { const rows = []; SD_DEV.forEach(([k, t], i) => { if (i % 2 === 0) rows.push([]); rows[rows.length - 1].push({ text: t, callback_data: 'dv:' + k }); });
   const buy = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar', url: cpLink(c) } : { text: '💶 Precios', callback_data: 'bm:precios' };
   return { inline_keyboard: [...(back ? [] : rows), ...(back ? [[{ text: '⬅️ Otro aparato', callback_data: 'dv:list' }]] : []), [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, buy], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] }; };
-function sdDevText(k, c) {
-  const s = db.servers.find((x) => x.id === c.serverId) || {}, app = kindOf(s) === 'jellyfin' ? 'Jellyfin' : 'Emby';
-  const data = `<blockquote>${s.publicUrl ? `🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>\n` : ''}👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔑 Contraseña: <code>${hEsc(c.password || '')}</code></blockquote>`;
+function sdDevText(k, c, guest) {
+  const s0 = db.servers.find((x) => x.id === c.serverId) || {}, app = kindOf(s0) === 'jellyfin' ? 'Jellyfin' : 'Emby', s = guest ? { ...s0, publicUrl: '' } : s0; // v338: a quien no es cliente no le enseñamos el servidor
+  const data = guest ? '<blockquote>🌐 Servidor · 👤 Usuario · 🔑 Contraseña\n<i>Te los damos al darte de alta o al pedir la prueba gratis 🎁</i></blockquote>' : `<blockquote>${s.publicUrl ? `🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>\n` : ''}👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔑 Contraseña: <code>${hEsc(c.password || '')}</code></blockquote>`;
   const login = (n) => [`${n}️⃣ Ábrela y elige <b>«Añadir servidor»</b> (o «Servidor manual»)`, `${n + 1}️⃣ Escribe tus datos:`, data, `${n + 2}️⃣ Pulsa <b>«Entrar»</b>… ¡y a disfrutar! 🍿`].join('\n');
   const moon = (where) => [`1️⃣ Abre <b>${where}</b>`, '2️⃣ Busca <b>«Moonfin»</b> e instálala', login(3).replace(/^3️⃣ Ábrela y elige/, `3️⃣ Ábrela (si te pregunta, elige <b>${app}</b>) y pulsa`)].join('\n');
   const T = {
@@ -8250,7 +8250,7 @@ function sdDevText(k, c) {
     apple: ['🍏 <b>IPHONE / IPAD / APPLE TV</b>', '', '🌙 Te recomiendo <b>Moonfin</b>: rápida, bonita y sin complicaciones.', '', moon('la App Store')],
     pc: ['💻 <b>ORDENADOR</b>', '', '🌙 Puedes instalar <b>Moonfin</b> o, más rápido aún, verlo en el navegador sin instalar nada:', '', s.publicUrl ? `1️⃣ Abre esta dirección en Chrome, Edge o Safari:\n     <code>${hEsc(s.publicUrl)}</code>` : '1️⃣ Abre la dirección de tu servidor en el navegador', `2️⃣ Escribe tu usuario y tu contraseña:`, data, '3️⃣ Pulsa <b>«Entrar»</b>… ¡y a disfrutar! 🍿'],
   };
-  return (T[k] || T.tv).join('\n') + '\n\n<i>👆 Toca cada dato para copiarlo</i>';
+  return (T[k] || T.tv).join('\n') + (guest ? '' : '\n\n<i>👆 Toca cada dato para copiarlo</i>');
 }
 /** v301: durante la prueba: a los 30 min, si no ha entrado, le ofrecemos ayuda; 1 hora antes del final, le avisamos para comprar */
 async function sdTick() {
