@@ -84,8 +84,8 @@ const DEFAULT_PRICES = {
 };
 /* Mensajes para enviar al cliente final. Variables: {nombre} {usuario} {contraseña} {servidor} {direccion} {pantallas} {contenido} {vence} */
 const DEFAULT_TEMPLATES = {
-  created: 'Hola {nombre} 👋\n\nTu cuenta Emby ya está activa:\n\nUsuario: {usuario}\nContraseña: {contraseña}\nServidor: {servidor}\nDirección: {direccion}\nPantallas: {pantallas}\nContenido: {contenido}\nVence: {vence}\n\n¡Disfruta del contenido!',
-  demo: 'Hola {nombre} 👋\n\nTu demo de Emby está lista:\n\nUsuario: {usuario}\nContraseña: {contraseña}\nServidor: {servidor}\nDirección: {direccion}\nTermina: {vence}\n\nSi te gusta, avísame antes de que termine y te la dejo como cuenta fija.',
+  created: 'Hola {nombre} 👋\n\nTu cuenta Emby ya está activa:\n\nUsuario: {usuario}\nContraseña: {contraseña}\nServidor: {servidor}\nDirección: {direccion}\nPuerto: déjalo vacío (no pongas nada)\nPantallas: {pantallas}\nContenido: {contenido}\nVence: {vence}\n\n¡Disfruta del contenido!',
+  demo: 'Hola {nombre} 👋\n\nTu demo de Emby está lista:\n\nUsuario: {usuario}\nContraseña: {contraseña}\nServidor: {servidor}\nDirección: {direccion}\nPuerto: déjalo vacío (no pongas nada)\nTermina: {vence}\n\nSi te gusta, avísame antes de que termine y te la dejo como cuenta fija.',
   renewed: 'Hola {nombre} 👋\n\nTu cuenta Emby ({usuario}) está renovada.\nNuevo vencimiento: {vence}\n\n¡Gracias!',
   expiring: '⏰ Hola {nombre}, tu cuenta caduca {cuando}\n\n📺 Usuario: {usuario}\n📅 Vence el: {vence}\n\nRenueva a tiempo y sigue disfrutando sin cortes de todas tus películas y series. 🍿',
   quality: '📺 Para ver Emby con la mejor calidad y sin cortes:\n1. Abre Emby en tu aparato y entra en Ajustes.\n2. Busca «Reproducción», «Calidad de vídeo» o «Calidad remota».\n3. Elige la calidad máxima: el valor más alto que aparezca (por ejemplo 1000 Mbps o «Máxima»).\nDespués, vuelve a reproducir el vídeo. Hazlo en cada aparato donde uses Emby.',
@@ -3236,6 +3236,7 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
         }
         const sdm = /^\/start\s+(?:demo|prueba)(?:_([a-z0-9-]{1,30}))?$/i.exec(text); // v295/v296: demo automática (con el sitio de donde viene)
         if (sdm) { if (botTooFast(chat)) continue; const src = (sdm[1] || '').toLowerCase(); jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : sdOffer(chat, src))); continue; }
+        if (/^\/start\s+amigo$/i.test(text) && mine.length) { const cc = bestAcc(mine); jobs.push(() => sdGiftBot(chat, cc)); continue; } // v349: el enlace del Plan amigo
         const gfm = /^\/start\s+regalo_([A-F0-9]{6})$/i.exec(text); // v303: el amigo abre la prueba que le regalan
         if (gfm) { if (botTooFast(chat)) continue; const code = gfm[1].toUpperCase(), fr = msg.from || {}; jobs.push(() => (mine.length ? botReply(chat, 'menu', mine) : sdOffer(chat, 'g-' + code.toLowerCase(), fr))); continue; }
         const rfm = /^\/start\s+ref_([A-F0-9]{6})$/i.exec(text); // v283: el amigo abre la invitación
@@ -3989,7 +3990,7 @@ function demoCard(c, s, hours, until) {
     cv.text(lb, x + 26, y + 20, 'r22', cardMix(col, white, 0.55), 1);
     const t = cardTxt(v) || '—', k = cv.measure(t, 'b40') <= w - 48 ? 'b40' : 'b28'; cv.text(cv.fit(t, k, w - 48), x + 24, k === 'b40' ? y + 56 : y + 64, k, white); };
   let y = 338;
-  if (s.publicUrl) { box(60, y, W - 120, 'Servidor', String(s.publicUrl).replace(/\/+$/, ''), sky); y += 136; }
+  if (s.publicUrl) { box(60, y, W - 120, cardTxt('Servidor  ·  puerto: déjalo vacío'), String(s.publicUrl).replace(/\/+$/, ''), sky); y += 136; } // v347
   const bw = (W - 120 - 20) / 2;
   box(60, y, bw, 'Usuario', c.embyName, violet); box(60 + bw + 20, y, bw, 'Contraseña', c.password || '', pink);
   // Franja de colores: es una demo y cómo quedarse
@@ -4090,6 +4091,35 @@ function bizTalkCard(name) {
   const y = 372; cv.rect(60, y, W - 120, 86, (x) => cardMix(cardMix(blue, [11, 16, 32], 0.3), cardMix(violet, [11, 16, 32], 0.35), Math.min(1, (x - 60) / (W - 120))), 0.7, 22);
   cv.circle(110, y + 43, 22, white, 0.18); cv.line(110, y + 43, 110, y + 29, 5, white); cv.line(110, y + 43, 121, y + 50, 5, white);
   const e = cv.text(cardTxt('Te escribimos'), 150, y + 26, 'b28', white, 0.9); cv.text(cardTxt('en unos minutos'), e + 12, y + 26, 'b28', cardMix(green, white, 0.35));
+  return cv.png();
+}
+/** v346: justificante del «Plan amigo»: le regalamos tiempo por traer a un amigo */
+function friendCard(g, friend, months, before) {
+  const W = 1000, H = 600, pink = [236, 72, 153], violet = [139, 92, 246], amber = [250, 204, 21], green = [34, 197, 94], sky = [56, 189, 248];
+  const name = cardTxt(String(g.panelName || '').split(/\s+/)[0]);
+  const { cv, white, soft } = cardBase(W, H, pink, `¡Gracias${name ? ', ' + name : ''}!`, 'PLAN AMIGO', amber);
+  cv.glow(W - 80, 140, 420, amber, 0.2); cv.glow(120, H - 40, 380, violet, 0.25);
+  cv.text(cardTxt('Por traer a un amigo te regalamos'), 60, 150, 'r22', cardMix(sky, white, 0.45), 1);
+  const e = cv.text(String(months), 60, 186, 'b96', cardMix(amber, white, 0.2)); cv.text(months === 1 ? 'mes gratis' : 'meses gratis', e + 18, 228, 'b40', white);
+  cv.text(cv.fit(cardTxt(`${friend || 'Tu amigo'} ya es de la familia gracias a ti`), 'r22', W - 120), 62, 310, 'r22', soft, 0.95);
+  const y = 368; cv.rect(60, y, W - 120, 130, (x) => cardMix(cardMix(green, [11, 16, 32], 0.45), cardMix(violet, [11, 16, 32], 0.5), Math.min(1, (x - 60) / (W - 120))), 0.6, 26);
+  cv.text('Antes vencía', 96, y + 26, 'r22', soft, 0.9); cv.text(rcFmtD(before) || '—', 96, y + 60, 'b28', white, 0.8);
+  cv.text('Ahora vence', W / 2 + 20, y + 26, 'r22', soft, 0.9); cv.text(rcFmtD(g.expires) || '—', W / 2 + 20, y + 60, 'b28', cardMix(green, white, 0.3));
+  cv.text(cardTxt('Ya está sumado a tu cuenta · no tienes que hacer nada'), W / 2, H - 58, 'r22', soft, 0.75, 'center');
+  return cv.png();
+}
+/** v349: anuncio del «Plan amigo» para tus clientes */
+function amigoCard(first, months) {
+  const W = 1000, H = 620, pink = [236, 72, 153], violet = [139, 92, 246], amber = [250, 204, 21], sky = [56, 189, 248], green = [34, 197, 94];
+  const { cv, white, soft } = cardBase(W, H, pink, first ? `¡Hola, ${cardTxt(first)}!` : 'Para ti, que ya eres de la familia', 'PLAN AMIGO', amber);
+  cv.glow(W - 60, 160, 440, amber, 0.22); cv.glow(100, H - 30, 380, violet, 0.28);
+  cv.text(cardTxt('Regala una prueba gratis a un amigo y gana'), 60, 150, 'r22', cardMix(sky, white, 0.45), 1);
+  const e = cv.text(String(months), 60, 186, 'b96', cardMix(amber, white, 0.2)); cv.text(months === 1 ? 'mes gratis' : 'meses gratis', e + 18, 228, 'b40', white);
+  const steps = [['1', 'Toca «Regala', 'una prueba»', sky], ['2', 'Mándasela', 'a quien quieras', violet], ['3', 'Si se queda,', `ganas ${months === 1 ? '1 mes' : months + ' meses'}`, green]];
+  const gap = 20, bw = (W - 120 - gap * 2) / 3;
+  steps.forEach(([n, a, b2, col], i) => { const x = 60 + i * (bw + gap), y = 330; cv.rect(x, y, bw, 170, (xx) => cardMix(col, [11, 16, 32], 0.5 + 0.3 * Math.min(1, (xx - x) / bw)), 0.55, 24);
+    cv.circle(x + 44, y + 48, 24, col, 1); cv.text(n, x + 44, y + 32, 'b28', white, 1, 'center'); cv.text(cardTxt(a), x + 24, y + 88, 'b28', white); cv.text(cardTxt(b2), x + 24, y + 126, 'r22', soft, 0.95); });
+  cv.text(cardTxt('Automático · tu amigo prueba gratis, sin compromiso'), W / 2, H - 60, 'r22', soft, 0.75, 'center');
   return cv.png();
 }
 /** Cabecera común de las tarjetas: fondo, logo, marca y una etiqueta a la derecha */
@@ -4257,7 +4287,7 @@ function botMenuKb(list) {
   const b = (t, k) => ({ text: t, callback_data: 'bm:' + k });
   return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar peli o serie', 'buscar')], [b('🟢 ¿Funciona?', 'servidor'), b('🛠️ Problemas', 'problemas')],
     [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis aparatos', 'aparatos'), b('💶 Precios', 'precios')], [b('🎁 Invita a un amigo', 'invitar'), b('💬 Ayuda', 'ayuda')],
-    ...(list.some((x) => sdGiftOk(x)) ? [[b('🎟️ Regala una prueba gratis', 'regalo')]] : []), // v303: el cliente regala demos a sus amigos
+    ...(list.some((x) => sdGiftOk(x)) ? [[b(sdGiftRew() ? `🎟️ Regala una prueba · gana ${sdGiftRew() === 1 ? '1 mes' : sdGiftRew() + ' meses'}` : '🎟️ Regala una prueba gratis', 'regalo')]] : []), // v303: el cliente regala demos a sus amigos
     ...(() => { // v285: «Novedades» siempre a mano (si su servidor tiene pelis y series); avisarme y el canal van dentro
       const sv = c && db.servers.find((x) => x.id === c.serverId);
       return sv && sv.kind !== 'iptv' && !list.every(cliTv) ? [[b('🍿 Novedades: lo último que ha llegado', 'novedades')]] : []; })()] };
@@ -4610,7 +4640,7 @@ async function botReply(chat, kind, list) {
   }
   if (kind === 'datos') {
     const parts = accs.map((c) => { const s = db.servers.find((x) => x.id === c.serverId) || {};
-      return `🔑 <b>Tus datos${accs.length > 1 ? ' · ' + hEsc(c.panelName) : ''}</b>\n\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : cliPx(c) ? '<i>la de tu cuenta de Plex</i>' : '<i>pídenosla y te la damos</i>'}${cliTv(c) && xuiLinks(c) && c.password ? `\n📺 Lista M3U: <tg-spoiler>${hEsc(xuiLinks(c).m3u)}</tg-spoiler>` : ''}${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}`; });
+      return `🔑 <b>Tus datos${accs.length > 1 ? ' · ' + hEsc(c.panelName) : ''}</b>\n\n👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : cliPx(c) ? '<i>la de tu cuenta de Plex</i>' : '<i>pídenosla y te la damos</i>'}${cliTv(c) && xuiLinks(c) && c.password ? `\n📺 Lista M3U: <tg-spoiler>${hEsc(xuiLinks(c).m3u)}</tg-spoiler>` : ''}${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>${kindOf(s) === 'plex' ? '' : '\n🔌 Puerto: <b>déjalo vacío</b> (no pongas nada)'}` : ''}`; });
     return send(parts.join('\n\n') + '\n\n🤫 No compartas tus datos con nadie.', null, true);
   }
   if (kind === 'aparatos') { // v284: aparatos modernos: lo que ve ahora, los usados últimamente y cerrar sesión en uno
@@ -5577,6 +5607,7 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   const what = `${plan.months} ${plan.months === 1 ? 'mes' : 'meses'}, ${plan.screens} ${plan.screens === 1 ? 'pantalla' : 'pantallas'}${plan.quality ? ', ' + QUALITIES[plan.quality] : ''}`;
   spend(me, cost, `${before.demo ? 'Alta desde demo' : 'Renovación'} de ${c.embyName} (${what})`);
   if (before.demo) for (const f of db.followups) if (f.clientId === c.id && f.status !== 'bought') { f.status = 'bought'; f.doneAt = new Date().toISOString(); }
+  if (before.demo && c.sdGift) sdGiftReward(c, me); // v346: Plan amigo también al convertirla a mano
   if (cost > 0) { c.charges = [...(c.charges || []), { ts: new Date().toISOString(), userId: me.id, credits: cost, from: base, to: c.expires, kind: before.demo ? 'alta' : 'renovacion' }].slice(-24); }
   if (!before.demo) addChurn(c.ownerId, 'ren');
   addLog(before.demo ? 'alta' : 'renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
@@ -5742,8 +5773,8 @@ function refundFor(c) {
     if (now - Date.parse(ch.ts) < REFUND_FULL_MS) { back = ch.credits; why = 'pagado hace menos de 1 hora: se devuelve entero'; }
     else {
       const total = Math.max(1, diffDays(ch.to, ch.from)), left = Math.min(total, Math.max(0, diffDays(ch.to, t > ch.from ? t : ch.from)));
-      back = Math.floor((ch.credits * left) / total);
-      why = left >= total ? 'periodo sin empezar: se devuelve entero' : left > 0 ? `quedaban ${left} de ${total} días` : 'periodo ya consumido';
+      back = Math.round((ch.credits * left) / total); // v344: lo equivalente a los días que quedan, redondeado al crédito más cercano (antes, siempre hacia abajo)
+      why = left >= total ? 'periodo sin empezar: se devuelve entero' : left > 0 ? `quedaban ${left} de ${total} días (${(Math.round(((ch.credits * left) / total) * 100) / 100).toLocaleString('es-ES')} créditos → ${back})` : 'periodo ya consumido';
     }
     lines.push({ kind: ch.kind, ts: ch.ts, credits: ch.credits, back, why, from: ch.from, to: ch.to, userId: ch.userId });
     if (back > 0) per.set(ch.userId, (per.get(ch.userId) || 0) + back);
@@ -7528,8 +7559,17 @@ route('GET', '/api/self-demo', SUPER, () => {
     pay: !!ctx, payAuto: !!(ctx && (ctx.key || ctx.pp)), today: sdToday(), total: mine.length, live: mine.filter((c) => c.demo && c.status === 'active').length,
     bought: mine.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length,
     last: mine.slice(-15).reverse().map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, at: c.createdAt, tg: c.telegram || '', src: c.sdGift ? '🎟️ regalo de ' + ((db.clients.find((x) => x.id === c.sdGift) || {}).panelName || 'un cliente') : ((cf.links || []).find((l) => l.code === c.sdSrc) || {}).name || '', state: !c.demo ? 'cliente' : c.status === 'active' ? 'probando' : 'terminada' })),
-    links: [{ code: '', name: 'Enlace general', on: true, gen: true }, ...(cf.links || [])].map((l) => { const of = mine.filter((c) => (c.sdSrc || '') === l.code); return { ...l, url: bot ? `https://t.me/${bot}?start=demo${l.code ? '_' + l.code : ''}` : '', n: of.length, bought: of.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length }; }) };
+    links: [{ code: '', name: 'Enlace general', on: true, gen: true }, SD_CHAT, ...(cf.links || [])].map((l) => { const of = mine.filter((c) => (c.sdSrc || '') === l.code); return { ...l, url: bot ? `https://t.me/${bot}?start=demo${l.code ? '_' + l.code : ''}` : '', n: of.length, bought: of.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length }; }) };
 });
+route('POST', '/api/self-demo/amigo-blast', SUPER, ({ me, body }) => lock(async () => { // v349: anunciar el Plan amigo a todos tus clientes (una vez)
+  if (!sdGiftRew()) throw new HttpError(400, 'Activa primero el Plan amigo (1 mes o más).');
+  const week = 7 * 86400000, list = db.clients.filter((c) => c.tgChat && !c.tgOffAt && sdGiftOk(c) && (!c.pamAt || Date.now() - Date.parse(c.pamAt) > week));
+  const seen = new Set(), todo = list.filter((c) => { const k = String(c.tgChat); if (seen.has(k)) return false; seen.add(k); return true; });
+  if (body && body.dry) return { n: todo.length };
+  addLog('aviso', null, `📣 Anuncio del Plan amigo enviado a ${todo.length} clientes`, me);
+  (async () => { for (const c of todo) { await amigoSend(c, 'blast').catch(() => {}); await new Promise((r) => setTimeout(r, 120)); } saveDb(); })();
+  return { ok: true, n: todo.length, note: `📣 Enviando el anuncio a ${todo.length} ${todo.length === 1 ? 'cliente' : 'clientes'}…` };
+}));
 route('PUT', '/api/self-demo', SUPER, ({ me, body }) => lock(async () => {
   const cf = db.settings.selfDemo, b = body || {};
   if (b.on !== undefined) { cf.on = !!b.on; if (cf.on && !db.settings.notices.telegram.token) throw new HttpError(400, 'Primero conecta el bot de Telegram en Bot › Conexión del bot.'); }
@@ -7549,6 +7589,7 @@ route('PUT', '/api/self-demo', SUPER, ({ me, body }) => lock(async () => {
   if (b.nudgeHelp !== undefined) cf.nudgeHelp = !!b.nudgeHelp;
   if (b.giftOn !== undefined) cf.giftOn = !!b.giftOn; // v303
   if ([1, 2, 3, 5, 10].includes(Number(b.giftMax))) cf.giftMax = Number(b.giftMax);
+  if ([0, 1, 2, 3].includes(Number(b.giftReward))) cf.giftReward = Number(b.giftReward); // v346: Plan amigo
   if (b.nudgeHour !== undefined) cf.nudgeHour = !!b.nudgeHour;
   if (b.on) delete cf.autoPaused;
   // v296: enlaces por sitio
@@ -7913,23 +7954,61 @@ function sdPick() {
 }
 const sdToday = () => db.clients.filter((c) => c.selfDemo && String(c.createdAt) === today()).length;
 const sdHoursText = (h) => (h % 24 === 0 ? (h === 24 ? '1 día' : `${h / 24} días`) : h === 1 ? '1 hora' : `${h} horas`);
-const sdLink = (src) => (sdCfg().links || []).find((l) => l.code === src) || null;
+const SD_CHAT = { code: 'chat', name: 'Tu chat privado (asistente)', on: true, gen: true }; // v345: las demos que salen de tu chat de Telegram
+const sdLink = (src) => (src === 'chat' ? SD_CHAT : (sdCfg().links || []).find((l) => l.code === src) || null);
 /** v303: pruebas que regalan tus clientes a sus amigos (solo tus clientes directos, nunca los de los revendedores) */
 const sdGiver = (src) => { const m = /^g-([a-f0-9]{6})$/i.exec(src || ''); return m ? db.clients.find((x) => x.refCode === m[1].toUpperCase()) || null : null; };
 const sdGiftMax = () => Number(sdCfg().giftMax) || 3;
+/** v346: «Plan amigo»: si el amigo al que regaló la prueba se hace cliente, al que la regaló le sumamos tiempo gratis (una vez por amigo) */
+function sdGiftReward(c, actor) {
+  const g = c && c.sdGift && db.clients.find((x) => x.id === c.sdGift); if (!g || c.sdGiftRewarded) return;
+  const m = Number(sdCfg().giftReward ?? 1) || 0, friend = String(c.panelName || '').split(/\s+/)[0] || 'Tu amigo';
+  c.sdGiftRewarded = new Date().toISOString();
+  if (!m || g.demo || g.status !== 'active' || diffDays(g.expires, today()) < 0) {
+    if (g.tgChat) tg('sendMessage', { chat_id: g.tgChat, parse_mode: 'HTML', text: `🥳 <b>${hEsc(friend)}</b> se ha quedado con nosotros gracias a ti.\n\n¡Mil gracias por recomendarnos! 💛` }).catch(() => {});
+    addLog('aviso', g, `🎟️ ${c.panelName}, al que regaló una prueba, se ha hecho cliente${m ? ' (sin regalo: su cuenta no está activa)' : ''}`, actor || null);
+    return;
+  }
+  const before = g.expires; g.expires = addMonths(g.expires, m);
+  addLog('edicion', g, `🎁 Plan amigo: +${m} ${m === 1 ? 'mes' : 'meses'} gratis porque ${c.panelName} (al que regaló una prueba) se ha hecho cliente. Vence el ${g.expires}`, actor || null);
+  saveDb();
+  if (g.tgChat) {
+    const cap = [`🎁 <b>¡Plan amigo!</b>`, '', `<b>${hEsc(friend)}</b> se ha hecho cliente gracias a ti, así que te regalamos <b>${m} ${m === 1 ? 'mes' : 'meses'} gratis</b> 🥳`, '', `📅 Ahora tu cuenta vence el <b>${rcFmtD(g.expires)}</b>.`, 'Ya está sumado, no tienes que hacer nada.', '', '¡Mil gracias por recomendarnos! 💛 Y si tienes más amigos, puedes seguir regalando pruebas desde el menú 🎟️'].join('\n');
+    let png = null; try { png = friendCard(g, friend, m, before); } catch (e) { console.error('Plan amigo (tarjeta):', e.message); }
+    (png ? tgPhoto(g.tgChat, png, cap, undefined, true, 'image/png', TG_PARTY) : Promise.reject(new Error('sin tarjeta'))).catch(() => tg('sendMessage', { chat_id: g.tgChat, parse_mode: 'HTML', text: cap }).catch(() => {}));
+  }
+  notifyStaff('payments', `🎁 Plan amigo: ${g.panelName} recibe +${m} ${m === 1 ? 'mes' : 'meses'} gratis porque ${c.panelName} (al que regaló una prueba) se ha hecho cliente. Ahora vence el ${rcFmtD(g.expires)}.`);
+}
 const sdGiftUsed = (c) => (c.sdGifts || []).filter((t) => Date.now() - Date.parse(t) < 30 * 86400000).length;
 function sdGiftOk(c) {
   const cf = sdCfg(), o = c && db.users.find((u) => u.id === c.ownerId);
   return !!(cf.on && cf.giftOn !== false && c && !c.demo && c.status === 'active' && !c.off && o && ['super', 'admin'].includes(o.role) && db.settings.notices.telegram.bot);
+}
+/** v348: cuántos meses regala el Plan amigo (0 = nada) y texto */
+const sdGiftRew = () => Number(sdCfg().giftReward ?? 1) || 0;
+const sdGiftRewTxt = () => { const m = sdGiftRew(); return m === 1 ? '1 mes gratis' : `${m} meses gratis`; };
+/** v349: el anuncio del Plan amigo a un cliente (tarjeta + botón para regalar) */
+async function amigoSend(c, why) {
+  if (!c || !c.tgChat || c.tgOffAt || !sdGiftOk(c) || !sdGiftRew()) return false;
+  const first = String(c.panelName || '').split(/\s+/)[0], m = sdGiftRew();
+  const cap = why === 'pay'
+    ? [`💛 <b>¿Te gusta ${hEsc(botName())}?</b>`, '', `Regala una <b>prueba gratis</b> a un amigo o familiar y, si se queda, <b>te regalamos ${sdGiftRewTxt()}</b> 🎁`, '', 'Es automático y tu amigo no tiene que pagar nada para probar 😊'].join('\n')
+    : [`🎁 <b>¡Nuevo: Plan amigo!</b>`, '', `${first ? hEsc(first) + ', ¿c' : '¿C'}onoces a alguien a quien le encantaría ${hEsc(botName())}? Regálale una <b>prueba gratis</b> con un toque.`, '', `Si se queda con nosotros, <b>te regalamos ${sdGiftRewTxt()}</b> en tu cuenta. ¡Automático! 🙌`, '', '👇 Toca el botón y elige a quién se la mandas'].join('\n');
+  const kb = { inline_keyboard: [[{ text: `🎟️ Regalar una prueba · gana ${m === 1 ? '1 mes' : m + ' meses'}`, callback_data: 'bm:regalo' }]] };
+  c.pamAt = new Date().toISOString();
+  try { await tgPhoto(c.tgChat, amigoCard(first, m), cap, kb, true); } catch (e) { await tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text: cap, reply_markup: kb }).catch(() => {}); }
+  return true;
 }
 async function sdGiftBot(chat, c) {
   const menu = [{ text: '🏠 Menú', callback_data: 'bm:menu' }];
   if (!sdGiftOk(c)) return tg('sendMessage', { chat_id: chat, text: '🎟️ Ahora mismo no se pueden regalar pruebas. ¡Vuelve a mirar en unos días! 😊', reply_markup: { inline_keyboard: [menu] } });
   const code = await refCode(c), cf = sdCfg(), nm = botName(), max = sdGiftMax(), left = Math.max(0, max - sdGiftUsed(c));
   const link = `https://t.me/${db.settings.notices.telegram.bot}?start=regalo_${code}`, first = String(c.panelName || '').split(/\s+/)[0];
+  const won = db.clients.filter((x) => x.sdGift === c.id && x.sdGiftRewarded).length;
   const share = `🎁 Te regalo una prueba GRATIS de ${sdHoursText(cf.hours)} en ${nm}: pelis y series en todos tus aparatos.\n\n👉 Ábrelo y empieza a ver al momento:`;
   const text = [`🎟️ <b>Regala una prueba gratis</b>`, '', `¿Tienes un amigo o familiar que quiera probar ${hEsc(nm)}? Mándale tu enlace: con un toque tendrá <b>${sdHoursText(cf.hours)} gratis</b>, sin esperar a nadie 🙌`, '',
-    '1️⃣ Toca <b>«📤 Enviar a un amigo»</b>', '2️⃣ Elige a quién se lo mandas', '3️⃣ Tu amigo lo abre y empieza a ver al momento 🍿', '',
+    ...(sdGiftRew() ? ['━━━━━━━━━━━━━━━', `🎁 <b>PLAN AMIGO: ¡GANA ${sdGiftRewTxt().toUpperCase()}!</b>`, `Si tu amigo se queda con nosotros, <b>te regalamos ${sdGiftRewTxt()}</b> en tu cuenta. Es automático: no tienes que hacer nada 🙌`, ...(won ? [`🏆 Ya has ganado <b>${won} ${won === 1 ? 'vez' : 'veces'}</b> con tus amigos. ¡Gracias!`] : []), '━━━━━━━━━━━━━━━', ''] : []),
+    '1️⃣ Toca <b>«📤 Enviar a un amigo»</b>', '2️⃣ Elige a quién se lo mandas', '3️⃣ Tu amigo lo abre y empieza a ver al momento 🍿', ...(sdGiftRew() ? [`4️⃣ Si contrata, te llega tu <b>${sdGiftRewTxt()}</b> 🎉`] : []), '',
     '🔔 Te aviso cuando empiece a probar.', left ? `👥 Puedes regalar <b>${max}</b> al mes · te ${left === 1 ? 'queda <b>1</b>' : `quedan <b>${left}</b>`}` : `✅ Este mes ya has regalado tus ${max} pruebas. ¡Gracias por recomendarnos${first ? ', ' + hEsc(first) : ''}! 💛`].join('\n');
   return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text, reply_markup: { inline_keyboard: [...(left ? [[{ text: '📤 Enviar a un amigo', url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(share)}` }]] : []), menu] } });
 }
@@ -8054,11 +8133,12 @@ async function bizMenu(chat, from, again) {
   const kb = [];
   if (pay) kb.push([{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }]);
   kb.push([{ text: '💶 Precios', callback_data: 'bz:pr' }, { text: '📲 Cómo instalar', callback_data: 'bz:in' }]);
-  if (!c && bot && sdCfg().on) kb.push([{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]);
+  if (!c && bot && sdCfg().on) kb.push([{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo_chat` }]);
   if (!c && bot) kb.push([{ text: '🔑 Ya soy cliente: quiero mi bot', callback_data: 'bz:link' }]); // v330: le damos su bot personal
   if (!c && bizWork().length) kb.push([{ text: '💼 Trabaja con nosotros', callback_data: 'bz:biz' }]); // v335: revendedor, alquiler de panel y montaje, juntos en un botón
   if (/^https:\/\/t\.me\//.test(b.group || '')) kb.push([{ text: '📢 Canal de novedades', url: b.group }]); // v340: en su fila, para que no salga cortado
   if (c && bot) kb.push([{ text: '🤖 Abrir mi bot', url: `https://t.me/${bot}` }]);
+  if (c && bot && sdGiftOk(c) && sdGiftRew()) kb.push([{ text: `🎟️ Regala una prueba · gana ${sdGiftRew() === 1 ? '1 mes' : sdGiftRew() + ' meses'}`, url: `https://t.me/${bot}?start=amigo` }]); // v349
   kb.push([{ text: '💬 Prefiero hablar contigo', callback_data: 'bz:yo' }]);
   if (!again) {
     await bizSend(chat, '👋', undefined, null, { fast: true }); await bizWait(900); // v328: el saludo grande y animado de Telegram, como una persona
@@ -8203,7 +8283,7 @@ async function bizTri(chat, cq, data) {
   if (a && !b && T.q2) return bizSend(chat, T.q2, { inline_keyboard: rows(T.b, `bz:t:${t}:${a}:`) });
   x.tri = { t, a: a || '', b: b || '', at: new Date().toISOString() }; saveDb();
   const c = bizClient(chat), bot = db.settings.notices.telegram.bot, ok = [{ text: '✅ ¡Solucionado, gracias!', callback_data: 'bz:ok' }], help = (l) => [{ text: l, callback_data: 'bz:tn' }];
-  const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase(), demo = !c && bot && sdCfg().on ? [{ text: `🎁 Probar gratis ${sdHoursText(sdCfg().hours)} antes`, url: `https://t.me/${bot}?start=demo` }] : null;
+  const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase(), demo = !c && bot && sdCfg().on ? [{ text: `🎁 Probar gratis ${sdHoursText(sdCfg().hours)} antes`, url: `https://t.me/${bot}?start=demo_chat` }] : null;
   if (t === 'fix') {
     if (c) { const left = Math.ceil((Date.parse(c.expiresAt) - Date.now()) / 86400000), sv = db.servers.find((y) => y.id === c.serverId), h = sv && health.get(sv.id);
       if (!(c.status === 'active' && left > 0)) return bizSend(chat, `🔎 <b>Ya lo he mirado por ti:</b> tu cuenta <code>${hEsc(c.embyName)}</code> está <b>caducada</b>, por eso no puedes ver.\n\n😊 ¡Pero no te preocupes, se arregla en 1 minuto! Renuévala y vuelves al momento, con todo como lo dejaste 🍿`, { inline_keyboard: [...(pay ? [[{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }]] : []), help('💬 Necesito ayuda con esto')] });
@@ -8246,7 +8326,7 @@ async function bizCallback(cq) {
   if (data === 'bz:pr') {
     const r = pricesMsg(c || {}); if (!r) return bizSend(chat, '💶 Escríbeme y te paso los precios 🙂', { inline_keyboard: [back] }, mid); // v327: las mismas tarifas que en el bot (1, 3, 6 meses y 1 año)
     const pay = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? [[{ text: '🔄 Renovar mi cuenta', url: cpLink(c) }]] : [];
-    const extra = !c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : [];
+    const extra = !c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo_chat` }]] : [];
     const kbP = { inline_keyboard: [...pay, ...extra, back] };
     try { const png = pricesCard(c || {}); if (png) return await bizPhoto(chat, png, `💶 <b>Nuestras tarifas</b>\n\n${c ? 'Toca <b>«Renovar mi cuenta»</b> y eliges pantallas y tiempo. Se activa al momento ⚡' : 'Si quieres, <b>pruébalo gratis</b> antes de decidir 😉'}`, kbP); } catch (e) { console.error('Asistente (tarifas):', e.message); }
     return bizSend(chat, r.text, kbP, mid);
@@ -8259,7 +8339,7 @@ async function bizCallback(cq) {
     const k = data.slice(5), sv = db.servers.find((x) => x.id === ((sdCfg().servers || [])[0])) || db.servers.find((x) => !x.off && ['emby', 'jellyfin'].includes(kindOf(x))) || {};
     const who = c || { serverId: sv.id, embyName: 'tu usuario', password: 'tu contraseña' };
     const t = sdDevText(k, who, !c); // v338: sin servidor ni datos para quien aún no es cliente
-    const kb = [[{ text: '⬅️ Otro aparato', callback_data: 'bz:in' }], ...(!c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo` }]] : []), back];
+    const kb = [[{ text: '⬅️ Otro aparato', callback_data: 'bz:in' }], ...(!c && bot && sdCfg().on ? [[{ text: `🎁 Pruébalo gratis ${sdHoursText(sdCfg().hours)}`, url: `https://t.me/${bot}?start=demo_chat` }]] : []), back];
     return bizSend(chat, t, { inline_keyboard: kb }, mid);
   }
   if (data.startsWith('bz:t:')) return bizTri(chat, cq, data); // v341
@@ -8324,7 +8404,7 @@ const sdDevKb = (c, back) => { const rows = []; SD_DEV.forEach(([k, t], i) => { 
   return { inline_keyboard: [...(back ? [] : rows), ...(back ? [[{ text: '⬅️ Otro aparato', callback_data: 'dv:list' }]] : []), [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, buy], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] }; };
 function sdDevText(k, c, guest) {
   const s0 = db.servers.find((x) => x.id === c.serverId) || {}, app = kindOf(s0) === 'jellyfin' ? 'Jellyfin' : 'Emby', s = guest ? { ...s0, publicUrl: '' } : s0; // v338: a quien no es cliente no le enseñamos el servidor
-  const data = guest ? '<blockquote>🌐 Servidor · 👤 Usuario · 🔑 Contraseña\n<i>Te los damos al darte de alta o al pedir la prueba gratis 🎁</i></blockquote>' : `<blockquote>${s.publicUrl ? `🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>\n` : ''}👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔑 Contraseña: <code>${hEsc(c.password || '')}</code></blockquote>`;
+  const data = guest ? '<blockquote>🌐 Servidor · 👤 Usuario · 🔑 Contraseña\n🔌 Puerto: <b>déjalo vacío</b> (no pongas nada)\n<i>Te los damos al darte de alta o al pedir la prueba gratis 🎁</i></blockquote>' : `<blockquote>${s.publicUrl ? `🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>\n🔌 Puerto: <b>déjalo vacío</b> (no pongas nada)\n` : ''}👤 Usuario: <code>${hEsc(c.embyName)}</code>\n🔑 Contraseña: <code>${hEsc(c.password || '')}</code></blockquote>`;
   const login = (n) => [`${n}️⃣ Ábrela y elige <b>«Añadir servidor»</b> (o «Servidor manual»)`, `${n + 1}️⃣ Escribe tus datos:`, data, `${n + 2}️⃣ Pulsa <b>«Entrar»</b>… ¡y a disfrutar! 🍿`].join('\n');
   const moon = (where) => [`1️⃣ Abre <b>${where}</b>`, '2️⃣ Busca <b>«Moonfin»</b> e instálala', login(3).replace(/^3️⃣ Ábrela y elige/, `3️⃣ Ábrela (si te pregunta, elige <b>${app}</b>) y pulsa`)].join('\n');
   const T = {
@@ -8421,8 +8501,8 @@ async function sdCreate(chat, from, src = '') {
       `🎁 <b>Es una demo gratis:</b> dura ${sdHoursText(hours)} y ${when} se apaga sola.`, '💳 ¿Te gusta? Hazte de ' + hEsc(botName()) + ' con <b>«🛒 Comprar»</b>: pagas con el enlace y tu cuenta sigue <b>al momento</b>, con todo como lo dejaste ⚡', '🧾 Te llega aquí tu <b>justificante de pago</b> con la nueva fecha de tu cuenta.', ...(sdBonusTxt() ? [sdBonusTxt()] : []), '',
       '📲 <b>¿Dónde lo vas a ver?</b> Elige tu aparato 👇'].join('\n');
     try { await tgPhoto(chat, demoCard(c, s, hours, when), cap, sdDevKb(c), true); } catch (e) { console.error('Demo (tarjeta):', e.message); await sendOld(); }
-    if (gv && gv.tgChat) tg('sendMessage', { chat_id: gv.tgChat, parse_mode: 'HTML', text: `🎉 <b>${hEsc(full.split(' ')[0])}</b> ya está usando la prueba que le has regalado.\n\n¡Gracias por recomendarnos! 💛`, reply_markup: { inline_keyboard: [[{ text: '🎟️ Regalar otra', callback_data: 'bm:regalo' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {}); // v303
-    const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : ''}${gv ? `\n🎟️ Regalo de tu cliente <b>${hEsc(gv.panelName)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
+    if (gv && gv.tgChat) tg('sendMessage', { chat_id: gv.tgChat, parse_mode: 'HTML', text: `🎉 <b>${hEsc(full.split(' ')[0])}</b> ya está usando la prueba que le has regalado.${sdGiftRew() ? `\n\n🎁 Si se queda con nosotros, <b>te regalamos ${sdGiftRewTxt()}</b>. ¡Crucemos los dedos! 🤞` : ''}\n\n¡Gracias por recomendarnos! 💛`, reply_markup: { inline_keyboard: [[{ text: '🎟️ Regalar otra', callback_data: 'bm:regalo' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {}); // v303
+    const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : gv ? '' : '\n🔗 Viene de: <b>Enlace general</b> <i>(o escribió al bot directamente)</i>'}${gv ? `\n🎟️ Regalo de tu cliente <b>${hEsc(gv.panelName)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
     for (const u of db.users.filter((x) => !x.disabled && x.role === 'super')) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '⏸️ Pausar las demos', callback_data: 'sdx:off' }]] } }).catch(() => {}); // v296: pausar con un toque
   } catch (e) {
     console.error('Demo automática:', e.message);
@@ -9117,9 +9197,7 @@ async function cpPaid(o, via) {
   if (!vend) notifyStaff('payments', `${o.usdc ? '🪙' : '💳'} ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y su cuenta se ha renovado sola.\n${howPaid}\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`);
   o.screensAfter = c.screens || 1; o.expiresFrom = base;
   if (c.tgChat) receiptTg(c, o);
-  if (o.wasDemo && c.sdGift) { const g = db.clients.find((x) => x.id === c.sdGift); // v303: el amigo al que regaló la prueba se ha hecho cliente
-    if (g && g.tgChat) tg('sendMessage', { chat_id: g.tgChat, parse_mode: 'HTML', text: `🥳 <b>${hEsc(String(c.panelName || '').split(/\s+/)[0] || 'Tu amigo')}</b> se ha quedado con nosotros gracias a ti.\n\n¡Mil gracias por recomendarnos! 💛` }).catch(() => {});
-    if (g) addLog('aviso', g, `🎟️ ${c.panelName}, al que regaló una prueba, se ha hecho cliente`, null); }
+  if (o.wasDemo && c.sdGift) sdGiftReward(c, null); // v303/v346: el amigo al que regaló la prueba se ha hecho cliente → Plan amigo
   return true;
 }
 /* ── Recibo del pago: mensaje de Telegram y página para verlo, imprimirlo o guardarlo en PDF ── */
@@ -9139,7 +9217,7 @@ function receiptTg(c, o) {
     + (o.expiresBefore && !o.wasDemo ? `\n▫️ <i>Antes vencía el ${hEsc(rcFmtD(o.expiresBefore))}</i>` : '')
     + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '')
     + (() => { const l = diffDays(o.expiresAfter || c.expires, today()), d = (db.settings.notices.chat || {}).days || 5; return l >= 0 ? `\n📅 Tienes <b>${l} ${l === 1 ? 'día' : 'días'}</b> por delante\n🔔 Te aviso ${d} ${d === 1 ? 'día' : 'días'} antes de que caduque` : ''; })() + '\n\n'
-    + `🔑 <b>Tus datos de acceso</b>${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>` : ''}\n👤 ${s.kind === 'plex' ? 'Cuenta de Plex' : 'Usuario'}: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : s.kind === 'plex' ? '<i>la de tu cuenta de Plex</i>' : '<i>la de siempre</i>'}${s.kind === 'iptv' && xuiLinks(c) && c.password ? `\n📺 Lista M3U: <tg-spoiler>${hEsc(xuiLinks(c).m3u)}</tg-spoiler>` : ''}\n\n`
+    + `🔑 <b>Tus datos de acceso</b>${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>${s.kind === 'plex' ? '' : '\n🔌 Puerto: <b>déjalo vacío</b> (no pongas nada)'}` : ''}\n👤 ${s.kind === 'plex' ? 'Cuenta de Plex' : 'Usuario'}: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : s.kind === 'plex' ? '<i>la de tu cuenta de Plex</i>' : '<i>la de siempre</i>'}${s.kind === 'iptv' && xuiLinks(c) && c.password ? `\n📺 Lista M3U: <tg-spoiler>${hEsc(xuiLinks(c).m3u)}</tg-spoiler>` : ''}\n\n`
     + `🍿 ${o.wasDemo ? 'Tu cuenta ya está activada' : 'No tienes que hacer nada'}: sigue viendo como siempre.\n💙 ¡Gracias por confiar en ${hEsc(brand)}!`;
   const url = rcUrl(c, o), kb = [];
   if (url) kb.push([{ text: '📄 Ver recibo completo', url }]);
@@ -9151,7 +9229,8 @@ function receiptTg(c, o) {
   // v302: imagen del recibo + el texto de siempre (si el texto no cabe debajo de la foto, va justo después)
   const fits = full.replace(/<[^>]+>/g, '').length <= 1000, eff = o.wasDemo ? TG_PARTY : undefined;
   const photo = (e) => tgPhoto(c.tgChat, png, fits ? full : `🧾 <b>Recibo de pago</b> · ${hEsc(rcMoney(o))} · válida hasta <b>${hEsc(rcFmtD(o.expiresAfter || c.expires))}</b>`, fits ? markup : null, true, 'image/png', e);
-  return photo(eff).catch(() => (eff ? photo() : Promise.reject(new Error('foto')))).then(() => (fits ? null : plain()), () => plain());
+  const amigo = () => { if (!c.pamAt || Date.now() - Date.parse(c.pamAt) > 30 * 86400000) setTimeout(() => { amigoSend(c, 'pay').then((x) => x && saveDb()).catch(() => {}); }, 20000); }; // v349: después del recibo, el Plan amigo
+  return photo(eff).catch(() => (eff ? photo() : Promise.reject(new Error('foto')))).then(() => (fits ? null : plain()), () => plain()).then(amigo, amigo);
 }
 const RC_JS = "document.getElementById('pr').onclick=function(){window.print()}";
 const RC_HASH = crypto.createHash('sha256').update(RC_JS).digest('base64');
