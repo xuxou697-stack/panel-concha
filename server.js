@@ -1199,6 +1199,11 @@ async function lifecycle() {
   for (const c of [...db.clients]) {
     if (down.has(c.serverId)) continue;
     if (c.buyPend) { // v358: preparada para comprar desde el bot: si no paga en 48 h, se borra (nunca llegó a poder entrar)
+      const hh = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
+      if (!c.buyNudge && c.buyChat && now - Date.parse(c.buyAt || c.createdAt) > (Number(process.env.BUY_NUDGE_MS) || 2 * 3600000) && now - Date.parse(c.buyAt || c.createdAt) < 40 * 3600000 && (process.env.DAILY_ANYTIME || (hh >= 10 && hh < 22))) { // v359: «¿Te ayudo con el pago?» (una sola vez)
+        c.buyNudge = new Date().toISOString(); saveDb(); const ct = botContact();
+        tg('sendMessage', { chat_id: c.buyChat, parse_mode: 'HTML', text: `👋 ¡Hola${c.panelName && c.panelName !== 'Cliente Telegram' ? ', ' + hEsc(String(c.panelName).split(/\s+/)[0]) : ''}! Vi que empezaste a comprar tu cuenta y no terminaste 😊\n\n¿Tienes alguna duda? <b>Te ayudo encantado.</b>\n\n💳 Tu enlace sigue listo: eliges plan, pagas y al momento te llegan tus datos ⚡\n⏳ Te lo guardamos 2 días.`, reply_markup: { inline_keyboard: [[{ text: '💳 Terminar mi compra', url: cpLink(c) }], ...(ct ? [[{ text: '💬 Tengo una duda', callback_data: 'by:duda' }]] : []), [{ text: '💶 Ver precios', callback_data: 'sd:pr' }]] } }).catch(() => {});
+      }
       if (now - Date.parse(c.buyAt || c.createdAt) > 48 * 3600000 && !db.orders.some((o) => o.clientId === c.id && o.status === 'pending' && (o.claimed || o.usdc))) {
         try { await deleteEmbyUser(c); db.clients = db.clients.filter((x) => x.id !== c.id); addLog('eliminada', c, '🛒 No llegó a pagar la cuenta del bot en 48 horas: borrada'); }
         catch (e) { if (e.embyStatus === 0) down.add(c.serverId); }
@@ -3310,7 +3315,7 @@ Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {})
             reply = `🎉 ¡Listo, ${c.panelName}! Tus avisos están activados.\n\nDesde ahora te escribiré por aquí:\n📅 ${days} ${days === 1 ? 'día' : 'días'} antes de que caduque tu cuenta${fd && !c.demo ? ` (ahora vence el ${fd})` : ''}\n💳 Con un botón para renovarla tú mismo, al momento\n📢 Si hay novedades o avisos importantes\n\nNo tienes que hacer nada más 😊\n\n📋 Escribe /suscripcion cuando quieras para ver cuántos días te quedan (o pulsa «Menú» abajo).\nSi algún día no quieres más avisos, escribe /stop.`;
             if (!c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()) welcomeBtn = { inline_keyboard: [[{ text: '💳 Renovar ahora', url: cpLink(c) }]] };
             const gift = tgGiftGive(c); // v249: regalo por activar el bot (una sola vez por cuenta)
-            { const wb = welcomeBtn; jobs.push(() => botWelcome(chat, c, wb)); } // bienvenida con imagen y confeti 🎉, y después su tarjeta con el menú
+            { const wb = welcomeBtn; jobs.push(() => botWelcome(chat, c, wb)); jobs.push(() => new Promise((r) => setTimeout(r, 2500)).then(() => chanInvite(chat))); } // v362: y el canal de novedades // bienvenida con imagen y confeti 🎉, y después su tarjeta con el menú
             if (gift) jobs.push(async () => { try { await applyState(c); } catch { /* el servidor ya lo cogerá */ } await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎁 <b>¡Tu regalo!</b>\n\nPor activar los avisos te hemos sumado <b>${gift}</b> gratis.\n\n📅 Ahora tu cuenta vence el <b>${c.demo && c.expiresAt ? new Date(c.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' }) : c.expires.split('-').reverse().join('/')}</b>. ¡Disfrútalo! 🍿` }).catch(() => {}); });
             reply = null; welcomeBtn = null;
           } else if (sdCfg().on && !/^\/start\s+\S/.test(text)) { reply = null; jobs.push(() => sdOffer(chat)); } // v295: quien llega sin cuenta, a la prueba gratis
@@ -3771,6 +3776,7 @@ async function weeklyText() {
     `🆕 Altas: ${cnt('alta')}   🔁 Renovaciones: ${cnt('renovacion')}   🎁 Demos: ${cnt('demo')}`,
     `👋 Se fueron sin renovar: ${gone.length}${back ? `   💌 Recuperados: ${back}` : ''}`, ...goneLines,
     `💶 Cobrado online: ${money.toFixed(2).replace('.', ',')} ${cur === 'EUR' ? '€' : cur}${credits ? `   🪙 Créditos vendidos: ${credits}` : ''}`,
+    ...(() => { const bo = db.orders.filter((o) => o.newBuy && o.status === 'paid' && o.paidAt && inWeek(o.paidAt)); return bo.length ? [`🛒 Compradas solas por el bot: ${bo.length} (${bo.reduce((n, o) => n + (Number(o.amount) || 0), 0).toFixed(2).replace('.', ',')} €)`] : []; })(), // v359
     '', `⏳ Vencen en los próximos 7 días: ${soon}`, `😴 Pagan pero no han visto nada en 7 días: ${sleepy}`,
     '', `🖥️ Servidores: ${downs ? `${downs} ${downs === 1 ? 'caída' : 'caídas'}` : 'sin caídas ✅'}`,
     ...(bySrv.size ? [`🔥 Transcodes cortados: ${[...bySrv].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ')}`] : []),
@@ -4016,31 +4022,31 @@ function accountCard(c) {
 }
 /** v300: tarjeta de bienvenida de la demo automática: letras grandes con servidor, usuario y contraseña */
 function demoCard(c, s, hours, until) {
-  const W = 1000, H = s.publicUrl ? 760 : 624, sky = [56, 189, 248], green = [34, 197, 94], pink = [236, 72, 153], violet = [139, 92, 246], amber = [250, 204, 21], orange = [249, 115, 22];
-  const { cv, white, soft } = cardBase(W, H, violet, 'Tu prueba gratis está lista', 'PRUEBA GRATIS', green);
-  cv.glow(W * 0.55, 250, 380, sky, 0.18); cv.glow(W - 80, H - 60, 360, orange, 0.22); cv.glow(120, 300, 260, pink, 0.16); // v300: más colorido
+  /* v360: más estrecha (720) para que en el móvil todo se vea más grande; los datos, uno debajo de otro y en letra grande */
+  const W = 720, sky = [56, 189, 248], green = [34, 197, 94], pink = [236, 72, 153], violet = [139, 92, 246], amber = [250, 204, 21], orange = [249, 115, 22];
+  const rows = [...(s.publicUrl ? [['Servidor', String(s.publicUrl).replace(/\/+$/, ''), sky]] : []), ['Usuario', c.embyName, violet], ['Contraseña', c.password || '', pink]];
+  const H = 330 + rows.length * 150 + 200;
+  const { cv, white, soft } = cardBase(W, H, violet, 'Tu prueba gratis', 'PRUEBA', green);
+  cv.glow(W * 0.6, 260, 320, sky, 0.18); cv.glow(W - 60, H - 60, 320, orange, 0.22); cv.glow(90, 320, 240, pink, 0.16);
   const name = cardTxt(String(c.panelName || '').split(/\s+/)[0]);
-  cv.text(cv.fit(name ? `¡Hola, ${name}!` : '¡Hola!', 'b40', W - 120), 60, 160, 'b40', white);
-  // Horas en grande, en amarillo
-  const days = hours >= 24 && hours % 24 === 0, end = cv.text(String(days ? hours / 24 : hours), 56, 214, 'b96', amber);
-  cv.text(days ? (hours === 24 ? 'día gratis' : 'días gratis') : hours === 1 ? 'hora gratis' : 'horas gratis', end + 16, 236, 'b40', white, 0.95);
-  cv.text(cardTxt(`Hasta ${until}`), end + 18, 286, 'r22', cardMix(amber, white, 0.5), 0.95);
-  const tag = cardTxt(kindOf(s) === 'jellyfin' ? 'Jellyfin' : 'Emby'), tw = cv.measure(tag, 'b28') + 40;
-  cv.rect(W - 56 - tw, 236, tw, 48, sky, 0.25, 24); cv.text(tag, W - 56 - tw / 2, 244, 'b28', cardMix(sky, white, 0.6), 1, 'center');
-  // Cajas de datos, cada una de un color
-  const box = (x, y, w, lb, v, col) => { cv.rect(x, y, w, 120, (xx) => cardMix(col, violet, Math.min(1, (xx - x) / w) * 0.6), 0.2, 22); cv.rect(x, y + 22, 6, 76, col, 1, 3);
-    cv.text(lb, x + 26, y + 20, 'r22', cardMix(col, white, 0.55), 1);
-    const t = cardTxt(v) || '—', k = cv.measure(t, 'b40') <= w - 48 ? 'b40' : 'b28'; cv.text(cv.fit(t, k, w - 48), x + 24, k === 'b40' ? y + 56 : y + 64, k, white); };
-  let y = 338;
-  if (s.publicUrl) { box(60, y, W - 120, cardTxt('Servidor  ·  puerto: déjalo vacío'), String(s.publicUrl).replace(/\/+$/, ''), sky); y += 136; } // v347
-  const bw = (W - 120 - 20) / 2;
-  box(60, y, bw, 'Usuario', c.embyName, violet); box(60 + bw + 20, y, bw, 'Contraseña', c.password || '', pink);
-  // Franja de colores: es una demo y cómo quedarse
-  y += 148;
-  cv.rect(60, y, W - 120, 84, (xx) => cardMix(cardMix(sky, violet, 0), cardMix(pink, orange, 0.35), Math.min(1, Math.max(0, (xx - 60) / (W - 120)))), 0.9, 24);
-  cv.text(cv.fit(cardTxt(`Es una demo: se apaga sola ${until}`), 'b28', W - 170), W / 2, y + 10, 'b28', white, 1, 'center');
-  cv.text(cv.fit(cardTxt('¿Te gusta? Paga con el enlace y sigue al momento'), 'r22', W - 170), W / 2, y + 48, 'r22', white, 0.95, 'center');
-  cv.text(cardTxt('Elige tu aparato abajo y te digo los pasos'), W / 2, H - 42, 'r22', soft, 0.7, 'center');
+  cv.text(cv.fit(name ? `¡Hola, ${name}!` : '¡Hola!', 'b40', W - 80), 44, 156, 'b40', white);
+  const days = hours >= 24 && hours % 24 === 0, end = cv.text(String(days ? hours / 24 : hours), 40, 206, 'b96', amber);
+  cv.text(days ? (hours === 24 ? 'día gratis' : 'días gratis') : hours === 1 ? 'hora gratis' : 'horas gratis', end + 14, 222, 'b40', white, 0.95);
+  cv.text(cv.fit(cardTxt(`Hasta ${until}`), 'b28', W - end - 60), end + 16, 270, 'b28', cardMix(amber, white, 0.45), 1);
+  // Los datos: uno por fila, la etiqueta en b28 y el dato en b40 (lo más grande que tenemos con letras)
+  let y = 330;
+  for (const [lb, v, col] of rows) {
+    const x = 40, w = W - 80;
+    cv.rect(x, y, w, 134, (xx) => cardMix(col, violet, Math.min(1, (xx - x) / w) * 0.6), 0.22, 22); cv.rect(x, y + 22, 7, 90, col, 1, 3);
+    cv.text(lb, x + 28, y + 16, 'b28', cardMix(col, white, 0.6), 1);
+    const t = cardTxt(v) || '—', k = cv.measure(t, 'b40') <= w - 52 ? 'b40' : 'b28'; cv.text(cv.fit(t, k, w - 52), x + 26, k === 'b40' ? y + 62 : y + 70, k, white);
+    y += 150;
+  }
+  cv.text(cardTxt('Puerto: déjalo vacío (no pongas nada)'), W / 2, y - 4, 'b28', cardMix(amber, white, 0.5), 1, 'center');
+  y += 50;
+  cv.rect(40, y, W - 80, 100, (xx) => cardMix(sky, cardMix(pink, orange, 0.35), Math.min(1, Math.max(0, (xx - 40) / (W - 80)))), 0.9, 24);
+  cv.text(cv.fit(cardTxt(`Se apaga sola ${until}`), 'b28', W - 120), W / 2, y + 14, 'b28', white, 1, 'center');
+  cv.text(cv.fit(cardTxt('¿Te gusta? Toca «Comprar» y sigue'), 'b28', W - 120), W / 2, y + 54, 'b28', white, 0.95, 'center');
   return cv.png();
 }
 /** v329: las tarifas en una imagen grande y clara: un recuadro de color por pantallas, el ahorro marcado */
@@ -4874,9 +4880,17 @@ async function reqAutoTick() {
 /* v357: paga pero no ve nada: el bot le pregunta si necesita ayuda (una vez al mes como mucho) */
 const SL_KB = { inline_keyboard: [[{ text: '📲 No sé instalarlo', callback_data: 'bm:guia' }], [{ text: '🔑 No sé entrar (usuario y contraseña)', callback_data: 'bm:datos' }], [{ text: '🛠️ Me da problemas', callback_data: 'pb:cortes' }], [{ text: '😊 Todo bien, no he tenido tiempo', callback_data: 'sl:ok' }]] };
 async function sleepyTick() {
-  const g = db.settings.grow.sleepy; if (!g.on || !db.settings.notices.telegram.token) return;
+  if (!db.settings.notices.telegram.token) return;
   const h = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
   if (!process.env.DAILY_ANYTIME && (h < 11 || h >= 21)) return;
+  // v359: a quien compró solo desde el bot, al día siguiente: «¿Ya lo tienes funcionando?»
+  for (const c of db.clients.filter((x) => x.selfBuy && !x.buyFollow && x.tgChat && x.status === 'active' && x.tgAt && Date.now() - Date.parse(x.tgAt) > (Number(process.env.BUY_FOLLOW_MS) || 20 * 3600000) && Date.now() - Date.parse(x.tgAt) < 7 * 86400000).slice(0, 15)) {
+    c.buyFollow = new Date().toISOString(); const first = String(c.panelName || '').split(/\s+/)[0];
+    await tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text: `👋 ¡Hola${first && first !== 'Cliente' ? ', ' + hEsc(first) : ''}! ¿Qué tal tu primer día en ${hEsc(botName())}? 😊\n\n<b>¿Ya lo tienes funcionando?</b>`, reply_markup: { inline_keyboard: [[{ text: '✅ Sí, todo perfecto', callback_data: 'bf:ok' }], [{ text: '📲 Ayuda para instalarlo', callback_data: 'bm:guia' }], [{ text: '🛠️ Me da problemas', callback_data: 'pb:cortes' }]] } }).catch(() => {});
+    addLog('aviso', c, 'El bot le ha preguntado si ya lo tiene funcionando (compró solo desde el bot)', null);
+    lock(async () => saveDb()).catch(() => {});
+  }
+  const g = db.settings.grow.sleepy; if (!g.on) return;
   const days = g.days || 7, t = today(), lim = days * 86400000;
   const list = db.clients.filter((c) => c.tgChat && !c.demo && c.status === 'active' && !c.off && !cliTv(c) && !cliPx(c) && c.createdAt && diffDays(t, String(c.createdAt).slice(0, 10)) >= days
     && (!c.expires || diffDays(c.expires, t) >= 4) && (c.seenAt ? Date.now() - Date.parse(c.seenAt) > lim : true) && (!c.sleepAt || Date.now() - Date.parse(c.sleepAt) > 30 * 86400000)).slice(0, 15);
@@ -4929,6 +4943,8 @@ async function botCallback(cq) {
   }
   if (data === 'sd:pr') return sdPrices(chat);
   if (data === 'by:go') return buyStart(chat, cq.from || {}); // v358
+  if (data === 'by:duda') { const ct = botContact(); const c = db.clients.find((x) => x.buyPend && x.buyChat === chat); if (c) notifyStaff('payments', `💬 ${c.panelName} empezó a comprar desde el bot y tiene una duda. Escríbele${c.telegram ? ' a ' + c.telegram : ''} 🙂`); return tg('sendMessage', { chat_id: chat, text: `💬 ¡Claro! Escríbenos y te contestamos enseguida:\n${ct || ''}\n\nYa les he avisado de que vas a escribir 😊` }); } // v359
+  if (data === 'bf:ok') return tg('sendMessage', { chat_id: chat, text: '🎉 ¡Genial! Nos alegra mucho.\n\nQue lo disfrutes 🍿 Si algún día necesitas algo, toca «Ayuda y soporte técnico» en el menú.', reply_markup: { inline_keyboard: [[{ text: '🍿 Ver lo último que ha llegado', callback_data: 'bm:novedades' }], [{ text: '🎁 Invita a un amigo', callback_data: 'bm:invitar' }]] } }); // v359
   if (data === 'dv:list' || SD_DEV.some((x) => data === 'dv:' + x[0])) { // v300: pasos de la demo según el aparato (v309: sin pisar «Mis aparatos»)
     const c = db.clients.filter((x) => x.tgChat === chat && x.status === 'active' && !x.off).sort((a, b) => (b.demo ? 1 : 0) - (a.demo ? 1 : 0))[0]; if (!c) return;
     const k = data.slice(3);
@@ -5871,6 +5887,7 @@ route('POST', '/api/clients/:id/renew', '*', ({ me, params, body }) => lock(asyn
   if (!before.demo) addChurn(c.ownerId, 'ren');
   addLog(before.demo ? 'alta' : 'renovacion', c, `${before.demo ? 'Demo convertida en cuenta' : 'Renovada'}: ${what}. Vence el ${c.expires}` + (cost ? `. ${cost} ${cost === 1 ? 'crédito' : 'créditos'}` : ''), me);
   const soc = socAccount(me, c, plan.months, plan.screens, body, before.demo ? 'alta' : 'renovación');
+  renewTg(c, plan.months, !!before.demo); // v362: se le avisa por Telegram (con el canal de novedades)
   libCheckLater(c);
   saveDb();
   return { ok: true, expires: c.expires, ...(soc && !soc.ask ? { soc: { amount: soc.amount, who: (socMember(soc.who) || {}).name } } : c.socPend ? { socPend: true } : {}), ...socAskOut(soc) };
@@ -7815,7 +7832,7 @@ route('GET', '/api/self-demo', SUPER, () => {
     gifts: { n: mine.filter((c) => c.sdGift).length, bought: mine.filter((c) => c.sdGift && (paid.has(c.id) || (!c.demo && c.status === 'active'))).length },
     funnel: sdFunnel(cf, mine), // v309: de dónde vienen tus clientes (%, y lo que te han pagado)
     devs: SD_DEV.map(([k, t]) => [t, mine.filter((c) => (c.sdDevs || []).includes(k)).length]), // v301: qué aparatos eligen
-    buyOn: cf.buyOn !== false, buyReady: !!buyAny(), buys: db.clients.filter((c) => c.selfBuy).length, buyPend: db.clients.filter((c) => c.buyPend).length, buyLink: bot ? `https://t.me/${bot}?start=comprar` : '', // v358
+    chan: cf.chan === undefined ? CHAN_DEF : cf.chan || '', buyOn: cf.buyOn !== false, buyPerHour: Number(cf.buyPerHour) || 10, buyReady: !!buyAny(), buys: db.clients.filter((c) => c.selfBuy).length, buyPend: db.clients.filter((c) => c.buyPend).length, buyLink: bot ? `https://t.me/${bot}?start=comprar` : '', // v358
     pay: !!ctx, payAuto: !!(ctx && (ctx.key || ctx.pp)), today: sdToday(), total: mine.length, live: mine.filter((c) => c.demo && c.status === 'active').length,
     bought: mine.filter((c) => paid.has(c.id) || (!c.demo && c.status === 'active')).length,
     last: mine.slice(-15).reverse().map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, at: c.createdAt, tg: c.telegram || '', src: c.sdGift ? '🎟️ regalo de ' + ((db.clients.find((x) => x.id === c.sdGift) || {}).panelName || 'un cliente') : ((cf.links || []).find((l) => l.code === c.sdSrc) || {}).name || '', state: !c.demo ? 'cliente' : c.status === 'active' ? 'probando' : 'terminada' })),
@@ -7838,7 +7855,9 @@ route('PUT', '/api/self-demo', SUPER, ({ me, body }) => lock(async () => {
   if (Number.isInteger(Number(b.perDay)) && Number(b.perDay) >= 0 && Number(b.perDay) <= 500) cf.perDay = Number(b.perDay);
   if (Array.isArray(b.servers)) { const ok = new Set(db.servers.map((x) => x.id)); cf.servers = b.servers.map(Number).filter((x) => ok.has(x)); }
   if (Number.isInteger(Number(b.perHour)) && Number(b.perHour) >= 0 && Number(b.perHour) <= 100) cf.perHour = Number(b.perHour);
-  if (b.buyOn !== undefined) cf.buyOn = !!b.buyOn; // v358: «Comprar mi cuenta» desde el bot
+  if (b.buyOn !== undefined) cf.buyOn = !!b.buyOn; // v358
+  if (b.chan !== undefined) { const u = str(b.chan, 200); if (u && !/^https:\/\/t\.me\/\S+$/.test(u)) throw new HttpError(400, 'El enlace del canal tiene que empezar por https://t.me/'); cf.chan = u; } // v361
+  if ([5, 10, 20, 50].includes(Number(b.buyPerHour))) cf.buyPerHour = Number(b.buyPerHour); // v359: «Comprar mi cuenta» desde el bot
   // v297: formato del usuario y contraseña de las demos
   if (typeof b.userPrefix === 'string') { const v = b.userPrefix.trim().toLowerCase(); if (!/^[a-z0-9._-]{0,20}$/.test(v)) throw new HttpError(400, 'El principio del usuario solo puede llevar letras, números, punto, guion o guion bajo (hasta 20).'); cf.userPrefix = v; }
   if (typeof b.userSuffix === 'string') { const v = b.userSuffix.trim().toLowerCase(); if (!/^[a-z0-9@._-]{0,30}$/.test(v)) throw new HttpError(400, 'El final del usuario solo puede llevar letras, números, @, punto o guiones (hasta 30). Por ejemplo: @uno.com'); cf.userSuffix = v; }
@@ -8657,6 +8676,42 @@ async function sdOffer(chat, src = '', from = null) {
   return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎬 <b>¡Bienvenido a ${hEsc(nm)}!</b>\n\nPruébalo <b>gratis durante ${sdHoursText(cf.hours)}</b>, sin compromiso y sin dar ningún dato:\n\n🍿 Pelis y series en todos tus aparatos\n📺 Tele, móvil, tablet y ordenador\n⚡ Tu cuenta, lista en unos segundos\n\n👇 Pulsa el botón y empieza a ver ya.`,
     reply_markup: { inline_keyboard: [[{ text: `🎁 Quiero mi prueba gratis (${sdHoursText(cf.hours)})`, callback_data: 'sd:go' + (ln ? ':' + ln.code : '') }], buyOk() ? [{ text: '🛒 Comprar ya', callback_data: 'by:go' }, { text: '💶 Ver precios', callback_data: 'sd:pr' }] : [{ text: '💶 Ver precios', callback_data: 'sd:pr' }]] } }); // v358: «Comprar ya»
 }
+/** v359: contracargo (el cliente pide al banco que le devuelva el dinero): se apaga su cuenta y te avisa */
+async function chargeback(d, vu) {
+  if (!d) return;
+  const pi = String(d.payment_intent || ''), amt = (Number(d.amount) || 0) / 100, cur = String(d.currency || 'eur').toUpperCase();
+  const o = pi && db.orders.find((x) => x.pi === pi), c = o && db.clients.find((x) => x.id === o.clientId);
+  const why = { fraudulent: 'dice que no fue él', product_not_received: 'dice que no recibió nada', duplicate: 'dice que pagó dos veces', subscription_canceled: 'dice que había cancelado', unrecognized: 'no reconoce el cargo' }[d.reason] || 'ha reclamado al banco';
+  if (c) {
+    await lock(async () => {
+      o.dispute = { at: new Date().toISOString(), reason: d.reason || '', amount: amt };
+      if (!c.off && c.status === 'active') { c.off = true; c.offBy = 'Contracargo en Stripe'; c.offAt = new Date().toISOString(); try { await removeAccess(c, true); } catch { /* se reintenta con la vigilancia */ } }
+      addLog('cobro', c, `⚠️ Contracargo de ${amt.toFixed(2)} ${cur} en Stripe (${why}): cuenta apagada`, null); saveDb();
+    });
+  }
+  const msg = `⚠️ CONTRACARGO en Stripe\n\n${c ? `👤 ${c.panelName} (@${c.embyName})\n` : ''}💶 ${amt.toFixed(2)} ${cur} · ${why}\n\n${c ? '🔒 Su cuenta se ha apagado sola. Si se arregla, puedes volver a encenderla desde el panel.' : 'No he encontrado de qué cuenta es (puede ser un pago antiguo). Míralo en Stripe.'}\n👉 Responde a la reclamación en Stripe › Pagos › Disputas (tienes unos días).`;
+  if (vu) notifyUser(vu, msg); else notifyStaff('payments', msg);
+}
+/* v359: tope de compras por hora (si alguien intenta abusar, se para y te avisa) */
+const buyHour = []; let buyCapTold = 0;
+const buyCapHit = () => { const now = Date.now(); while (buyHour.length && now - buyHour[0] > 3600000) buyHour.shift(); const cap = Number(sdCfg().buyPerHour) || 10; if (buyHour.length < cap) return false; if (now - buyCapTold > 3600000) { buyCapTold = now; notifyStaff('servers', `🛑 Se han preparado ${cap} cuentas para comprar en la última hora desde el bot. He parado las nuevas durante un rato por seguridad. Si es normal, sube el límite en Demos › Demo automática.`); } return true; };
+/* v361: canal de novedades: se ofrece en la bienvenida de la demo y de la compra */
+const CHAN_DEF = 'https://t.me/+t-p5DhJGGe1lOTVk';
+const chanUrl = () => { const v = sdCfg().chan; const u = v === undefined ? CHAN_DEF : String(v || ''); return /^https:\/\/t\.me\//.test(u) ? u : ''; };
+const chanTxt = () => chanUrl() ? ['', '📢 <b>Únete a nuestro canal de novedades</b>', 'Ahí avisamos de <b>las películas y series que van llegando</b>, los estrenos, las promociones y si hay algún aviso del servicio. ¡Para no perderte nada! 🍿'] : [];
+const chanRow = () => chanUrl() ? [[{ text: '📢 Unirme al canal de novedades', url: chanUrl() }]] : [];
+/** v362: invitación al canal en un mensaje aparte (al enlazar su Telegram) */
+const chanInvite = (chat) => chanUrl() ? tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: chanTxt().slice(1).join('\n'), reply_markup: { inline_keyboard: chanRow() } }).catch(() => {}) : Promise.resolve();
+/** v362: renovación o alta hecha a mano desde el panel: se le avisa por Telegram (con el canal) */
+function renewTg(c, months, wasDemo) {
+  if (!c.tgChat || !db.settings.notices.telegram.on || !db.settings.notices.telegram.token) return;
+  const brand = botName(), first = String(c.panelName || '').split(/\s+/)[0], fd = c.expires.split('-').reverse().join('/');
+  const text = [wasDemo ? `🎉 <b>¡Bienvenido a ${hEsc(brand)}${first ? ', ' + hEsc(first) : ''}!</b> Ya eres de la familia 💙` : `✅ <b>¡Tu cuenta está renovada${first ? ', ' + hEsc(first) : ''}!</b>`, '',
+    `📅 Válida hasta el <b>${fd}</b>`, `📦 ${months} ${months === 1 ? 'mes' : 'meses'} · ${c.screens || 1} ${(c.screens || 1) === 1 ? 'pantalla' : 'pantallas'}`, '',
+    `🍿 ${wasDemo ? 'Tu cuenta ya está activada' : 'No tienes que hacer nada'}: sigue viendo como siempre.`, `💙 ¡Gracias por confiar en ${hEsc(brand)}!`, ...chanTxt()].join('\n');
+  tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', disable_web_page_preview: true, text, ...(wasDemo ? { message_effect_id: TG_PARTY } : {}), reply_markup: { inline_keyboard: [...chanRow(), [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } })
+    .catch((e) => { if (/effect/i.test(e.message)) tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', disable_web_page_preview: true, text, reply_markup: { inline_keyboard: [...chanRow(), [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {}); });
+}
 /* ── v358: «Comprar mi cuenta» desde el bot, sin prueba: elige plan, paga y le llegan sus datos al momento ──
    Se prepara una cuenta apagada (no puede entrar) con su enlace de pago. Al pagar se enciende sola y se le mandan sus datos.
    Si no paga en 48 horas, se borra sola. No sale en tu lista de cuentas hasta que paga. */
@@ -8674,6 +8729,7 @@ async function buyStart(chat, from) {
   if (prev) { if (prev.buyPend) { prev.buyChat = chat; prev.buyAt = new Date().toISOString(); } else { prev.tgChat = chat; } await lock(async () => { payKeyOf(prev); saveDb(); }); return send(prev, !!prev.buyPend); }
   if (buyBusy.has(uid)) return; buyBusy.add(uid);
   try {
+    if (buyCapHit()) return tg('sendMessage', { chat_id: chat, text: `😊 ¡Mucha gente comprando ahora mismo! Vuelve a tocar «Comprar» en un ratito${botContact() ? ' o escríbenos:\n' + botContact() : '.'}` });
     if (db.clients.filter((c) => c.buyPend).length >= 30) return tg('sendMessage', { chat_id: chat, text: `😕 Ahora mismo hay muchas altas en marcha. Vuelve en un rato${botContact() ? ' o escríbenos:\n' + botContact() : '.'}` });
     const s = buyAny(); if (!s) throw new Error('No hay servidor con plazas');
     await tg('sendMessage', { chat_id: chat, text: '⏳ Preparando tu cuenta… un momento 🍿' }).catch(() => {});
@@ -8690,7 +8746,7 @@ async function buyStart(chat, from) {
         paid: false, buyChat: chat, buyUser: uid, buyAt: new Date().toISOString(), ...(from && from.username ? { telegram: '@' + from.username } : {}) };
       await createInEmby(c, password); // apagada: no puede entrar hasta que pague
       c.password = password; payKeyOf(c);
-      db.clients.push(c);
+      db.clients.push(c); buyHour.push(Date.now());
       addLog('aviso', c, `🛒 Alta desde el bot: cuenta preparada (apagada) esperando el pago (${s.name})`, null);
       saveDb();
     });
@@ -8705,9 +8761,9 @@ async function buyStart(chat, from) {
 async function buyWelcome(c, o) {
   const s = db.servers.find((x) => x.id === c.serverId) || {}, first = String(c.panelName || '').split(/\s+/)[0];
   const cap = [`🎉 <b>¡Bienvenido a ${hEsc(botName())}${first ? ', ' + hEsc(first) : ''}!</b>`, `✅ Tu cuenta ya está activa hasta el <b>${hEsc(c.expires.split('-').reverse().join('/'))}</b>`, '',
-    `<blockquote>${s.publicUrl ? `🌐 <b>Servidor</b>\n<code>${hEsc(s.publicUrl)}</code>\n\n` : ''}👤 <b>Usuario</b>\n<code>${hEsc(c.embyName)}</code>\n\n🔑 <b>Contraseña</b>\n<code>${hEsc(c.password || '')}</code>\n\n🔌 Puerto: <b>déjalo vacío</b></blockquote>`,
-    '<i>👆 Toca cada dato para copiarlo</i>', '', `📺 ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}`, '', '📲 <b>¿Dónde lo vas a ver?</b> Elige tu aparato y te digo los pasos 👇'].join('\n');
-  const kb = { inline_keyboard: [...sdDevKb(c).inline_keyboard.slice(0, 3), [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] };
+    `${s.publicUrl ? `🌐 <b>Servidor</b>\n<code>${hEsc(s.publicUrl)}</code>\n\n` : ''}👤 <b>Usuario</b>\n<code>${hEsc(c.embyName)}</code>\n\n🔑 <b>Contraseña</b>\n<code>${hEsc(c.password || '')}</code>\n\n🔌 Puerto: <b>déjalo vacío</b>`,
+    '<i>👆 Toca cada dato para copiarlo</i>', '', `📺 ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${c.screens || 1} ${c.screens === 1 ? 'pantalla' : 'pantallas'}`, '', ...chanTxt(), '', '📲 <b>¿Dónde lo vas a ver?</b> Elige tu aparato y te digo los pasos 👇'].join('\n');
+  const kb = { inline_keyboard: [...sdDevKb(c).inline_keyboard.slice(0, 3), ...chanRow(), [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] };
   return tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', disable_web_page_preview: true, text: cap, reply_markup: kb });
 }
 const sdBusy = new Set();
@@ -8807,18 +8863,20 @@ async function sdCreate(chat, from, src = '') {
     const app = kindOf(s) === 'jellyfin' ? 'Jellyfin' : 'Emby', sameDay = localDate(end) === today();
     const when = sameDay ? `hoy a las ${until}` : `${localDate(end) === addDays(today(), 1) ? 'mañana' : 'el ' + end.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })} a las ${until}`;
     const card = [`🎉 <b>¡Tu prueba gratis está lista, ${hEsc(full.split(' ')[0])}!</b>`, '', `⏳ <b>Válida hasta ${when}</b> · ${sdHoursText(hours)}`, '',
-      `<blockquote>${s.publicUrl ? `🌐 <b>Servidor</b>\n<code>${hEsc(s.publicUrl)}</code>\n\n` : ''}👤 <b>Usuario</b>\n<code>${hEsc(c.embyName)}</code>\n\n🔑 <b>Contraseña</b>\n<code>${hEsc(c.password)}</code></blockquote>`,
+      `${s.publicUrl ? `🌐 <b>Servidor</b>\n<code>${hEsc(s.publicUrl)}</code>\n\n` : ''}👤 <b>Usuario</b>\n<code>${hEsc(c.embyName)}</code>\n\n🔑 <b>Contraseña</b>\n<code>${hEsc(c.password)}</code>`,
       '<i>👆 Toca cada dato para copiarlo</i>', '', '<b>📲 Cómo empezar</b>', `1️⃣ Instala la app de <b>${app}</b> (toca «📲 Instalar la app»)`, `2️⃣ Pon el ${s.publicUrl ? 'servidor, el ' : ''}usuario y la contraseña`, '3️⃣ ¡Y a disfrutar! 🍿', '',
-      '💬 Cuando termine te escribo por aquí para que la actives si te ha gustado. 😉'].join('\n');
+      '💬 Cuando termine te escribo por aquí para que la actives si te ha gustado. 😉', ...chanTxt()].join('\n');
     const sendOld = () => tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', disable_web_page_preview: true, text: card,
-      reply_markup: { inline_keyboard: [[{ text: '📲 Instalar la app', callback_data: 'bm:guia' }], [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar', url: cpLink(c) } : { text: '💶 Precios', callback_data: 'bm:precios' }], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
+      reply_markup: { inline_keyboard: [[{ text: '📲 Instalar la app', callback_data: 'bm:guia' }], [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar', url: cpLink(c) } : { text: '💶 Precios', callback_data: 'bm:precios' }], ...chanRow(), [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
     // v300: tarjeta con letras grandes + «¿dónde lo vas a ver?» con un botón por aparato (si la foto falla, el mensaje de antes)
     const cap = [`🎉 <b>¡Tu prueba gratis está lista, ${hEsc(full.split(' ')[0])}!</b>`, `⏳ Válida hasta <b>${when}</b>`, '',
-      `<blockquote>${s.publicUrl ? `🌐 <code>${hEsc(s.publicUrl)}</code>\n` : ''}👤 <code>${hEsc(c.embyName)}</code>\n🔑 <code>${hEsc(c.password)}</code></blockquote>`,
+      ...(s.publicUrl ? [`🌐 <b>Servidor:</b>`, `<code>${hEsc(s.publicUrl)}</code>`, ''] : []), `👤 <b>Usuario:</b>`, `<code>${hEsc(c.embyName)}</code>`, '', `🔑 <b>Contraseña:</b>`, `<code>${hEsc(c.password)}</code>`, '', '🔌 <b>Puerto:</b> déjalo vacío', // v360: sin cita, para que se vea más grande
       '<i>👆 Toca cada dato para copiarlo</i>', '',
       `🎁 <b>Es una demo gratis:</b> dura ${sdHoursText(hours)} y ${when} se apaga sola.`, '💳 ¿Te gusta? Hazte de ' + hEsc(botName()) + ' con <b>«🛒 Comprar»</b>: pagas con el enlace y tu cuenta sigue <b>al momento</b>, con todo como lo dejaste ⚡', '🧾 Te llega aquí tu <b>justificante de pago</b> con la nueva fecha de tu cuenta.', ...(sdBonusTxt() ? [sdBonusTxt()] : []), '',
-      '📲 <b>¿Dónde lo vas a ver?</b> Elige tu aparato 👇'].join('\n');
-    try { await tgPhoto(chat, demoCard(c, s, hours, when), cap, sdDevKb(c), true); } catch (e) { console.error('Demo (tarjeta):', e.message); await sendOld(); }
+      ...chanTxt(), ...(chanUrl() ? [''] : []), '📲 <b>¿Dónde lo vas a ver?</b> Elige tu aparato 👇'].join('\n');
+    const capLen = (t) => t.replace(/<[^>]+>/g, '').replace(/[\u{10000}-\u{10FFFF}]/gu, '..').length; // Telegram: el pie de foto, como mucho 1024
+    const cap2 = capLen(cap) > 1000 ? cap.replace(chanTxt().join('\n'), '').replace(/\n{3,}/g, '\n\n') : cap;
+    try { await tgPhoto(chat, demoCard(c, s, hours, when), cap2, { inline_keyboard: [...sdDevKb(c).inline_keyboard, ...chanRow()] }, true); } catch (e) { console.error('Demo (tarjeta):', e.message); await sendOld(); }
     if (gv && gv.tgChat) tg('sendMessage', { chat_id: gv.tgChat, parse_mode: 'HTML', text: `🎉 <b>${hEsc(full.split(' ')[0])}</b> ya está usando la prueba que le has regalado.${sdGiftRew() ? `\n\n🎁 Si se queda con nosotros, <b>te regalamos ${sdGiftRewTxt()}</b>. ¡Crucemos los dedos! 🤞` : ''}\n\n¡Gracias por recomendarnos! 💛`, reply_markup: { inline_keyboard: [[{ text: '🎟️ Regalar otra', callback_data: 'bm:regalo' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {}); // v303
     const txt = `🤖 <b>Demo automática</b>: ${hEsc(full)}${from && from.username ? ' (@' + hEsc(from.username) + ')' : ''}\n${hEsc(s.name)} · ${sdHoursText(hours)} · usuario <code>${hEsc(c.embyName)}</code>${ln ? `\n🔗 Viene de: <b>${hEsc(ln.name)}</b>` : gv ? '' : '\n🔗 Viene de: <b>Enlace general</b> <i>(o escribió al bot directamente)</i>'}${gv ? `\n🎟️ Regalo de tu cliente <b>${hEsc(gv.panelName)}</b>` : ''}\nHoy van ${sdToday()}${cf.perDay ? ' de ' + cf.perDay : ''}.`;
     for (const u of db.users.filter((x) => !x.disabled && x.role === 'super')) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '⏸️ Pausar las demos', callback_data: 'sdx:off' }]] } }).catch(() => {}); // v296: pausar con un toque
@@ -9289,10 +9347,12 @@ async function payWebhook(req, res, pathname) {
     const ss = ev.data && ev.data.object;
     if (ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') {
       const o = db.orders.find((x) => x.method === 'stripe' && x.extId === (ss && ss.id) && (um ? x.vendorId === vu.id : !x.vendorId));
-      if (o && ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (ss.subscription) o.subId = String(ss.subscription); if (o.kind === 'client' ? await cpPaid(o, 'aviso de Stripe') : markPaid(o, 'aviso de Stripe')) saveDb(); });
+      if (o && ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (ss.subscription) o.subId = String(ss.subscription); if (ss.payment_intent) o.pi = String(ss.payment_intent); // v359: para encontrarlo si hay contracargo
+ if (o.kind === 'client' ? await cpPaid(o, 'aviso de Stripe') : markPaid(o, 'aviso de Stripe')) saveDb(); });
     }
     if (ev.type === 'invoice.paid' || ev.type === 'invoice.payment_succeeded') await subInvoice(ss, um ? vu.id : null, 'aviso de Stripe');
     if (ev.type === 'customer.subscription.deleted') { const c = db.clients.find((x) => x.sub && x.sub.id === (ss && ss.id)); if (c && c.sub.status === 'active') await lock(async () => { c.sub.status = 'canceled'; addLog('cobro', c, 'Renovación automática terminada en Stripe', null); saveDb(); }); }
+    if (ev.type === 'charge.dispute.created') await chargeback(ss, um ? vu : null); // v359: devolución por el banco: se apaga la cuenta
     if (ev.type === 'checkout.session.expired') { const o = db.orders.find((x) => x.method === 'stripe' && x.extId === (ss && ss.id)); if (o && o.status === 'pending') await lock(async () => { o.status = 'expired'; saveDb(); }); }
     return ok();
   }
@@ -9539,10 +9599,11 @@ function receiptTg(c, o) {
     + (auto ? '\n🔁 Renovación automática: <b>activa</b>' : '')
     + (() => { const l = diffDays(o.expiresAfter || c.expires, today()), d = (db.settings.notices.chat || {}).days || 5; return l >= 0 ? `\n📅 Tienes <b>${l} ${l === 1 ? 'día' : 'días'}</b> por delante\n🔔 Te aviso ${d} ${d === 1 ? 'día' : 'días'} antes de que caduque` : ''; })() + '\n\n'
     + `🔑 <b>Tus datos de acceso</b>${s.publicUrl ? `\n🌐 Servidor: <code>${hEsc(s.publicUrl)}</code>${s.kind === 'plex' ? '' : '\n🔌 Puerto: <b>déjalo vacío</b> (no pongas nada)'}` : ''}\n👤 ${s.kind === 'plex' ? 'Cuenta de Plex' : 'Usuario'}: <code>${hEsc(c.embyName)}</code>\n🔒 Contraseña: ${c.password ? `<tg-spoiler>${hEsc(c.password)}</tg-spoiler>  <i>(toca para verla)</i>` : s.kind === 'plex' ? '<i>la de tu cuenta de Plex</i>' : '<i>la de siempre</i>'}${s.kind === 'iptv' && xuiLinks(c) && c.password ? `\n📺 Lista M3U: <tg-spoiler>${hEsc(xuiLinks(c).m3u)}</tg-spoiler>` : ''}\n\n`
-    + `🍿 ${o.newBuy ? 'Tu cuenta ya está lista: ahora te digo cómo empezar a ver 👇' : `${o.wasDemo ? 'Tu cuenta ya está activada' : 'No tienes que hacer nada'}: sigue viendo como siempre.`}\n💙 ¡Gracias por confiar en ${hEsc(brand)}!`;
+    + `🍿 ${o.newBuy ? 'Tu cuenta ya está lista: ahora te digo cómo empezar a ver 👇' : `${o.wasDemo ? 'Tu cuenta ya está activada' : 'No tienes que hacer nada'}: sigue viendo como siempre.`}\n💙 ¡Gracias por confiar en ${hEsc(brand)}!` + (chanUrl() ? '\n\n📢 <b>Únete a nuestro canal de novedades:</b> avisamos de las pelis y series que llegan, estrenos y promociones 🍿' : '');
   const url = rcUrl(c, o), kb = [];
   if (url) kb.push([{ text: '📄 Ver recibo completo', url }]);
   kb.push([{ text: '📲 Cómo instalar', callback_data: 'gd:main' }, ...(url ? [{ text: '🏠 Mi cuenta', url: url.replace(/\/recibo\/.*$/, '') }] : [])]);
+  kb.push(...chanRow()); // v362
   const head = o.wasDemo ? `🎉 <b>¡Bienvenido a ${hEsc(brand)}!</b> Ya eres de la familia 💙\n\n` : '', full = head + text, markup = { inline_keyboard: kb };
   const plain = () => tg('sendMessage', { chat_id: c.tgChat, text: full, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: markup }).catch(() => {});
   let png = null; try { png = payCard(c, o); } catch (e) { console.error('Recibo (imagen):', e.message); }
@@ -9972,7 +10033,7 @@ async function subInvoice(inv, vendorId, via) {
   await lock(async () => {
     if ((c.sub.inv || []).includes(inv.id) || db.orders.some((o) => o.extId === inv.id)) return;
     c.sub.inv = [...(c.sub.inv || []), inv.id].slice(-24);
-    const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: c.sub.vendorId || null, userId: null, user: c.panelName, credits: 0,
+    const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', pi: String(inv.payment_intent || ''), clientId: c.id, vendorId: c.sub.vendorId || null, userId: null, user: c.panelName, credits: 0,
       months: c.sub.months, screens: c.sub.screens, amount: inv.amount_paid / 100, currency: String(inv.currency || 'eur').toUpperCase(), method: 'stripe', status: 'pending', created: new Date().toISOString(), extId: inv.id, cycle: true, pack: `${c.sub.months} ${c.sub.months === 1 ? 'mes' : 'meses'} · automática` };
     db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000;
     await cpPaid(o, via);
