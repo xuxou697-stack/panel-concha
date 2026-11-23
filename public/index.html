@@ -1628,6 +1628,7 @@ button.svm{cursor:pointer}button.svm:hover{background:color-mix(in srgb,var(--c)
 .rq{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 0;border-top:1px dashed var(--line)}.rq:first-of-type{border-top:0}
 .rq-t{flex:1;min-width:200px}.rq-t b{display:block;font-size:15px}.rq-t small{color:var(--muted);font-size:12.5px}.rq-a{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.rq-st{font-size:12.5px;color:var(--muted)}
 .rq.pending .rq-t b{color:#fbbf24}
+.fk{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:rgba(99,102,241,.16);color:#c7d2fe;margin-bottom:4px}.fph{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.fph img{width:96px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 
 .cpb{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;margin:0 0 16px;padding:16px;border-radius:20px;border:1px solid color-mix(in srgb,#8b5cf6 40%,transparent);background:linear-gradient(120deg,color-mix(in srgb,#6366f1 16%,var(--surface)),color-mix(in srgb,#ec4899 12%,var(--surface)))}
 .cpb-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:10px}.cpb-h b{font-size:15.5px}.cpb-h small{color:var(--muted);font-size:12.5px}
@@ -3076,7 +3077,8 @@ function navGroups() {
     { v: 'cuentas', f: 'expired', t: 'Vencidos', i: 'alert', n: cnt.expired, hot: true, hide: 'cuentas|all' },
     { v: 'cuentas', f: 'off', t: 'Desactivados', i: 'pause', n: cnt.off, hide: 'cuentas|all' },
     { v: 'calendario', t: 'Calendario', i: 'calendar' },
-    { v: 'compartidas', t: 'Compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true }];
+    { v: 'compartidas', t: 'Compartidas', i: 'users', n: S.d.sharedCount || 0, hot: true },
+    { v: 'peticiones', t: 'Peticiones y fallos', i: 'msg', n: S.d.faultsPending || 0, hot: true }]; // v356
   cli.push({ v: 'movimientos', t: 'Movimientos', i: 'history' }, { v: 'papelera', t: 'Papelera', i: 'trash', n: trash().length });
   // v281: herramientas, al final y separadas
   const tools = [
@@ -3311,7 +3313,7 @@ async function start() {
   try { S.d = kindView(await api('GET', '/api/data', null, { timeout: 30000 })); if (uiOld(S.d.uiVer)) return; } // primera carga: con límite de tiempo
   finally { bootLoading(false); }
   if (S.d.me.mustPw) return showMustPw();
-  $('#gate').hidden = true; $('#app').hidden = false; const wantInst = location.hash === '#/appinst' && !isStandalone(); goHome(); if (wantInst) S.view = 'appinst'; try { history.replaceState(null, '', location.pathname + location.search + '#/' + (wantInst ? 'appinst' : homeKey())); } catch (e) { /* nada */ } render(); payReturn();
+  $('#gate').hidden = true; $('#app').hidden = false; const wantInst = location.hash === '#/appinst' && !isStandalone(), wantV = ['#/creditos', '#/peticiones'].includes(location.hash) ? location.hash.slice(2) : ''; goHome(); if (wantInst) S.view = 'appinst'; else if (wantV) S.view = wantV; /* v357: el botón «Recargar créditos» del bot abre Créditos */ try { history.replaceState(null, '', location.pathname + location.search + '#/' + (wantInst ? 'appinst' : wantV || homeKey())); } catch (e) { /* nada */ } render(); payReturn();
 }
 /** Primera entrada (o contraseña puesta por otro): hay que elegir una propia antes de usar el panel */
 function showMustPw() {
@@ -5632,7 +5634,7 @@ function vCrecer(mode = 'crecer') {
   // v278: «Crecer» (para ti: resumen semanal, plazas, quién no ve) y «Mensajes automáticos» del Bot (para tus clientes)
   const isBot = mode === 'bot', TT = isBot ? 'Mensajes automáticos' : 'Crecer';
   const sub = isBot ? 'Mensajes que el bot manda solo a tus clientes para no perderlos. Enciende los que quieras.' : 'Lo que te ayuda a ver cómo va el negocio y a tener sitio para clientes nuevos.';
-  const show = (k) => (isBot ? ['biz', 'winback', 'demoFollow', 'bye', 'epAlert', 'wrap', 'survey', 'outage'] : ['weekly']).includes(k);
+  const show = (k) => (isBot ? ['biz', 'winback', 'demoFollow', 'bye', 'epAlert', 'wrap', 'survey', 'outage', 'autoReq', 'sleepy'] : ['weekly']).includes(k);
   const g = S.grow;
   if (!g || (g.at && Date.now() - g.at > 20000)) { loadGrow(); return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
   if (g.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
@@ -5717,6 +5719,19 @@ Ayer terminó tu prueba en ${esc(BRAND.name)}. Tu usuario sigue guardado, con to
       ${(g.bye || []).some((x) => x[1]) ? `<div class="by-dist">${(() => { const tot = g.bye.reduce((n, x) => n + x[1], 0) || 1; return g.bye.map((x) => `<div class="by-r"><span>${esc(x[0])}</span><div class="gr-bar"><i style="width:${Math.round(x[1] / tot * 100)}%;background:#f97316"></i></div><b>${x[1]}</b></div>`).join(''); })()}</div>` : '<p class="muted small">Todavía nadie ha dicho por qué se va. ¡Buena señal! 😊</p>'}
       ${(g.byeList || []).length ? `<div class="gr-list"><h4>Los últimos</h4>${g.byeList.map((x) => `<div class="gr-li"><div><b>${esc(x.name)}</b><small>@${esc(x.emby)} · ${esc(x.why)} · ${x.how === 'stop' ? 'escribió /stop' : 'no renueva'} · ${fmtTs(x.at, true)}</small></div><div class="gr-li-a">${contact(x)}</div></div>`).join('')}</div>` : ''}
       ${save('bye')}`)}
+    ${card('autoReq', 'c4', '🍿', 'Peticiones que se contestan solas', '<span class="aud c">👥 Le llega a quien pidió algo</span> Cuando un cliente pide una película o serie con /pedir, el panel mira cada rato si ya ha llegado al servidor. En cuanto está, le avisa con la carátula y la petición se marca como hecha. Si ya la teníais cuando la pide, se lo dice al momento.', (c.autoReq || {}).on !== false, `
+      ${sw('on', (c.autoReq || {}).on !== false, 'Avisar solo cuando llegue lo que piden')}
+      <div class="gr-prev"><small>Así le llega (con la carátula):</small><pre>🎉 ¡Buenas noticias, Laura!\n\nYa tienes disponible lo que nos pediste el 3 de noviembre:\n🎬 Dune: Parte dos (2024)\n\n📲 Ábrela en la app y búscala con la lupa 🔍\n¡Que la disfrutes! 🍿</pre><div class="gr-prev-b">🙋 Pedir otra</div><div class="gr-prev-b">🏠 Menú</div></div>
+      <div class="gr-kpis"><div><b>${g.areqPend || 0}</b><span>esperando</span></div><div class="ok"><b>${g.areqN || 0}</b><span>avisadas solas en 30 días 🎉</span></div></div>
+      <p class="gr-note">ℹ️ Se mira cada 30 minutos, de 10:00 a 22:00. Tiene que coincidir el título (sin contar tildes ni el año). Si no coincide, sigues pudiendo marcarla tú en <b>Clientes › Peticiones y fallos</b>.</p>
+      ${save('autoReq')}`)}
+    ${card('sleepy', 'c6', '😴', 'Ayuda a los que pagan y no ven', '<span class="aud c">👥 Le llega a quien no ve nada</span> Si un cliente lleva unos días sin ver nada, el bot le pregunta con cariño si necesita ayuda, con botones: instalar, entrar, problemas o «todo bien». Así no se va sin renovar por no saber usarlo.', (c.sleepy || {}).on !== false, `${noBot}
+      ${sw('on', (c.sleepy || {}).on !== false, 'Preguntar si necesitan ayuda')}
+      <label class="f">Cuándo<select name="days">${options([[5, 'A los 5 días sin ver nada'], [7, 'A los 7 días (recomendado)'], [10, 'A los 10 días'], [14, 'A los 14 días']], (c.sleepy || {}).days || 7)}</select></label>
+      <div class="gr-prev"><small>Así le llega:</small><pre>👋 ¡Hola, Laura! ¿Todo bien?\n\nHemos visto que llevas unos días sin ver nada en ${esc(BRAND.name)} 😊\n\nSi algo no va bien, te ayudamos ahora mismo. Toca lo que te pasa 👇</pre><div class="gr-prev-b">📲 No sé instalarlo</div><div class="gr-prev-b">🔑 No sé entrar (usuario y contraseña)</div><div class="gr-prev-b">🛠️ Me da problemas</div><div class="gr-prev-b">😊 Todo bien, no he tenido tiempo</div></div>
+      <div class="gr-kpis"><div><b>${g.sleepy || 0}</b><span>no ven nada ahora</span></div><div><b>${g.slN || 0}</b><span>preguntados en 30 días</span></div></div>
+      <p class="gr-note">ℹ️ Como mucho una vez al mes a cada cliente, de 11:00 a 21:00. No se manda a demos, a IPTV ni a Plex, ni a quien caduca en menos de 4 días (a esos ya les llega el aviso de renovar).</p>
+      ${save('sleepy')}`)}
     ${card('epAlert', 'c7', '🔔', 'Capítulo nuevo de su serie', '<span class="aud c">👥 Le llega a tus clientes</span> Si un cliente está viendo una serie y llega un capítulo nuevo, el bot le avisa solo a él, con la carátula. Puede decir «no avisarme de esta serie».', ea.on, `
       ${sw('on', ea.on, 'Avisar de los capítulos nuevos')}
       <div class="gr-prev"><small>Así le llega:</small><pre>🔔 ¡Capítulo nuevo de The Last of Us!\n\n🆕 T2E05 · Sentir su amor\n\nComo estás viendo esta serie, te aviso en cuanto llega. ▶️ Ya lo tienes en tu app. ¡A disfrutarlo! 🍿</pre><div class="gr-prev-b">🔕 No avisarme de esta serie</div></div>
@@ -8120,15 +8135,22 @@ function cpBoxHtml(d) {
 /* ---------- Peticiones: películas y series que piden los clientes por el bot ---------- */
 async function loadRq() { S.rqBusy = true; try { S.rq = await api('GET', '/api/requests'); S.rqAt = Date.now(); } catch (e) { S.rq = { error: e.message, list: [] }; } S.rqBusy = false; if (S.view === 'peticiones') render(); }
 function vPeticiones() {
-  const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#f59e0b 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#3b1d0a,#4c1d95)"><span class="ap-ic">🙋</span><div><h1>Peticiones</h1><p>Lo que tus clientes piden por el bot con /pedir. Cuando lo subas, márcalo y el bot les avisa solo.</p></div></section>`;
+  const hero = `<section class="ap-hero" style="background:radial-gradient(120% 140% at 0% 0%,#f59e0b 0%,transparent 55%),radial-gradient(120% 140% at 100% 100%,#ec4899 0%,transparent 55%),linear-gradient(135deg,#3b1d0a,#4c1d95)"><span class="ap-ic">🙋</span><div><h1>Peticiones y fallos</h1><p>Lo que tus clientes piden por el bot y los fallos que te avisan desde Ayuda. Cuando lo arregles o lo subas, márcalo y el bot les avisa solo.</p></div></section>`;
   const d = S.rq;
   if (!d) return hero + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
   const pend = d.list.filter((r) => r.status === 'pending'), done = d.list.filter((r) => r.status !== 'pending');
   const card = (r) => `<div class="rq ${r.status}"><div class="rq-t"><b>«${esc(r.title)}»</b><small>${esc(r.name)} · @${esc(r.emby)}${S.d.users.length > 1 && r.ownerId !== me().id ? ' · de ' + esc(userName(r.ownerId)) : ''} · ${fmtTs(r.at, true)}${r.tg ? '' : ' · sin Telegram'}</small></div>
-    <div class="rq-a">${r.status === 'pending' ? `<button type="button" class="btn sm primary" data-act="rq-done" data-id="${r.id}">✅ Ya está</button><button type="button" class="btn sm" data-act="rq-no" data-id="${r.id}">🙏 No disponible</button>` : `<span class="rq-st">${r.status === 'done' ? '✅ Disponible · avisado' : '🙏 No disponible · avisado'}</span>`}<button type="button" class="btn sm ghost" data-act="rq-del" data-id="${r.id}" title="Borrar">🗑️</button></div></div>`;
-  return hero + `<div class="ap-grid"><section class="ap-card"><h2>⏳ Pendientes (${pend.length})</h2>${pend.length ? pend.map(card).join('') : '<p class="muted small">No hay peticiones pendientes. 🎉</p>'}</section>
+    <div class="rq-a">${r.status === 'pending' ? `<button type="button" class="btn sm primary" data-act="rq-done" data-id="${r.id}">✅ Ya está</button><button type="button" class="btn sm" data-act="rq-no" data-id="${r.id}">🙏 No disponible</button>` : `<span class="rq-st">${r.status === 'done' ? (r.auto ? `🤖 Llegó al servidor${r.found ? ' (' + esc(r.found) + ')' : ''} · avisado solo` : '✅ Disponible · avisado') : '🙏 No disponible · avisado'}</span>`}<button type="button" class="btn sm ghost" data-act="rq-del" data-id="${r.id}" title="Borrar">🗑️</button></div></div>`;
+  // v356: fallos que avisan desde Ayuda › «No carga, se corta o va lento» / «Otro problema»
+  const FK = { uno: '🎬 Falla una película o capítulo', sigue: '📶 No le va bien (ya probó los pasos)', otro: '💬 Otro problema' };
+  const fl = d.faults || [], fpend = fl.filter((f) => f.status === 'pending'), fdone = fl.filter((f) => f.status !== 'pending');
+  const fcard = (f) => `<div class="rq ${f.status}"><div class="rq-t"><span class="fk">${FK[f.k] || FK.otro}</span><b>«${esc(f.text)}»</b><small>${esc(f.name)} · @${esc(f.emby)}${f.server ? ' · 🖥️ ' + esc(f.server) : ''}${f.dev ? ' · ' + esc(f.dev) : ''}${S.d.users.length > 1 && f.ownerId !== me().id ? ' · de ' + esc(userName(f.ownerId)) : ''} · ${fmtTs(f.at, true)}</small>${f.photos ? `<div class="fph">${Array.from({ length: f.photos }, (_, i) => `<a href="/api/faults/${f.id}/photo/${i}" target="_blank" rel="noopener"><img loading="lazy" src="/api/faults/${f.id}/photo/${i}" alt="Foto del error"></a>`).join('')}</div>` : ''}</div>
+    <div class="rq-a">${f.status === 'pending' ? `<button type="button" class="btn sm primary" data-act="fx-done" data-id="${f.id}">✅ Arreglado: avisar al cliente</button>` : `<span class="rq-st">✅ Arreglado · avisado${f.doneBy ? ' por ' + esc(f.doneBy) : ''}</span>`}<button type="button" class="btn sm ghost" data-act="fx-del" data-id="${f.id}" title="Borrar">🗑️</button></div></div>`;
+  const faultsHtml = `<section class="ap-card"><h2>🛠️ Fallos por arreglar (${fpend.length})</h2>${fpend.length ? fpend.map(fcard).join('') : '<p class="muted small">Ningún cliente ha avisado de fallos. 🎉</p>'}</section>${fdone.length ? `<section class="ap-card"><h2>📁 Fallos ya arreglados</h2>${fdone.slice(0, 40).map(fcard).join('')}</section>` : ''}`;
+  return hero + `<div class="ap-grid">${faultsHtml}<section class="ap-card"><h2>🙋 Peticiones pendientes (${pend.length})</h2>${pend.length ? pend.map(card).join('') : '<p class="muted small">No hay peticiones pendientes. 🎉</p>'}</section>
     ${done.length ? `<section class="ap-card"><h2>📁 Ya contestadas</h2>${done.slice(0, 60).map(card).join('')}</section>` : ''}</div>`;
 }
+async function fxSet(id, status) { try { await api('POST', `/api/faults/${id}`, { status }); toast(status === 'done' ? 'Arreglado: al cliente ya le ha llegado el aviso ✅' : 'Borrado'); S.rq = null; await reload(); loadRq(); } catch (e) { toast(e.message, true); } }
 async function rqSet(id, status) { try { await api('POST', `/api/requests/${id}`, { status }); toast(status === 'done' ? 'Marcada como disponible: el cliente ya está avisado 🍿' : status === 'no' ? 'Cliente avisado' : 'Borrada'); S.rq = null; await reload(); loadRq(); } catch (e) { toast(e.message, true); } }
 
 /* ---------- Cobro a clientes: pagan con Stripe desde su enlace y la cuenta se renueva sola ---------- */
@@ -8395,6 +8417,12 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 357, d: '2026-11-23', items: ['🍿 Peticiones que se contestan solas: cuando llega al servidor lo que pidió un cliente, el bot le avisa con la carátula y se marca hecha. Si ya lo teníais, se lo dice al momento (Bot › Mensajes automáticos)', '😴 A quien paga y lleva unos días sin ver nada, el bot le pregunta si necesita ayuda, con botones para instalar, entrar o problemas', '🔋 Créditos bajos: el revendedor recibe el aviso con el botón «Recargar créditos ahora», un recordatorio cada 3 días, y a ti te llega que se está quedando sin créditos'], team: ['🔋 Cuando te quedan pocos créditos, el bot te avisa con un botón para recargarlos al momento', '🍿 Las peticiones de tus clientes se contestan solas cuando la película o serie llega al servidor'] },
+  { v: 356, d: '2026-11-23', items: ['🔍 Bot › Ayuda › «Me falla con todo»: antes de nada mira la cuenta del cliente, su servidor y sus pantallas, y se lo dice', '🔧 Los pasos salen de uno en uno, según el aparato (Smart TV, Fire TV, móvil u ordenador), con «¿Ya funciona?» y «Siguiente paso»', '📸 El cliente puede mandar una foto del error y te llega con el aviso', '🛠️ Nueva sección «Peticiones y fallos» en Clientes: al marcar un fallo como arreglado (aquí o con el botón del aviso de Telegram), al cliente le llega «¡Ya está arreglado!»', '📺 «Límite de transmisión» trae el botón para ver y cerrar sus aparatos'], team: ['🛠️ Nueva sección «Peticiones y fallos» en Clientes: ves los fallos que avisan tus clientes por el bot (con foto si la mandan). Toca «Arreglado» y al cliente le llega el aviso'] },
+  { v: 355, d: '2026-11-23', items: ['📶 Bot › Ayuda: «No carga» y «Se corta o va lento» se juntan. Ahora pregunta con botones: ¿falla todo?, ¿solo una película o capítulo?, ¿la imagen va más lenta que el sonido?', '🎬 Si falla una película, el cliente escribe el título, el capítulo y el minuto, y te llega el aviso con su nombre, servidor y revendedor', '✨ Todas las respuestas de Ayuda tienen ahora botones para volver, y «Otro problema» deja escribir el fallo en el mismo bot'], team: ['📶 En el bot de tus clientes, «No carga» y «Se corta» se juntan y preguntan con botones. Si a un cliente tuyo le falla una película o algo más, te llega un aviso con lo que ha escrito'] },
+  { v: 354, d: '2026-11-23', items: ['📊 Resumen semanal: en «Se fueron sin renovar» ahora sale de qué revendedor era cada cuenta y su nombre, para poder avisarles'] },
+  { v: 353, d: '2026-11-23', items: ['🛠️ Bot: «Soporte técnico» y «Ayuda» se juntan en un solo botón, «Ayuda y soporte técnico», para no repetir. Dentro están: algo no funciona, estado del servicio, cómo instalar, mis datos, mejor calidad y hablar con una persona'], team: ['🛠️ En el bot de tus clientes, «Soporte técnico» y «Ayuda» se juntan en un solo botón: «Ayuda y soporte técnico»'] },
+  { v: 352, d: '2026-11-23', items: ['🏷️ Bot: botones con nombres más claros para el cliente: «Estado del servicio», «Soporte técnico», «Mis dispositivos», «Planes y precios», «Buscar películas y series» y «Ayuda y preguntas frecuentes»'], team: ['🏷️ El bot de tus clientes tiene botones con nombres más claros: «Estado del servicio», «Soporte técnico», «Mis dispositivos», «Planes y precios», «Buscar películas y series» y «Ayuda y preguntas frecuentes»'] },
   { v: 351, d: '2026-11-22', items: ['💬 Bot: la pantalla de «Ayuda» se ha renovado. En vez de la lista larga de comandos, ahora son botones según lo que le pasa al cliente (algo no funciona, ¿va el servidor?, cómo instalar, mis datos, mejor calidad) y uno para hablar con una persona'], team: ['💬 Bot: la pantalla de «Ayuda» de tus clientes se ha renovado: ahora son botones según lo que les pasa, en vez de una lista larga de comandos'] },
   { v: 350, d: '2026-11-22', items: ['💡 Guías de instalación y «Tus datos»: ahora explican que, si no ven su nombre en la lista de Emby, toquen «Iniciar sesión manualmente» y escriban usuario y contraseña tal cual'], team: ['💡 Las guías de instalación que reciben tus clientes explican ahora que, si no ven su nombre en la lista, toquen «Iniciar sesión manualmente» y escriban usuario y contraseña tal cual'] },
   { v: 349, d: '2026-11-22', items: ['📣 Plan amigo a la vista: botón «Anunciar el Plan amigo a mis clientes» (Demo automática) que les manda una tarjeta bonita con el botón para regalar; después de cada pago, un recordatorio corto (1 vez al mes); y en el asistente de tu chat privado, los clientes ven «🎟️ Regala una prueba · gana 1 mes»'] },
@@ -11611,6 +11639,8 @@ document.addEventListener('click', (e) => {
     case 'nav-back': if (history.state && history.state.k && history.length > 1) history.back(); else { goHome(); render(); } break;
     case 'cp-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/client-pay', { on }).then(() => { toast(on ? 'Cobro a clientes activado ✅' : 'Cobro a clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'rq-done': rqSet(el.dataset.id, 'done'); break;
+    case 'fx-done': fxSet(el.dataset.id, 'done'); break;
+    case 'fx-del': if (confirm('¿Borrar este aviso?')) fxSet(el.dataset.id, 'delete'); break;
     case 'rq-no': rqSet(el.dataset.id, 'no'); break;
     case 'rq-del': rqSet(el.dataset.id, 'delete'); break;
     case 'sec-tgextra': dConfirm('Quitar los otros Telegram', 'Los avisos solo te llegarán a ti. Para volver a añadir a tu socio, mándale otra vez el enlace.', 'Quitar', () => api('POST', '/api/security/tg/extra-off', {}).then(() => { S.sec = null; }), 'Quitados'); break;

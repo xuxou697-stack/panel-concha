@@ -127,6 +127,7 @@ function loadDb() {
   if (!Array.isArray(db.access)) db.access = [];
   if (!Array.isArray(db.followups)) db.followups = [];
   if (!Array.isArray(db.requests)) db.requests = []; // películas y series que piden los clientes por el bot
+  if (!Array.isArray(db.faults)) db.faults = []; // v356: fallos que avisan los clientes por el bot (Ayuda)
   db.settings.referral = { days: 0, ...(db.settings.referral || {}) };
   if (!Array.isArray(db.broadcasts)) db.broadcasts = [];
   if (!Array.isArray(db.incidents)) db.incidents = [];
@@ -154,6 +155,7 @@ function loadDb() {
       outage: { on: false, chat: '', thread: 0, delay: 3, name: true, ...(g.outage || {}) }, survey: { on: false, days: 30, since: '', ...(g.survey || {}) },
       epAlert: { on: true, ...(g.epAlert || {}) }, wrap: { on: true, days: 5, ...(g.wrap || {}) },
       demoFollow: { on: true, d1: true, d3: true, ...(g.demoFollow || {}) }, bye: { on: true, ...(g.bye || {}) },
+      autoReq: { on: true, ...(g.autoReq || {}) }, sleepy: { on: true, days: 7, ...(g.sleepy || {}) }, // v357
       biz: { on: true, group: '', quiet: 3, hours: '10-22', fix: true, rsOn: true, rs: BIZ_RS_DEF, pnOn: true, pn: BIZ_PN_DEF, pnPrices: [25, 40, 55, 70], pnDays: '24 horas', smOn: true, sm: BIZ_SM_DEF, smSetup: 60, smMaint: 30, ...(g.biz || {}) } }; } // v309 · v324: asistente en tu chat privado
   if (!db.botStats || typeof db.botStats !== 'object') db.botStats = { days: {}, miss: {} };
   db.settings.selfDemo = { on: false, hours: 4, servers: [], quality: 'basico', perDay: 20, perHour: 5, userPrefix: 'prueba', userSuffix: '', passMode: 'random', links: [{ code: 'forobeta', name: 'Forobeta', on: true }, { code: 'canal', name: 'Mi canal de Telegram', on: true }], ...(db.settings.selfDemo || {}) }; // v295/v296
@@ -2713,6 +2715,7 @@ function publicData(me) {
     alertsUnread: !seeClients ? 0 : db.alerts.reduce((n, a) => n + (!a.read && (!vis || vis.has(a.ownerId)) ? 1 : 0), 0),
     followPending: !seeClients ? 0 : db.followups.filter((f) => f.status === 'pending' && (!vis || vis.has(f.ownerId))).length,
     sharedCount: !seeClients ? 0 : sharedCount(vis),
+    faultsPending: !seeClients ? 0 : db.faults.filter((f) => f.status === 'pending' && (!vis || vis.has(f.ownerId))).length + db.requests.filter((r) => r.status === 'pending' && (!vis || vis.has(r.ownerId))).length, // v356
     sharedIds: !seeClients ? [] : ((shareCache.get(vis ? [...vis].sort().join(',') : 'all') || {}).ids || []),
     renewals: !seeClients ? {} : (() => { const m = {}; for (const l of db.log) if (l.type === 'renovacion' && l.clientId != null && /^Renovada/.test(l.text)) m[l.clientId] = (m[l.clientId] || 0) + 1; return m; })(),
     teamCount: teamCount(me),
@@ -3195,6 +3198,11 @@ async function telegramPoll() {
         const gm = u.message || u.channel_post; // v307: «/conectar CÓDIGO» en un grupo o canal privado de un vendedor
         if (gm && gm.chat && gm.chat.type !== 'private') { const lm = typeof gm.text === 'string' && /^\/conectar(?:@\w+)?\s+([A-Za-z0-9]{6})\s*$/.exec(gm.text.trim()); if (lm) feedLinkCode(gm, lm[1].toUpperCase(), jobs); continue; }
         const msg = u.message;
+        if (msg && msg.chat && msg.chat.type === 'private' && Array.isArray(msg.photo) && msg.photo.length) { // v356: foto del error para su aviso
+          const pm = db.clients.filter((c) => c.tgChat === msg.chat.id);
+          if (pm.length && botAlive(pm)) { const ph = msg.photo[msg.photo.length - 1].file_id, cap = msg.caption || ''; jobs.push(() => probPhoto(msg.chat.id, pm, ph, cap)); }
+          continue;
+        }
         if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') continue;
         const chat = msg.chat.id, text = msg.text.trim();
         let reply;
@@ -3204,7 +3212,7 @@ async function telegramPoll() {
         const mine = db.clients.filter((c) => c.tgChat === chat);
         if (cmd && cmd !== 'stop' && BOT_CMD[cmd] && (cmd !== 'start' || mine.length)) {
           if (botTooFast(chat)) continue;
-          reqWait.delete(chat); searchWait.delete(chat);
+          reqWait.delete(chat); searchWait.delete(chat); probWait.delete(chat);
           jobs.push(() => botReply(chat, BOT_CMD[cmd], mine));
           continue;
         }
@@ -3218,6 +3226,21 @@ async function telegramPoll() {
           jobs.push(() => tg('sendMessage', { chat_id: chat, text: `✅ ¡Gracias! Hemos guardado tu email: ${mail}
 
 Si te has equivocado, escríbelo otra vez (tienes una hora).` }).catch(() => {}));
+          continue;
+        }
+        // v357: ha tocado «Pedir»: lo que escriba es el título que quiere (antes se perdía y salía el menú)
+        const rw = reqWait.get(chat);
+        if (mine.length && botAlive(mine) && !cmd && rw && Date.now() - rw < 15 * 60000 && !/^[uc]\d+_[0-9a-f]{10}$/i.test(text)) {
+          if (botTooFast(chat)) continue;
+          reqWait.delete(chat); probWait.delete(chat); searchWait.delete(chat);
+          jobs.push(() => botRequest(chat, mine, text));
+          continue;
+        }
+        // v355: nos está contando un fallo (qué película falla, o qué le pasa)
+        const pw = probWait.get(chat);
+        if (mine.length && !cmd && pw && Date.now() - pw.at < 30 * 60000 && !/^[uc]\d+_[0-9a-f]{10}$/i.test(text)) {
+          if (botTooFast(chat)) continue;
+          jobs.push(() => probReport(chat, mine, text, pw.k, pw.dev));
           continue;
         }
         // Ha tocado «Buscar»: lo que escriba es el título que busca (solo buscar: no se apunta ninguna petición)
@@ -3729,11 +3752,16 @@ async function weeklyText() {
   const votes = db.clients.filter((c) => c.survey && inWeek(c.survey.at));
   const avg = votes.length ? (votes.reduce((n, c) => n + c.survey.n, 0) / votes.length).toFixed(1).replace('.', ',') : '';
   const fmtD = (ms) => new Date(ms).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  /* v354: de quién eran las cuentas que se fueron sin renovar (agrupadas por revendedor) */
+  const gone = logs.filter((l) => l.type === 'papelera' && /sin renovar/i.test(l.text));
+  const goneBy = new Map(); for (const l of gone) { const k = l.ownerId == null ? '' : l.ownerId; if (!goneBy.has(k)) goneBy.set(k, []); goneBy.get(k).push(l.emby || l.client || '—'); }
+  const ownName = (id) => { const u = db.users.find((x) => x.id === id); return u ? (u.role === 'super' ? `${u.name} (tuyos)` : u.name) : 'Sin dueño'; };
+  const goneLines = [...goneBy].sort((a, b) => b[1].length - a[1].length).map(([id, ns]) => `   • ${ownName(id)}: ${ns.length} → ${ns.slice(0, 8).join(', ')}${ns.length > 8 ? ` y ${ns.length - 8} más` : ''}`);
   const lines = [
     `📊 Tu semana en ${botName()}`, `${fmtD(now - 6 * 86400000)} – ${fmtD(now)}`, '',
     `👥 Clientes activos: ${live.length}`,
     `🆕 Altas: ${cnt('alta')}   🔁 Renovaciones: ${cnt('renovacion')}   🎁 Demos: ${cnt('demo')}`,
-    `👋 Se fueron sin renovar: ${cnt('papelera', (l) => /sin renovar/i.test(l.text))}${back ? `   💌 Recuperados: ${back}` : ''}`,
+    `👋 Se fueron sin renovar: ${gone.length}${back ? `   💌 Recuperados: ${back}` : ''}`, ...goneLines,
     `💶 Cobrado online: ${money.toFixed(2).replace('.', ',')} ${cur === 'EUR' ? '€' : cur}${credits ? `   🪙 Créditos vendidos: ${credits}` : ''}`,
     '', `⏳ Vencen en los próximos 7 días: ${soon}`, `😴 Pagan pero no han visto nada en 7 días: ${sleepy}`,
     '', `🖥️ Servidores: ${downs ? `${downs} ${downs === 1 ? 'caída' : 'caídas'}` : 'sin caídas ✅'}`,
@@ -3762,9 +3790,9 @@ const BOT_CMD = { start: 'menu', inicio: 'menu', buscar: 'buscar', busca: 'busca
   renovar: 'renovar', pagar: 'renovar', app: 'app', descargar: 'app', calidad: 'calidad', ayuda: 'ayuda', help: 'ayuda', menu: 'menu',
   problemas: 'problemas', problema: 'problemas', soporte: 'problemas', servidor: 'servidor', funciona: 'servidor',
   instalar: 'guia', guia: 'guia', moonfin: 'guia', datos: 'datos', acceso: 'datos', contrasena: 'datos', aparatos: 'aparatos', dispositivos: 'aparatos', invitar: 'invitar', amigo: 'invitar', precios: 'precios', tarifa: 'precios', novedades: 'novedades', nuevo: 'novedades', estrenos: 'novedades' };
-const BOT_MENU = [['menu', '🏠 Menú con botones'], ['suscripcion', '📋 Cuántos días te quedan'], ['buscar', '🔎 ¿Lo tenéis? Busca una peli o serie'], ['novedades', '🍿 Lo último que ha llegado'], ['renovar', '💳 Renovar tu cuenta al momento'], ['problemas', '🛠️ Soluciones rápidas a problemas'], ['servidor', '🟢 ¿Funciona el servidor?'],
-  ['instalar', '📲 Cómo instalar la app (Moonfin)'], ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis aparatos conectados'], ['precios', '💶 Precios'], ['invitar', '🎁 Invita a un amigo'],
-  ['app', '📲 Descargar la app'], ['calidad', '✨ Ver con la mejor calidad'], ['ayuda', '💬 Ayuda y contacto'], ['stop', '🔕 Dejar de recibir avisos']];
+const BOT_MENU = [['menu', '🏠 Menú con botones'], ['suscripcion', '📋 Cuántos días te quedan'], ['buscar', '🔎 Buscar películas y series'], ['novedades', '🍿 Lo último que ha llegado'], ['renovar', '💳 Renovar tu cuenta al momento'], ['problemas', '🛠️ Soporte técnico'], ['servidor', '🟢 Estado del servicio'],
+  ['instalar', '📲 Cómo instalar la app (Moonfin)'], ['datos', '🔑 Mis datos de acceso'], ['aparatos', '📺 Mis dispositivos'], ['precios', '💶 Planes y precios'], ['invitar', '🎁 Invita a un amigo'],
+  ['app', '📲 Descargar la app'], ['calidad', '✨ Ver con la mejor calidad'], ['ayuda', '🛠️ Ayuda y soporte técnico'], ['stop', '🔕 Dejar de recibir avisos']];
 function tgSetCommands() {
   if (!db.settings.notices.telegram.token) return;
   tg('setMyCommands', { commands: BOT_MENU.map(([command, description]) => ({ command, description })) }).catch(() => {});
@@ -3807,9 +3835,9 @@ function botAnswer(kind, list) {
   if (kind === 'calidad') return { text: fillText(tplFor(accs[0].ownerId, 'quality'), accs[0]) };
   { // v351: ayuda moderna: botones por lo que le pasa, sin lista de comandos repetida
     const b = (t, k) => ({ text: t, callback_data: 'bm:' + k }), tv = list.every(cliTv), app = (db.settings.app || {}).file;
-    const kb = [[b('🛠️ Algo no funciona', 'problemas'), b('🟢 ¿Va el servidor?', 'servidor')], [b('📲 Cómo instalar', 'guia'), b('🔑 Mis datos', 'datos')],
+    const kb = [[b('🔧 Algo no funciona', 'problemas'), b('🟢 Estado del servicio', 'servidor')], [b('📲 Cómo instalar', 'guia'), b('🔑 Mis datos', 'datos')],
       [b('✨ Ver con mejor calidad', 'calidad'), ...(app ? [b('📥 Nuestra app', 'app')] : [])], ...(tgu ? [[{ text: '💬 Hablar con una persona', url: `https://t.me/${tgu}` }]] : wa ? [[{ text: '💬 Hablar con una persona', url: `https://wa.me/${wa}` }]] : []), [b('🏠 Menú', 'menu')]];
-    const text = ['💬 ¿En qué te ayudamos?', '', 'Toca lo que te pasa y te lo solucionamos al momento 👇', ...(!tv ? ['', '💡 Truco: escríbeme el nombre de una peli o serie (por ejemplo «Spiderman») y te digo si la tenemos 🍿'] : []), ...(!tgu && !wa && sp.email ? ['', `✉️ ¿Prefieres escribirnos? ${sp.email}`] : []), '', '🔕 ¿No quieres más avisos? Escribe /stop'].join('\n');
+    const text = ['🛠️ Ayuda y soporte técnico', '', '💬 ¿En qué te ayudamos?', '', 'Toca lo que te pasa y te lo solucionamos al momento 👇', ...(!tv ? ['', '💡 Truco: escríbeme el nombre de una peli o serie (por ejemplo «Spiderman») y te digo si la tenemos 🍿'] : []), ...(!tgu && !wa && sp.email ? ['', `✉️ ¿Prefieres escribirnos? ${sp.email}`] : []), '', '🔕 ¿No quieres más avisos? Escribe /stop'].join('\n');
     return { text, kb: { inline_keyboard: kb } };
   }
 }
@@ -4287,16 +4315,16 @@ function botMenuKb(list) {
   if (c && c.demo && list.every((x) => x.demo)) { // v299: en la demo, menú corto y «Comprar» bien a la vista
     const b2 = (t, k) => ({ text: t, callback_data: 'bm:' + k });
     const buy = cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar mi cuenta', url: cpLink(c) } : b2('🛒 Comprar mi cuenta', 'precios');
-    return { inline_keyboard: [[buy], [b2('📲 Instalar la app', 'guia'), b2('🔑 Mis datos', 'datos')], [b2('🍿 Novedades', 'novedades'), b2('🔎 Buscar', 'buscar')], [b2('💶 Precios', 'precios'), b2('💬 Ayuda', 'ayuda')]] };
+    return { inline_keyboard: [[buy], [b2('📲 Instalar la app', 'guia'), b2('🔑 Mis datos', 'datos')], [b2('🍿 Novedades', 'novedades'), b2('💶 Planes y precios', 'precios')], [b2('🔎 Buscar películas y series', 'buscar')], [b2('🛠️ Ayuda y soporte técnico', 'ayuda')]] }; // v352: nombres más claros
   }
   const pay = c && !c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '💳 Renovar', url: cpLink(c) } : { text: '💳 Renovar', callback_data: 'bm:renovar' };
   const b = (t, k) => ({ text: t, callback_data: 'bm:' + k });
-  return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar peli o serie', 'buscar')], [b('🟢 ¿Funciona?', 'servidor'), b('🛠️ Problemas', 'problemas')],
-    [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis aparatos', 'aparatos'), b('💶 Precios', 'precios')], [b('🎁 Invita a un amigo', 'invitar'), b('💬 Ayuda', 'ayuda')],
+  return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar películas y series', 'buscar')], [b('🟢 Estado del servicio', 'servidor')], // v352: nombres más claros
+    [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis dispositivos', 'aparatos'), b('💶 Planes y precios', 'precios')], [b('🎁 Invita a un amigo', 'invitar')], // v353: «Soporte técnico» va dentro de «Ayuda y soporte»
     ...(list.some((x) => sdGiftOk(x)) ? [[b(sdGiftRew() ? `🎟️ Regala una prueba · gana ${sdGiftRew() === 1 ? '1 mes' : sdGiftRew() + ' meses'}` : '🎟️ Regala una prueba gratis', 'regalo')]] : []), // v303: el cliente regala demos a sus amigos
     ...(() => { // v285: «Novedades» siempre a mano (si su servidor tiene pelis y series); avisarme y el canal van dentro
       const sv = c && db.servers.find((x) => x.id === c.serverId);
-      return sv && sv.kind !== 'iptv' && !list.every(cliTv) ? [[b('🍿 Novedades: lo último que ha llegado', 'novedades')]] : []; })()] };
+      return sv && sv.kind !== 'iptv' && !list.every(cliTv) ? [[b('🍿 Novedades: lo último que ha llegado', 'novedades')]] : []; })(), [b('🛠️ Ayuda y soporte técnico', 'ayuda')]] };
 }
 /** Manda la tarjeta en imagen; si algo falla, el mismo texto de siempre */
 async function sendCard(chat, c, caption, kb, html) {
@@ -4376,14 +4404,114 @@ async function botSearch(chat, list, text) {
 
 /* ---------- Bot: problemas, servidor, pedir, datos, aparatos, precios e invitar ---------- */
 const reqWait = new Map(); // chat -> momento en que pidió /pedir (esperamos el título)
+const probWait = new Map(); // v355: chat -> { k, dev, at }: esperamos que nos cuente el fallo (qué película falla, o qué le pasa)
+const probKb = () => ({ inline_keyboard: PROBS.map(([k, t]) => [{ text: t, callback_data: 'pb:' + k }]) });
+const probBack = (extra) => ({ inline_keyboard: [...(extra || []), [{ text: '⬅️ Otro problema', callback_data: 'pb:menu' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] });
+const probDone = [{ text: '✅ ¡Ya funciona!', callback_data: 'pb:ok' }, { text: '😕 Sigue igual', callback_data: 'pb:sigue' }];
+/* v356: el aparato donde lo ve (con botones) y los pasos para cada uno, de uno en uno */
+const PDEV = { tv: '📺 Smart TV', fire: '🔥 Fire TV o Android TV', movil: '📱 Móvil o tablet', pc: '💻 Ordenador' };
+const PSTEP_ROUTER = 'Apaga el <b>router</b>, espera 30 segundos y enciéndelo. Espera 2 minutos a que vuelva internet.';
+const PSTEP_Q = 'Pon la <b>calidad al máximo</b> con el botón de abajo 📺. Si la app tiene que convertir la imagen, se corta.';
+const PSTEPS = {
+  tv: ['Apaga la tele y <b>desenchúfala 30 segundos</b>. Así la app se cierra del todo. Vuelve a encenderla y abre la app.', PSTEP_ROUTER, 'Mira si en la tele va <b>YouTube</b>: si tampoco va bien, el problema es el internet de casa.', 'Si va por wifi, acerca el router o prueba con <b>cable de red</b>.', PSTEP_Q],
+  fire: ['Cierra la app del todo: <b>Ajustes › Aplicaciones › Administrar aplicaciones</b> › la app › <b>Forzar detención</b>. Vuelve a abrirla.', 'Desenchufa el aparato de la corriente <b>30 segundos</b> y vuelve a enchufarlo.', PSTEP_ROUTER, 'En <b>Ajustes › Aplicaciones</b› la app, pulsa <b>Borrar caché</b> (no borra tus datos).', PSTEP_Q],
+  movil: ['Cierra la app del todo: desliza desde abajo, <b>quítala de las apps abiertas</b> y vuelve a abrirla.', 'Prueba con <b>wifi y con datos</b>: si con uno va y con el otro no, es esa conexión.', '<b>Reinicia el móvil</b> (apagar y encender).', 'Actualiza la app en la tienda (<b>Play Store</b> o <b>App Store</b>).', PSTEP_Q],
+  pc: ['Recarga la página con la tecla <b>F5</b>, o cierra el navegador y vuelve a abrirlo.', 'Prueba con <b>otro navegador</b> (Chrome, Edge o Firefox).', 'Si usas una <b>VPN</b>, apágala un momento.', PSTEP_ROUTER, PSTEP_Q],
+};
+PSTEPS.fire[3] = PSTEPS.fire[3].replace('</b›', '</b> ›');
+const pDevKb = (pre) => ({ inline_keyboard: [[{ text: PDEV.tv, callback_data: pre + 'tv' }, { text: PDEV.fire, callback_data: pre + 'fire' }], [{ text: PDEV.movil, callback_data: pre + 'movil' }, { text: PDEV.pc, callback_data: pre + 'pc' }], [{ text: '⬅️ Volver', callback_data: 'pb:cortes' }]] });
+function probStep(dev, i) {
+  const st = PSTEPS[dev], n = st.length, bar = '🟢'.repeat(i + 1) + '⚪'.repeat(n - i - 1), last = i >= n - 1;
+  const text = `🔧 <b>Paso ${i + 1} de ${n}</b> · ${PDEV[dev]}\n${bar}\n\n${st[i]}\n\n${last ? '¿Ya va bien? Si no, avísanos y lo miramos nosotros 🙏' : '¿Ya funciona? 👇'}`;
+  const kb = [[{ text: '✅ ¡Ya funciona!', callback_data: 'pb:ok' }, last ? { text: '😕 Sigue igual', callback_data: 'pb:sigue:' + dev } : { text: '➡️ Siguiente paso', callback_data: `pb:st:${dev}:${i + 1}` }]];
+  if (st[i] === PSTEP_Q) kb.push([{ text: '📺 Poner la calidad al máximo', callback_data: 'bm:calidad' }]);
+  if (!last) kb.push([{ text: '😕 Nada de esto funciona: avisadnos', callback_data: 'pb:sigue:' + dev }]);
+  kb.push([{ text: '⬅️ Volver', callback_data: 'pb:cortes' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]);
+  return { text, kb: { inline_keyboard: kb } };
+}
+/* v356: antes de los pasos, miramos su cuenta, su servidor y sus pantallas */
+async function probDiag(c) {
+  const s = c && db.servers.find((x) => x.id === c.serverId), L = [], kb = [];
+  let stop = false;
+  if (c && c.expires) L.push(`✅ Tu cuenta está activa (hasta el ${new Date(c.expires + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })})`);
+  const mt = s && srvMaintOf(s), h = s && health.get(s.id);
+  if (mt) { stop = true; L.push(`🚧 <b>Tu servidor está en mantenimiento</b>${mt.cut ? ' y ahora mismo no está disponible' : ''}.${mt.msg ? '\n' + hEsc(mt.msg) : ''}${mt.until ? `\n⏰ Volvemos a las ${new Date(mt.until).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' })}.` : ''}`); }
+  else if (h && h.down) { stop = true; L.push('🔴 <b>Tu servidor tiene un problema ahora mismo.</b>\nNo es cosa tuya: ya lo sabemos y lo estamos arreglando. Vuelve a probar en un rato 🙏'); }
+  else if (s) L.push('✅ Tu servidor funciona bien');
+  if (!stop && s && c.embyId && !cliPx(c)) {
+    try {
+      const ses = await Promise.race([emby(s, 'GET', '/Sessions'), new Promise((_, r) => setTimeout(() => r(new Error('t')), 5000))]);
+      const w = new Set((ses || []).filter((x) => x.UserId === c.embyId && x.NowPlayingItem).map((x) => x.DeviceId)).size, scr = Number(c.screens) || 1;
+      if (w > scr) { L.push(`⚠️ <b>Estás viendo en ${w} pantallas y tu plan es de ${scr}.</b> Cierra alguna y vuelve a probar.`); kb.push([{ text: '📺 Ver y cerrar mis aparatos', callback_data: 'bm:aparatos' }]); }
+      else L.push(`📺 Ahora ves en ${w} de ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}`);
+    } catch { /* si no contesta, seguimos sin ese dato */ }
+  }
+  return { stop, text: `🔍 <b>He mirado tu cuenta:</b>\n\n${L.join('\n')}`, kb };
+}
+/** v355: «No carga, se corta o va lento»: primero preguntamos qué le pasa, con botones */
+function probCortes(k, c) {
+  const moon = c && !cliPx(c) ? [[{ text: '🌙 Probar la app Moonfin', callback_data: 'gd:moon' }]] : [];
+  if (k === 'cortes') return { text: '📶 <b>No carga, se corta o va lento</b>\n\nTranquilo, lo arreglamos juntos 🙂\n<b>¿Qué te pasa exactamente?</b> Toca la opción que más se parezca:', kb: probBack([
+    [{ text: '🌐 Me falla con todo lo que pongo', callback_data: 'pb:todo' }],
+    [{ text: '🎬 Solo falla una película o capítulo', callback_data: 'pb:uno' }],
+    [{ text: '🔊 La imagen va más lenta que el sonido', callback_data: 'pb:sync' }]]) };
+  if (k === 'sync') return { text: '🔊 <b>La imagen va más lenta que el sonido</b>\n\n1️⃣ Para la película y dale a play otra vez (o retrocede 10 segundos).\n2️⃣ Pon la calidad al máximo: cuando la app convierte la imagen, a veces se retrasa.\n3️⃣ En los ajustes de la app busca <b>«Reproductor»</b> y prueba con el otro que haya.\n4️⃣ Si usas barra de sonido o equipo de música, mira en la tele la opción <b>«Retardo de audio»</b> o <b>«Sincronización»</b>.\n\n¿Solo te pasa con una película? Toca abajo y nos la apuntamos 👇', kb: probBack([
+    [{ text: '🎬 Solo pasa en una película o capítulo', callback_data: 'pb:uno' }], ...moon, [{ text: '📺 Poner la calidad al máximo', callback_data: 'bm:calidad' }], probDone]) };
+  if (k === 'uno') return { text: '🎬 <b>Solo falla una película o capítulo</b>\n\nPrimero, <b>¿dónde lo estás viendo?</b> 👇', kb: pDevKb('pb:ud:') };
+  return null;
+}
+const probAsk = (k, dev) => k === 'uno'
+  ? `🎬 <b>¿Qué película o capítulo falla?</b>${dev ? `\n${PDEV[dev]}` : ''}\n\nEscríbeme aquí <b>en un solo mensaje</b>:\n\n🎞️ El título\n📺 Si es serie: temporada y capítulo\n⏱️ En qué minuto se para (si lo sabes)\n\n✏️ <i>Por ejemplo: «La casa de papel, temporada 2 capítulo 5, se para en el minuto 23»</i>\n\n📸 Si sale un error en pantalla, puedes mandar también <b>una foto</b> (con el clip 📎).`
+  : `${k === 'sigue' ? '😕 <b>Vaya, lo sentimos.</b> Lo miramos nosotros.' : '💬 <b>Cuéntanos qué te pasa</b>'}${dev ? `\n${PDEV[dev]}` : ''}\n\n✏️ Escríbeme aquí <b>en un mensaje</b> qué te pasa${dev ? '' : ' y en qué aparato (tele, móvil…)'}.\n📸 Si sale un mensaje de error, mándame <b>una foto</b> de la pantalla (con el clip 📎).\n\nLo recibimos al momento 🙏`;
+const FAULT_WHAT = { uno: '🎬 Falla una película o capítulo', sigue: '📶 Sigue sin ir bien (ya probó los pasos)', otro: '💬 Otro problema' };
+const faultKb = (f) => ({ inline_keyboard: [[{ text: '✅ Ya está arreglado: avisar al cliente', callback_data: 'fx:' + f.id }]] });
+/** Aviso a quien lleva al cliente (y al súper si falla una película): con botón para marcarlo arreglado */
+function faultNotify(f, photo) {
+  const c = db.clients.find((x) => x.id === f.clientId) || {}, o = db.users.find((u) => u.id === f.ownerId), rs = o && (o.role === 'reseller' || o.role === 'sub');
+  const msg = photo ? `📸 Foto del aviso de ${f.name} (@${f.emby})` : `🛠️ Aviso de un cliente\n\n${FAULT_WHAT[f.k] || FAULT_WHAT.otro}\n👤 ${f.name} (@${f.emby})${f.server ? `\n🖥️ Servidor: ${f.server}` : ''}${f.dev ? `\n${PDEV[f.dev]}` : ''}${rs ? `\n💼 Revendedor: ${o.name}` : ''}\n\n📝 «${f.text}»\n${whenTxt()}\n\nCuando lo arregles, toca el botón y al cliente le llega el aviso 👇`;
+  const to = new Set(); if (rs) for (const ch of userChats(o)) to.add(ch);
+  if (f.k === 'uno' || !rs) for (const u of db.users) if (!u.disabled && u.tgChat && (u.role === 'super' ? (u.secAlerts || {}).payments !== false : u.role === 'admin' && (u.secAlerts || {}).payments === true)) for (const ch of userChats(u)) to.add(ch);
+  for (const ch of to) (photo ? tg('sendPhoto', { chat_id: ch, photo, caption: msg }) : tg('sendMessage', { chat_id: ch, text: msg, disable_web_page_preview: true, reply_markup: faultKb(f) })).catch(() => {});
+  void c;
+}
+/** v355/v356: el cliente nos cuenta el fallo: se apunta en el panel (Peticiones › Fallos) y avisamos */
+async function probReport(chat, list, text, k, dev, photo) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 400) || (photo ? '(solo ha mandado una foto)' : '');
+  if (t.length < 3) return tg('sendMessage', { chat_id: chat, text: 'Cuéntamelo con un poco más de detalle, por favor 🙂' });
+  probWait.delete(chat);
+  const c = bestAcc(list), s = db.servers.find((x) => x.id === c.serverId);
+  const f = { id: crypto.randomBytes(5).toString('hex'), clientId: c.id, name: c.panelName, emby: c.embyName, ownerId: c.ownerId, server: s ? s.name : '', k, dev: dev || '', text: t, photos: photo ? [photo] : [], chat, at: new Date().toISOString(), status: 'pending' };
+  await lock(async () => { db.faults.unshift(f); db.faults = db.faults.slice(0, 500); addLog('aviso', c, `Avisa de un fallo por el bot (${(FAULT_WHAT[k] || '').slice(3)}): «${t}»`, null); saveDb(); });
+  faultNotify(f); if (photo) faultNotify(f, photo);
+  return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `✅ <b>¡Recibido, gracias!</b>\n\nYa lo tenemos apuntado:\n<i>«${hEsc(t)}»</i>${photo ? '\n📸 Con tu foto' : ''}\n\nLo revisamos y <b>te avisamos por aquí cuando esté arreglado</b> 🙏${k === 'uno' ? '\nMientras, puedes ver cualquier otra cosa con normalidad 🍿' : ''}${photo ? '' : '\n\n📸 ¿Tienes una foto del error? Mándamela ahora y la añado.'}`, reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
+}
+/** v356: una foto que llega justo después de avisar: se añade a su último aviso */
+async function probPhoto(chat, list, photo, caption) {
+  const pw = probWait.get(chat);
+  if (pw && Date.now() - pw.at < 30 * 60000) return probReport(chat, list, caption, pw.k, pw.dev, photo);
+  const f = db.faults.find((x) => x.chat === chat && x.status === 'pending' && Date.now() - Date.parse(x.at) < 30 * 60000);
+  if (!f) return false;
+  await lock(async () => { f.photos = [...(f.photos || []), photo].slice(0, 5); if (caption) f.text = (f.text + ' · ' + String(caption).trim()).slice(0, 600); saveDb(); });
+  faultNotify(f, photo);
+  return tg('sendMessage', { chat_id: chat, text: '📸 ¡Foto recibida! La hemos añadido a tu aviso. Gracias 🙏', reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
+}
+/** v356: lo marcan como arreglado (en el panel o con el botón de Telegram): al cliente le llega el aviso */
+async function faultFix(f, actor) {
+  if (!f || f.status === 'done') return;
+  f.status = 'done'; f.doneAt = new Date().toISOString(); f.doneBy = actor ? actor.name : '';
+  const c = db.clients.find((x) => x.id === f.clientId);
+  addLog('aviso', c || null, `Fallo arreglado y cliente avisado: «${f.text}»`, actor || null); saveDb();
+  if (c && c.tgChat) tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text: `✅ <b>¡Ya está arreglado${c.panelName ? ', ' + hEsc(String(c.panelName).split(/\s+/)[0]) : ''}!</b>\n\nLo que nos avisaste:\n<i>«${hEsc(f.text)}»</i>\n\nYa debería ir bien 🍿 Gracias por avisarnos y por la paciencia 🙏`, message_effect_id: '5046509860389126442', reply_markup: { inline_keyboard: [[{ text: '👍 ¡Va perfecto!', callback_data: 'pb:ok' }, { text: '😕 Sigue fallando', callback_data: 'pb:sigue' }]] } })
+    .catch(() => tg('sendMessage', { chat_id: c.tgChat, text: `✅ ¡Ya está arreglado! Lo que nos avisaste: «${f.text}». Ya debería ir bien 🍿` }).catch(() => {}));
+}
 const botRate = new Map();
 function botTooFast(chat) { const t = Date.now(), l = botRate.get(chat) || 0; botRate.set(chat, t); if (botRate.size > 5000) botRate.clear(); return t - l < 1200; }
 const hEsc = (x) => String(x == null ? '' : x).replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
 const PROBS = [
-  ['carga', '🔄 No carga o se queda pensando', '1. Cierra la app del todo y vuelve a abrirla.\n2. Comprueba que tienes internet (abre YouTube, por ejemplo).\n3. Apaga y enciende el router y el aparato.\n4. Escribe /servidor por si estamos en mantenimiento.\n\nSi sigue igual, escríbenos con una foto del error.'],
-  ['cortes', '📶 Se corta o va lento', '1. Pon la calidad al máximo (escribe /calidad): si la app convierte la imagen, se corta.\n2. Con wifi, acerca el aparato al router o usa cable.\n3. Cierra otras apps o descargas que usen internet.\n4. Prueba otra película: si solo falla una, avísanos y la revisamos.'],
+  // v355: «No carga» y «Se corta o va lento» van juntos, con preguntas y botones (ver probCortes)
+  ['cortes', '📶 No carga, se corta o va lento', ''],
   ['clave', '🔑 Me pide la contraseña', '1. Escribe /datos para ver tu usuario y tu contraseña.\n2. Cuidado con mayúsculas y espacios al escribirla.\n3. Si te dice que no es correcta, escríbenos y te la cambiamos en un momento.'],
-  ['pantallas', '📺 «Límite de transmisión» o demasiadas pantallas', ''],
+  ['pantallas', '📺 «Límite de transmisión» o pantallas', ''],
   ['falta', '🎬 No encuentro una película o serie', '1. Usa la lupa 🔍 de la app y prueba también con el título original.\n2. Busca también en la sección de películas o series por orden alfabético.'],
   ['caducada', '⛔ Mi cuenta no funciona', '1. Escribe /suscripcion para ver si ha caducado.\n2. Si ha caducado, renueva con /renovar y vuelve a funcionar al momento.\n3. Si no ha caducado, mira /servidor y /problemas › No carga.'],
   ['otro', '💬 Otro problema', ''],
@@ -4627,7 +4755,7 @@ async function botReply(chat, kind, list) {
   if (['estado', 'renovar', 'app', 'calidad', 'ayuda', 'menu', 'buscar'].includes(kind) || !list.length) { const r = botAnswer(list.length ? kind : 'estado', list); return send(r.text, r.kb || (list.length ? { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } : null)); }
   const accs = list.slice(0, 5);
   if (kind === 'guia') return send(guideText('where', accs[0]) + '\n\n👇 Toca para ver los pasos:', guideKb('where', accs[0]));
-  if (kind === 'problemas') return accs.every(cliTv) ? send('🛠️ ¿Qué te pasa con tus canales? Toca una opción y te digo cómo arreglarlo:', { inline_keyboard: PROBS_TV.map(([k, t]) => [{ text: t, callback_data: 'pt:' + k }]) }) : send('🛠️ ¿Qué te pasa? Toca una opción y te digo cómo arreglarlo:', { inline_keyboard: PROBS.map(([k, t]) => [{ text: t, callback_data: 'pb:' + k }]) });
+  if (kind === 'problemas') return accs.every(cliTv) ? send('🛠️ ¿Qué te pasa con tus canales? Toca una opción y te digo cómo arreglarlo:', { inline_keyboard: PROBS_TV.map(([k, t]) => [{ text: t, callback_data: 'pt:' + k }]) }) : send('🛠️ <b>¿Qué te pasa?</b>\n\nToca una opción y te digo cómo arreglarlo 👇', probKb(), true);
   if (kind === 'servidor') {
     const seen = new Set(), lines = [];
     for (const c of accs) {
@@ -4698,17 +4826,76 @@ async function botReply(chat, kind, list) {
   if (kind === 'novedades') return botNews(chat, bestAcc(accs));
   return send(botAnswer('ayuda', list).text);
 }
+/* v357: ¿ya lo tenemos? Compara el título pedido con lo que hay en su servidor (sin tildes, sin año, sin signos) */
+const rqNorm = (x) => String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/&/g, ' y ').replace(/[^a-z0-9]+/g, ' ').replace(/\b(the|el|la|los|las|a|an)\b/g, ' ').replace(/\s+/g, ' ').trim();
+async function rqFind(c, title) {
+  const ym = /\b(19[2-9]\d|20[0-4]\d)\b/.exec(title), year = ym ? Number(ym[1]) : 0;
+  const clean = String(title).replace(/\(?\b(19[2-9]\d|20[0-4]\d)\b\)?/g, ' ').replace(/\b(temporada|season|cap[ií]tulo|serie|pel[ií]cula)\b.*$/i, ' ').replace(/\s+/g, ' ').trim();
+  const nq = rqNorm(clean); if (nq.length < 2) return null;
+  const found = await searchFor(c, clean.slice(0, 60));
+  return found.find((x) => rqNorm(x.name) === nq && (!year || !x.year || Math.abs(x.year - year) <= 1)) || null;
+}
+/** v357: al llegar lo que pidió, se le avisa solo (con la carátula) y la petición se marca hecha */
+async function rqTell(c, r, hit) {
+  const first = String(c.panelName || '').split(/\s+/)[0], fd = new Date(r.at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+  const cap = `🎉 <b>¡Buenas noticias${first ? ', ' + hEsc(first) : ''}!</b>\n\n${r.now ? '¡Eso ya lo tenemos! No hace falta pedirlo:' : `Ya tienes disponible lo que nos pediste el ${fd}:`}\n${hit.type === 'Serie' ? '📺' : '🎬'} <b>${hEsc(hit.name)}</b>${hit.year ? ` (${hit.year})` : ''}\n\n📲 Ábrela en la app y búscala con la lupa 🔍\n¡Que la disfrutes! 🍿`;
+  const kb = { inline_keyboard: [[{ text: '🙋 Pedir otra', callback_data: 'bm:pedir' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] };
+  let pic = null; try { pic = await posterBytes(hit.s, hit.id); } catch { /* sin carátula */ }
+  if (pic) { try { return await tgPhoto(c.tgChat, pic.buf, cap, kb, true, pic.type, '5046509860389126442'); } catch { /* sin foto */ } }
+  return tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text: cap, reply_markup: kb });
+}
+let rqBusy = false;
+async function reqAutoTick() {
+  if (rqBusy || !db.settings.grow.autoReq.on || !db.settings.notices.telegram.token) return;
+  const h = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
+  if (!process.env.DAILY_ANYTIME && (h < 10 || h >= 22)) return; // de noche no se avisa
+  rqBusy = true;
+  try {
+    const list = db.requests.filter((r) => r.status === 'pending' && Date.now() - Date.parse(r.at) < 90 * 86400000 && (!r.chkAt || Date.now() - r.chkAt > 90 * 60000)).slice(0, 60);
+    for (const r of list) {
+      r.chkAt = Date.now();
+      const c = db.clients.find((x) => x.id === r.clientId);
+      if (!c || c.status !== 'active' || !c.embyId || cliTv(c)) continue;
+      let hit = null; try { hit = await rqFind(c, r.title); } catch { continue; }
+      if (!hit) continue;
+      await lock(async () => { r.status = 'done'; r.doneAt = new Date().toISOString(); r.auto = true; r.found = hit.name + (hit.year ? ` (${hit.year})` : ''); botStat('areq', c); addLog('aviso', c, `Petición «${r.title}»: ya está en el servidor, avisado solo por el bot`, null); saveDb(); });
+      if (c.tgChat) await rqTell(c, r, hit).catch(() => {});
+    }
+  } finally { rqBusy = false; lock(async () => saveDb()).catch(() => {}); }
+}
+/* v357: paga pero no ve nada: el bot le pregunta si necesita ayuda (una vez al mes como mucho) */
+const SL_KB = { inline_keyboard: [[{ text: '📲 No sé instalarlo', callback_data: 'bm:guia' }], [{ text: '🔑 No sé entrar (usuario y contraseña)', callback_data: 'bm:datos' }], [{ text: '🛠️ Me da problemas', callback_data: 'pb:cortes' }], [{ text: '😊 Todo bien, no he tenido tiempo', callback_data: 'sl:ok' }]] };
+async function sleepyTick() {
+  const g = db.settings.grow.sleepy; if (!g.on || !db.settings.notices.telegram.token) return;
+  const h = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
+  if (!process.env.DAILY_ANYTIME && (h < 11 || h >= 21)) return;
+  const days = g.days || 7, t = today(), lim = days * 86400000;
+  const list = db.clients.filter((c) => c.tgChat && !c.demo && c.status === 'active' && !c.off && !cliTv(c) && !cliPx(c) && c.createdAt && diffDays(t, String(c.createdAt).slice(0, 10)) >= days
+    && (!c.expires || diffDays(c.expires, t) >= 4) && (c.seenAt ? Date.now() - Date.parse(c.seenAt) > lim : true) && (!c.sleepAt || Date.now() - Date.parse(c.sleepAt) > 30 * 86400000)).slice(0, 15);
+  for (const c of list) {
+    c.sleepAt = new Date().toISOString(); botStat('sleepy', c);
+    const first = String(c.panelName || '').split(/\s+/)[0];
+    const text = `👋 <b>¡Hola${first ? ', ' + hEsc(first) : ''}!</b> ¿Todo bien?\n\nHemos visto que ${c.seenAt ? `llevas unos días sin ver nada en ${hEsc(botName())}` : `todavía no has visto nada en ${hEsc(botName())}`} 😊\n\nSi algo no va bien, te ayudamos ahora mismo. <b>Toca lo que te pasa</b> 👇`;
+    await tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text, reply_markup: SL_KB }).catch(() => {});
+    addLog('aviso', c, 'El bot le ha preguntado si necesita ayuda (no ha visto nada estos días)', null);
+  }
+  if (list.length) lock(async () => saveDb()).catch(() => {});
+}
 async function botRequest(chat, list, text) {
   const title = String(text).replace(/\s+/g, ' ').trim().slice(0, 120);
   if (title.length < 2) return tg('sendMessage', { chat_id: chat, text: 'Escríbeme el título, por favor 🙂 (o /pedir para empezar de nuevo)' });
   const c = list[0];
+  if (c && c.status === 'active' && c.embyId && !cliTv(c)) { // v357: ¿ya lo tenemos? Se lo decimos al momento
+    let hit = null; try { hit = await rqFind(c, title); } catch { /* seguimos */ }
+    if (hit) return rqTell(c, { at: new Date().toISOString(), now: true }, hit).catch(() => {});
+  }
   await lock(async () => {
     db.requests.unshift({ id: crypto.randomBytes(5).toString('hex'), clientId: c.id, name: c.panelName, emby: c.embyName, ownerId: c.ownerId, title, at: new Date().toISOString(), status: 'pending' });
     db.requests = db.requests.slice(0, 1000);
     addLog('aviso', c, `Ha pedido por el bot: «${title}»`, null);
     saveDb();
   });
-  const o = db.users.find((u) => u.id === c.ownerId), msg = `🙋 Petición de ${c.panelName} (@${c.embyName}):\n«${title}»\n\nLa tienes en el panel, en Clientes › Peticiones.`;
+  const o = db.users.find((u) => u.id === c.ownerId), msg = `🙋 Petición de ${c.panelName} (@${c.embyName}):\n«${title}»\n\nLa tienes en el panel, en Clientes › Peticiones y fallos.\n🤖 Si llega al servidor, el bot le avisa solo.`;
   if (o && (o.role === 'reseller' || o.role === 'sub')) notifyUser(o, msg); else notifyStaff('payments', msg);
   return tg('sendMessage', { chat_id: chat, text: `✅ ¡Apuntado! Hemos recibido tu petición:\n«${title}»\n\nTe avisaré por aquí cuando esté disponible. 🍿` });
 }
@@ -4759,8 +4946,10 @@ async function botCallback(cq) {
   }
   if (data.startsWith('bm:')) { // botones del menú del cliente
     const k = data.slice(3), mine = db.clients.filter((c) => c.tgChat === chat);
-    if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda', 'novedades', 'regalo', 'calidad', 'app'].includes(k) || !mine.length || botTooFast(chat)) return; // v351: + calidad y app (botones de Ayuda)
+    if (!['menu', 'estado', 'renovar', 'buscar', 'servidor', 'problemas', 'guia', 'datos', 'aparatos', 'precios', 'invitar', 'ayuda', 'novedades', 'regalo', 'calidad', 'app', 'pedir'].includes(k) || !mine.length || botTooFast(chat)) return; // v351: + calidad y app (botones de Ayuda)
     if (k !== 'buscar') searchWait.delete(chat);
+    if (k !== 'pedir') reqWait.delete(chat);
+    if (k !== 'servidor' && k !== 'calidad') probWait.delete(chat);
     return botReply(chat, k, mine);
   }
   if (data.startsWith('sv:')) { // v263: encuesta
@@ -4863,7 +5052,8 @@ Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como
   if (data.startsWith('gd:') || data === 'pb:pantallas') {
     const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
     if (!['main', 'moon', 'dl', 'jf', 'pxinv', 'pxapp', 'tvapp', 'login', 'where'].includes(k)) return;
-    return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: guideKb(k, c) });
+    const gkb = guideKb(k, c), kb6 = data === 'pb:pantallas' ? { inline_keyboard: [[{ text: '📺 Ver y cerrar mis aparatos', callback_data: 'bm:aparatos' }], ...gkb.inline_keyboard, [{ text: '⬅️ Otro problema', callback_data: 'pb:menu' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } : gkb; // v356
+    return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: kb6 });
   }
   if (data.startsWith('ga:')) { // guía de una app de IPTV
     const c = db.clients.find((x) => x.tgChat === chat && cliTv(x)), t = iptvAppGuide(data.slice(3), c, null); if (!t) return;
@@ -4875,10 +5065,44 @@ Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como
     const body = p[0] === 'otro' ? `Cuéntanos qué te pasa y te ayudamos:${botContact() ? '\n\n' + botContact() : '\n\nEscribe a tu proveedor.'}` : p[0] === 'conex' ? `Tu plan permite ${c0 && c0.screens ? c0.screens : 'varias'} ${c0 && c0.screens === 1 ? 'conexión' : 'conexiones'} a la vez.\n\n1. Cierra la app en los aparatos que no estés usando (no basta con salir: ciérrala del todo).\n2. Espera 1 minuto y vuelve a entrar.\n3. Escribe /aparatos para ver lo que está conectado ahora.\n4. Si necesitas más conexiones, escribe /renovar y elige más pantallas.` : p[2];
     return tg('sendMessage', { chat_id: chat, text: `${p[1]}\n\n${body}`, disable_web_page_preview: true, reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } });
   }
+  if (data === 'sl:ok') { // v357: «Todo bien, no he tenido tiempo»
+    const c = db.clients.find((x) => x.tgChat === chat); if (c) botStat('slback', c);
+    return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: '😊 <b>¡Perfecto!</b> Aquí estamos cuando quieras.\n\nPor si te apetece algo, mira lo último que ha llegado 👇', reply_markup: { inline_keyboard: [[{ text: '🍿 Ver las novedades', callback_data: 'bm:novedades' }], [{ text: '🔎 Buscar una película o serie', callback_data: 'bm:buscar' }]] } });
+  }
+  if (data.startsWith('fx:')) { // v356: «Ya está arreglado» desde el aviso de Telegram
+    const u = db.users.find((x) => !x.disabled && userChats(x).includes(chat)), f = db.faults.find((x) => x.id === data.slice(3));
+    if (!u || !f) return;
+    const vis = visibleOwners(u); if (vis && !vis.has(f.ownerId)) return;
+    const was = f.status === 'done';
+    await lock(async () => faultFix(f, u));
+    if (cq.message && cq.message.message_id) tg('editMessageReplyMarkup', { chat_id: chat, message_id: cq.message.message_id, reply_markup: { inline_keyboard: [[{ text: was ? `✅ Ya estaba arreglado${f.doneBy ? ' (' + f.doneBy + ')' : ''}` : '✅ Arreglado · cliente avisado', callback_data: 'noop' }]] } }).catch(() => {});
+    return;
+  }
   if (data.startsWith('pb:')) {
-    const p = PROBS.find(([k]) => k === data.slice(3)); if (!p) return;
-    const body = p[0] === 'otro' ? `Cuéntanos qué te pasa y te ayudamos:${botContact() ? '\n\n' + botContact() : '\n\nEscribe a tu proveedor.'}` : p[2];
-    return tg('sendMessage', { chat_id: chat, text: `${p[1]}\n\n${body}`, disable_web_page_preview: true });
+    let k = data.slice(3); if (k === 'carga') k = 'cortes'; // los botones viejos de «No carga» llevan al nuevo
+    const mine = db.clients.filter((x) => x.tgChat === chat), c = bestAcc(mine.length ? mine : [null]);
+    const [k0, a1, a2] = k.split(':'), mid = cq.message && cq.message.message_id;
+    const html = (text, kb) => tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text, disable_web_page_preview: true, reply_markup: kb });
+    if (k0 !== 'uno' && k0 !== 'sigue' && k0 !== 'otro' && k0 !== 'ud') probWait.delete(chat);
+    if (k === 'menu') return html('🛠️ <b>¿Qué te pasa?</b>\n\nToca una opción y te digo cómo arreglarlo 👇', probKb());
+    if (k === 'ok') { probWait.delete(chat); return tg('sendMessage', { chat_id: chat, text: '🎉 ¡Genial! Nos alegra mucho.\n\nQue disfrutes 🍿', message_effect_id: '5046509860389126442', reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => tg('sendMessage', { chat_id: chat, text: '🎉 ¡Genial! Que disfrutes 🍿' })); }
+    if (!mine.length) return;
+    if (k0 === 'sigue' || k0 === 'otro') { const dev = PDEV[a1] ? a1 : ''; probWait.set(chat, { k: k0, dev, at: Date.now() }); searchWait.delete(chat); return html(probAsk(k0, dev), { inline_keyboard: [[{ text: '⬅️ Volver', callback_data: 'pb:menu' }]] }); }
+    if (k0 === 'ud' && PDEV[a1]) { probWait.set(chat, { k: 'uno', dev: a1, at: Date.now() }); searchWait.delete(chat); return html(probAsk('uno', a1), { inline_keyboard: [[{ text: '⬅️ Volver', callback_data: 'pb:cortes' }]] }); }
+    if (k === 'todo') { // v356: primero miramos su cuenta y su servidor; luego, ¿dónde lo ve?
+      const m = await tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: '🔍 Un momento, miro tu cuenta y tu servidor…' }).catch(() => null);
+      const d = await probDiag(c), text = d.stop ? `${d.text}\n\nCuando vuelva, te funcionará sin hacer nada 🙂` : `${d.text}\n\n👍 Por nuestra parte está todo bien. Vamos a probar unos pasos rápidos.\n\n<b>¿Dónde lo estás viendo?</b> 👇`;
+      const kb = d.stop ? probBack([[{ text: '🟢 Ver el estado del servicio', callback_data: 'bm:servidor' }]]) : { inline_keyboard: [...d.kb, ...pDevKb('pb:dv:').inline_keyboard] };
+      if (m && m.message_id) return tg('editMessageText', { chat_id: chat, message_id: m.message_id, parse_mode: 'HTML', text, reply_markup: kb }).catch(() => html(text, kb));
+      return html(text, kb);
+    }
+    if (k0 === 'dv' && PDEV[a1]) { const st = probStep(a1, 0); return html(st.text, st.kb); }
+    if (k0 === 'st' && PDEV[a1]) { const i = Math.max(0, Math.min(PSTEPS[a1].length - 1, Number(a2) || 0)), st = probStep(a1, i); // el paso siguiente cambia el mismo mensaje
+      return (mid ? tg('editMessageText', { chat_id: chat, message_id: mid, parse_mode: 'HTML', text: st.text, reply_markup: st.kb }) : Promise.reject()).catch(() => html(st.text, st.kb)); }
+    const pc = probCortes(k, c);
+    if (pc) return html(pc.text, pc.kb);
+    const p = PROBS.find(([x]) => x === k); if (!p) return;
+    return html(`<b>${hEsc(p[1])}</b>\n\n${hEsc(p[2])}`, probBack());
   }
   if (data.startsWith('dv:')) {
     const d = devKeys.get(data.slice(3));
@@ -4893,7 +5117,27 @@ Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como
   }
 }
 // Peticiones en el panel (cada uno ve las de sus clientes)
-route('GET', '/api/requests', '*', ({ me }) => { const vis = visibleOwners(me); return { list: db.requests.filter((r) => !vis || vis.has(r.ownerId)).slice(0, 300).map((r) => ({ ...r, tg: !!(db.clients.find((c) => c.id === r.clientId) || {}).tgChat })) }; });
+route('GET', '/api/requests', '*', ({ me }) => { const vis = visibleOwners(me); return { list: db.requests.filter((r) => !vis || vis.has(r.ownerId)).slice(0, 300).map((r) => ({ ...r, tg: !!(db.clients.find((c) => c.id === r.clientId) || {}).tgChat })),
+  faults: db.faults.filter((f) => !vis || vis.has(f.ownerId)).slice(0, 200).map((f) => ({ id: f.id, name: f.name, emby: f.emby, ownerId: f.ownerId, server: f.server, k: f.k, dev: f.dev ? PDEV[f.dev] : '', text: f.text, photos: (f.photos || []).length, at: f.at, status: f.status, doneAt: f.doneAt || '', doneBy: f.doneBy || '' })) }; });
+/* v356: fallos que avisan los clientes: «Arreglado» avisa al cliente por el bot */
+route('POST', '/api/faults/:id', '*', ({ me, params, body }) => lock(async () => {
+  const vis = visibleOwners(me), f = db.faults.find((x) => x.id === params.id && (!vis || vis.has(x.ownerId)));
+  if (!f) throw new HttpError(404, 'Ese aviso ya no existe.');
+  if (body.status === 'delete') { db.faults = db.faults.filter((x) => x !== f); saveDb(); return { ok: true }; }
+  if (body.status !== 'done') throw new HttpError(400, 'Estado no válido.');
+  await faultFix(f, me);
+  return { ok: true };
+}));
+/* v356: la foto del error (se pide a Telegram al momento, no se guarda en el panel) */
+route('GET', '/api/faults/:id/photo/:n', '*', async ({ me, params }) => {
+  const vis = visibleOwners(me), f = db.faults.find((x) => x.id === params.id && (!vis || vis.has(x.ownerId))), fid = f && (f.photos || [])[Number(params.n) || 0];
+  if (!fid) throw new HttpError(404, 'No hay foto.');
+  const info = await tg('getFile', { file_id: fid }), tok = db.settings.notices.telegram.token;
+  const r = await fetch(`${TG_API}/file/bot${tok}/${info.file_path}`, { signal: AbortSignal.timeout(20000) });
+  if (!r.ok) throw new HttpError(502, 'Telegram no ha dado la foto.');
+  const buf = Buffer.from(await r.arrayBuffer());
+  return { __raw: buf, headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' } };
+});
 route('POST', '/api/requests/:id', '*', ({ me, params, body }) => lock(async () => {
   const vis = visibleOwners(me), r = db.requests.find((x) => x.id === params.id && (!vis || vis.has(x.ownerId)));
   if (!r) throw new HttpError(404, 'Esa petición ya no existe.');
@@ -7674,7 +7918,7 @@ route('GET', '/api/grow', SUPER, () => {
   return { cfg: g, bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
     df: { f1: db.clients.filter((c) => (c.dfSent || []).includes('f1')).length, f3: db.clients.filter((c) => (c.dfSent || []).includes('f3')).length, back: db.clients.filter((c) => (c.dfSent || []).length && !c.demo).length },
     bye: BYE.map(([k, t]) => [t, db.clients.filter((c) => c.leftWhy && c.leftWhy.k === k).length]), byeList: db.clients.filter((c) => c.leftWhy).sort((a, b) => b.leftWhy.at.localeCompare(a.leftWhy.at)).slice(0, 20).map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, why: (BYE.find((x) => x[0] === c.leftWhy.k) || [])[1] || '', at: c.leftWhy.at, how: c.leftWhy.how, whatsapp: c.whatsapp || '', telegram: c.telegram || '' })),
-    tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, watching: Object.keys(watchLoad()).length,
+    tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, areqN: botStatSum(['areq'], 30).areq || 0, areqPend: db.requests.filter((r) => r.status === 'pending').length, slN: botStatSum(['sleepy'], 30).sleepy || 0, slBack: botStatSum(['slback'], 30).slback || 0, watching: Object.keys(watchLoad()).length,
     biz: { conn: g.biz.conn ? { on: g.biz.conn.on, can: g.biz.conn.can, at: g.biz.conn.at, name: g.biz.conn.name } : null, conns: Object.values(bizConns()).map((v) => ({ name: v.name, on: v.on, can: v.can, at: v.at })), pending: g.biz.pending ? { name: g.biz.pending.name, username: g.biz.pending.username, at: g.biz.pending.at } : null, diag: g.biz.diag || '', lastMsg: g.biz.lastMsg || '', n: botStatSum(['biz'], 30).biz || 0, chats: Object.keys(bizSt()).length, wants: Object.values(bizSt()).filter((x) => x.wants && Date.now() - Date.parse(x.wants) < 30 * 86400000).length, fix: botStatSum(['bizfix'], 30).bizfix || 0, rsRead: botStatSum(['bizrs'], 30).bizrs || 0, rsWant: Object.values(bizSt()).filter((x) => x.rs && Date.now() - Date.parse(x.rs) < 30 * 86400000).length, pnRead: botStatSum(['bizpn'], 30).bizpn || 0, pnWant: Object.values(bizSt()).filter((x) => x.pn && Date.now() - Date.parse(x.pn.at) < 30 * 86400000).length, smRead: botStatSum(['bizsm'], 30).bizsm || 0, smWant: Object.values(bizSt()).filter((x) => x.sm && Date.now() - Date.parse(x.sm.at) < 30 * 86400000).length,
       ...(() => { const st = bizSt(), from = (c) => c && c.tgChat != null && st[String(c.tgChat)] && st[String(c.tgChat)].first; // v331: lo que te ha traído el asistente
         const demos = db.clients.filter((c) => c.selfDemo && from(c) && Date.parse(c.createdAt || 0) >= from(c)).length;
@@ -7691,6 +7935,8 @@ route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   if (b.survey) { const v = b.survey; const was = g.survey.on; g.survey.on = !!v.on; if ([7, 15, 30, 60].includes(Number(v.days))) g.survey.days = Number(v.days); if (g.survey.on && (!was || !g.survey.since)) g.survey.since = today(); }
   if (b.epAlert) g.epAlert.on = !!b.epAlert.on;
   if (b.biz) { g.biz.on = !!b.biz.on; if (typeof b.biz.group === 'string') { const gl = b.biz.group.trim().slice(0, 200); if (gl && !/^https:\/\/t\.me\/[\w+\-/]+$/.test(gl)) throw new HttpError(400, 'El enlace del grupo tiene que empezar por https://t.me/'); g.biz.group = gl; } if ([1, 3, 6, 12, 24].includes(Number(b.biz.quiet))) g.biz.quiet = Number(b.biz.quiet); if (typeof b.biz.hours === 'string' && /^(|\d{1,2}-\d{1,2})$/.test(b.biz.hours)) g.biz.hours = b.biz.hours; if (b.biz.fix != null) g.biz.fix = !!b.biz.fix; if (b.biz.rsOn != null) g.biz.rsOn = !!b.biz.rsOn; if (typeof b.biz.rs === 'string') g.biz.rs = b.biz.rs.replace(/\r/g, '').trim().slice(0, 3800) || BIZ_RS_DEF; if (b.biz.pnOn != null) g.biz.pnOn = !!b.biz.pnOn; if (typeof b.biz.pn === 'string') g.biz.pn = b.biz.pn.replace(/\r/g, '').trim().slice(0, 3000) || BIZ_PN_DEF; if (Array.isArray(b.biz.pnPrices) && b.biz.pnPrices.length === 4 && b.biz.pnPrices.every((v) => Number(v) > 0 && Number(v) < 10000)) g.biz.pnPrices = b.biz.pnPrices.map((v) => Math.round(Number(v) * 100) / 100); if (typeof b.biz.pnDays === 'string' && b.biz.pnDays.trim()) g.biz.pnDays = b.biz.pnDays.trim().slice(0, 40); if (b.biz.smOn != null) g.biz.smOn = !!b.biz.smOn; if (typeof b.biz.sm === 'string') g.biz.sm = b.biz.sm.replace(/\r/g, '').trim().slice(0, 3000) || BIZ_SM_DEF; if (Number(b.biz.smSetup) > 0 && Number(b.biz.smSetup) < 10000) g.biz.smSetup = Number(b.biz.smSetup); if (Number(b.biz.smMaint) >= 0 && Number(b.biz.smMaint) < 10000 && b.biz.smMaint !== '') g.biz.smMaint = Number(b.biz.smMaint); } // v324 · v331 · v332
+  if (b.autoReq) g.autoReq.on = !!b.autoReq.on; // v357
+  if (b.sleepy) { g.sleepy.on = !!b.sleepy.on; if ([5, 7, 10, 14].includes(Number(b.sleepy.days))) g.sleepy.days = Number(b.sleepy.days); }
   if (b.wrap) { g.wrap.on = !!b.wrap.on; if ([3, 5, 7].includes(Number(b.wrap.days))) g.wrap.days = Number(b.wrap.days); }
   addLog('ajustes', null, 'Ajustes de «Crecer» cambiados', me);
   saveDb();
@@ -11742,6 +11988,17 @@ function vendorDailyText(u) {
   L.push('', 'Renuévalas desde el panel, en Clientes.');
   return L.join('\n');
 }
+/** v357: pocos créditos: al vendedor, con botón para recargar; y a ti (o a su reseller) para que lo sepas */
+function lowCredTell(u, first) {
+  const n = u.credits || 0, pc = db.payCfg || {}, online = canBuy(u) && ((pc.stripe && pc.stripe.on && pc.stripe.key) || (pc.usdc && usdcOk()) || (pc.nowpay && pc.nowpay.on && pc.nowpay.key)), base = siteBase();
+  const par = u.parentId ? db.users.find((x) => x.id === u.parentId) : null;
+  if (u.tgChat) {
+    const text = `${n <= 0 ? '🪫 <b>Te has quedado sin créditos</b>' : `🔋 <b>Te ${n === 1 ? 'queda 1 crédito' : `quedan ${n} créditos`}</b>`}${first ? '' : ' (recordatorio)'}\n\n${n <= 0 ? 'Sin créditos no puedes crear ni renovar cuentas.' : 'Recarga antes de quedarte sin ellos, así no te quedas sin poder renovar a tus clientes.'}\n\n${online ? '💳 Recárgalos en 1 minuto con el botón: pagas con tarjeta y <b>se suman al momento</b> ⚡' : `🙋 Pide una recarga a ${hEsc(par && par.role !== 'super' ? par.name : 'tu proveedor')}.`}`;
+    const kb = online && /^https:\/\//.test(base) ? { inline_keyboard: [[{ text: '💳 Recargar créditos ahora', url: base + '/#/creditos' }]] } : undefined;
+    for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, parse_mode: 'HTML', text, disable_web_page_preview: true, ...(kb ? { reply_markup: kb } : {}) }).catch(() => {});
+  }
+  if (first) { const msg = `🔋 ${u.name} se está quedando sin créditos: ${n === 1 ? 'le queda 1' : `le quedan ${n}`}.${online ? '\nYa le ha llegado el aviso con el botón para recargar.' : '\nYa le ha llegado el aviso para que te pida una recarga.'}`; if (par && par.role !== 'super') notifyUser(par, msg); else notifyStaff('credits', msg); }
+}
 let vdDay = null;
 function vendorDaily() {
   const t = today(), h = Number(new Date().toLocaleString('en-GB', { timeZone: process.env.TZ || 'Europe/Madrid', hour: '2-digit', hour12: false }));
@@ -11750,8 +12007,11 @@ function vendorDaily() {
   for (const u of db.users) {
     if (!vdIsVendor(u) || !holdsCredits(u) || !paysCredits(u)) continue;
     const lim = vdLow(), low = lim > 0 && (u.credits || 0) <= lim;
-    if (low && !u.lowCredAt) { u.lowCredAt = new Date().toISOString(); ch = true; if (u.tgChat) notifyUser(u, (u.credits || 0) <= 0 ? `🪫 Te has quedado sin créditos (saldo: ${u.credits || 0}).\n\nPide una recarga para poder crear y renovar cuentas.` : `🔋 Te ${u.credits === 1 ? 'queda 1 crédito' : `quedan ${u.credits} créditos`}.\n\nPide una recarga antes de quedarte sin ellos, así no te quedas sin poder renovar.`); }
-    else if (!low && u.lowCredAt) { delete u.lowCredAt; ch = true; }
+    // v357: aviso con botón para recargar al momento; si sigue bajo, se le recuerda cada 3 días. Y te avisa a ti (o a su reseller)
+    if (low && (!u.lowCredAt || (u.lowCredRem && Date.now() - Date.parse(u.lowCredRem) > 3 * 86400000) || (!u.lowCredRem && Date.now() - Date.parse(u.lowCredAt) > 3 * 86400000))) {
+      const first = !u.lowCredAt; if (first) u.lowCredAt = new Date().toISOString(); else u.lowCredRem = new Date().toISOString(); ch = true;
+      lowCredTell(u, first);
+    } else if (!low && u.lowCredAt) { delete u.lowCredAt; delete u.lowCredRem; ch = true; }
   }
   // Resumen de la mañana (a partir de las 9:00, una vez al día)
   if ((process.env.DAILY_ANYTIME || h >= 9) && vdDay !== t && db.settings.vdDay !== t) {
@@ -12910,5 +13170,7 @@ server.listen(PORT, HOST, () => {
   setInterval(() => { if (live()) weeklySend(false).catch((e) => console.error('Resumen semanal:', e.message)); }, Number(process.env.WEEKLY_MS) || 10 * 60000);
   setInterval(() => { if (live()) feedTick().catch((e) => console.error('Canal de contenidos:', e.message)); }, Number(process.env.FEED_MS) || 10 * 60000);
   setInterval(() => { if (live()) sdTick().then(() => lock(async () => saveDb())).catch((e) => console.error('Demo automática (avisos):', e.message)); }, Number(process.env.SD_MS) || 2 * 60000); // v301
+  setInterval(() => { if (live()) reqAutoTick().catch((e) => console.error('Peticiones (solas):', e.message)); }, Number(process.env.REQ_MS) || 30 * 60000); // v357
+  setInterval(() => { if (live()) sleepyTick().catch((e) => console.error('Ayuda a los que no ven:', e.message)); }, Number(process.env.SLEEPY_MS) || 30 * 60000); // v357
   setInterval(() => { if (live()) epAlertTick().catch((e) => console.error('Capítulos nuevos:', e.message)); }, Number(process.env.EP_MS) || 15 * 60000); // v291 // mensajes que llegan al bot de Telegram
 });
