@@ -1916,6 +1916,14 @@ form.formpage.bz>.dfoot .btn.primary,.bzs .btn.primary{border:0;color:#fff;font-
 @media (prefers-reduced-motion:reduce){.bzs .check>input[type=checkbox],.bzs .check>input[type=checkbox]::after{transition:none}}
 .fu-top{display:flex;justify-content:flex-end;margin:0 0 12px}
 .fuc .fu-del{color:var(--danger,#ef4444)}
+.lfeat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 10px}@media(max-width:560px){.lfeat{grid-template-columns:1fr}}
+.lfeat label{position:relative;display:block}.lfeat input{position:absolute;opacity:0;pointer-events:none}
+.lfeat label>span{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2,rgba(255,255,255,.03));cursor:pointer;transition:.15s}
+.lfeat label>span em{font-style:normal;font-size:20px;line-height:1}.lfeat label>span b{display:block;font-size:13.5px}.lfeat label>span small,.lfeat label>span div small{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.3}
+.lfeat label>span:after{content:'';margin-left:auto;flex:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--line)}
+.lfeat input:checked+span{border-color:#22c55e88;background:rgba(34,197,94,.09)}.lfeat input:checked+span:after{background:#22c55e;border-color:#22c55e;box-shadow:inset 0 0 0 3px var(--bg,#0b1a23)}
+.lfpre{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px}.lfpre button{border:1px solid var(--line);background:transparent;color:inherit;border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+.lfchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:12.5px;font-weight:600;background:transparent;color:inherit;cursor:pointer}
 .lplat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 12px}
 .lplat label{position:relative}.lplat input{position:absolute;opacity:0;pointer-events:none}
 .lplat span{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2,rgba(255,255,255,.03));font-weight:700;font-size:13px;text-align:center;cursor:pointer}
@@ -3170,6 +3178,15 @@ function navGroups() {
   const pos = (k) => { const i = ORDER.indexOf(k); return i < 0 ? -1 : i; };
   const first = g.filter((x) => pos(x.k) < 0), rest = g.filter((x) => pos(x.k) >= 0).sort((a, b) => pos(a.k) - pos(b.k));
   const out = [...first, ...rest];
+  // v380: panel alquilado: solo lo que su proveedor le ha dado
+  const LF = S.d.licFeatures;
+  if (Array.isArray(LF)) {
+    const NAV_FEAT = { bot: { g: ['bot'], v: ['peticiones'] }, demoauto: { v: ['autodemo'] }, pay: { v: ['cobrocli'] }, grow: { v: ['crecer', 'botauto', 'invita', 'canales', 'misnov'] },
+      team: { g: ['ven'], v: ['cobrosven', 'pagos', 'creditos'] }, money: { v: ['ingresos', 'gastos', 'socios'] }, monitor: { g: ['mon'] }, msg: { g: ['msg'] }, app: { v: ['appcli'] }, notifs: { v: ['notifs'] } };
+    const offG = new Set(), offV = new Set();
+    for (const [k, m] of Object.entries(NAV_FEAT)) if (!LF.includes(k)) { (m.g || []).forEach((x) => offG.add(x)); (m.v || []).forEach((x) => offV.add(x)); }
+    for (let i = out.length - 1; i >= 0; i--) { if (offG.has(out[i].k)) { out.splice(i, 1); continue; } out[i] = { ...out[i], items: out[i].items.filter((it) => !offV.has(it.v)) }; if (!out[i].items.length) out.splice(i, 1); }
+  }
   // v318: modo reducido: solo lo básico (clientes, demos, créditos y su cuenta)
   if (me().lite) { const keep = { cli: ['cuentas', 'nuevo', 'movimientos', 'papelera'], demo: ['demonueva', 'cuentas', 'demosvencidas'], din: ['cobros', 'creditos', 'cobrosven'], ven: ['equipo', 'equipooff', 'equipodel'], cta: ['perfil', 'seguridad'] };
     return out.filter((x) => x.k === 'ini' || keep[x.k]).map((x) => (x.k === 'ini' ? { ...x, items: x.items.filter((i) => i.v === 'resumen') } : { ...x, items: x.items.filter((i) => keep[x.k].includes(i.v)).map((i) => ({ ...i, sec: undefined })) })).filter((x) => x.items.length); }
@@ -3313,7 +3330,7 @@ async function start() {
   try { S.d = kindView(await api('GET', '/api/data', null, { timeout: 30000 })); if (uiOld(S.d.uiVer)) return; } // primera carga: con límite de tiempo
   finally { bootLoading(false); }
   if (S.d.me.mustPw) return showMustPw();
-  $('#gate').hidden = true; $('#app').hidden = false; const wantInst = location.hash === '#/appinst' && !isStandalone(), wantV = ['#/creditos', '#/peticiones'].includes(location.hash) ? location.hash.slice(2) : ''; goHome(); if (wantInst) S.view = 'appinst'; else if (wantV) S.view = wantV; /* v357: el botón «Recargar créditos» del bot abre Créditos */ try { history.replaceState(null, '', location.pathname + location.search + '#/' + (wantInst ? 'appinst' : wantV || homeKey())); } catch (e) { /* nada */ } render(); payReturn();
+  $('#gate').hidden = true; $('#app').hidden = false; const wantInst = location.hash === '#/appinst' && !isStandalone(), wantV = ['#/creditos', '#/peticiones', '#/nuevo', '#/cuentas', '#/licencias'].includes(location.hash) ? location.hash.slice(2) : ''; /* v380: también los accesos directos del icono */ goHome(); if (wantInst) S.view = 'appinst'; else if (wantV) S.view = wantV; /* v357: el botón «Recargar créditos» del bot abre Créditos */ try { history.replaceState(null, '', location.pathname + location.search + '#/' + (wantInst ? 'appinst' : wantV || homeKey())); } catch (e) { /* nada */ } render(); payReturn();
 }
 /** Primera entrada (o contraseña puesta por otro): hay que elegir una propia antes de usar el panel */
 function showMustPw() {
@@ -3552,7 +3569,9 @@ function pageTabs() {
 }
 
 /* ---------- Pintado ---------- */
+function appBadge() { try { const n = (S.d && S.d.faultsPending) || 0; if ('setAppBadge' in navigator) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {}); } catch { /* v379: el número en el icono del móvil */ } }
 function render() {
+  appBadge();
   // v318: modo reducido: fuera el botón de Novedades y las pantallas que no tiene
   if (S.d && S.d.me) { document.body.classList.toggle('lite', !!S.d.me.lite); if (S.d.me.lite && ['monitor', 'altrans', 'alses', 'alhist', 'inactivos', 'uso', 'mensajecli', 'avisotv', 'plantillas', 'bot', 'avisos', 'seguimiento', 'canales', 'misnov', 'cobrocli', 'calendario', 'compartidas', 'stats', 'mensajeeq', 'atencion', 'accesos', 'appinst', 'appcli', 'estado', 'servidores', 'hoy', 'crecer', 'botstats'].includes(S.view)) S.view = 'resumen'; }
   // pantallas que se juntaron con otras: los enlaces antiguos siguen funcionando
@@ -4189,7 +4208,7 @@ function tgStats(d, t, y) {
   return { linked, today, yday, gone, gone30, base: base.length, pct: base.length ? Math.round((linked.filter((c) => !c.demo).length / base.length) * 100) : 0 };
 }
 function fzTgHtml(d, t, y) {
-  if (!(d.settings.notices && d.settings.notices.telegram && d.settings.notices.telegram.bot) || noCli()) return '';
+  if (!(d.settings.notices && d.settings.notices.telegram && d.settings.notices.telegram.bot) || noCli() || (Array.isArray(d.licFeatures) && !d.licFeatures.includes('bot'))) return ''; // v380
   const x = tgStats(d, t, y), df = x.today.length - x.yday.length;
   const cmp = !x.today.length && !x.yday.length ? 'igual que ayer' : df > 0 ? `▲ ${df} más que ayer` : df < 0 ? `▼ ${-df} menos que ayer` : 'igual que ayer';
   const who = x.today.slice(0, 4).map((c) => `<span class="fztg-p">${esc(c.panelName)}</span>`).join('') + (x.today.length > 4 ? `<span class="fztg-p more">+${x.today.length - 4}</span>` : '');
@@ -5629,12 +5648,16 @@ function dBroadcast() {
 
 /* ---------- Monitor: control de inactivos ---------- */
 /* ---------- v263: «Crecer»: recuperar caducados, resumen semanal, avisos de caídas, encuesta, plazas y clientes que no ven ---------- */
+document.addEventListener('change', async (ev) => { const inp = ev.target; if (!inp || !inp.dataset || !inp.dataset.anim || !inp.files || !inp.files[0]) return; const f = inp.files[0]; // v371
+  if (f.size > (inp.dataset.anim === 'howto' ? 48e6 : 8e6)) return toast(inp.dataset.anim === 'howto' ? 'Pesa demasiado (máximo 48 MB).' : 'Pesa demasiado (máximo 8 MB).', true);
+  toast('Subiendo…'); try { const r = await fetch('/api/anim-upload/' + inp.dataset.anim, { method: 'POST', headers: { 'x-anim-upload': '1', 'Content-Type': 'video/mp4' }, body: f, credentials: 'same-origin' }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'No se pudo subir'); toast('Animación subida ✅ Pulsa «Probar» para verla'); S.anims = null; render(); } catch (e) { toast(e.message, true); } });
+function loadAnims() { if (S.animsBusy) return; S.animsBusy = true; api('GET', '/api/anims').then((r) => { S.anims = r; S.animsBusy = false; render(); }, (e) => { S.animsBusy = false; S.anims = { list: [] }; toast(e.message, true); }); } // v371
 function loadGrow() { S.grow = { busy: true }; api('GET', '/api/grow').then((r) => { S.grow = { ...r, at: Date.now() }; if (S.view === 'crecer' || S.view === 'botauto') render(); }, (e) => { S.grow = { error: e.message }; if (S.view === 'crecer' || S.view === 'botauto') render(); }); }
 function vCrecer(mode = 'crecer') {
   // v278: «Crecer» (para ti: resumen semanal, plazas, quién no ve) y «Mensajes automáticos» del Bot (para tus clientes)
   const isBot = mode === 'bot', TT = isBot ? 'Mensajes automáticos' : 'Crecer';
   const sub = isBot ? 'Mensajes que el bot manda solo a tus clientes para no perderlos. Enciende los que quieras.' : 'Lo que te ayuda a ver cómo va el negocio y a tener sitio para clientes nuevos.';
-  const show = (k) => (isBot ? ['biz', 'winback', 'demoFollow', 'bye', 'epAlert', 'wrap', 'survey', 'outage', 'autoReq', 'sleepy'] : ['weekly']).includes(k);
+  const show = (k) => (isBot ? ['biz', 'winback', 'demoFollow', 'bye', 'epAlert', 'wrap', 'survey', 'outage', 'autoReq', 'sleepy', 'reviews', 'upsell', 'anniv'] : ['weekly']).includes(k);
   const g = S.grow;
   if (!g || (g.at && Date.now() - g.at > 20000)) { loadGrow(); return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>'; }
   if (g.busy) return head(TT, sub) + '<div class="panel"><div class="empty loading">Cargando…</div></div>';
@@ -5719,6 +5742,23 @@ Ayer terminó tu prueba en ${esc(BRAND.name)}. Tu usuario sigue guardado, con to
       ${(g.bye || []).some((x) => x[1]) ? `<div class="by-dist">${(() => { const tot = g.bye.reduce((n, x) => n + x[1], 0) || 1; return g.bye.map((x) => `<div class="by-r"><span>${esc(x[0])}</span><div class="gr-bar"><i style="width:${Math.round(x[1] / tot * 100)}%;background:#f97316"></i></div><b>${x[1]}</b></div>`).join(''); })()}</div>` : '<p class="muted small">Todavía nadie ha dicho por qué se va. ¡Buena señal! 😊</p>'}
       ${(g.byeList || []).length ? `<div class="gr-list"><h4>Los últimos</h4>${g.byeList.map((x) => `<div class="gr-li"><div><b>${esc(x.name)}</b><small>@${esc(x.emby)} · ${esc(x.why)} · ${x.how === 'stop' ? 'escribió /stop' : 'no renueva'} · ${fmtTs(x.at, true)}</small></div><div class="gr-li-a">${contact(x)}</div></div>`).join('')}</div>` : ''}
       ${save('bye')}`)}
+    ${card('upsell', 'c4', '💰', 'Más tiempo y más pantallas', '<span class="aud c">👥 Le llega a tus clientes</span> Solo si lo enciendes: a quien renueva <b>mes a mes</b>, el aviso de caducidad (que le llega igual) lleva una línea con cuánto se ahorra con 6 meses. <b>No manda mensajes de más</b>: la publicidad la mandas tú cuando quieras.', (c.upsell || {}).on !== false, `${noBot}
+      ${sw('on', (c.upsell || {}).on !== false, 'Poner el consejo de ahorro en el aviso de caducidad')}
+      <div class="gr-prev"><small>En el aviso de caducidad (si paga mes a mes):</small><pre>💡 Consejo: si renuevas 6 meses de golpe, te ahorras 8,00 € (te sale a 6,17 € al mes en vez de 7,50 €).</pre></div>
+      
+      <p class="gr-note">ℹ️ Solo a quien puede pagar con tu enlace de pago (Cobro a clientes). Los precios son los tuyos.</p>
+      ${save('upsell')}`)}
+    ${card('anniv', 'c7', '🎂', 'Aniversario del cliente', '<span class="aud c">👥 Le llega a tus clientes</span> Cuando un cliente cumple 1 año (o 2, 3…) contigo, le llega una felicitación con confeti y, si quieres, unos días de regalo que se suman solos a su cuenta.', (c.anniv || {}).on !== false, `${noBot}
+      ${sw('on', (c.anniv || {}).on !== false, 'Felicitar en el aniversario')}
+      <label class="f">Regalo<select name="days">${options([[0, 'Sin regalo, solo la felicitación'], [1, '1 día'], [2, '2 días'], [3, '3 días (recomendado)'], [5, '5 días'], [7, '7 días']], (c.anniv || {}).days ?? 3)}</select></label>
+      <div class="gr-prev"><small>Así le llega (con confeti 🎉):</small><pre>🎂 ¡Feliz aniversario, Laura!\n\nHoy hace 1 año que estás con ${esc(BRAND.name)} 💜\nGracias de corazón por confiar en nosotros.\n\n🎁 Como regalo, te hemos sumado 3 días gratis.\n📅 Ahora tu cuenta vence el 15/03/2027.\n\n¡Que sigas disfrutando! 🍿</pre></div>
+      <p class="gr-note">ℹ️ Se manda de 11:00 a 21:00, una vez por año cumplido. Solo a cuentas activas con el bot enlazado.</p>
+      ${save('anniv')}`)}
+    ${card('reviews', 'c6', '⭐', 'Opiniones reales de clientes', '<span class="aud c">👥 Le llega a quien pone 5 estrellas</span> Cuando un cliente pone 5 estrellas en la encuesta, el bot le pide una frase sobre lo que le parece, con su permiso. Te llega para que decidas si se publica. Las publicadas salen en los precios del bot y en la página de pago de quien está probando o comprando, solo con el nombre y la inicial.', (c.reviews || {}).on !== false, `
+      ${sw('on', (c.reviews || {}).on !== false, 'Pedir una frase a quien pone 5 estrellas')}
+      ${(g.reviews || []).length ? (g.reviews || []).map((r) => `<div class="ap-h" style="align-items:flex-start;gap:10px"><div style="flex:1"><b>«${esc(r.text)}»</b><br><small class="muted">— ${esc(r.name)} · ${fmtTs(r.at, true)} · ${r.status === 'ok' ? '✅ publicada' : r.status === 'no' ? '🚫 no publicada' : '⏳ esperando tu respuesta'}</small></div><div style="display:flex;gap:6px">${r.status !== 'ok' ? `<button type="button" class="btn sm primary" data-act="rv-set" data-id="${r.id}" data-st="ok">✅ Publicar</button>` : `<button type="button" class="btn sm ghost" data-act="rv-set" data-id="${r.id}" data-st="no">Quitar</button>`}<button type="button" class="btn sm ghost" data-act="rv-set" data-id="${r.id}" data-st="delete" title="Borrar">🗑️</button></div></div>`).join('') : '<p class="muted small">Todavía no hay opiniones. Llegarán cuando los clientes contesten la encuesta (se activa en «Encuesta de satisfacción»).</p>'}
+      <p class="gr-note">ℹ️ Solo se publican las que tú apruebes. Nunca se inventan ni se cambian.</p>
+      ${save('reviews')}`)}
     ${card('autoReq', 'c4', '🍿', 'Peticiones que se contestan solas', '<span class="aud c">👥 Le llega a quien pidió algo</span> Cuando un cliente pide una película o serie con /pedir, el panel mira cada rato si ya ha llegado al servidor. En cuanto está, le avisa con la carátula y la petición se marca como hecha. Si ya la teníais cuando la pide, se lo dice al momento.', (c.autoReq || {}).on !== false, `
       ${sw('on', (c.autoReq || {}).on !== false, 'Avisar solo cuando llegue lo que piden')}
       <div class="gr-prev"><small>Así le llega (con la carátula):</small><pre>🎉 ¡Buenas noticias, Laura!\n\nYa tienes disponible lo que nos pediste el 3 de noviembre:\n🎬 Dune: Parte dos (2024)\n\n📲 Ábrela en la app y búscala con la lupa 🔍\n¡Que la disfrutes! 🍿</pre><div class="gr-prev-b">🙋 Pedir otra</div><div class="gr-prev-b">🏠 Menú</div></div>
@@ -5903,11 +5943,13 @@ function vInvita() {
   return head('Invita a un amigo', sub) + `<div class="iv-st ${st[0]}">${st[1]}</div>
   <div class="iv-grid">
     <form class="gr-card iv-c" id="ivForm" onsubmit="return false">
-      <div class="gr-h"><span class="gr-i">🎁</span><div><h3>Regalos</h3><p>Se suman solos al crear la cuenta del amigo con el código.</p></div></div>
+      <div class="gr-h"><span class="gr-i">🎁</span><div><h3>Regalos</h3><p>Se suman solos cuando el amigo contrata el mínimo de meses (desde el bot o con el código en el panel).</p></div></div>
       <div class="gr-b">
         <div class="row2"><label class="f">🙋 Para quien recomienda<select name="days">${options(withCur(r.days), r.days)}</select></label>
           <label class="f">🤝 Para el amigo nuevo<select name="newDays">${options(withCur(r.newDays), r.newDays)}</select></label></div>
         <label class="f">👥 Amigos por cliente<select name="max">${options([[0, 'Sin límite'], [1, '1 amigo'], [2, '2 amigos'], [3, '3 amigos'], [5, '5 amigos']], r.max)}</select></label>
+        <label class="f">🗓️ Plan amigo y «Otra cuenta»: el regalo llega cuando contrata<select name="minMonths">${options([[1, '1 mes o más'], [3, '3 meses o más'], [6, '6 meses o más'], [12, '1 año']], r.minMonths || 3)}</select></label>
+        <p class="muted small" style="margin:-4px 0 10px">Vale para el <b>Plan amigo</b> («Regala una prueba») y para «➕ Otra cuenta». La invitación de aquí arriba y sus promociones (como el Black Friday) <b>no tienen mínimo</b>: el amigo activa su regalo él solo desde el bot, sin pagar.</p>
         <h4 class="iv-h">🔥 Promoción</h4>
         <label class="gr-sw" style="--g:#f97316"><input type="checkbox" name="pon"${r.promo.on ? ' checked' : ''}><span class="sw"></span><b>Es una promoción con fecha límite</b></label>
         <div class="row2" style="margin-top:10px"><label class="f">Nombre<input name="pname" maxlength="40" value="${esc(r.promo.name)}" placeholder="Black Friday"></label>
@@ -7411,7 +7453,12 @@ function ajSections() {
       <div class="infobox" style="margin-top:14px"><b>📣 Clientes que ya tenían el bot</b><p class="small muted" style="margin:4px 0 10px">No tienen que hacer nada: el bot nuevo les funciona solo en cuanto escriban o toquen «Menú». Si quieres que lo vean ya, mándales su tarjeta nueva con el menú (una vez a cada uno).</p>
         <button class="btn" type="button" data-act="bot-ann">📣 Enviar la tarjeta nueva a todos los que tienen el bot</button></div>
       <p class="muted small" style="margin-top:10px">La foto de perfil del bot y la imagen o animación que se ve <b>antes</b> de pulsar «Iniciar» solo se cambian en Telegram: abre @BotFather y usa /setuserpic (foto de perfil) y /setdescriptionpic (imagen o GIF de bienvenida). El texto de bienvenida de esa pantalla lo pone el panel solo.</p>
-    </form></div></section>`,
+    </form></div></section>
+  <section><h2>🎬 Animaciones del bot</h2>
+    <div class="panel pad" style="max-width:640px"><p class="muted small" style="margin:0 0 12px">Vídeos cortos sin sonido (como un GIF) que el bot manda en momentos clave. Si no hay ninguno, se usa la imagen fija de siempre. Sube un <b>MP4</b> (máximo 8 MB; el vídeo «¿Cómo funciona?», hasta 48 MB y con sonido).</p>
+    ${!S.anims ? (loadAnims(), '<div class="empty loading">Cargando…</div>') : S.anims.list.map((a) => `<div class="ap-h" style="align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>${a.k === 'welcome' ? '🎬' : a.k === 'howto' ? '🎥' : '🎉'} ${esc(a.t)}</b><br><small class="muted">${a.has ? `${a.on ? '✅ Encendida' : '⏸️ Apagada'} · ${(a.size / 1048576).toFixed(1)} MB` : 'Sin animación (se usa la imagen fija)'}${a.k === 'welcome' ? ' · sale al pulsar «Iniciar»' : a.k === 'howto' ? ' · botón «🎥 ¿Cómo funciona?» en la bienvenida, en los precios y en Ayuda; y si escriben «cómo funciona»' : ' · sale antes del recibo de un cliente nuevo'}</small></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn sm" style="display:inline-block">${a.has ? 'Cambiar' : 'Subir MP4'}<input type="file" accept="video/mp4" hidden data-anim="${a.k}"></label>${a.has ? `<button type="button" class="btn sm ghost" data-act="anim-test" data-k="${a.k}">🧪 Probar</button><button type="button" class="btn sm ghost" data-act="anim-on" data-k="${a.k}" data-on="${a.on ? 0 : 1}">${a.on ? 'Apagar' : 'Encender'}</button><button type="button" class="btn sm ghost" data-act="anim-del" data-k="${a.k}" title="Borrar">🗑️</button>` : ''}</div></div>`).join('')}
+    <p class="muted small" style="margin-top:10px">💡 La de bienvenida dice «4 HORAS GRATIS»: si cambias las horas de la demo, sube una nueva.</p></div></section>`,
     brand: `  <section><h2>Marca del panel</h2>
     <div class="panel pad"><form id="brandForm" style="max-width:520px">
       <div class="brandrow"><span class="logo" id="brandPrev">${g.brand && g.brand.logo ? `<img src="${esc(g.brand.logo)}" alt="">` : LOGO}</span>
@@ -8241,7 +8288,12 @@ function vCobroCli() {
     <p><b>5.</b> Su enlace es también su página <b>«Mi cuenta»</b>: su fecha, sus pantallas, la app, la guía de calidad y tu contacto.</p></div>
     <p class="muted small">Solo para <b>tus clientes</b> (y los de tus administradores). Los de resellers y subresellers no, porque el dinero te llegaría a ti. También puedes copiar el enlace de cualquier cliente desde su menú ⋯ › «Enlace de pago», o añadirlo al copiar su mensaje.</p></section>`;
   const list = `<section class="ap-card"><h2>🧾 Últimos pagos de clientes</h2>${d.orders.length ? d.orders.map((o) => `<div class="ap-h"><b>${cpSt(o)[0]} ${esc(o.user)}</b><span>${MP_T[o.method] || ''} · ${o.months} ${o.months === 1 ? 'mes' : 'meses'} · ${money(o.amount)} · ${fmtTs(o.paidAt || o.created, true)}${o.after ? ' · vence ' + fmt(o.after) : ''}</span><em style="color:${o.status === 'paid' ? '#16a34a' : 'var(--muted)'}">${cpSt(o)[1]}</em></div>`).join('') : '<p class="muted small">Todavía no ha pagado ningún cliente.</p>'}</section>`;
-  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${cpPayPalCard(d.pp)}${cpUsdcCard(d.usdc)}${cpManualCard(c.manual)}${cpRemindCard(c.remind)}${subs}${vend}${how}${list}</div>`;
+  const lg = d.legal || {}, legal = `<section class="ap-card"><h2>📄 Condiciones y privacidad</h2><p class="muted small" style="margin:0 0 10px">Una página clara para tus clientes (qué es el servicio, pagos, renovación, devoluciones, buen uso y qué datos guardas). Sale enlazada abajo en todas las páginas de pago.${d.legalUrl ? ` Ponla también en BotFather › Edit Bot › <b>Edit Privacy Policy</b>: <code>${esc(d.legalUrl)}</code> · <a href="/condiciones" target="_blank" rel="noopener">Verla ↗</a>` : ''}</p>
+    <form id="legalForm" class="ap-form" onsubmit="return false"><label class="f">Nombre que sale como responsable (tu marca o tu empresa)<input name="name" value="${esc(lg.name || '')}" placeholder="${esc(S.d.settings.brand && S.d.settings.brand.name || 'Serviparte')}"></label>
+    <label class="f">Correo de contacto (opcional)<input name="email" type="email" value="${esc(lg.email || '')}" placeholder="hola@tudominio.com"></label>
+    <label class="f">Algo más que quieras añadir (opcional)<textarea name="extra" rows="3" placeholder="Por ejemplo, tu dirección de empresa o una norma propia">${esc(lg.extra || '')}</textarea></label>
+    <button type="button" class="btn primary" data-act="legal-save">Guardar</button></form></section>`;
+  return hero + `<div class="ap-grid">${cpPendingCard(d.orders, money)}${warn}${pub}<form id="cpForm" class="ap-form">${table}</form>${cpPayPalCard(d.pp)}${cpUsdcCard(d.usdc)}${cpManualCard(c.manual)}${cpRemindCard(c.remind)}${subs}${vend}${legal}${how}${list}</div>`;
 }
 function cpTable(pr, desc, note) {
   const M = [[1, '1 mes'], [3, '3 meses'], [6, '6 meses'], [12, '1 año']], SC = [1, 2, 3, 4];
@@ -8423,6 +8475,25 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 381, d: '2026-11-24', items: ['🎁 «Invita a un amigo» y el Black Friday, como en el cartel: el amigo abre la invitación, toca «🎁 Activar mi mes gratis» y se le crea la cuenta al momento, sin pagar. Quien le invitó recibe su mes solo. Una vez por persona y respetando «una persona por cliente»', '🗓️ El mínimo de 3 meses queda solo para el Plan amigo («Regala una prueba») y «➕ Otra cuenta»'] },
+  { v: 380, d: '2026-11-24', items: ['🧩 Paneles alquilados: ahora eliges una a una las funciones de cada panel (bot de Telegram, prueba automática, cobro online, crecer, revendedores, dinero, monitor, mensajes masivos, app y notificaciones), con atajos «Básico», «Medio» y «Completo». Lo que no le das, ni le aparece en su panel. Los que ya tienes siguen con todo'] },
+  { v: 379, d: '2026-11-24', items: ['📱 La app del panel en el móvil lleva el símbolo de Serviparte (el logo del bot) si el panel no tiene logo propio', '🔴 El icono del móvil enseña un numerito con las peticiones y fallos pendientes', '👆 Manteniendo pulsado el icono: accesos directos a «Nuevo cliente», «Clientes» y «Peticiones y fallos»'] },
+  { v: 378, d: '2026-11-24', items: ['📣 La publicidad la mandas solo tú desde el panel: el bot ya no manda solo el Plan amigo después de pagar ni la oferta de pantalla extra, y quitamos el «un mensaje cada 3 días». El consejo de ahorro del aviso de caducidad queda apagado (lo enciendes en Bot › Más tiempo y más pantallas si lo quieres)', '🔥 Las ofertas se VEN en el bot: con una promoción activa (Black Friday), el botón del menú sale destacado «🔥 BLACK FRIDAY · Invita a un amigo»'] },
+  { v: 377, d: '2026-11-24', items: ['🗓️ Plan amigo e Invita a un amigo: el regalo llega cuando el amigo contrata 3 meses o más (se cambia en Invita a un amigo › Regalos). Si contrata menos, queda apuntado y llega cuando renueve con el mínimo. La promoción (Black Friday) se respeta igual', '🤫 Menos mensajes repetidos: el recibo ya no repite la bienvenida si salió la animación, los datos completos solo van en el primer recibo, el canal de novedades se ofrece una sola vez y el Plan amigo ya no llega justo después de la primera compra', '🧘 Sin agobiar: como mucho un mensaje de promoción cada 3 días por cliente (Plan amigo, encuesta, pantalla extra, «¿todo bien?»)', '🔔 El aviso de pago de una prueba ahora dice «se ha hecho CLIENTE» en vez de «se ha renovado»'] },
+  { v: 376, d: '2026-11-24', items: ['👥 «Mis cuentas» en el bot: quien tiene varias cuentas las ve en lista, con sus datos, «Renovar», «Cambiar nombre» y «📤 Pasársela» (el familiar abre el enlace y desde ese momento los avisos le llegan a él)', '🛡️ «Otra cuenta» solo da el regalo de amigo si se paga por 3 meses o más (lo cambias en Invita a un amigo › Regalos)', '👨‍👩‍👧 En la ficha del cliente, la tarjeta «Familia» con sus otras cuentas'] },
+  { v: 375, d: '2026-11-24', items: ['🎁 «Otra cuenta» cuenta como «Invita a un amigo»: si un cliente compra desde su bot otra cuenta para un familiar, recibe solo su regalo (y la cuenta nueva el suyo), con el mismo máximo de amigos que tengas puesto'] },
+  { v: 374, d: '2026-11-24', items: ['🎁 «Invita a un amigo» automático: el amigo que abre la invitación puede darse de alta él solo (comprar o probar gratis). Cuando paga, el regalo se aplica solo: días gratis para el que invitó (le llega el aviso) y para el amigo nuevo si lo tienes puesto. Tú solo recibes el aviso'] },
+  { v: 373, d: '2026-11-24', items: ['➕ «Otra cuenta» en el bot: un cliente puede comprar una cuenta nueva para un familiar o amigo desde su propio menú. Dice el nombre, paga, y la cuenta se crea sola en el mismo servidor y con el mismo dueño. Las dos cuentas quedan en su mismo Telegram y te llega el aviso «es OTRA CUENTA de…»'] },
+  { v: 372, d: '2026-11-24', items: ['🎥 Vídeo «¿Cómo funciona?» en el bot: botón en la bienvenida, en los precios y en Ayuda. Si alguien escribe «cómo funciona» o «qué es Emby», el bot le manda el vídeo solo, con la prueba gratis debajo (se sube en 🎬 Animaciones del bot)'] },
+  { v: 371, d: '2026-11-24', items: ['🎬 Animaciones del bot (Ajustes › Bot): bienvenida animada al pulsar «Iniciar» y «¡Bienvenido a la familia!» con confeti cuando alguien se hace cliente. Se suben como MP4 y se pueden probar, apagar o borrar'] },
+  { v: 370, d: '2026-11-24', items: ['💡 El aviso de caducidad dice cuánto se ahorra con 6 meses a quien paga mes a mes', '📺 A quien pasa del límite de pantallas varias veces, el bot le ofrece una pantalla más con su precio', '🎂 Aniversario: al cumplir 1 año (o más) el cliente recibe una felicitación con confeti y días de regalo (Bot › Mensajes automáticos)'], team: ['🎂 Tus clientes reciben una felicitación (y unos días de regalo) cuando cumplen un año'] },
+  { v: 369, d: '2026-11-24', items: ['↩️ Condiciones: «Sin devoluciones» (la cuenta se activa al momento; antes pueden hacer la prueba gratis; si hay una caída larga se compensa con días extra). En la página de pago sale «Al pagar aceptas las condiciones… no admite devoluciones»'] },
+  { v: 368, d: '2026-11-24', items: ['📄 Página «Condiciones y privacidad» para tus clientes, enlazada en todas las páginas de pago (se ajusta en Cobro a clientes)', '⭐ Opiniones reales: a quien pone 5 estrellas se le pide una frase; tú decides si se publica y sale en los precios del bot y en la página de pago', 'ℹ️ La «Info» del bot ahora dice «Serviparte · Pelis y series en todos tus aparatos · Atención de 10:00 a 22:00» y se pone sola al arrancar'] },
+  { v: 367, d: '2026-11-24', items: ['🕙 El bot enseña el horario de atención en «Ayuda y soporte técnico» y, de noche, avisa al cliente de que le contestaréis al abrir (al avisar de un fallo, al escribir «Otro problema» o al tener una duda con la compra). El horario es el mismo del asistente (Bot › Automáticos)'] },
+  { v: 366, d: '2026-11-24', items: ['🎉 Nuevo mensaje de entrega de la prueba: más claro, con tus datos de acceso juntos y «¿Qué puedes hacer ahora?»; los aparatos van en un mensaje aparte', '📺 Instrucciones de cada aparato con formato nuevo: pasos con nombre, datos en grande y ayuda al final', '🛒 Al comprar desde el bot ya no se repiten los datos (van en el recibo)', '🎨 «Renovar» y «Comprar» salen en color azul en Telegram, y la bienvenida con botones cortos: «QUIERO MI PRUEBA GRATIS», «Comprar», «Precios»'] },
+  { v: 365, d: '2026-11-24', items: ['🎬 La bienvenida del bot para la gente nueva ahora llega con una imagen de cine (fondo oscuro, morado y azul eléctrico, tu logo grande y «4 HORAS GRATIS»), con efecto de entrada 🎉 y el botón de la prueba gratis destacado en verde'] },
+  { v: 364, d: '2026-11-24', items: ['🤖 Nueva descripción del bot («¿Qué puede hacer este bot?»), la que ve la gente antes de pulsar Iniciar'] },
+  { v: 363, d: '2026-11-24', items: ['🎬 Nuevo mensaje de bienvenida del bot para la gente nueva («¡BIENVENIDO A SERVIPARTE! Tu entretenimiento empieza aquí…»)'] },
   { v: 362, d: '2026-11-23', items: ['📢 El canal de novedades también sale en las cuentas nuevas y en las renovaciones: en el recibo de pago, al enlazar su Telegram y al renovar a mano', '✅ Al renovar una cuenta a mano desde el panel, al cliente le llega por Telegram «¡Tu cuenta está renovada!» con la nueva fecha'], team: ['✅ Al renovar una cuenta desde el panel, a tu cliente le llega por Telegram «¡Tu cuenta está renovada!» con la nueva fecha (si tiene el bot enlazado)'] },
   { v: 361, d: '2026-11-23', items: ['📢 La bienvenida de la demo y de la compra invita a unirse al canal de novedades, con botón y explicando qué es (el enlace se cambia en Demos › Demo automática)'] },
   { v: 360, d: '2026-11-23', items: ['🔠 Tarjeta de la demo más grande: servidor, usuario y contraseña uno debajo de otro y en letra grande', '📝 Los datos del mensaje de la demo y de la compra ya no van en cita (Telegram las pone en letra más pequeña): ahora salen en tamaño normal, cada uno con su nombre'] },
@@ -8742,7 +8813,10 @@ function vCFicha() {
   const h = S.cf.hist, hist = h ? (h.history || []) : null;
   const tl = `<div class="cf-card cf-wide"><h3>🕓 Historial</h3>${!h ? '<p class="muted small">Cargando…</p>' : h.error ? `<p class="err">${esc(h.error)}</p>` : !hist.length ? '<p class="muted small">Todavía no hay movimientos de esta cuenta.</p>'
     : `<div class="cf-tl">${hist.slice(0, 40).map((l) => { const [e, t, cl] = MV_KIND[l.type] || ['📝', l.type || 'Otro', 's']; return `<div class="cf-ti ${cl}"><span class="cf-dot">${e}</span><div><div class="cf-tt"><b>${esc(t)}</b><time>${fmtTs(l.ts, true)}</time></div><p>${esc(l.text)}</p><small>${l.auto || !l.actor ? '🤖 Automático' : '👤 ' + esc(l.actor)}</small></div></div>`; }).join('')}</div>${hist.length > 40 ? `<button type="button" class="btn sm" data-act="m-hist" data-id="${c.id}">Ver las ${hist.length}</button>` : ''}`}</div>`;
-  return back + hero + kpis + `<div class="cf-grid">${plan}${contact}${conn}${tl}</div>`;
+  // v376: «Familia»: la cuenta principal y las que ha comprado desde su bot para otros
+  const root = c.buyExtraOf ? (S.d.clients.find((x) => x.id === c.buyExtraOf) || null) : c, fam = root ? [root, ...S.d.clients.filter((x) => x.buyExtraOf === root.id)] : [];
+  const famCard = fam.length > 1 ? `<div class="cf-card"><h3>👨‍👩‍👧 Familia de ${esc(String(root.panelName).split(/\s+/)[0])}</h3><p class="muted small">Cuentas que paga la misma persona desde su bot.</p>${fam.map((x) => `<div class="cf-r"><span>${x.id === root.id ? '⭐' : '👤'}</span><em>${x.id === c.id ? `<b>${esc(x.panelName)}</b> (esta)` : `<button type="button" class="linkbtn" data-act="ficha" data-id="${x.id}">${esc(x.panelName)}</button>`}</em><b>${x.demo ? 'Prueba' : 'Vence ' + esc(String(x.expires || '').split('-').reverse().join('/'))}</b></div>`).join('')}</div>` : '';
+  return back + hero + kpis + `<div class="cf-grid">${plan}${contact}${famCard}${conn}${tl}</div>`;
 }
 
 /* ---------- Cuentas compartidas ---------- */
@@ -9501,7 +9575,7 @@ function vLicencias() {
       <header><span class="cav">${esc(l.name.charAt(0).toUpperCase())}</span><div class="who"><b>${esc(l.name)}</b>${l.url ? `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.url.replace(/^https?:\/\//, ''))}</a>` : '<small class="muted">sin dirección</small>'}</div><span class="lpill ${stCls}">${stTxt}</span></header>
       <div class="lbig"><div><small>Pagado hasta</small><b>${fmt(l.until)}</b></div><div class="r"><small>${l.price ? eur(l.price) + ' / mes' : 'sin precio'}</small><em class="${stCls}">${licLeftTxt(l)}</em></div></div>
       <div class="lbar"><i class="${stCls}" style="width:${l.state === 'ok' || l.state === 'soon' ? done : 100}%"></i></div>
-      <div class="lmeta">${licPlatChip(l)}${l.contact ? `<span>${ic('send')}${esc(l.contact)}</span>` : ''}<span class="${l.online ? 'on' : ''}">${ic('signal')}${l.lastCheck ? (l.online ? 'Conectado' : 'Última conexión ' + whenShort(l.lastCheck)) : 'Aún no se ha conectado'}</span></div>
+      <div class="lmeta">${licPlatChip(l)}<button type="button" class="lfchip" data-act="lic-edit" data-id="${l.id}" title="Elegir funciones">🧩 ${licFeats(l).length === LIC_FEATS.length ? 'Completo' : `${licFeats(l).length} de ${LIC_FEATS.length} funciones`}</button>${l.contact ? `<span>${ic('send')}${esc(l.contact)}</span>` : ''}<span class="${l.online ? 'on' : ''}">${ic('signal')}${l.lastCheck ? (l.online ? 'Conectado' : 'Última conexión ' + whenShort(l.lastCheck)) : 'Aún no se ha conectado'}</span></div>
       ${licStatsHtml(l)}
       ${l.notes ? `<p class="lnote">${esc(l.notes)}</p>` : ''}
       <div class="acts"><button class="btn sm primary" data-act="lic-renew" data-id="${l.id}">${ic('refresh')}Renovar</button><button class="btn sm" data-act="lic-edit" data-id="${l.id}">${ic('edit')}Editar</button><button class="btn sm" data-act="lic-msg" data-id="${l.id}">${ic('copy')}Datos de acceso</button><button class="btn sm ghost" data-act="lic-more" data-id="${l.id}">Más…</button></div>
@@ -9533,6 +9607,18 @@ const licPlatPick = (sel) => { const on = Array.isArray(sel) ? sel : licPlatArr(
   return `<span class="flabel">Qué incluye su panel</span><div class="lplat">${LIC_KINDS.map(([k, t, c]) => `<label><input type="checkbox" name="plat" value="${k}"${on.includes(k) ? ' checked' : ''}><span class="${c}"><i></i>${t}<small>${on.includes(k) ? 'encendido' : 'apagado'}</small></span></label>`).join('')}</div>
   <p class="small muted" style="margin:-4px 0 12px">Enciende las que quiera usar. Puedes cambiarlo cuando quieras (añadir o quitar): su panel se entera en menos de una hora. Cada una va en su propia pestaña. Para Plex o IPTV, su panel tiene que tener la última versión.</p>`; };
 const licPlatChip = (l) => `<span class="lplcs">${LIC_KINDS.map(([k, t, c]) => `<button type="button" class="lplc ${c}${licPlats(l).includes(k) ? '' : ' off'}" data-act="lic-plat" data-id="${l.id}" data-k="${k}" title="${licPlats(l).includes(k) ? 'Apagar' : 'Encender'} ${t} en su panel"><i></i>${t}</button>`).join('')}</span>`;
+/* v380: funciones de cada panel alquilado (se marcan una a una) */
+const LIC_FEATS = [['bot', '🤖', 'Bot de Telegram', 'Para sus clientes: menú, avisos al caducar, ayuda, «Mis datos»'], ['demoauto', '🎁', 'Prueba gratis automática', 'La piden al bot y se crea sola (necesita el bot)'],
+  ['pay', '💳', 'Cobro online', 'Página de pago, renovar y comprar desde el bot'], ['grow', '📈', 'Crecer y fidelizar', 'Invita a un amigo, automáticos, opiniones, canal de novedades'],
+  ['team', '👥', 'Revendedores', 'Vendedores, subresellers, créditos y deudas'], ['money', '💶', 'Dinero e informes', 'Ingresos, gastos y socios'],
+  ['monitor', '📡', 'Monitor en vivo', 'Quién está viendo, alertas y pantallas de más'], ['msg', '📣', 'Mensajes masivos', 'Mensaje a todos sus clientes y aviso en la tele'],
+  ['app', '📲', 'App de clientes', 'Su propia app para Android'], ['notifs', '🔔', 'Notificaciones', 'Avisos al dueño por Telegram: pagos, caídas…']];
+const LIC_PRESETS = [['Básico', ['notifs']], ['Medio', ['bot', 'notifs', 'team', 'monitor', 'msg']], ['Completo', LIC_FEATS.map((x) => x[0])]];
+const licFeats = (l) => (l && Array.isArray(l.features) ? l.features : LIC_FEATS.map((x) => x[0]));
+const licFeatPick = (on) => `<span class="flabel">Funciones de su panel</span><div class="lfpre">${LIC_PRESETS.map(([t, a]) => `<button type="button" data-lfp="${a.join(',')}">${t}</button>`).join('')}</div>
+  <div class="lfeat">${LIC_FEATS.map(([k, e, t, d]) => `<label><input type="checkbox" name="feat" value="${k}"${on.includes(k) ? ' checked' : ''}><span><em>${e}</em><div style="flex:1;min-width:0"><b>${t}</b><small>${d}</small></div></span></label>`).join('')}</div>
+  <p class="small muted" style="margin:-2px 0 12px">Siempre tiene: clientes, demos a mano, servidores y su cuenta. Lo que marques se enciende en su panel en menos de una hora; lo que no, ni le aparece.</p>`;
+const licFeatWire = (f) => { f.querySelectorAll('[data-lfp]').forEach((b) => { b.onclick = () => { const a = b.dataset.lfp.split(','); f.querySelectorAll('input[name=feat]').forEach((i) => { i.checked = a.includes(i.value); }); }; }); };
 const licMonths = (name, sel = 1) => `<div class="pmeth lmon">${[1, 3, 6, 12].map((n) => `<label><input type="radio" name="${name}" value="${n}"${n === sel ? ' checked' : ''}><span>${plural(n, 'mes', 'meses')}</span></label>`).join('')}</div>`;
 const licMethods = () => `<div class="pmeth">${PAY_METHODS.filter((x) => x !== 'Sin cobro').map((x, i) => `<label><input type="radio" name="method" value="${x}"${i === 0 ? ' checked' : ''}><span>${x}</span></label>`).join('')}</div>`;
 function licShowToken(name, token) {
@@ -9547,14 +9633,15 @@ function licNew() {
       <div class="row2"><label class="f">Dirección de su panel (opcional)<input name="url" maxlength="200" placeholder="https://juanito.duckdns.org"></label><label class="f">Su contacto (opcional)<input name="contact" maxlength="80" placeholder="Telegram @juanito"></label></div>
       <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="0"></label><label class="f">Empieza el<input type="date" name="start" value="${S.d.today}"></label></div>
       ${licPlatPick(['emby'])}
+      ${licFeatPick(LIC_FEATS.map((x) => x[0]))}
       <span class="flabel">Meses pagados</span>${licMonths('months')}
       <p class="small muted" id="licUntil" style="margin:8px 0"></p>
       <label class="check"><input type="checkbox" name="paid" checked> Ya me ha pagado (se apunta el cobro)</label>
       <div id="licPay">${licMethods()}</div>
       <label class="f">Notas (opcional)<input name="notes" maxlength="300"></label>`,
-    onOpen: () => { const f = dlgForm, upd = () => { const mo = +f.elements.months.value || 1, st = f.elements.start.value || S.d.today; $('#licUntil').innerHTML = `Pagado hasta el <b>${fmt(addMonths(st, mo))}</b>${+f.elements.price.value ? ` · ${eur(+f.elements.price.value * mo)}` : ''}`; $('#licPay').hidden = !f.elements.paid.checked; }; f.oninput = upd; f.onchange = upd; upd(); },
+    onOpen: () => { const f = dlgForm; licFeatWire(f); const upd = () => { const mo = +f.elements.months.value || 1, st = f.elements.start.value || S.d.today; $('#licUntil').innerHTML = `Pagado hasta el <b>${fmt(addMonths(st, mo))}</b>${+f.elements.price.value ? ` · ${eur(+f.elements.price.value * mo)}` : ''}`; $('#licPay').hidden = !f.elements.paid.checked; }; f.oninput = upd; f.onchange = upd; upd(); },
     onSubmit: async (fd) => {
-      const r = await api('POST', '/api/licenses', { name: fd.get('name'), url: fd.get('url'), contact: fd.get('contact'), price: +fd.get('price') || 0, start: fd.get('start'), months: +fd.get('months'), paid: !!fd.get('paid'), method: fd.get('method') || '', notes: fd.get('notes'), platforms: fd.getAll('plat').length ? fd.getAll('plat') : ['emby'] });
+      const r = await api('POST', '/api/licenses', { name: fd.get('name'), url: fd.get('url'), contact: fd.get('contact'), price: +fd.get('price') || 0, start: fd.get('start'), months: +fd.get('months'), paid: !!fd.get('paid'), method: fd.get('method') || '', notes: fd.get('notes'), platforms: fd.getAll('plat').length ? fd.getAll('plat') : ['emby'], features: fd.getAll('feat') });
       S.lic.tok = { name: r.lic.name, token: r.token }; S.lic.data = null; loadLic(); return 'Licencia creada';
     }, after: () => { if (S.lic.tok) { licShowToken(S.lic.tok.name, S.lic.tok.token); S.lic.tok = null; } } });
 }
@@ -9577,8 +9664,10 @@ function licEdit(id) {
       <div class="row2"><label class="f">Dirección de su panel<input name="url" maxlength="200" value="${esc(l.url)}"></label><label class="f">Su contacto<input name="contact" maxlength="80" value="${esc(l.contact)}"></label></div>
       <div class="row2"><label class="f">Precio al mes (€)<input type="number" name="price" min="0" step="0.5" value="${l.price || 0}"></label><label class="f">Pagado hasta (cambiar a mano)<input type="date" name="until" value="${l.until}" required></label></div>
       ${licPlatPick(licPlats(l))}
+      ${licFeatPick(licFeats(l))}
       <label class="f">Notas<input name="notes" maxlength="300" value="${esc(l.notes)}"></label>`,
-    onSubmit: async (fd) => { await api('PUT', `/api/licenses/${id}`, Object.fromEntries(['name', 'url', 'contact', 'notes', 'until'].map((k) => [k, fd.get(k)]).concat([['price', +fd.get('price') || 0], ['platforms', fd.getAll('plat')]]))); S.lic.data = null; loadLic(); return 'Cambios guardados'; } });
+    onOpen: () => licFeatWire(dlgForm),
+    onSubmit: async (fd) => { await api('PUT', `/api/licenses/${id}`, Object.fromEntries(['name', 'url', 'contact', 'notes', 'until'].map((k) => [k, fd.get(k)]).concat([['price', +fd.get('price') || 0], ['platforms', fd.getAll('plat')], ['features', fd.getAll('feat')]]))); S.lic.data = null; loadLic(); return 'Cambios guardados'; } });
 }
 function licMore(id) {
   const l = licOf(id); if (!l) return;
@@ -11329,7 +11418,7 @@ document.addEventListener('click', (e) => {
     api('POST', '/api/my-feed/test', { chan: fd.get('chan') || '', header: fd.get('header') || '', footer: fd.get('footer') || '' }).then((r) => toast(r.note), (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
   if (a === 'fd-bot') { dFeedBot(+el.dataset.id); return; }
   if (a === 'iv-save') { const fm = $('#ivForm'), g = (n) => fm.elements[n];
-    el.disabled = true; api('PUT', '/api/referral', { days: +g('days').value, newDays: +g('newDays').value, max: +g('max').value, promo: { on: g('pon').checked, name: g('pname').value, until: g('puntil').value } })
+    el.disabled = true; api('PUT', '/api/referral', { days: +g('days').value, newDays: +g('newDays').value, max: +g('max').value, minMonths: +g('minMonths').value, promo: { on: g('pon').checked, name: g('pname').value, until: g('puntil').value } })
       .then(() => { toast('🎁 Invita a un amigo: guardado'); S.inv = null; reload().catch(() => render()); }, (e) => toast(e.message, true)).finally(() => { el.disabled = false; }); return; }
   if (a === 'sd-save') { const fm = $('#sdForm'), g = (n) => fm.elements[n];
     const all = [...fm.querySelectorAll('input[name=srv]')], on = all.filter((x) => x.checked).map((x) => +x.value);
@@ -11651,6 +11740,11 @@ document.addEventListener('click', (e) => {
     case 'cp-on': { const on = !(S.cp && S.cp.cfg && S.cp.cfg.on); api('PUT', '/api/client-pay', { on }).then(() => { toast(on ? 'Cobro a clientes activado ✅' : 'Cobro a clientes apagado'); S.cp = null; loadCp(); return reload(); }).catch((ex) => toast(ex.message, true)); } break;
     case 'rq-done': rqSet(el.dataset.id, 'done'); break;
     case 'fx-done': fxSet(el.dataset.id, 'done'); break;
+    case 'anim-test': api('POST', `/api/anims/${el.dataset.k}/test`, {}).then(() => toast('Mira tu Telegram 🎬'), (x) => toast(x.message, true)); break;
+    case 'anim-on': api('POST', `/api/anims/${el.dataset.k}`, { on: el.dataset.on === '1' }).then(() => { S.anims = null; render(); }, (x) => toast(x.message, true)); break;
+    case 'anim-del': if (confirm('¿Borrar esta animación? Se volverá a usar la imagen fija.')) api('POST', `/api/anims/${el.dataset.k}`, { del: true }).then(() => { S.anims = null; render(); }, (x) => toast(x.message, true)); break;
+    case 'rv-set': if (el.dataset.st !== 'delete' || confirm('¿Borrar esta opinión?')) api('POST', `/api/reviews/${el.dataset.id}`, { status: el.dataset.st }).then(() => { toast(el.dataset.st === 'ok' ? 'Publicada ✅' : 'Hecho'); loadGrow(); }).catch((e) => toast(e.message, true)); break;
+    case 'legal-save': { const f = document.getElementById('legalForm'); api('PUT', '/api/legal', { name: f.name.value, email: f.email.value, extra: f.extra.value }).then(() => toast('Condiciones guardadas ✅')).catch((e) => toast(e.message, true)); break; }
     case 'fx-del': if (confirm('¿Borrar este aviso?')) fxSet(el.dataset.id, 'delete'); break;
     case 'rq-no': rqSet(el.dataset.id, 'no'); break;
     case 'rq-del': rqSet(el.dataset.id, 'delete'); break;
