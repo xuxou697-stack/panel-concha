@@ -8575,7 +8575,7 @@ function sdGiftReward(c, actor) {
 const sdGiftUsed = (c) => (c.sdGifts || []).filter((t) => Date.now() - Date.parse(t) < 30 * 86400000).length;
 function sdGiftOk(c) {
   const cf = sdCfg(), o = c && db.users.find((u) => u.id === c.ownerId);
-  return !!(cf.on && cf.giftOn !== false && c && !c.demo && c.status === 'active' && !c.off && o && ['super', 'admin'].includes(o.role) && db.settings.notices.telegram.bot);
+  return !!(cf.on && cf.giftOn !== false && c && !c.demo && c.status === 'active' && !c.off && c.expires && diffDays(c.expires, today()) >= 0 && o && /* v385: solo si su cuenta está al día (no caducada) */ ['super', 'admin'].includes(o.role) && db.settings.notices.telegram.bot);
 }
 /** v348: cuántos meses regala el Plan amigo (0 = nada) y texto */
 const sdGiftRew = () => Number(sdCfg().giftReward ?? 1) || 0;
