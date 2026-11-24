@@ -847,6 +847,51 @@ async function pxSyncAll() {
   return n;
 }
 setTimeout(() => { if (db.servers.some((x) => x.kind === 'plex')) pxSyncAll().catch(() => {}); setInterval(() => { if (db.servers.some((x) => x.kind === 'plex')) pxSyncAll().catch(() => {}); }, 10 * 60000); }, 45000);
+/* v384: Plex: volver a mandar la invitación (se quita la vieja y se invita otra vez, con sus mismas bibliotecas) */
+async function pxResend(c) {
+  const s = db.servers.find((x) => x.id === c.serverId);
+  if (!s || s.kind !== 'plex' || !c.embyId) throw new HttpError(400, 'Esta cuenta no es de Plex.');
+  const e = pxReg(s).users[c.embyId]; if (!e) throw new HttpError(404, 'No encuentro su usuario de Plex.');
+  if (e.shareId && e.accepted) throw new HttpError(400, 'Ya aceptó la invitación: no hace falta reenviarla.');
+  const mid = await pxMid(s);
+  if (e.shareId) { try { await pxTv(s, `/api/servers/${encodeURIComponent(mid)}/shared_servers/${encodeURIComponent(e.shareId)}`, 'DELETE'); } catch (er) { if (er.embyStatus !== 404) throw er; } }
+  e.shareId = null; e.accepted = false;
+  await pxApply(s, c.embyId, e, pxPolicy(e));
+  c.pxPendSince = new Date().toISOString(); delete c.pxRemAt; c.pxResAt = new Date().toISOString();
+  return e.email || e.name || c.embyName;
+}
+/* v384: si a las 24 h no ha aceptado la invitación de Plex: le escribe el bot (si lo tiene) y te avisa a ti. Una vez */
+async function pxRemindTick() {
+  const now = Date.now(), due = [];
+  await lock(async () => {
+    let ch = false;
+    for (const c of db.clients) {
+      if (c.status !== 'active') continue;
+      const pend = pxPendingOf(c);
+      if (!pend) { if (c.pxPendSince || c.pxRemAt) { delete c.pxPendSince; delete c.pxRemAt; ch = true; } continue; }
+      if (!c.pxPendSince) { c.pxPendSince = new Date().toISOString(); ch = true; continue; }
+      if (!c.pxRemAt && now - Date.parse(c.pxPendSince) > 24 * 3600000) { c.pxRemAt = new Date().toISOString(); ch = true; due.push(c); }
+    }
+    if (ch) saveDb();
+  });
+  for (const c of due) {
+    const s = db.servers.find((x) => x.id === c.serverId) || {}, e = (pxReg(s).users || {})[c.embyId] || {}, mail = e.email || c.email || '';
+    if (c.tgChat) tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', disable_web_page_preview: true,
+      text: `📩 <b>Te falta un paso para ver ${hEsc(botName())}</b>
+
+Todavía no has aceptado la invitación de Plex${mail ? ` que mandamos a <b>${hEsc(mail)}</b>` : ''}.
+
+1️⃣ Busca en tu correo un email de <b>Plex</b> (mira también en <b>Spam</b>)
+2️⃣ Pulsa <b>«Aceptar»</b>
+3️⃣ ¡Listo! El servidor te sale en la app de Plex 🍿
+
+¿No lo encuentras? Toca <b>«Reenvíame la invitación»</b> 👇`,
+      reply_markup: { inline_keyboard: [[{ text: '🔁 Reenvíame la invitación', callback_data: 'px:re', style: 'primary' }], [{ text: '📺 Entrar en la tele con un código', callback_data: 'gd:pxlink' }], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {});
+    notifyStaff('servers', `📩 Plex: ${c.panelName} lleva 1 día sin aceptar la invitación${mail ? ' (' + mail + ')' : ''}.${c.tgChat ? ' Ya le he escrito por el bot.' : ' No tiene el bot: escríbele tú.'} Desde su ficha puedes «Reenviar invitación».`);
+    await lock(async () => { addLog('aviso', c, '📩 Recordatorio: invitación de Plex sin aceptar (24 h)', null); saveDb(); });
+  }
+}
+setInterval(() => { if (live() && db.servers.some((x) => x.kind === 'plex')) pxRemindTick().catch((e) => console.error('Plex (recordatorio):', e.message)); }, 30 * 60000);
 /** Plex no limita las pantallas por usuario: el panel corta las reproducciones que sobran */
 const pxOver = new Map();
 async function plexScreens(s, list, byEmby) {
@@ -4733,6 +4778,7 @@ const guideKb = (skip, c) => { const jf = cliJf(c);
   if (cliPx(c)) return { inline_keyboard: [ // clientes de Plex: su invitación, su app y cómo entrar
     ...(skip === 'pxinv' ? [] : [[{ text: '📩 Aceptar la invitación', callback_data: 'gd:pxinv' }]]),
     ...(skip === 'pxapp' ? [] : [[{ text: '📥 Instalar la app Plex', callback_data: 'gd:pxapp' }]]),
+    ...(skip === 'pxlink' ? [] : [[{ text: '📺 Entrar en la tele con un código', callback_data: 'gd:pxlink' }]]), // v384
     ...(skip === 'login' ? [] : [[{ text: '🔑 Cómo iniciar sesión', callback_data: 'gd:login' }]]),
     ...(skip === 'where' ? [] : [[{ text: '📱 ¿Dónde puedo ver Plex?', callback_data: 'gd:where' }]])] };
   return { inline_keyboard: [
@@ -4754,6 +4800,7 @@ function guideText(k, c) {
     const acc = c && c.plexNew ? `\n\n👤 Tu cuenta de Plex: ${c.embyName}\n🔒 Tu contraseña: escribe /datos para verla` : '';
     if (k === 'main') return `📺 ¿Te dice que hay demasiadas pantallas?\n\nTranquilo 😊 Tu plan permite ${c && c.screens ? c.screens : 'varias'} ${c && c.screens === 1 ? 'pantalla' : 'pantallas'} a la vez. Si ves en más aparatos de los que tienes, la reproducción que sobra se corta sola.\n\n💡 Cierra Plex en los aparatos que no uses (o mira /aparatos).\n\n👇 Elige qué quieres hacer:`;
     if (k === 'pxinv') return (c && c.plexNew ? '📩 TU INVITACIÓN\n\n✅ Tu cuenta de Plex la hemos creado nosotros y la invitación ya está aceptada: solo tienes que entrar en la app con tu email y tu contraseña.' : '📩 ACEPTA LA INVITACIÓN (1 vez)\n\n1️⃣ Mira tu email: te ha llegado una invitación de Plex\n2️⃣ Pulsa «Aceptar»\n     (o entra en app.plex.tv › Ajustes › Amigos y comparte, y acéptala)\n3️⃣ ¡Listo! El servidor ya te sale en la app de Plex\n\n💡 ¿No te llega? Mira en «Spam» o escríbenos.') + acc;
+    if (k === 'pxlink') return '📺 ENTRAR EN LA TELE CON UN CÓDIGO\n(sin escribir la contraseña con el mando)\n\n1️⃣ Abre la app de Plex en la tele y elige «Iniciar sesión»\n2️⃣ En la pantalla te sale un código de 4 letras, por ejemplo «AB12»\n3️⃣ En el móvil abre 👉 plex.tv/link\n4️⃣ Entra con tu cuenta de Plex' + (c ? ` (${c.embyName})` : '') + ' y escribe el código\n5️⃣ ¡Listo! La tele entra sola en unos segundos 🍿\n\n💡 Si el código caduca, vuelve a pulsar «Iniciar sesión» en la tele y sale otro.';
     if (k === 'pxapp') return '📥 APP PLEX (gratis)\n\n📺 Smart TV (Samsung, LG…) → busca «Plex» en la tienda de tu tele\n🤖 Android TV / Google TV → «Plex» en Play Store\n🔥 Fire TV → «Plex» en la tienda de Amazon\n🍏 iPhone / iPad / Apple TV → «Plex» en la App Store\n💻 PC / Mac → app.plex.tv en el navegador\n\nÁbrela y entra con tu cuenta de Plex.' + acc;
     if (k === 'login') return '🔑 CÓMO INICIAR SESIÓN\n\n1️⃣ Abre la app de Plex\n2️⃣ Pulsa «Iniciar sesión» y entra con tu cuenta de Plex' + (c ? `: ${c.embyName}` : '') + '\n   (en la tele te sale un código: escríbelo en plex.tv/link desde el móvil)\n3️⃣ En el menú, elige nuestro servidor ✅\n\n🔐 ' + (c && c.plexNew ? '¿No recuerdas la contraseña? Escribe /datos y te la enseño.' : '¿Olvidaste la contraseña? Cámbiala en plex.tv con «¿Olvidaste tu contraseña?».');
     if (k === 'where') return '📱 ¿DÓNDE PUEDO VER PLEX?\n\n📺 Smart TV Samsung / LG / Android TV\n➡️ App Plex de la tienda de tu tele\n\n🔥 Fire TV\n➡️ App Plex de la tienda de Amazon\n\n🍏 Apple TV / iPhone / iPad\n➡️ Plex, gratis en la App Store\n\n💻 PC / Mac\n➡️ En el navegador: app.plex.tv';
@@ -4944,7 +4991,9 @@ async function refLead(chat, from, code) {
 }
 /** v282: tarifas modernas: una pantalla cada vez (la de su plan primero), con lo que ahorra y botones para ver las demás */
 /** v299: precios sencillos para quien no entiende de esto: 1) cuántas pantallas → 2) en la página eliges el tiempo y pagas */
-function pricesSimple(c) {
+/** v383: UN solo mensaje de tarifas, limpio, para todos (clientes, pruebas y gente nueva). Botones: pagar · probar gratis · cómo funciona */
+function priceCard(c, chat) {
+  c = c || {};
   const ctx = c.id ? cpCtx(c) : null, o = db.users.find((u) => u.id === c.ownerId);
   const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
   const cur = (db.settings.currency || 'EUR').toUpperCase();
@@ -4952,41 +5001,27 @@ function pricesSimple(c) {
   const P = (m, sc) => Number(pr[`${m}-${sc}`]) || 0;
   const scs = [1, 2, 3, 4].filter((sc) => [1, 3, 6, 12].some((m) => P(m, sc) >= 0.5));
   if (!scs.length) return null;
-  // v314: el precio real de 1 mes (nada de «desde» con el plan largo dividido); si no hay de 1 mes, el plan más corto que tenga
-  const lbl = (sc) => { if (P(1, sc) >= 0.5) return `${money(P(1, sc))}/mes`; const m = [3, 6, 12].find((x) => P(x, sc) >= 0.5); return m ? `${money(P(m, sc))} · ${m} meses` : ''; };
-  const canPay = !!(c.id && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase()), payScr = canPay ? cpScreens(c, cpCtx(c)) : [];
-  const L = [`💶 <b>${c.demo || !c.id ? 'Elige tu plan' : 'Renueva tu cuenta'}</b>`, ''];
-  L.push(canPay ? '1️⃣ Toca cuántas <b>pantallas</b> quieres\n<i>(pantallas = aparatos viendo a la vez)</i>\n2️⃣ Eliges el <b>tiempo</b> y pagas en 1 minuto 💳\n3️⃣ ¡Listo! Se activa al momento ✅'
-    : `📺 <i>Pantallas = aparatos viendo a la vez.</i>\n\n${scs.map((sc) => `📺 <b>${sc === 1 ? '1 pantalla' : sc + ' pantallas'}</b> · <b>${lbl(sc)}</b>`).join('\n')}`);
-  const kb = [];
-  if (canPay) for (const sc of scs.filter((x) => payScr.includes(x))) kb.push([{ text: `📺 ${sc === 1 ? '1 pantalla' : sc + ' pantallas'} · ${lbl(sc)}`, url: `${cpLink(c)}?s=${sc}` }]);
-  if (!c.id && sdCfg().on) kb.push([{ text: '🎁 Pruébalo gratis primero', callback_data: 'sd:go' }]);
-  kb.push([{ text: '📋 Ver todos los precios', callback_data: 'pr:all' }]);
-  if (c.id) kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
+  const NAME = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '12 meses' }, mine = c.id && !c.demo ? Number(c.screens) || 1 : 0;
+  const L = [`💎 <b>TARIFAS ${hEsc(botName()).toUpperCase()}</b>`, '', '📺 <b>Elige cuántas pantallas necesitas</b>', '<i>Pantallas = aparatos viendo a la vez</i>', '━━━━━━━━━━━━━━━'];
+  for (const sc of scs) {
+    const ms = [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5), it = ms.map((m) => `${NAME[m]} → <b>${money(P(m, sc))}</b>${m === 12 ? ' 🏆' : ''}`);
+    L.push('', `📺 <b>${sc === 1 ? '1 PANTALLA' : sc + ' PANTALLAS'}</b>${sc === mine ? '  <i>· tu plan</i>' : ''}`);
+    for (let k = 0; k < it.length; k += 2) L.push('      ' + it.slice(k, k + 2).join('   ·   '));
+  }
+  L.push('', '━━━━━━━━━━━━━━━', '', '🎁 <b>¡Cuanto más tiempo, más ahorras!</b>', '⭐ Los planes largos tienen descuento.', '🚀 Elige tu plan y ten tu cuenta en pocos pasos.');
+  // botones: 1) pagar · 2) probar gratis (solo si puede) · 3) cómo funciona (+ menú si es cliente)
+  const kb = [], canPay = !!(c.id && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase());
+  if (canPay) kb.push([{ text: '💳 ELEGIR PLAN Y PAGAR', url: cpLink(c), style: 'primary' }]);
+  else if (!c.id && buyOk()) kb.push([{ text: '💳 ELEGIR PLAN Y PAGAR', callback_data: 'by:go', style: 'primary' }]);
+  const used = chat && db.selfDemoUsed && db.selfDemoUsed[String(chat)];
+  if (!c.id && sdCfg().on && licFeat('demoauto') && !used) kb.push([{ text: '🎁 PROBAR GRATIS', callback_data: 'sd:go', style: 'success' }]);
+  const row = []; if (animOn('howto')) row.push({ text: '🎬 Cómo funciona', callback_data: 'hw:go' }); if (c.id) row.push({ text: '🏠 Menú', callback_data: 'bm:menu' });
+  if (row.length) kb.push(row);
   if (!canPay && c.id && botContact()) L.push('', `💬 Para contratar, escríbenos:\n${hEsc(botContact())}`);
   return { text: L.join('\n'), kb: { inline_keyboard: kb } };
 }
-function pricesMsg(c, scr) { // v298: todas las pantallas a la vez, cada una en su recuadro (la de su plan, marcada)
-  const ctx = c.id ? cpCtx(c) : null, o = db.users.find((u) => u.id === c.ownerId);
-  const pr = (ctx && ctx.cfg.prices) || (!o || ['super', 'admin'].includes(o.role) ? cpCfg().prices : (o.clientPay || {}).prices) || {};
-  const cur = (db.settings.currency || 'EUR').toUpperCase();
-  const money = (n) => n.toLocaleString('es-ES', { style: 'currency', currency: cur, minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
-  const P = (m, sc) => Number(pr[`${m}-${sc}`]) || 0;
-  const scs = [1, 2, 3, 4].filter((sc) => [1, 3, 6, 12].some((m) => P(m, sc) >= 0.5));
-  if (!scs.length) return null;
-  const mine = Number(c.screens) || 1, ICON = { 1: '📅', 3: '🗓️', 6: '⭐', 12: '🏆' }, NAME = { 1: '1 mes', 3: '3 meses', 6: '6 meses', 12: '1 año' };
-  const L = [`💶 <b>Tarifas de ${hEsc(botName())}</b>`];
-  for (const sc of scs) {
-    const ms = [1, 3, 6, 12].filter((m) => P(m, sc) >= 0.5), base = P(1, sc);
-    const rows = ms.map((m) => { const v = P(m, sc), off = base >= 0.5 && m > 1 ? Math.round((1 - v / (base * m)) * 100) : 0; return `${ICON[m]} ${NAME[m]}  ·  <b>${money(v)}</b>${off >= 1 ? `  <i>(−${off} %)</i>` : ''}`; });
-    L.push('', `📺 <b>${sc === 1 ? '1 pantalla' : sc + ' pantallas'}</b>${sc === mine && c.id && !c.demo ? '  ·  <i>tu plan</i>' : ''}`, `<blockquote>${rows.join('\n')}</blockquote>`);
-  }
-  L.push('', '📺 = aparatos viendo a la vez. Cuanto más tiempo, más ahorras 😉');
-  const kb = [];
-  if (c.id && cpEligible(c) && siteBase()) kb.push([{ text: `💳 ${c.demo ? 'Activar mi cuenta' : 'Renovar ahora'} (eliges pantallas y tiempo)`, url: cpLink(c) }]);
-  kb.push([{ text: '🏠 Menú', callback_data: 'bm:menu' }]);
-  return { text: L.join('\n'), kb: { inline_keyboard: kb } };
-}
+function pricesSimple(c, chat) { return priceCard(c, chat); } // v383: antes había 2 mensajes distintos de precios; ahora es el mismo
+function pricesMsg(c, scr, chat) { return priceCard(c, chat); }
 /** v314: de todas las cuentas de un chat, la que manda (precios, novedades, invitar…): primero las activas de verdad,
  *  luego demos activas, luego caducadas, y lo de la papelera lo último; a igualdad, la más reciente.
  *  Antes cogía la primera de la lista, que podía ser una demo vieja de otro vendedor en la papelera (y salían sus precios). */
@@ -5067,7 +5102,7 @@ async function botReply(chat, kind, list) {
     return send(parts.join('\n\n— — —\n\n') + tip, { inline_keyboard: kb }, true);
   }
   if (kind === 'precios') {
-    const r = pricesSimple(bestAcc(accs)); // v299
+    const r = pricesSimple(bestAcc(accs), chat); // v299/v383
     return r ? send(r.text, r.kb, true) : send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
   }
   if (kind === 'invitar') return refBot(chat, bestAcc(accs));
@@ -5223,8 +5258,7 @@ async function botCallback(cq) {
   if (/^na:[0-9a-f]{8}$/.test(data)) { if (botTooFast(chat)) return; return botNewsAlbum(chat, data.slice(3)); } // v289: carátulas del día
   if (/^pr:([1-4]|all)$/.test(data)) { // v282/v299: tabla completa de precios (también para quien todavía no es cliente)
     const mine = db.clients.filter((c) => c.tgChat === chat);
-    const r = pricesMsg(bestAcc(mine) || { id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }); if (!r) return;
-    if (!mine.length) r.kb = { inline_keyboard: sdCfg().on ? [[{ text: '🎁 Pruébalo gratis primero', callback_data: 'sd:go' }]] : [] };
+    const r = pricesMsg(bestAcc(mine) || { id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }, 0, chat); if (!r) return; // v383: el mismo mensaje de tarifas
     return tg('editMessageText', { chat_id: chat, message_id: cq.message.message_id, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb })
       .catch(() => tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb }).catch(() => {}));
   }
@@ -5342,9 +5376,21 @@ Si hay que cambiarlo: Panel › Socios › ✏️` : `✅ ${e.name} marcado como
     mpCloseButtons(o, o.status === 'paid' ? `✅ Confirmado por ${o.confirmedBy || u.name}` : o.status === 'rejected' ? `❌ No recibido (${o.rejectedBy || u.name})` : '…');
     return tg('sendMessage', { chat_id: chat, text: msg }).catch(() => {});
   }
+  if (data === 'px:re') { // v384: el cliente pide que le reenvíen la invitación de Plex (como mucho cada 6 h)
+    const c = db.clients.find((x) => x.tgChat === chat && pxPendingOf(x));
+    if (!c) return db.clients.some((x) => x.tgChat === chat && cliPx(x)) ? tg('sendMessage', { chat_id: chat, text: '✅ Tu invitación de Plex ya está aceptada. ¡Ya puedes verlo en la app de Plex! 🍿' }).catch(() => {}) : botReply(chat, 'menu', db.clients.filter((x) => x.tgChat === chat));
+    if (c.pxResAt && Date.now() - Date.parse(c.pxResAt) < 6 * 3600000) return tg('sendMessage', { chat_id: chat, text: '📩 Te la acabamos de mandar hace poco. Mira bien en tu correo, también en Spam. Si no está, escríbenos 🙂' }).catch(() => {});
+    try {
+      const to = await lock(async () => { const t = await pxResend(c); addLog('aviso', c, `📩 Invitación de Plex reenviada (la pidió desde el bot) a ${t}`, null); saveDb(); return t; });
+      notifyStaff('servers', `📩 Plex: ${c.panelName} ha pedido desde el bot que le reenvíen la invitación. Hecho ✅ (${to})`);
+      return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `✅ Listo: te la hemos vuelto a mandar a <b>${hEsc(to)}</b>.
+
+Abre el email de Plex y pulsa <b>«Aceptar»</b>. Mira también en Spam 😉` }).catch(() => {});
+    } catch (e) { console.error('Plex (reenviar desde el bot):', e.message); notifyStaff('servers', `⚠️ Plex: ${c.panelName} ha pedido reenviar su invitación y no se ha podido: ${e.message}`); return tg('sendMessage', { chat_id: chat, text: `😕 No he podido reenviarla ahora. Ya hemos avisado y te la mandamos enseguida.${botContact() ? '\n\n' + botContact() : ''}` }).catch(() => {}); }
+  }
   if (data.startsWith('gd:') || data === 'pb:pantallas') {
     const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
-    if (!['main', 'moon', 'dl', 'jf', 'pxinv', 'pxapp', 'tvapp', 'login', 'where'].includes(k)) return;
+    if (!['main', 'moon', 'dl', 'jf', 'pxinv', 'pxapp', 'pxlink', 'tvapp', 'login', 'where'].includes(k)) return;
     const gkb = guideKb(k, c), kb6 = data === 'pb:pantallas' ? { inline_keyboard: [[{ text: '📺 Ver y cerrar mis aparatos', callback_data: 'bm:aparatos' }], ...gkb.inline_keyboard, [{ text: '⬅️ Otro problema', callback_data: 'pb:menu' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } : gkb; // v356
     return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: kb6 });
   }
@@ -5552,6 +5598,15 @@ route('POST', '/api/clients/:id/noticed', '*', ({ me, params, body }) => lock(as
   return { ok: true };
 }));
 /* Desenlaza el Telegram de un cliente */
+route('POST', '/api/clients/:id/px-resend', '*', async ({ me, params }) => { // v384
+  const c = clientFor(me, params.id);
+  const to = await pxResend(c);
+  await lock(async () => { addLog('edicion', c, `📩 Invitación de Plex reenviada a ${to}`, me); saveDb(); });
+  if (c.tgChat) tg('sendMessage', { chat_id: c.tgChat, parse_mode: 'HTML', text: `📩 Te hemos vuelto a mandar la invitación de Plex a <b>${hEsc(to)}</b>.
+
+Abre el email y pulsa <b>«Aceptar»</b> (mira también en Spam) 😉`, reply_markup: { inline_keyboard: [[{ text: '📩 Cómo aceptarla', callback_data: 'gd:pxinv' }]] } }).catch(() => {});
+  return { ok: true, to };
+});
 route('POST', '/api/clients/:id/guide', '*', async ({ me, params, body }) => {
   const c = clientFor(me, params.id), cfg = db.settings.notices.telegram;
   if (!c.tgChat) throw new HttpError(400, 'Este cliente no tiene Telegram enlazado. Mándasela por WhatsApp o cópiala.');
@@ -9266,12 +9321,10 @@ async function sdCreate(chat, from, src = '') {
 }
 /** Precios para quien todavía no es cliente (con los del dueño) */
 function sdPrices(chat) {
-  const r = pricesSimple({ id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }); // v299
-  if (r) r.text += revTxt(); // v368: opiniones reales
-  if (r && animOn('howto') && r.kb && r.kb.inline_keyboard) r.kb = { inline_keyboard: [...r.kb.inline_keyboard, [{ text: '🎥 ¿Cómo funciona? Mira el vídeo', callback_data: 'hw:go' }]] }; // v372
-  if (r) { const kb2 = buyOk() ? { inline_keyboard: [[{ text: '🛒 Comprar mi cuenta', callback_data: 'by:go' }], ...((r.kb && r.kb.inline_keyboard) || [])] } : r.kb; return tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb2 }); } // v358
-  const kb = { inline_keyboard: [...(sdCfg().on ? [[{ text: '🎁 Probar gratis primero', callback_data: 'sd:go' }]] : [])] };
-  return r ? tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: kb }) : tg('sendMessage', { chat_id: chat, text: `💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`, reply_markup: kb });
+  const r = priceCard({ id: 0, ownerId: (ownerUser() || {}).id, screens: 1, demo: true }, chat); // v383: un solo mensaje de tarifas
+  if (r) { r.text += revTxt(); return tg('sendMessage', { chat_id: chat, text: r.text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: r.kb }); } // v368: opiniones reales
+  const kb = { inline_keyboard: [...(sdCfg().on ? [[{ text: '🎁 PROBAR GRATIS', callback_data: 'sd:go' }]] : [])] };
+  return tg('sendMessage', { chat_id: chat, text: `💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`, reply_markup: kb });
 }
 const CONN_FILE = path.join(DATA_DIR, 'conexiones.json');
 let conn = null, connDirty = false, connSaved = 0;

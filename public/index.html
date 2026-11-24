@@ -4000,7 +4000,7 @@ function clientCard(c) {
   const mine = c.ownerId === me().id, ren = (S.d.renewals || {})[c.id] || 0;
   const shared = (S.d.sharedIds || []).includes(c.id);
   // Avisos que solo salen cuando toca
-  const flags = [shared ? `<button type="button" class="flag warn" data-act="m-conn" data-id="${c.id}">${ic('users')}Parece compartida</button>` : '', c.paid === false ? `<span class="flag bad">${ic('wallet')}Cobro pendiente</span>` : '', c.plexPending ? `<span class="flag pxw" title="Le ha llegado un email de Plex: tiene que aceptar la invitación">📩 Invitación de Plex sin aceptar</span>` : ''].filter(Boolean).join('');
+  const flags = [shared ? `<button type="button" class="flag warn" data-act="m-conn" data-id="${c.id}">${ic('users')}Parece compartida</button>` : '', c.paid === false ? `<span class="flag bad">${ic('wallet')}Cobro pendiente</span>` : '', c.plexPending ? `<button type="button" class="flag pxw" data-act="px-resend" data-id="${c.id}" title="Tiene que aceptar la invitación de Plex de su email. Toca para reenviársela">📩 Invitación de Plex sin aceptar · 🔁 Reenviar</button>` : ''].filter(Boolean).join('');
   const note = c.note ? `<div class="cnote">${ic('note')}<span>${esc(c.note.split('\n')[0].slice(0, 90))}</span></div>` : '';
   // Ficha abierta: solo lo que no se ve ya en la tarjeta
   const chip = (href, icon, label, cls = '') => href ? `<a class="cchip ${cls}" href="${href}" target="_blank" rel="noopener">${ic(icon)}${label}</a>` : `<span class="cchip ${cls}">${ic(icon)}${label}</span>`;
@@ -8475,6 +8475,8 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 384, d: '2026-11-24', items: ['📩 Plex: si a las 24 h un cliente no ha aceptado la invitación, el bot le escribe con los pasos y un botón «Reenvíame la invitación», y a ti te llega el aviso', '🔁 Plex: en la tarjeta del cliente, la etiqueta «Invitación de Plex sin aceptar» ahora es un botón para reenviársela en un toque', '📺 Plex: guía nueva en el bot «Entrar en la tele con un código» (plex.tv/link), sin escribir la contraseña con el mando'] },
+  { v: 383, d: '2026-11-24', items: ['💎 Precios del bot ordenados: un solo mensaje «TARIFAS SERVIPARTE», limpio, con cada pantalla y sus meses (12 meses 🏆). Botones claros: «💳 ELEGIR PLAN Y PAGAR», «🎁 PROBAR GRATIS» (solo si aún no la ha hecho) y «🎬 Cómo funciona». Ya no salen dos listas de precios repetidas'] },
   { v: 382, d: '2026-11-24', items: ['🛠️ Arreglado: al subir una animación del bot salía «Subida no válida»'] },
   { v: 381, d: '2026-11-24', items: ['🎁 «Invita a un amigo» y el Black Friday, como en el cartel: el amigo abre la invitación, toca «🎁 Activar mi mes gratis» y se le crea la cuenta al momento, sin pagar. Quien le invitó recibe su mes solo. Una vez por persona y respetando «una persona por cliente»', '🗓️ El mínimo de 3 meses queda solo para el Plan amigo («Regala una prueba») y «➕ Otra cuenta»'] },
   { v: 380, d: '2026-11-24', items: ['🧩 Paneles alquilados: ahora eliges una a una las funciones de cada panel (bot de Telegram, prueba automática, cobro online, crecer, revendedores, dinero, monitor, mensajes masivos, app y notificaciones), con atajos «Básico», «Medio» y «Completo». Lo que no le das, ni le aparece en su panel. Los que ya tienes siguen con todo'] },
@@ -11833,6 +11835,7 @@ document.addEventListener('click', (e) => {
     case 'export': dExport(); break;
     case 'exp': runExport(el.dataset.f); break;
     case 'bulk-clear': S.sel.clear(); render(); break;
+    case 'px-resend': if (c) openDlg({ title: '📩 Reenviar la invitación de Plex', submit: 'Reenviar', body: `<p>Se le vuelve a mandar la invitación de Plex a <b>${esc(c.panelName)}</b>, con sus mismas bibliotecas.</p><p class="muted small">Úsalo si dice que no le ha llegado o que la ha borrado. Le llega un email nuevo de Plex${c.tgLinked ? ' y un aviso por el bot' : ''}.</p>`, onSubmit: async () => { const r = await api('POST', `/api/clients/${c.id}/px-resend`, {}); toast(`📩 Invitación reenviada a ${r.to}`); await reload(); } }); break; // v384
     case 'm-notes': if (c) dNotes(c); break;
     case 'm-pass': if (c) dPass(c); break;
     case 'm-hist': if (c) dHistory(c); break;
