@@ -13474,7 +13474,7 @@ const server = http.createServer(async (req, res) => {
     if ((pathname === '/condiciones' || pathname === '/privacidad') && req.method === 'GET') return condPage(res); // v368
     if (pathname.startsWith('/pagar/') && (req.method === 'GET' || req.method === 'POST')) return await cpRoute(req, res, pathname);
     if (pathname.startsWith('/cripto/') && req.method === 'GET') return usdcCreditPage(res, pathname); // v315
-    if (req.method === 'POST' && pathname.startsWith('/api/anim-upload/')) return await animUpload(req, res, pathname.slice(18)); // v371
+    if (req.method === 'POST' && pathname.startsWith('/api/anim-upload/')) return await animUpload(req, res, decodeURIComponent(pathname.slice('/api/anim-upload/'.length))); // v371/v382: corregido (cortaba la primera letra)
     if (req.method === 'POST' && pathname === '/api/app-upload') return await appUpload(req, res);
     if ((req.method === 'GET' || req.method === 'HEAD') && /^\/app(\/|\.apk$|$)/.test(pathname) && (pathname === '/app' || pathname === '/app/' || pathname === '/app.apk' || pathname === '/app/version.json' || /^\/app\/[\w.-]+\.apk$/.test(pathname))) return appDownload(req, res, pathname);
     if (!pathname.startsWith('/api/')) return send(res, 404, { error: 'No encontrado.' });
