@@ -2820,6 +2820,15 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 .aud{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;margin:0 4px 4px 0;vertical-align:1px}
 .aud.c{background:color-mix(in srgb,#f59e0b 20%,transparent);color:#fcd34d}.aud.v{background:color-mix(in srgb,#a855f7 22%,transparent);color:#d8b4fe}.aud.y{background:color-mix(in srgb,#2aa3e6 22%,transparent);color:#7dd3fc}
 .bt-aud{margin:-4px 0 14px;font-size:13.5px;color:var(--muted)}
+.fsp{margin:0 0 18px;padding:18px 20px;border-radius:18px;border:1px solid rgba(124,92,255,.35);background:linear-gradient(135deg,rgba(124,92,255,.12),rgba(56,189,248,.06))}
+.fsp-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.fsp-h b{font-size:17px;display:block}.fsp-h small{color:var(--muted);font-size:13px}
+.fsp-bar{height:8px;border-radius:5px;background:rgba(255,255,255,.08);margin:12px 0 10px;overflow:hidden}.fsp-bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#22c55e,#38bdf8)}
+.fsp-l{list-style:none;margin:0;padding:0;display:grid;gap:8px}.fsp-l li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.fsp-l li>div{flex:1;min-width:0}.fsp-l li b{display:block;font-size:14px}.fsp-l li small{color:var(--muted);font-size:12.5px}
+.fsp-n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;background:rgba(255,255,255,.08)}
+.fsp-l li.ok{opacity:.65}.fsp-l li.ok .fsp-n{background:#22c55e;color:#04130a}.fsp-l li.now{border-color:rgba(124,92,255,.6);background:rgba(124,92,255,.1)}.fsp-l li.now .fsp-n{background:#7c5cff;color:#fff}
+.fsp-l em{font-style:normal;color:#22c55e;font-weight:700;font-size:12.5px}.fsp-f{margin:12px 0 0;font-size:13px;color:var(--muted)}
+.simplebar{display:flex;align-items:center;gap:8px;margin:0 0 14px;padding:10px 14px;border-radius:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);font-size:13.5px}.simplebar span{flex:1}
 </style>
 </head>
 <body>
@@ -3178,6 +3187,12 @@ function navGroups() {
   const pos = (k) => { const i = ORDER.indexOf(k); return i < 0 ? -1 : i; };
   const first = g.filter((x) => pos(x.k) < 0), rest = g.filter((x) => pos(x.k) >= 0).sort((a, b) => pos(a.k) - pos(b.k));
   const out = [...first, ...rest];
+  // v388: modo sencillo: solo lo básico (Resumen, Clientes, Demos, Servidores y Mi cuenta)
+  if (simpleOn()) {
+    const KEEP = { ini: ['resumen'], cli: ['cuentas', 'nuevo'], demo: null, emby: ['servidores'], cta: null };
+    for (let i = out.length - 1; i >= 0; i--) { const g = out[i]; if (!(g.k in KEEP)) { out.splice(i, 1); continue; } if (KEEP[g.k]) out[i] = { ...g, items: g.items.filter((it) => KEEP[g.k].includes(it.v) && !(it.v === 'cuentas' && it.f && it.f !== 'all')) }; if (!out[i].items.length) out.splice(i, 1); }
+    out.push({ k: 'simple', items: [{ v: 'resumen', t: '🧘 Ver todas las opciones', i: 'eye', act: 'simple-toggle' }] });
+  }
   // v380: panel alquilado: solo lo que su proveedor le ha dado
   const LF = S.d.licFeatures;
   if (Array.isArray(LF)) {
@@ -3588,6 +3603,7 @@ function render() {
     if (x.hide) return '';
     if (x.sec) return `<span class="nsec">${x.sec}</span>` + item({ ...x, sec: '' });
     const cur = hereOf(x) || flat.some((h) => h.hide === `${x.v}|${x.f || ''}` && hereOf(h));
+    if (x.act) return `<button type="button" data-act="${x.act}">${ic(x.i)}<span class="t">${x.t}</span></button>`; // v388
     return `<button type="button" data-view="${x.v}"${x.f ? ` data-filter="${x.f}"` : ''}${cur ? ' aria-current="page"' : ''}>${ic(x.i)}<span class="t">${x.t}</span>${x.n ? `<span class="n${x.hot ? ' hot' : ''}">${x.n}</span>` : ''}</button>`;
   };
   $('#nav').innerHTML = navGroups().map((g) => { // el selector de plataforma va solo arriba (antes salía dos veces)
@@ -4053,6 +4069,29 @@ function clientCard(c) {
 }
 const clientTable = (rows, compact) => `<div class="panel"><table class="cards"><thead><tr><th>Cuenta</th><th>Plan</th><th>Vence</th><th>Estado</th><th class="r">${compact ? '' : 'Acciones'}</th></tr></thead><tbody>${rows.map((c) => clientRow(c, compact)).join('')}</tbody></table></div>`;
 
+/* v388: «Primeros pasos»: 5 pasos con ✅ para quien empieza (sobre todo los paneles alquilados). Se oculta al terminar o con «Ocultar» */
+const lsGet = (k) => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+const lsSet = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (e) { /* sin almacenamiento */ } };
+const simpleOn = () => lsGet('modoSencillo') === '1';
+function firstSteps() {
+  if (!isSuper() || lsGet('pasosOcultos') === '1') return '';
+  const d = S.d, sv = d.servers, LF = d.licFeatures, has = (k) => !Array.isArray(LF) || LF.includes(k), tg = d.settings.notices && d.settings.notices.telegram || {};
+  const kn = sv.length ? [...new Set(sv.map((x) => KIND_NAME[KIND_OF(x)] || 'Emby'))].join(' / ') : 'Emby, Jellyfin o Plex';
+  const steps = [
+    [!!sv.length, '🖥️', 'Conecta tu servidor', `Tu ${esc(kn)}: dirección y clave. Es lo primero.`, 'servidores', 'Conectar'],
+    [!!sv.length && sv.every((x) => !x.ready || x.ready.basico), '📚', 'Elige el contenido', 'En Servidores › «Contenido»: qué bibliotecas ve cada cliente.', 'servidores', 'Elegir'],
+    [d.clients.some((c) => !c.demo), '👤', 'Crea tu primer cliente', 'Nombre, usuario, meses y pantallas. Te da el mensaje para mandarle.', 'nuevo', 'Crear'],
+    [d.clients.some((c) => c.demo), '🎁', 'Crea una demo', 'Una prueba gratis de unas horas, que se apaga sola.', 'demonueva', 'Crear'],
+    ...(has('bot') ? [[!!tg.bot, '🤖', 'Conecta el bot de Telegram', 'Avisos a tus clientes, renovar solos y ayuda 24 h.', 'botcfg', 'Conectar']] : [[!!(d.settings.brand && d.settings.brand.logo), '🎨', 'Pon tu nombre y tu logo', 'Para que el panel y los mensajes sean tuyos.', 'apariencia', 'Poner']]),
+  ];
+  const done = steps.filter((x) => x[0]).length;
+  if (done === steps.length) return '';
+  const pct = Math.round((done / steps.length) * 100), next = steps.findIndex((x) => !x[0]);
+  return `<section class="fsp"><div class="fsp-h"><div><b>🚀 Primeros pasos</b><small>Llevas ${done} de ${steps.length} · en unos minutos lo tienes listo</small></div><button type="button" class="btn sm ghost" data-act="fsp-hide">Ocultar</button></div>
+    <div class="fsp-bar"><i style="width:${pct}%"></i></div>
+    <ol class="fsp-l">${steps.map(([ok, e, t, s, v, b], i) => `<li class="${ok ? 'ok' : i === next ? 'now' : ''}"><span class="fsp-n">${ok ? '✓' : i + 1}</span><div><b>${e} ${t}</b><small>${s}</small></div>${ok ? '<em>Hecho</em>' : `<button type="button" class="btn sm${i === next ? ' primary' : ''}" data-view="${v}">${b}</button>`}</li>`).join('')}</ol>
+    <p class="fsp-f">¿Te pierdes con tantas opciones? <button type="button" class="linkbtn" data-act="simple-toggle">${simpleOn() ? 'Quitar el modo sencillo' : 'Activa el 🧘 modo sencillo'}</button> · <button type="button" class="linkbtn" data-view="guia">Guía completa</button></p></section>`;
+}
 function vResumen() {
   const d = S.d;
   if (noCli()) {
@@ -4094,8 +4133,9 @@ function vResumen() {
   const wRaw = String(d.me.username || d.me.name || ''), wName = wRaw.charAt(0).toUpperCase() + wRaw.slice(1);
   const welcome = `<div class="welcome"><p class="wg">${greet} ${hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙'}</p><h1>Bienvenido, <span>${esc(wName)}</span></h1><span class="wrole r-${d.me.role}">${ROLE[d.me.role] || ''}</span><p class="wl">${phrase}</p></div>`;
   const DS = dashStyle();
-  if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip, dsearch });
-  return welcome + licBanner() + downBox() + secTip + dsearch + hero + quick + review + `
+  const fsp = (simpleOn() && isSuper() ? '<div class="simplebar">🧘<span><b>Modo sencillo:</b> solo ves lo básico (clientes, demos y servidores).</span><button type="button" class="btn sm" data-act="simple-toggle">Ver todo</button></div>' : '') + firstSteps(); // v388: primeros pasos
+  if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip: fsp + secTip, dsearch });
+  return welcome + licBanner() + downBox() + fsp + secTip + dsearch + hero + quick + review + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
     ${sc('active', cnt.active, 'Activas', 'con su contenido', 'check')}
@@ -8475,6 +8515,9 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 388, d: '2026-11-25', items: ['🚀 «Primeros pasos» en el Resumen: 5 pasos con ✅ (conectar el servidor, elegir el contenido, primer cliente, primera demo y el bot) para quien empieza. Se quita solo al terminar o con «Ocultar»', '🧘 Modo sencillo: un toque y el menú se queda solo con lo básico (Resumen, Clientes, Demos, Servidores y Mi cuenta). «Ver todas las opciones» lo devuelve todo. Cada uno lo elige en su navegador'] },
+  { v: 387, d: '2026-11-25', items: ['📺 Bot: a los clientes de Plex, los pasos por aparato (Samsung, Fire TV, móvil…) ya son de Plex: app Plex, iniciar sesión con el código de plex.tv/link, aceptar la invitación y elegir el servidor. Antes salían los de Emby/Moonfin', '🔄 Reiniciar un servidor Plex o Jellyfin desde el panel (con el agente) ya reinicia el servicio correcto, y los avisos dicen Plex o Jellyfin en vez de Emby'] },
+  { v: 386, d: '2026-11-25', items: ['📺 Plex: el mensaje de la cuenta o la demo ya habla de Plex (no de Emby), sin «Dirección» ni «Puerto», con «Cuenta de Plex» y los pasos para empezar (aceptar la invitación, app Plex y plex.tv/link). La guía de calidad es la de Plex', '🛠️ Agente del servidor: la orden se puede volver a pegar si falla (sirve hasta que se conecta), sale «¡Conectado!» en segundos y ya reconoce Plex. Avisa de que solo vale para VPS Linux'] },
   { v: 385, d: '2026-11-24', items: ['🛠️ «Regala una prueba · gana 1 mes» ya no les sale a los clientes con la cuenta caducada (ni en el bot ni en tu asistente de Telegram). Solo lo ven los que están al día'] },
   { v: 384, d: '2026-11-24', items: ['📩 Plex: si a las 24 h un cliente no ha aceptado la invitación, el bot le escribe con los pasos y un botón «Reenvíame la invitación», y a ti te llega el aviso', '🔁 Plex: en la tarjeta del cliente, la etiqueta «Invitación de Plex sin aceptar» ahora es un botón para reenviársela en un toque', '📺 Plex: guía nueva en el bot «Entrar en la tele con un código» (plex.tv/link), sin escribir la contraseña con el mando'] },
   { v: 383, d: '2026-11-24', items: ['💎 Precios del bot ordenados: un solo mensaje «TARIFAS SERVIPARTE», limpio, con cada pantalla y sus meses (12 meses 🏆). Botones claros: «💳 ELEGIR PLAN Y PAGAR», «🎁 PROBAR GRATIS» (solo si aún no la ha hecho) y «🎬 Cómo funciona». Ya no salen dos listas de precios repetidas'] },
@@ -9046,10 +9089,12 @@ async function agLink(id) {
   const s = S.ag.data.servers.find((x) => x.id === id);
   let r; try { r = await api('POST', `/api/servers/${id}/agent/link`, {}); } catch (e) { return toast(e.message, true); }
   showDlg('Instalar el agente en ' + s.name, `<ol class="lsteps">
-      <li>Entra en el <b>VPS donde está este Emby</b> (por SSH o la consola de tu proveedor). Debe ser Ubuntu o Debian.</li>
-      <li>Copia esta orden, pégala y pulsa Enter. Te pedirá la contraseña de sudo si hace falta.</li></ol>
+      <li>Entra en el <b>VPS donde está este servidor</b> (por SSH o la consola de tu proveedor). Debe ser <b>Linux: Ubuntu o Debian</b>.</li>
+      <li>Copia esta orden, pégala y pulsa Enter. Te pedirá la contraseña de sudo si hace falta.</li>
+      <li>En <b>1 minuto</b> como mucho aquí sale «¡Conectado!».</li></ol>
+    <p class="small" style="background:rgba(245,165,36,.1);border:1px solid rgba(245,165,36,.35);border-radius:10px;padding:8px 10px">⚠️ <b>Solo funciona en un VPS Linux.</b> Si tu ${esc(KIND_NAME[KIND_OF(s)] || 'servidor')} está en un ordenador con <b>Windows o Mac</b>, o en un <b>NAS</b>, el agente no se puede instalar. No pasa nada: el resto del panel funciona igual.</p>
     <div class="ltok"><code id="agCmd">${esc(r.command)}</code><button type="button" class="btn sm primary" data-act="ag-copy">${ic('copy')}Copiar</button></div>
-    <p class="small muted">Es <b>de un solo uso</b> y caduca el ${fmtTs(r.expires, true)}. Es privada: no la compartas.</p>
+    <p class="small muted">Si falla, arregla lo que diga y <b>vuelve a pegar la misma orden</b>: sirve hasta que el agente se conecte o hasta el ${fmtTs(r.expires, true)}. Es privada: no la compartas.</p>
     <div class="ag-wait" id="agWait"><span class="bl-sp"></span><span>Esperando a que el agente se conecte…</span></div>`);
   clearInterval(S.ag.wait);
   S.ag.wait = setInterval(async () => {
@@ -10768,7 +10813,22 @@ function fillTpl(key, c, password) {
   };
   const alias = { contrasena: 'contraseña', 'dirección': 'direccion', fecha: 'vence', caducidad: 'vence', vencimiento: 'vence', cliente: 'nombre', user: 'usuario' };
   const txt = tplText(key).replace(/\{([a-záéíóúñ_]+)\}|\[([a-záéíóúñ_]+)\]/gi, (m, a, b) => { let k = String(a || b).toLowerCase(); k = alias[k] || k; return vars[k] !== undefined ? vars[k] : m; });
-  return srv.kind === 'jellyfin' ? txt.replace(/\bEmby\b/g, 'Jellyfin') : txt; // cliente de Jellyfin: el mensaje habla de Jellyfin
+  if (srv.kind === 'plex') return pxTplFix(key, txt, c, srv); // v386: cliente de Plex: su mensaje habla de Plex y con sus pasos
+  return srv.kind === 'jellyfin' ? txt.replace(/\bEmby\b/g, 'Jellyfin') : srv.kind === 'iptv' ? txt.replace(/\bEmby\b/g, 'IPTV') : txt; // cliente de Jellyfin: el mensaje habla de Jellyfin
+}
+/** v386: mensajes para clientes de Plex: sin «Dirección» ni «Puerto» (en Plex no se usan), «Cuenta de Plex» en vez de «Usuario», sus pasos y su guía de calidad */
+function pxTplFix(key, txt, c, srv) {
+  if (key === 'quality') return '📺 Para ver Plex con la mejor calidad y sin cortes:\n1. Abre Plex en tu aparato y entra en Ajustes (el engranaje ⚙️).\n2. Busca «Calidad» o «Calidad de vídeo».\n3. En «Calidad remota» (o «Internet») elige «Original» o la más alta.\nDespués, vuelve a poner el vídeo. Hazlo en cada aparato donde uses Plex.';
+  let t = txt.replace(/\bEmby\b/g, 'Plex').replace(/^[ \t]*(Puerto|Dirección|Direccion)\b[^\n]*\n?/gim, '').replace(/^([ \t]*)Usuario:/gim, '$1Cuenta de Plex:');
+  if (key === 'created' || key === 'demo') {
+    const steps = c.plexNew
+      ? ['✅ Tu cuenta de Plex ya está creada y la invitación aceptada.', '1️⃣ Instala la app «Plex» (gratis) en tu tele o tu móvil', '2️⃣ Entra con tu cuenta de Plex y tu contraseña', '   📺 En la tele: pulsa «Iniciar sesión» y escribe el código que sale en plex.tv/link']
+      : ['1️⃣ Acepta la invitación de Plex que te ha llegado al correo (mira también en Spam)', '2️⃣ Instala la app «Plex» (gratis) en tu tele o tu móvil', '3️⃣ Entra con tu cuenta de Plex', '   📺 En la tele: pulsa «Iniciar sesión» y escribe el código que sale en plex.tv/link'];
+    steps.push(`${c.plexNew ? '3️⃣' : '4️⃣'} Elige el servidor «${srv.name || 'nuestro servidor'}» y ¡a disfrutar! 🍿`);
+    if (!/plex\.tv\/link/i.test(t)) t = t.replace(/\n*(¡Disfruta|Si te gusta)/, '\n\n📲 CÓMO EMPEZAR\n' + steps.join('\n') + '\n\n$1');
+    if (!/plex\.tv\/link/i.test(t)) t += '\n\n📲 CÓMO EMPEZAR\n' + steps.join('\n');
+  }
+  return t;
 }
 /** v243: Telegram convierte en «formato avanzado» (de pago, Premium) las líneas que empiezan por «1.», «•», «-» o «>».
     Al copiar un mensaje se cambian por emojis (1️⃣, ▪️, »): se ve igual de ordenado y se puede mandar sin Premium. No cambia ninguna palabra */
@@ -10913,7 +10973,7 @@ function dMessage(c, password, key) {
     body: `<label class="f">Plantilla<select name="tpl">${options(TPL, key || (c.demo ? 'demo' : 'created'))}</select></label>
       <label class="check"><input type="checkbox" name="guide" checked> Añadir al final la guía para poner la calidad al máximo (en cuentas y demos nuevas)</label>
       ${c.payLink ? `<label class="check"><input type="checkbox" name="pay"${key === 'renewed' ? '' : ' checked'}> Añadir el enlace para pagar y renovar 💳</label>` : ''}
-      ${appHas() ? `<label class="check"><input type="checkbox" name="app"${S.d.settings.app.inMsg !== false ? ' checked' : ''}> Añadir el enlace para descargar la app ${esc(appName())} 📲</label>` : ''}
+      ${appHas() && !['plex', 'iptv'].includes(srv.kind) ? `<label class="check"><input type="checkbox" name="app"${S.d.settings.app.inMsg !== false ? ' checked' : ''}> Añadir el enlace para descargar la app ${esc(appName())} 📲</label>` : ''}
       ${tgLink(c) ? `<label class="check"><input type="checkbox" name="tg"${c.tgLinked ? '' : ' checked'}> Añadir el enlace de Telegram para que reciba los avisos${c.tgLinked ? ' <span class="muted small">(ya lo tiene enlazado)</span>' : ''}</label>` : ''}
       <label class="f">Mensaje (puedes retocarlo antes de copiarlo)<textarea name="msg" rows="13" style="font-family:ui-monospace,Consolas,monospace;font-size:13.5px"></textarea></label>
       ${notes.map((n) => `<p class="muted small" style="margin-bottom:8px">${n}</p>`).join('')}
@@ -11836,6 +11896,8 @@ document.addEventListener('click', (e) => {
     case 'export': dExport(); break;
     case 'exp': runExport(el.dataset.f); break;
     case 'bulk-clear': S.sel.clear(); render(); break;
+    case 'fsp-hide': lsSet('pasosOcultos', '1'); render(); toast('Primeros pasos ocultos. Los tienes en el menú › Guía de inicio rápido'); break; // v388
+    case 'simple-toggle': { const on = !simpleOn(); lsSet('modoSencillo', on ? '1' : ''); if (typeof closeMenu === 'function') closeMenu(); S.view = 'resumen'; render(); toast(on ? '🧘 Modo sencillo: solo lo básico. Para verlo todo, toca «Ver todas las opciones» en el menú' : 'Ya ves todas las opciones'); break; }
     case 'px-resend': if (c) openDlg({ title: '📩 Reenviar la invitación de Plex', submit: 'Reenviar', body: `<p>Se le vuelve a mandar la invitación de Plex a <b>${esc(c.panelName)}</b>, con sus mismas bibliotecas.</p><p class="muted small">Úsalo si dice que no le ha llegado o que la ha borrado. Le llega un email nuevo de Plex${c.tgLinked ? ' y un aviso por el bot' : ''}.</p>`, onSubmit: async () => { const r = await api('POST', `/api/clients/${c.id}/px-resend`, {}); toast(`📩 Invitación reenviada a ${r.to}`); await reload(); } }); break; // v384
     case 'm-notes': if (c) dNotes(c); break;
     case 'm-pass': if (c) dPass(c); break;

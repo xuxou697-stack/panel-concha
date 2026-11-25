@@ -5389,7 +5389,8 @@ Abre el email de Plex y pulsa <b>«Aceptar»</b>. Mira también en Spam 😉` })
     } catch (e) { console.error('Plex (reenviar desde el bot):', e.message); notifyStaff('servers', `⚠️ Plex: ${c.panelName} ha pedido reenviar su invitación y no se ha podido: ${e.message}`); return tg('sendMessage', { chat_id: chat, text: `😕 No he podido reenviarla ahora. Ya hemos avisado y te la mandamos enseguida.${botContact() ? '\n\n' + botContact() : ''}` }).catch(() => {}); }
   }
   if (data.startsWith('gd:') || data === 'pb:pantallas') {
-    const k = data === 'pb:pantallas' ? 'main' : data.slice(3), c = db.clients.find((x) => x.tgChat === chat);
+    let k = data === 'pb:pantallas' ? 'main' : data.slice(3); const c = db.clients.find((x) => x.tgChat === chat);
+    if (/^px/.test(k) && !(c && cliPx(c))) k = 'where'; // v387: guía de Plex a quien no es de Plex: la suya
     if (!['main', 'moon', 'dl', 'jf', 'pxinv', 'pxapp', 'pxlink', 'tvapp', 'login', 'where'].includes(k)) return;
     const gkb = guideKb(k, c), kb6 = data === 'pb:pantallas' ? { inline_keyboard: [[{ text: '📺 Ver y cerrar mis aparatos', callback_data: 'bm:aparatos' }], ...gkb.inline_keyboard, [{ text: '⬅️ Otro problema', callback_data: 'pb:menu' }, { text: '🏠 Menú', callback_data: 'bm:menu' }]] } : gkb; // v356
     return tg('sendMessage', { chat_id: chat, text: guideText(k, c), disable_web_page_preview: true, reply_markup: kb6 });
@@ -9196,7 +9197,23 @@ const sdDevRows = () => { const rows = []; SD_DEV.forEach(([k, t], i) => { if (i
 const sdDevKb = (c, back) => { const rows = []; SD_DEV.forEach(([k, t], i) => { if (i % 2 === 0) rows.push([]); rows[rows.length - 1].push({ text: t, callback_data: 'dv:' + k }); });
   const buy = c && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '🛒 Comprar', url: cpLink(c) } : { text: '💶 Precios', callback_data: 'bm:precios' };
   return { inline_keyboard: [...(back ? [] : rows), ...(back ? [[{ text: '⬅️ Otro aparato', callback_data: 'dv:list' }]] : []), [{ text: '🍿 Novedades', callback_data: 'bm:novedades' }, buy], [{ text: '🏠 Menú', callback_data: 'bm:menu' }]] }; };
+/* v387: pasos por aparato para clientes de Plex (app Plex, iniciar sesión con código y aceptar la invitación) */
+function pxDevText(k, c, s0) {
+  const STORE = { tv: ['📺 <b>SAMSUNG / LG</b>', 'la tienda de apps de la tele (Samsung: «Apps» · LG: «LG Content Store»)'], fire: ['🔥 <b>FIRE TV</b>', 'la tienda de Amazon (la lupa 🔎 del menú)'], atv: ['🤖 <b>ANDROID TV / TV BOX</b>', 'Google Play Store de la tele'],
+    mov: ['📱 <b>MÓVIL / TABLET</b>', 'Play Store (Android) o App Store (iPhone)'], apple: ['🍏 <b>IPHONE / APPLE TV</b>', 'la App Store'], pc: ['💻 <b>ORDENADOR</b>', ''] };
+  const [t, store] = STORE[k] || STORE.tv, tele = ['tv', 'fire', 'atv', 'apple'].includes(k), pend = pxPendingOf(c), st = (n, a, b) => `${n}️⃣ <b>${a}</b>` + (b ? `\n${b}` : '');
+  const L = [`${t} · <b>PLEX</b>`, '', '¡Vamos a preparar tu dispositivo! 🚀', ''];
+  let n = 1;
+  if (pend) { L.push(st(n++, 'Acepta la invitación (1 vez)', 'Busca en tu correo el email de <b>Plex</b> (mira también en Spam) y pulsa «Aceptar».'), ''); }
+  if (k === 'pc') L.push(st(n++, 'Abre Plex en el navegador', 'Entra en 👉 app.plex.tv (o instala «Plex» para Windows o Mac).'), '');
+  else L.push(st(n++, 'Instala la aplicación', `Abre ${store} y busca «<b>Plex</b>». Es gratis.`), '');
+  L.push(st(n++, 'Inicia sesión con tu cuenta de Plex', `👤 Cuenta: <code>${hEsc(c.embyName || '')}</code>` + (c.plexNew && c.password ? `\n🔑 Contraseña: <code>${hEsc(c.password)}</code>` : '') + (tele ? '\n📺 En la tele te sale un <b>código</b>: escríbelo en 👉 plex.tv/link desde el móvil (así no tienes que teclear la contraseña con el mando).' : '')), '');
+  L.push(st(n++, 'Elige nuestro servidor', `En el menú de Plex elige «<b>${hEsc((s0 && s0.name) || 'nuestro servidor')}</b>» y entra en Películas o Series.`), '', st(n, '¡A disfrutar! 🍿', ''));
+  L.push('', '🆘 Si tienes algún problema, toca <b>«🛠️ Ayuda y soporte técnico»</b> en el menú.');
+  return L.join('\n');
+}
 function sdDevText(k, c, guest) {
+  { const sx = db.servers.find((x) => x.id === (c && c.serverId)); if (!guest && sx && sx.kind === 'plex') return pxDevText(k, c, sx); if (!guest && sx && sx.kind === 'iptv') return hEsc(guideText('tvapp', c)); } // v387
   /* v366: formato nuevo: título, pasos con nombre corto en negrita, datos en monoespaciado (sin cita: así se ven más grandes) */
   const s0 = db.servers.find((x) => x.id === c.serverId) || {}, app = kindOf(s0) === 'jellyfin' ? 'Jellyfin' : 'Emby', s = guest ? { ...s0, publicUrl: '' } : s0; // v338: a quien no es cliente no le enseñamos el servidor
   const D = (srv = true) => guest ? ['🌐 Servidor · 👤 Usuario · 🔑 Contraseña', '📌 Puerto: <b>déjalo vacío</b>', '<i>Te los damos al darte de alta o al pedir la prueba gratis 🎁</i>']
@@ -12736,7 +12753,7 @@ route('GET', '/api/agent/install/:one', null, ({ req, params }) => lock(async ()
   const s = db.servers.find((x) => x.agent && x.agent.oneHash === h);
   if (!s || !(s.agent.oneExp > Date.now())) { ipFail(ip); return { __raw: 'echo "La orden de instalación no es válida o ya se usó. Crea una nueva en el panel." >&2; exit 1\n', headers: { 'Content-Type': 'text/plain; charset=utf-8' } }; }
   const token = crypto.randomBytes(32).toString('hex');
-  s.agent = { tokenHash: agentHash(token), since: new Date().toISOString() }; // la orden ya no sirve más
+  s.agent = { ...s.agent, tokenHash: agentHash(token), since: new Date().toISOString() }; // v386: la orden sigue valiendo hasta que el agente se conecta (por si falla y hay que repetir)
   addLog('servidor', null, `Agente instalado en ${s.name} (desde ${ip})`, null);
   saveDb();
   return { __raw: agentInstaller(panelBase(req), token, s.name), headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } };
@@ -12748,6 +12765,7 @@ route('POST', '/api/agent/report', null, ({ req, body }) => {
   const tk = String(req.headers['x-agent-token'] || '');
   const s = /^[a-f0-9]{64}$/.test(tk) ? db.servers.find((x) => x.agent && x.agent.tokenHash === agentHash(tk)) : null;
   if (!s) { ipFail(ip); throw new HttpError(403, 'Agente no reconocido.'); }
+  if (s.agent.oneHash) { delete s.agent.oneHash; delete s.agent.oneExp; } // v386: ya conectado: la orden de instalación deja de servir
   const disks = Array.isArray(body.disks) ? body.disks.slice(0, 8).map((x) => ({ mount: str(x.mount, 80), size: agNum(x.size) || 0, used: agNum(x.used) || 0 })).filter((x) => x.size > 0) : [];
   const smp = {
     at: new Date().toISOString(),
@@ -12800,6 +12818,7 @@ async function powerReady(s, kind) {
     if (ver < 2) throw new Error('Tu agente es antiguo. Pulsa «Reinstalar» en este servidor y ejecuta la orden nueva en el VPS.');
     return 'agent';
   }
+  if (s.kind === 'plex') { if (agentOn && ver >= 3) return 'agent'; throw new Error('Plex solo se puede reiniciar desde el panel con el agente instalado en su VPS Linux. Si no, reinícialo en tu servidor.'); } // v387
   // Emby: primero por su API; si Emby está colgado y el agente es nuevo, el agente reinicia el servicio
   try {
     const info = await emby(s, 'GET', '/System/Info');
@@ -12828,7 +12847,7 @@ async function powerRun(s, kind, by, warn) {
   if (how === 'api') await emby(s, 'POST', '/System/Restart');
   else s.agent.cmd = { cmd: kind === 'vps' ? 'reboot' : 'restart-emby', exp: Date.now() + 5 * 60000 };
   power.set(s.id, { kind, at: Date.now(), by });
-  const what = kind === 'vps' ? 'el VPS' : 'Emby';
+  const what = kind === 'vps' ? 'el VPS' : s.kind === 'plex' ? 'Plex' : s.kind === 'jellyfin' ? 'Jellyfin' : 'Emby'; // v387
   await lock(async () => { addLog('servidor', null, `Reinicio de ${what} en ${s.name}${by ? ' pedido por ' + by : ' (automático)'}${viewers ? ` · había ${viewers} viendo` : ''}`, null); saveDb(); });
   notifyStaff('servers', `🔄 ${by ? by + ' ha reiniciado' : 'Se ha reiniciado'} ${what} en «${s.name}». ${kind === 'vps' ? 'Vuelve en unos minutos.' : 'Vuelve en uno o dos minutos.'}\n${whenTxt()}`);
 }
@@ -12929,8 +12948,9 @@ HOST=$(hostname 2>/dev/null)
 OS=$( (. /etc/os-release 2>/dev/null; echo "$PRETTY_NAME") | tr -d '"\\' )
 set -- $(read_cpu); C1=$1; I1=$2
 set -- $(read_net); R1=$1; T1=$2; S1=$(date +%s)
+W=5
 while true; do
-  sleep 60
+  sleep $W; W=60
   set -- $(read_cpu); C2=$1; I2=$2
   set -- $(read_net); R2=$1; T2=$2; S2=$(date +%s)
   DT=$((S2-S1)); [ "$DT" -le 0 ] && DT=60
@@ -12942,7 +12962,7 @@ while true; do
   LOAD=$(cut -d' ' -f1 /proc/loadavg)
   UPT=$(cut -d. -f1 /proc/uptime)
   DISKS=$(df -P -B1 -x tmpfs -x devtmpfs -x overlay -x squashfs -x efivarfs 2>/dev/null | awk 'NR>1 && $2>1000000000 {printf "%s{\"mount\":\"%s\",\"size\":%s,\"used\":%s}", (n++?",":""), $6, $2, $3}')
-  if pgrep -f -i 'EmbyServer|emby-server|embyserver|jellyfin' >/dev/null 2>&1; then EMBY=true; else EMBY=false; fi
+  if pgrep -f -i 'EmbyServer|emby-server|embyserver|jellyfin|Plex Media Server|plexmediaserver' >/dev/null 2>&1; then EMBY=true; else EMBY=false; fi
   set -- $MEM
   JSON="{\"cpu\":$CPU,\"mem\":$1,\"memTotal\":$2,\"load\":$LOAD,\"cores\":$CORES,\"up\":$UP,\"down\":$DOWN,\"uptime\":$UPT,\"emby\":$EMBY,\"disks\":[$DISKS],\"host\":\"$HOST\",\"os\":\"$OS\",\"ver\":\"4\"}"
   RESP=$(curl -fsS -m 20 -X POST -H 'Content-Type: application/json' -H "X-Agent-Token: $TOKEN" --data "$JSON" "$PANEL/api/agent/report" 2>/dev/null || true)
@@ -12952,7 +12972,8 @@ while true; do
     *'"cmd":"restart-emby"'*) logger -t panel-agente "Reinicio de Emby pedido desde el panel"
       if systemctl list-units --all --type=service 2>/dev/null | grep -q 'emby-server'; then systemctl restart emby-server
       elif systemctl list-units --all --type=service 2>/dev/null | grep -q 'jellyfin'; then systemctl restart jellyfin
-      elif command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' | grep -qiE 'emby|jellyfin'; then docker restart $(docker ps -a --format '{{.Names}}' | grep -iE 'emby|jellyfin' | head -n1)
+      elif systemctl list-units --all --type=service 2>/dev/null | grep -q 'plexmediaserver'; then systemctl restart plexmediaserver
+      elif command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' | grep -qiE 'emby|jellyfin|plex'; then docker restart $(docker ps -a --format '{{.Names}}' | grep -iE 'emby|jellyfin|plex' | head -n1)
       fi ;;
   esac
 done
