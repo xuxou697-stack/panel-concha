@@ -12255,6 +12255,26 @@ route('PUT', '/api/socios/entries/:id/who', SUPER, ({ me, params, body }) => loc
   socSetWho(x, body.who, me.name); saveDb(); return { ok: true };
 }));
 /** Quién ha hecho una demo o una cuenta (solo para saberlo; no es dinero) */
+/* v397: un cobro hecho a mano con Stripe (el tuyo o el de tu socio): se le quita la comisión, y se puede deshacer */
+const socFeeTxt = (v) => v.toFixed(2).replace('.', ',');
+route('PUT', '/api/socios/entries/:id/fee', SUPER, ({ me, params, body }) => lock(async () => {
+  const d = socCfg(), x = d.entries.find((e) => e.id === params.id); if (!x) throw new HttpError(404, 'Ese movimiento ya no existe.');
+  if (x.kind !== 'cobro') throw new HttpError(400, 'Solo se puede en un cobro.');
+  if (body.on) {
+    if (x.feeHand) return { ok: true, fee: x.fee, amount: x.amount };
+    if (/ de Stripe\)$/.test(x.desc || '')) throw new HttpError(400, 'A este cobro ya se le quitó la comisión de Stripe.');
+    const f = feeCfg().stripe, gross = x.amount, fee = socR2(Math.min(gross, gross * f.pct / 100 + f.fix));
+    x.gross = gross; x.fee = fee; x.feeHand = 'stripe'; x.amount = socR2(gross - fee);
+    x.desc = str(String(x.desc || '') + ` (cobrado ${socFeeTxt(gross)} € − ${socFeeTxt(fee)} € de Stripe)`, 160);
+  } else {
+    if (!x.feeHand) return { ok: true, amount: x.amount };
+    x.amount = socR2(x.gross || x.amount + (x.fee || 0)); x.desc = String(x.desc || '').replace(/ \(cobrado [^)]*de Stripe\)$/, '');
+    delete x.gross; delete x.fee; delete x.feeHand;
+  }
+  x.edited = me.name;
+  if (x.sw && d.sw.on && d.sw.key && d.sw.group) swPush(x).catch((er) => { x.swErr = er.message.slice(0, 140); });
+  saveDb(); return { ok: true, fee: x.fee || 0, amount: x.amount };
+}));
 route('POST', '/api/socios/madeby', SUPER, ({ params, body }) => lock(async () => {
   const c = db.clients.find((x) => x.id === Number(body.clientId)); if (!c) throw new HttpError(404, 'Esa cuenta ya no existe.');
   if (!socMember(body.who)) throw new HttpError(400, 'Elige quién.');

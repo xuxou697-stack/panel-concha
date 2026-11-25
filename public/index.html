@@ -2509,7 +2509,7 @@ dialog form h2:empty{display:none}.mlist3{gap:16px}
 .tc-hit{position:absolute;inset:0;border:0;background:none;cursor:pointer;border-radius:18px}.tc-r>*:not(.tc-hit){position:relative;pointer-events:none}.tc-r .tc-tools,.tc-r .so-askb,.tc-r .tc-a .btn{pointer-events:auto}
 .tc-ic{font-size:30px;flex:none;width:40px;text-align:center}.tc-t{flex:1;min-width:0}.tc-t b{display:block;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tc-t small{color:var(--muted);font-size:14px}.tc-t small b{display:inline;font-size:inherit;color:var(--text)}
 .tc-a{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px}.tc-a>b{font-size:18px}.tc-r.cobro .tc-a>b{color:#22c55e}.tc-r.gasto .tc-a>b{color:#f87171}
-.tc-tools{display:flex;gap:4px}.tc-tools button{border:1px solid var(--line);background:var(--raised);border-radius:9px;padding:3px 7px;font-size:13px;cursor:pointer;opacity:.75}.tc-tools button:hover{opacity:1}
+.tc-tools{display:flex;gap:4px}.tc-tools .so-fee{opacity:.9}.tc-tools .so-fee.on{background:#635bff;border-color:#635bff;color:#fff;opacity:1;font-weight:700;font-size:12px}.tc-tools button{border:1px solid var(--line);background:var(--raised);border-radius:9px;padding:3px 7px;font-size:13px;cursor:pointer;opacity:.75}.tc-tools button:hover{opacity:1}
 .tc-r.ask{background:color-mix(in srgb,#f59e0b 8%,var(--surface))}
 .tc-big{display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;background:var(--surface);border:1px solid var(--line);margin-bottom:10px}.tc-bi{font-size:40px;flex:none}.tc-big>div{flex:1;min-width:0}.tc-big b{display:block;font-size:20px}.tc-big small{color:var(--muted);font-size:14px}
 .tc-big.owe{border-color:color-mix(in srgb,#f87171 40%,transparent)}.tc-big.get{border-color:color-mix(in srgb,#22c55e 40%,transparent)}.tc-big.ok{border-color:color-mix(in srgb,#22c55e 40%,transparent)}
@@ -2802,6 +2802,8 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 .iv-tg{background:#0e1621;border-radius:14px;padding:12px;color:#e9eef3;max-width:380px;margin:0 auto}.iv-tg>img{display:block;width:100%;border-radius:12px 12px 0 0}.iv-bub{background:#182533;border-radius:0 0 12px 12px;padding:10px 13px;font-size:14px;line-height:1.5}.iv-tg>.iv-bub:first-child{border-radius:12px}.iv-bub code{background:#0e1621;padding:1px 5px;border-radius:5px}
 .iv-kb{display:grid;gap:4px;margin-top:4px}.iv-kb span{background:rgba(43,82,120,.75);border-radius:8px;text-align:center;padding:8px;font-size:13.5px}
 .cv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.cv-k{margin-top:12px}.cv-k h4{margin:0 0 6px;font-size:14px}.cv-l{display:grid;grid-template-columns:1fr auto;gap:5px 10px;align-items:center;padding:9px 11px;border-radius:10px;background:color-mix(in srgb,var(--text) 5%,transparent);margin-bottom:6px}.cv-l>span{font-size:13.5px}.cv-l .gr-bar,.cv-i{grid-column:1/-1}.cv-p{font-size:18px}.cv-i{color:var(--muted);font-size:12px}.cv-l.none small{color:var(--muted);font-size:12px}.cv-big{display:flex;align-items:center;gap:14px;margin:4px 0 6px}.cv-big b{font-size:34px;line-height:1;color:var(--brand,#8b5cf6);white-space:nowrap}.cv-big b small{font-size:16px;font-weight:600}.cv-big span{font-size:14px}.cv-big span small{color:var(--muted);font-size:12px}
+.so-feet{color:#8b84ff!important;font-size:12px}
+.ska-fee{display:flex;align-items:center;gap:10px;margin:14px auto 4px;padding:11px 14px;border-radius:13px;border:1px solid var(--line);background:color-mix(in srgb,#635bff 10%,transparent);cursor:pointer;max-width:340px;text-align:left;font-size:14px}.ska-fee input{width:20px;height:20px;accent-color:#635bff;flex:none}.ska-fee small{color:var(--muted)}
 .so-pg{display:grid;gap:6px;margin-bottom:12px}.so-pg div{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;padding:9px 12px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.so-pg span{color:var(--muted);font-size:12.5px}.so-pg em{font-style:normal;font-weight:700}.so-pg i{grid-column:1/-1;font-style:normal;font-size:12px;color:#22c55e}.so-xl{width:100%;justify-content:center;margin-top:4px}
 .iv-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.iv-chip{border:1px solid var(--line,rgba(127,127,127,.25));background:transparent;color:var(--text);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer}.iv-chip.on{background:var(--accent,#3b82f6);border-color:transparent;color:#fff}
 .iv-fr li.iv-li{grid-template-columns:1fr auto;cursor:pointer;gap:6px 10px}.iv-fr li.iv-li:hover{background:color-mix(in srgb,var(--text) 9%,transparent)}.iv-who{display:flex;flex-direction:column;min-width:0}.iv-who small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis}.iv-tag{align-self:start;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}.iv-g{background:#f59e0b22;color:#f59e0b}.iv-p{background:#22c55e22;color:#22c55e}.iv-x{background:#94a3b822;color:var(--muted)}.iv-gifts{grid-column:1/-1;display:flex;flex-direction:column;gap:2px;font-size:12.5px}.iv-gifts span{color:var(--text)}
@@ -3862,6 +3864,7 @@ function socAsk(r, what) {
     dlgForm.innerHTML = `<div class="ska"><div class="ska-ok"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M14 27l8 8 16-17"/></svg></div>
       <h2>${title}</h2><p class="ska-q">${q}</p>${ask && ask.desc ? `<p class="ska-d">${esc(ask.desc)}</p>` : ''}
       <div class="ska-who">${ms.map((m, i) => `<button type="button" class="ska-b" data-who="${m.id}" style="animation-delay:${0.25 + i * 0.08}s"><i>${esc(m.name.slice(0, 1))}</i><b>${esc(m.name)}</b></button>`).join('')}</div>
+      ${ask && what !== 'demo' ? `<label class="ska-fee"><input type="checkbox" id="skaFee"><span>💳 Lo ha cobrado con <b>Stripe</b> <small>(quitar la comisión)</small></span></label>` : ''}
       <button type="button" class="ska-later" data-who="">Ahora no${ask ? ' (te lo pregunto por Telegram)' : ''}</button></div>`;
     if (!dlg.open) { dlg.showModal(); navDlgOpened(); }
     setTimeout(() => { if (document.activeElement && dlgForm.contains(document.activeElement)) document.activeElement.blur(); }, 0);
@@ -3873,9 +3876,10 @@ function socAsk(r, what) {
         b.classList.add('on');
         try {
           if (ask) await api('PUT', `/api/socios/entries/${ask.id}/who`, { who });
+          const fz = ask && document.getElementById('skaFee') && document.getElementById('skaFee').checked ? await api('PUT', `/api/socios/entries/${ask.id}/fee`, { on: true }) : null; /* v397 */
           if (made && r.id) await api('POST', '/api/socios/madeby', { clientId: r.id, who });
           const nm = (ms.find((m) => m.id === who) || {}).name;
-          toast(ask ? `📒 ${eur(ask.amount)} para ${nm}` : `👍 Hecho por ${nm}`);
+          toast(ask ? (fz ? `📒 ${eur(fz.amount)} para ${nm} (−${eur(fz.fee)} de Stripe)` : `📒 ${eur(ask.amount)} para ${nm}`) : `👍 Hecho por ${nm}`);
         } catch (er) { toast(er.message, true); }
       }
       if (dlg.open) dlg.close();
@@ -8570,6 +8574,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 397, d: '2026-11-25', items: ['💳 Socios: si un cobro a mano se hizo con Stripe (el tuyo o el de tu socio), toca 💳 al lado del precio y se le quita la comisión, igual que a los pagos online. Se puede deshacer', '💳 Al crear o renovar una cuenta, en «¿Quién ha cobrado?» hay una casilla «Lo ha cobrado con Stripe» que quita la comisión directamente'] },
   { v: 396, d: '2026-11-25', items: ['🕊️ Socios › Saldos: ves la última vez que estuvisteis en paz, los pagos entre vosotros, y un botón para descargar todo para Excel (cada movimiento con el saldo de cada uno y cuándo quedasteis en paz)'] },
   { v: 395, d: '2026-11-25', items: ['🔒 Invita a un amigo: solo pueden invitar los clientes que ya han pagado alguna vez. Los que tienen el mes gratis (Black Friday) no ven el botón hasta que paguen, y si alguien usa su código no hay regalo. Así nadie puede encadenar meses gratis con cuentas falsas'] },
   { v: 394, d: '2026-11-25', items: ['🤝 Invita a un amigo: la lista de amigos dice qué recibió cada uno, qué recibió quien le invitó y si ya paga, con filtros (con regalo, ya pagan, sin pagar). Tocas un nombre y se abre su ficha', '⏳ Aviso solo para ti cuando a un amigo se le acaba su mes gratis y todavía no ha pagado (al cliente no se le manda nada)', '🔴 Si un servidor se cae, el cliente que abre el bot ve «ya lo sabemos y lo estamos arreglando», y cuando vuelve le llega «✅ Ya funciona» (solo a los que preguntaron)', '📈 Crecer: cuántas pruebas gratis y meses gratis acaban pagando, por plataforma (Emby, Jellyfin, Plex)', '🛠️ Plex: el recordatorio de invitación sin aceptar (24 h) ya sale de verdad'] },
@@ -9341,14 +9346,16 @@ function vSocios() {
   const dayTxt = (k) => (k === t0 ? 'Hoy' : k === t1 ? 'Ayer' : new Date(k + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }));
   const byDay = {};
   for (const x of d.entries) (byDay[dayKey(x)] = byDay[dayKey(x)] || []).push(x);
-  const tools = (x) => `<span class="tc-tools"><button type="button" data-act="so-more" data-id="${x.id}" title="Modificar">✏️</button><button type="button" data-act="so-del" data-id="${x.id}" title="Eliminar">🗑️</button></span>`;
+  const feeB = (x) => (x.kind !== 'cobro' || x.ask || (!x.feeHand && / de Stripe\)$/.test(x.desc || '')) ? '' /* v397: 💳 cobrado con Stripe → quita la comisión */
+    : `<button type="button" class="so-fee${x.feeHand ? ' on' : ''}" data-act="so-fee" data-id="${x.id}" data-on="${x.feeHand ? '' : '1'}" title="${x.feeHand ? 'Quitar: no fue con Stripe' : 'Lo cobró con Stripe: quitar la comisión'}">💳 Stripe${x.feeHand ? ' ✓' : ''}</button>`);
+  const tools = (x) => `<span class="tc-tools">${feeB(x)}<button type="button" data-act="so-more" data-id="${x.id}" title="Modificar">✏️</button><button type="button" data-act="so-del" data-id="${x.id}" title="Eliminar">🗑️</button></span>`;
   const row = (x) => {
     const [ico0, src] = x.kind === 'pago' ? ['🔁', 'Entre socios'] : SO_SRC[x.src] || SO_SRC.manual, ico = x.cat || (x.kind === 'cobro' ? '💰' : ico0);
     const only = Array.isArray(x.split) && x.split.length && x.kind !== 'pago' ? ` · solo ${x.split.map(soName).map(esc).join(' y ')}` : '';
     if (x.ask) return `<div class="tc-r ask"><span class="tc-ic">❓</span><div class="tc-t"><b>${esc(x.desc || src)}</b><small>¿Quién lo ha cobrado?</small><span class="so-askb">${cfg.members.map((m) => `<button type="button" class="sx-mini" data-act="so-who" data-id="${x.id}" data-k="${m.id}"><i>${esc(m.name.slice(0, 1))}</i>${esc(m.name)}</button>`).join('')}</span></div><div class="tc-a"><b>${eur(x.amount)}</b>${tools(x)}</div></div>`;
     const who = x.kind === 'pago' ? `<b>${esc(soName(x.who))}</b> → <b>${esc(soName(x.to))}</b>` : x.who === '*' ? `${x.kind === 'gasto' ? 'Pagado' : 'Cobrado'} <b>entre ${S.so.data.cfg.members.length > 2 ? 'todos' : 'los dos'}</b>` : `${x.kind === 'gasto' ? 'Pagado por' : 'Recibido por'} <b>${esc(soName(x.who))}</b>`;
     return `<div class="tc-r ${x.kind}"><button type="button" class="tc-hit" data-act="so-more" data-id="${x.id}" aria-label="Modificar"></button><span class="tc-ic">${ico}</span>
-      <div class="tc-t"><b>${esc(x.desc || src)}${x.photo ? ' 📎' : ''}</b><small>${who}${only}</small></div>
+      <div class="tc-t"><b>${esc((x.desc || src).replace(/ \(cobrado [^)]*de Stripe\)$/, ''))}${x.photo ? ' 📎' : ''}</b><small>${who}${only}</small>${(() => { const m = / \(cobrado ([\d.,]+) € − ([\d.,]+) € de Stripe\)$/.exec(x.desc || ''); return m ? `<small class="so-feet">💳 Stripe: ${m[1]} € − ${m[2]} € de comisión</small>` : ''; })()}</div>
       <div class="tc-a"><b>${x.kind === 'gasto' ? '−' : x.kind === 'pago' ? '' : '+'}${eur(x.amount)}</b>${tools(x)}</div></div>`;
   };
   const list = d.entries.length ? Object.keys(byDay).sort().reverse().map((k) => `<h3 class="tc-day">${esc(dayTxt(k))}</h3>${byDay[k].map(row).join('')}`).join('')
@@ -11745,6 +11752,8 @@ document.addEventListener('click', (e) => {
     dConfirm(`¿Tú eres ${esc(m.name)}?`, `Desde ahora «Yo» será <b>${esc(m.name)}</b>: verás «Debes» o «Te debe» desde su lado y lo que apuntes tú irá a su nombre. Tu Telegram también pasa a ser el de ${esc(m.name)} (para los pagos que confirmes desde ahí). Las cuentas no cambian.`, `Sí, soy ${m.name}`, async () => { await api('PUT', '/api/socios/me', { member: k, chat: true }); S.so.data = null; await loadSo(); }, `Hecho: eres ${m.name}`); return; }
   if (a === 'so-tab') { S.so.tab = el.dataset.k; render(); return; }
   if (a === 'so-csv') { soCsv(); return; } /* v396 */
+  if (a === 'so-fee') { const on = !!el.dataset.on, go = () => api('PUT', `/api/socios/entries/${el.dataset.id}/fee`, { on }).then((r) => { toast(on ? `💳 Comisión de Stripe quitada: −${eur(r.fee)} · queda ${eur(r.amount)}` : '↩️ Comisión devuelta'); loadSo(); }, (x) => toast(x.message, true)); /* v397 */
+    if (on) dConfirm('💳 ¿Cobrado con Stripe?', 'Se le quita la comisión de Stripe (la misma que a tus pagos online) y queda apuntado lo que llega de verdad. Lo puedes deshacer tocando otra vez.', 'Sí, quitar la comisión', go); else go(); return; }
   if (a === 'so-xpay') { soExpPay(+el.dataset.id); return; }
   if (a === 'so-cfg') { soCfgDlg(); return; }
   if (a === 'so-sw') { if (dlg.open) dlg.close(); soSwDlg(); return; }
