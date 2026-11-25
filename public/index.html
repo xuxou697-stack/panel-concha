@@ -2829,6 +2829,7 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 .fsp-l li.ok{opacity:.65}.fsp-l li.ok .fsp-n{background:#22c55e;color:#04130a}.fsp-l li.now{border-color:rgba(124,92,255,.6);background:rgba(124,92,255,.1)}.fsp-l li.now .fsp-n{background:#7c5cff;color:#fff}
 .fsp-l em{font-style:normal;color:#22c55e;font-weight:700;font-size:12.5px}.fsp-f{margin:12px 0 0;font-size:13px;color:var(--muted)}
 .simplebar{display:flex;align-items:center;gap:8px;margin:0 0 14px;padding:10px 14px;border-radius:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);font-size:13.5px}.simplebar span{flex:1}
+.fee-g{display:grid;gap:8px}.fee-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.fee-r b{min-width:170px;font-size:14px}@media(max-width:560px){.fee-r b{min-width:100%}}
 </style>
 </head>
 <body>
@@ -3633,19 +3634,20 @@ function render() {
       <div class="dfoot" style="justify-content:flex-start"><button class="btn primary" data-view="cuentas" data-filter="all">Ir a Clientes</button>${S.view !== 'resumen' ? '<button class="btn" data-view="resumen">Ir al Resumen</button>' : ''}</div></div>`;
   }
   document.querySelectorAll('.brand .sub').forEach((x) => { if (/\b(Emby|Jellyfin|Plex)\b/.test(x.textContent)) x.textContent = x.textContent.replace(/\b(Emby|Jellyfin|Plex)\b/g, KIND_NAME[kindTab()]); });
-  if ((S.view === 'pagos' || S.view === 'creditos') && !S.pay && !S.payBusy) loadPay();
-  if (S.view === 'seguridad' && !S.sec && !S.secBusy) loadSec();
-  if (S.view === 'equipodel' && !S.utr && !S.utrBusy) loadUtr();
-  if (S.view === 'copias' && !S.bk && !S.bkBusy) loadBk();
-  if (S.view === 'uso' && !S.uso && !S.usoBusy) loadUso();
-  if (S.view === 'calidad' && !S.qg.data && !S.qg.busy) loadQuality();
+  if ((S.view === 'pagos' || S.view === 'creditos') && (!S.pay || Date.now() - (S.payAt || 0) > 60000) && !S.payBusy) loadPay(); // v389: precios siempre al día (antes se quedaban los de cuando se abrió el panel)
+  if (S.view === 'seguridad' && (!S.sec || Date.now() - (S.secAt || 0) > 60000) && !S.secBusy) { S.secAt = Date.now(); loadSec(); } // v390
+  if (S.view === 'equipodel' && (!S.utr || Date.now() - (S.utrAt || 0) > 60000) && !S.utrBusy) { S.utrAt = Date.now(); loadUtr(); } // v390
+  if (S.view === 'copias' && (!S.bk || Date.now() - (S.bkAt || 0) > 60000) && !S.bkBusy) { S.bkAt = Date.now(); loadBk(); } // v390
+  if (S.view === 'uso' && (!S.uso || Date.now() - (S.usoAt || 0) > 60000) && !S.usoBusy) { S.usoAt = Date.now(); loadUso(); } // v390
+  if (S.view === 'calidad' && (!S.qg.data || Date.now() - (S.qgAt || 0) > 60000) && !S.qg.busy) { S.qgAt = Date.now(); loadQuality(); } // v390
   if (S.view === 'srvficha') sfAfterRender();
   if (S.view === 'cficha' && !S.cf.hist && !S.cf.busy) loadCf();
   if (S.view === 'peticiones' && !S.rqBusy && (!S.rq || Date.now() - S.rqAt > 20000)) loadRq();
   if (S.view === 'cobrocli' && !S.cpBusy && (!S.cp || Date.now() - S.cpAt > 30000)) loadCp();
   instBanner(); newsDots();
   if (S.view === 'avisotv') { tvPreview(); const f = $('#tvForm'); if (f) { f.oninput = tvPreview; f.onchange = (e) => { if (e.target.name === 'use') { S.tv.own = e.target.value === 'mine'; f.querySelector('.tv-form').disabled = !S.tv.own; } }; } }
-  if (S.view === 'ingresos' && !S.ing && !S.ingBusy) loadIng();
+  if (S.view === 'ingresos' && (!S.ing || Date.now() - (S.ingAt || 0) > 60000) && !S.ingBusy) { S.ingAt = Date.now(); loadIng(); } // v390
+  if (S.view === 'ingresos') feeWire(); // v392
   if (S.view === 'inactivos' && S.d.servers.length && Date.now() - S.seenAt > 60000) loadSeen();
   if (S.view === 'monitor') { if (!S.mon.data) loadMon(); S.mon.left = S.mon.every; S.liveTimer = setInterval(monTick, 1000); }
   if (S.view === 'directo') { loadLive(); S.liveTimer = setInterval(loadLive, (S.d.settings.liveSec || 15) * 1000); }
@@ -3665,9 +3667,9 @@ function render() {
       + tab('data-view="calendario"', 'calendar', 'Calendario', S.view === 'calendario')
       + tab('data-view="resumen"', 'grid', 'Resumen', S.view === 'resumen'));
   $('#tabbar').classList.toggle('t6', !noCli());
-  if (S.view === 'auditoria' && !S.audit && !S.auditBusy) loadAudit();
-  if (S.view === 'logs' && !S.logs && !S.logsBusy) loadLogs();
-  if (S.view === 'accesos' && !S.acc.data && !S.acc.busy) loadAccess();
+  if (S.view === 'auditoria' && (!S.audit || Date.now() - (S.auditAt || 0) > 60000) && !S.auditBusy) { S.auditAt = Date.now(); loadAudit(); } // v390
+  if (S.view === 'logs' && (!S.logs || Date.now() - (S.logsAt || 0) > 60000) && !S.logsBusy) { S.logsAt = Date.now(); loadLogs(); } // v390
+  if (S.view === 'accesos' && (!S.acc.data || Date.now() - (S.accAt || 0) > 60000) && !S.acc.busy) { S.accAt = Date.now(); loadAccess(); } // v390
   if (S.view === 'compartidas' && !S.sh.busy && (!S.sh.data || Date.now() - S.sh.at > 60000)) loadShared();
   if (S.view === 'seguimiento' && !S.fu.busy && (!S.fu.data || Date.now() - S.fu.at > 30000)) loadFollow();
   if (S.view === 'mensajecli') bcRefresh();
@@ -4133,7 +4135,8 @@ function vResumen() {
   const wRaw = String(d.me.username || d.me.name || ''), wName = wRaw.charAt(0).toUpperCase() + wRaw.slice(1);
   const welcome = `<div class="welcome"><p class="wg">${greet} ${hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙'}</p><h1>Bienvenido, <span>${esc(wName)}</span></h1><span class="wrole r-${d.me.role}">${ROLE[d.me.role] || ''}</span><p class="wl">${phrase}</p></div>`;
   const DS = dashStyle();
-  const fsp = (simpleOn() && isSuper() ? '<div class="simplebar">🧘<span><b>Modo sencillo:</b> solo ves lo básico (clientes, demos y servidores).</span><button type="button" class="btn sm" data-act="simple-toggle">Ver todo</button></div>' : '') + firstSteps(); // v388: primeros pasos
+  const upd = S.d.licUpdate ? `<div class="simplebar" style="background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.35)">🆕<span><b>Hay una versión nueva del panel (v${S.d.licUpdate.latest})</b> con mejoras y arreglos. La tuya es la v${S.d.licUpdate.mine || '?'}. Pídele a tu proveedor que te lo actualice.</span></div>` : ''; // v391
+  const fsp = upd + (simpleOn() && isSuper() ? '<div class="simplebar">🧘<span><b>Modo sencillo:</b> solo ves lo básico (clientes, demos y servidores).</span><button type="button" class="btn sm" data-act="simple-toggle">Ver todo</button></div>' : '') + firstSteps(); // v388: primeros pasos
   if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip: fsp + secTip, dsearch });
   return welcome + licBanner() + downBox() + fsp + secTip + dsearch + hero + quick + review + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
@@ -6259,6 +6262,18 @@ async function loadIng() {
   S.ingBusy = false;
   if (S.view === 'ingresos') render();
 }
+/* v392: comisiones de cobro: cuánto se queda Stripe/PayPal/cripto y cuánto te llega de verdad */
+function feeHtml(x, cur, last) {
+  if (!isSuper() || !x.fees) return '';
+  const f = x.fees, on = f.on, fi = (k, l) => `<div class="fee-r"><b>${l}</b><span class="pz-money sm"><input name="${k}p" type="number" min="0" max="30" step="0.01" value="${f[k].pct}" inputmode="decimal"><em>%</em></span><span>+</span><span class="pz-money sm"><input name="${k}f" type="number" min="0" max="10" step="0.01" value="${f[k].fix}" inputmode="decimal"><em>€</em></span></div>`;
+  return `<section class="panel pad" style="margin:14px 0"><h3 style="margin:0 0 6px">💳 Comisiones de cobro</h3>
+    <div class="ktiles" style="margin:8px 0">${'<div class="ktile" style="--c:#38bdf8"><b>' + cur(last.online) + '</b><span>cobrado online este mes</span></div><div class="ktile" style="--c:#f0616d"><b>− ' + cur(last.fees) + '</b><span>comisiones (Stripe, PayPal…)</span></div><div class="ktile" style="--c:#19c37d"><b>' + cur((last.online || 0) - (last.fees || 0)) + '</b><span>te llega de verdad</span></div>'}</div>
+    <form id="feeForm"><label class="check"><input type="checkbox" name="on"${on ? ' checked' : ''}><span>Restar las comisiones en <b>Socios</b> (se apunta lo que llega de verdad)</span></label>
+      <p class="small muted" style="margin:6px 0 10px">💡 <b>Stripe:</b> el panel le pregunta a Stripe la comisión <b>exacta</b> de cada pago (con el cambio de moneda). Estos números son solo la estimación mientras llega la buena, y la de PayPal y cripto. El <b>Bizum por Stripe</b> también cuenta: lleva su comisión de Stripe y se resta igual. El Bizum o efectivo apuntado a mano no tiene comisión.</p>
+      <div class="fee-g">${fi('stripe', 'Stripe')}${fi('paypal', 'PayPal')}${fi('nowpay', 'Cripto (NOWPayments)')}</div>
+      <button class="btn primary sm" type="submit" style="margin-top:10px">💾 Guardar comisiones</button></form></section>`;
+}
+function feeWire() { const f = $('#feeForm'); if (!f) return; f.onsubmit = async (e) => { e.preventDefault(); const g = (n) => f.elements[n].value; try { await api('PUT', '/api/pay-fees', { on: f.elements.on.checked, stripe: { pct: g('stripep'), fix: g('stripef') }, paypal: { pct: g('paypalp'), fix: g('paypalf') }, nowpay: { pct: g('nowpayp'), fix: g('nowpayf') } }); toast('💳 Comisiones guardadas'); S.ing = null; render(); } catch (x) { toast(x.message, true); } }; }
 function vIngresos() {
   const sub = 'Créditos vendidos a tus vendedores, cuentas nuevas y renovaciones de cada mes.';
   const x = S.ing;
@@ -6272,6 +6287,7 @@ function vIngresos() {
   return head('Informe de ingresos', sub) + `
     <div class="ktiles">${k(cur(last.money), 'ingresos este mes', '#19c37d', 'wallet', diffP(last.money, prev.money))}${k(plural(last.sold, 'crédito', 'créditos'), 'vendidos este mes', '#3fa9f5', 'coins', diffP(last.sold, prev.sold))}
       ${k(last.alta + last.renovacion, `${last.alta} nuevas · ${last.renovacion} renovaciones este mes`, '#a46bff', 'userplus')}${k(x.pending, 'cobros pendientes', '#f0616d', 'alert', x.pending ? '<button class="lnk" data-view="cobros">Ver la lista</button>' : '')}</div>
+    ${feeHtml(x, cur, last)}
     <div class="ugrid">
       <section class="panel pad"><h2>Ingresos por mes</h2><p class="muted small">Créditos vendidos a tus vendedores × su precio por crédito. Últimos 12 meses: <b>${cur(yearMoney)}</b> (${plural(yearSold, 'crédito', 'créditos')}).</p>
         ${colChart(M.map((r) => ({ label: mshort(r.m), v: r.money, tip: `${mlab(r.m)} · ${cur(r.money)} · ${r.sold} créditos` })), '#19c37d')}</section>
@@ -6468,7 +6484,7 @@ function qsGo(i) {
 /* ---------- Comprar créditos online ---------- */
 async function loadPay() {
   S.payBusy = true;
-  try { S.pay = await api('GET', '/api/pay'); } catch (e) { S.pay = { error: e.message, methods: [], orders: [], packs: [] }; }
+  try { S.pay = await api('GET', '/api/pay'); S.payAt = Date.now(); } catch (e) { S.pay = { error: e.message, methods: [], orders: [], packs: [] }; }
   S.payBusy = false;
   if (S.view === 'pagos' || S.view === 'creditos') render();
 }
@@ -7550,6 +7566,7 @@ function vPrecios2() {
       <div class="pz-tiers">${rows.map((r, i) => `<div class="pz-tier"><span class="pz-tn">${i + 1}</span><span>Desde</span><input name="tfrom" type="number" min="1" step="1" value="${r.from || ''}" placeholder="${i === 0 ? '1' : i === 1 ? '100' : '500'}" aria-label="Desde cuántos créditos"><span>créditos</span><b>→</b><span class="pz-money sm"><input name="tprice" type="number" min="0" step="0.01" value="${r.price || ''}" placeholder="${i === 0 ? '3,00' : i === 1 ? '2,50' : '2,00'}" aria-label="Precio de cada crédito" inputmode="decimal"><em>€</em></span></div>`).join('')}</div>
       <p class="tr-prev pz-stairs" id="tierPrev"></p>
       <p class="pz-hint">Ejemplo: «Desde 1 → 3 €» y «Desde 100 → 2,50 €». Quien compra 50 paga 150 €; quien compra 100 paga 250 €. Si un vendedor tiene precio propio en su ficha, se usa el suyo.</p>
+      ${(() => { const own = S.d.users.filter((u) => (u.role === 'reseller' || u.role === 'sub') && Number(u.creditPrice) > 0); return own.length ? `<div class="warnbox" style="margin:8px 0 12px">⚠️ <b>${own.length === 1 ? 'Este vendedor tiene' : 'Estos vendedores tienen'} precio propio</b> y no usa${own.length === 1 ? '' : 'n'} tus precios por cantidad:<div style="display:grid;gap:6px;margin-top:8px">${own.map((u) => `<div style="display:flex;align-items:center;gap:10px"><span style="flex:1"><b>${esc(u.name || u.username)}</b> · ${eur(u.creditPrice)} por crédito</span><button type="button" class="btn sm" data-act="own-price-off" data-id="${u.id}">Quitar precio propio</button></div>`).join('')}</div></div>` : ''; })()} <!-- v391 -->
       <div class="pz-acts"><button class="btn primary" type="submit">💾 Guardar precio del crédito</button></div>
     </form></section>`;
   const PCOL = ['#38bdf8', '#a78bfa', '#f472b6', '#fbbf24', '#34d399', '#fb923c'];
@@ -8515,6 +8532,11 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 393, d: '2026-11-25', items: ['💳 Bizum por Stripe: el panel reconoce cuando el cliente paga con Bizum en la página de Stripe, lo apunta en Socios como «Bizum (Stripe)» y le resta su comisión real, igual que a la tarjeta'] },
+  { v: 392, d: '2026-11-25', items: ['💳 Comisiones de cobro: en Socios ya se apunta lo que te llega de verdad (lo cobrado menos la comisión). Con Stripe, el panel le pregunta a Stripe la comisión exacta de cada pago, con su cambio de moneda. En Ingresos ves «cobrado online», «comisiones» y «te llega de verdad», y puedes ajustar la estimación de Stripe, PayPal y cripto'] },
+  { v: 391, d: '2026-11-25', items: ['🆕 Paneles alquilados: si no tienen la última versión, les sale un aviso para que la actualicen. En tus Licencias ves qué versión tiene cada uno («✅ al día» o «⚠️ le faltan X versiones») y un aviso con los que van atrasados', '⚠️ Precios del crédito: aviso con los vendedores que tienen precio propio (y no usan tus precios por cantidad), con un botón para quitárselo en un toque'] },
+  { v: 390, d: '2026-11-25', items: ['🛠️ Revisado todo el panel: 9 pantallas más que se quedaban con los datos de cuando se abrieron ahora se actualizan solas al entrar (Ingresos, Copias de seguridad, Uso, Calidad, Seguridad, Accesos, Auditoría, Registros y Equipo borrado)'] },
+  { v: 389, d: '2026-11-25', items: ['🛠️ Comprar créditos: los precios y paquetes se vuelven a cargar cada vez que el vendedor entra en la página. Antes, si cambiabas los precios con su panel abierto, seguía viendo los antiguos hasta recargar (al pagar ya se cobraba el precio bueno)'] },
   { v: 388, d: '2026-11-25', items: ['🚀 «Primeros pasos» en el Resumen: 5 pasos con ✅ (conectar el servidor, elegir el contenido, primer cliente, primera demo y el bot) para quien empieza. Se quita solo al terminar o con «Ocultar»', '🧘 Modo sencillo: un toque y el menú se queda solo con lo básico (Resumen, Clientes, Demos, Servidores y Mi cuenta). «Ver todas las opciones» lo devuelve todo. Cada uno lo elige en su navegador'] },
   { v: 387, d: '2026-11-25', items: ['📺 Bot: a los clientes de Plex, los pasos por aparato (Samsung, Fire TV, móvil…) ya son de Plex: app Plex, iniciar sesión con el código de plex.tv/link, aceptar la invitación y elegir el servidor. Antes salían los de Emby/Moonfin', '🔄 Reiniciar un servidor Plex o Jellyfin desde el panel (con el agente) ya reinicia el servicio correcto, y los avisos dicen Plex o Jellyfin en vez de Emby'] },
   { v: 386, d: '2026-11-25', items: ['📺 Plex: el mensaje de la cuenta o la demo ya habla de Plex (no de Emby), sin «Dirección» ni «Puerto», con «Cuenta de Plex» y los pasos para empezar (aceptar la invitación, app Plex y plex.tv/link). La guía de calidad es la de Plex', '🛠️ Agente del servidor: la orden se puede volver a pegar si falla (sirve hasta que se conecta), sale «¡Conectado!» en segundos y ya reconoce Plex. Avisa de que solo vale para VPS Linux'] },
@@ -9604,7 +9626,9 @@ function vLicencias() {
   const tile = (val, label, sub2, cls = '') => `<div class="vpt ${cls}"><b>${val}</b><span>${label}</span>${sub2 ? `<small>${sub2}</small>` : ''}</div>`;
   const soon = L.filter((l) => l.state === 'soon' || l.state === 'grace').length, off = L.filter((l) => l.state === 'locked' || l.state === 'blocked').length;
   const month = d.today.slice(0, 7), cobrado = L.reduce((n, l) => n + (l.payments || []).filter((p) => p.at.slice(0, 7) === month).reduce((m, p) => m + (p.amount || 0), 0), 0);
-  const tiles = `<div class="vptiles lict">${tile(act.length, 'Paneles funcionando', act.length ? eur(act.reduce((n, l) => n + (l.price || 0), 0)) + ' al mes' : '', 'ok')}${tile(soon, 'Vencen pronto', 'en 7 días o en margen', soon ? 'warn' : '')}${tile(off, 'En pausa', 'sin renovar', off ? 'bad' : '')}${tile(eur(cobrado), 'Cobrado este mes', '')}${tile(L.reduce((n, l) => n + ((l.stats && l.stats.active) || 0), 0), 'Cuentas activas', 'en todos tus paneles')}</div>`;
+  const oldV = L.filter((l) => l.stats && (l.stats.ver || l.stats.vnum) && !(l.stats.vnum >= (d.latest || 0))); // v391
+  const updBox = oldV.length && d.latest ? `<div class="warnbox" style="margin:0 0 14px">🆕 <b>${oldV.length === 1 ? '1 panel alquilado no está' : oldV.length + ' paneles alquilados no están'} en la última versión (v${d.latest}):</b> ${oldV.map((l) => `${esc(l.name)} (${l.stats.vnum ? 'v' + l.stats.vnum : 'antigua'})`).join(', ')}. Ya les sale un aviso en su panel para que actualicen.</div>` : '';
+  const tiles = updBox + `<div class="vptiles lict">${tile(act.length, 'Paneles funcionando', act.length ? eur(act.reduce((n, l) => n + (l.price || 0), 0)) + ' al mes' : '', 'ok')}${tile(soon, 'Vencen pronto', 'en 7 días o en margen', soon ? 'warn' : '')}${tile(off, 'En pausa', 'sin renovar', off ? 'bad' : '')}${tile(eur(cobrado), 'Cobrado este mes', '')}${tile(L.reduce((n, l) => n + ((l.stats && l.stats.active) || 0), 0), 'Cuentas activas', 'en todos tus paneles')}</div>`;
   // Calendario del mes
   if (!S.lic.cal) S.lic.cal = d.today.slice(0, 7);
   const [y, m] = S.lic.cal.split('-').map(Number), days = new Date(Date.UTC(y, m, 0)).getUTCDate(), offset = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
@@ -9738,7 +9762,7 @@ function licStatsHtml(l) {
   return `<details class="lst"><summary><span class="lst-h">${ic('chart')}Su panel por dentro</span><small>actualizado ${whenShort(x.at)}</small></summary>
     <div class="lks">${k('🖥️', x.servers.length, x.servers.length === 1 ? 'servidor' : 'servidores')}${k('👥', x.active, x.active === 1 ? 'cuenta activa' : 'cuentas activas', 'ok')}${k('⏳', x.expired, x.expired === 1 ? 'caducada' : 'caducadas')}${k('🎁', x.demos, x.demos === 1 ? 'demo' : 'demos')}${vend}${k('✨', x.newMonth, 'altas este mes')}${x.renewMonth !== undefined ? k('🔄', x.renewMonth, 'renovaciones este mes') : ''}${x.trash !== undefined ? k('🗂️', x.trash, 'en la papelera') : ''}${k('🛡️', x.admins, x.admins === 1 ? 'administrador' : 'administradores')}</div>
     ${bk ? `<p class="small" style="margin:8px 0 0">Cuentas activas: <b>${bk.emby}</b> Emby · <b>${bk.jellyfin}</b> Jellyfin · <b>${bk.plex}</b> Plex</p>` : ''}
-    <div class="lwhen"><div><small>Su dueño entró por última vez</small><b>${ago(x.superLogin)}</b></div><div><small>Última entrada de alguien</small><b>${ago(x.lastLogin)}</b></div><div><small>Último movimiento</small><b>${ago(x.lastAction)}</b></div>${x.ver ? `<div><small>Versión de su panel</small><b>${esc(String(x.ver).slice(0, 12))}</b></div>` : ''}</div>
+    <div class="lwhen"><div><small>Su dueño entró por última vez</small><b>${ago(x.superLogin)}</b></div><div><small>Última entrada de alguien</small><b>${ago(x.lastLogin)}</b></div><div><small>Último movimiento</small><b>${ago(x.lastAction)}</b></div>${x.ver ? `<div><small>Versión de su panel</small><b>${x.vnum ? `v${x.vnum} ${x.vnum >= (S.lic.data.latest || 0) ? '<span style="color:#22c55e">✅ al día</span>' : `<span style="color:#f5a524">⚠️ le faltan ${(S.lic.data.latest || 0) - x.vnum} versiones</span>`}` : `${esc(String(x.ver).slice(0, 12))} <span style="color:#f5a524">⚠️ antigua</span>`}</b></div>` : ''}</div>
     ${x.servers.length ? `<div class="lsv">${x.servers.map((s) => `<span class="${s.kind === 'jellyfin' ? 'jf' : s.kind === 'plex' ? 'px' : s.kind === 'iptv' ? 'tv' : 'em'}${s.off ? ' off' : ''}" title="${KIND_NAME[s.kind] || 'Emby'}${s.off ? ' · pausado' : ''}">${esc(s.name)}</span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${[['emby', 'Emby'], ['jellyfin', 'Jellyfin'], ['plex', 'Plex']].filter(([kd]) => cnt(kd)).map(([kd, t]) => `${cnt(kd)} ${t}`).join(' · ')}</p>` : '<p class="small muted" style="margin:6px 0 0">Todavía no ha conectado ningún servidor.</p>'}
     ${(x.newVendors || []).length ? `<h4 style="margin:12px 0 0;font-size:13px">Últimos vendedores que ha creado</h4><div class="lpeople">${x.newVendors.map((v) => `<div><span>${v.role === 'sub' ? '👤' : '🧑‍💼'} <b>${esc(v.name)}</b> <small>${v.role === 'sub' ? 'subreseller' + (v.parent ? ' de ' + esc(v.parent) : '') : 'reseller'}</small></span><small>${plural(v.clients, 'cliente', 'clientes')} · ${v.at ? whenShort(v.at) : ''}</small></div>`).join('')}</div>` : ''}
   </details>`;
@@ -11896,6 +11920,7 @@ document.addEventListener('click', (e) => {
     case 'export': dExport(); break;
     case 'exp': runExport(el.dataset.f); break;
     case 'bulk-clear': S.sel.clear(); render(); break;
+    case 'own-price-off': { const u = S.d.users.find((x) => String(x.id) === String(el.dataset.id)); if (u) api('PUT', `/api/users/${u.id}`, { creditPrice: 0 }).then(async () => { toast(`${u.name || u.username} ya usa tus precios por cantidad`); await reload(); }, (x) => toast(x.message, true)); break; } // v391
     case 'fsp-hide': lsSet('pasosOcultos', '1'); render(); toast('Primeros pasos ocultos. Los tienes en el menú › Guía de inicio rápido'); break; // v388
     case 'simple-toggle': { const on = !simpleOn(); lsSet('modoSencillo', on ? '1' : ''); if (typeof closeMenu === 'function') closeMenu(); S.view = 'resumen'; render(); toast(on ? '🧘 Modo sencillo: solo lo básico. Para verlo todo, toca «Ver todas las opciones» en el menú' : 'Ya ves todas las opciones'); break; }
     case 'px-resend': if (c) openDlg({ title: '📩 Reenviar la invitación de Plex', submit: 'Reenviar', body: `<p>Se le vuelve a mandar la invitación de Plex a <b>${esc(c.panelName)}</b>, con sus mismas bibliotecas.</p><p class="muted small">Úsalo si dice que no le ha llegado o que la ha borrado. Le llega un email nuevo de Plex${c.tgLinked ? ' y un aviso por el bot' : ''}.</p>`, onSubmit: async () => { const r = await api('POST', `/api/clients/${c.id}/px-resend`, {}); toast(`📩 Invitación reenviada a ${r.to}`); await reload(); } }); break; // v384

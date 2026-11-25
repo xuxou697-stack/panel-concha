@@ -2747,6 +2747,7 @@ function publicData(me) {
     parentTemplates: tplLocked() ? {} : (() => { const p = me.parentId ? db.users.find((x) => x.id === me.parentId) : null; return (p && p.templates) || {}; })(),
     licMaster: me.role === 'super' && !LIC_CLIENT,
     licFeatures: LIC_CLIENT && db.licState && Array.isArray(db.licState.features) ? db.licState.features : null, // v380
+    ...(LIC_CLIENT && me.role === 'super' && db.licState && Number(db.licState.latest) > (indexFile().num || 0) ? { licUpdate: { mine: indexFile().num || 0, latest: Number(db.licState.latest) } } : {}), // v391: hay versión nueva
     kinds: licKinds(),
     uiVer: indexFile().ver,
     reqPending: (() => { const vis = visibleOwners(me); return db.requests.filter((r) => r.status === 'pending' && (!vis || vis.has(r.ownerId))).length; })(),
@@ -9584,6 +9585,12 @@ route('GET', '/api/usage', STAFF, ({ req }) => {
 });
 
 /* ---------- Informe de ingresos ---------- */
+route('PUT', '/api/pay-fees', SUPER, ({ me, body }) => lock(async () => { // v392
+  const f = db.settings.payFees = db.settings.payFees || {};
+  if (body.on !== undefined) f.on = !!body.on;
+  for (const k of Object.keys(FEE_DEF)) if (body[k] && typeof body[k] === 'object') { const pct = Number(String(body[k].pct).replace(',', '.')), fix = Number(String(body[k].fix).replace(',', '.')); if (!(pct >= 0 && pct <= 30 && fix >= 0 && fix <= 10)) throw new HttpError(400, 'Revisa las comisiones: el % va de 0 a 30 y el fijo de 0 a 10 €.'); f[k] = { pct, fix }; }
+  addLog('ajustes', null, `Comisiones de cobro: ${f.on === false ? 'no se restan' : 'se restan en Socios e Ingresos'}`, me); saveDb(); return { ok: true, fees: feeCfg() };
+}));
 route('GET', '/api/income', STAFF, ({ req }) => {
   const q = new URL(req.url, 'http://x').searchParams, n = Math.min(24, Math.max(1, Number(q.get('months')) || 12));
   const t = today(), months = [];
@@ -9618,13 +9625,15 @@ route('GET', '/api/income', STAFF, ({ req }) => {
       if (l.ownerId != null) ur(l.ownerId)[k]++;
     }
   }
+  // v392: lo cobrado online y sus comisiones (tu Stripe/PayPal/cripto; no los de los vendedores)
+  for (const o of db.orders) { if (o.status !== 'paid' || !o.paidAt || o.vendorId) continue; const m = localDate(new Date(o.paidAt)).slice(0, 7), bm = byMonth[m]; if (!bm) continue; bm.online = (bm.online || 0) + (o.amount || 0); bm.fees = (bm.fees || 0) + (o.fee !== undefined ? o.fee : feeEst(o)); }
   const pending = db.clients.filter((c) => c.paid === false && c.status !== 'trash');
   const vendors = db.users.map((u) => {
     const r = byUser.get(u.id) || row();
     return { id: u.id, name: u.name, role: u.role, credits: u.credits || 0, price: price(u), ...r, money: Math.round(r.money * 100) / 100, pending: pending.filter((c) => c.ownerId === u.id).length,
       clients: db.clients.filter((c) => c.ownerId === u.id && c.status !== 'trash' && !c.demo).length };
   }).filter((v) => v.sold || v.alta || v.renovacion || v.spent || v.pending || v.clients).sort((a, b) => b.money - a.money || (b.alta + b.renovacion) - (a.alta + a.renovacion));
-  return { months: months.map((m) => ({ m, ...byMonth[m], money: Math.round(byMonth[m].money * 100) / 100 })), vendors, pending: pending.length, currency: db.settings.currency || 'EUR',
+  return { months: months.map((m) => ({ m, ...byMonth[m], money: Math.round(byMonth[m].money * 100) / 100, online: r2(byMonth[m].online || 0), fees: r2(byMonth[m].fees || 0) })), fees: feeCfg(), vendors, pending: pending.length, currency: db.settings.currency || 'EUR',
     keep: { log: db.settings.retention.logDays, ledger: db.settings.retention.ledgerDays } };
 });
 
@@ -9651,6 +9660,29 @@ function panelBase(req) {
   const proto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
   return `${proto}://${req.headers['x-forwarded-host'] || req.headers.host}`;
 }
+/* v392: comisiones de cobro (Stripe, PayPal, cripto): se restan en Socios e Ingresos para que cuadre lo que llega de verdad.
+   Stripe: se pide a Stripe la comisión REAL de cada pago (con su cambio de moneda); mientras, se usa una estimación. */
+const FEE_DEF = { stripe: { pct: 5.4, fix: 0.28 }, paypal: { pct: 3.4, fix: 0.35 }, nowpay: { pct: 0.5, fix: 0 } };
+function feeCfg() { const f = db.settings.payFees || {}; const o = { on: f.on !== false }; for (const k of Object.keys(FEE_DEF)) o[k] = { pct: Number((f[k] || {}).pct ?? FEE_DEF[k].pct) || 0, fix: Number((f[k] || {}).fix ?? FEE_DEF[k].fix) || 0 }; return o; }
+function feeEst(o) { const f = feeCfg(); if (!f.on || o.manual || !f[o.method]) return 0; return r2(Math.min(o.amount, o.amount * f[o.method].pct / 100 + f[o.method].fix)); }
+function feeSet(o) { if (o.fee === undefined) o.fee = feeEst(o); return o.fee || 0; }
+async function feeReal(o) { // la comisión de verdad, preguntándole a Stripe (solo tu Stripe, no el de los vendedores)
+  if (!feeCfg().on || o.method !== 'stripe' || !o.pi || o.vendorId || o.feeReal || !db.payCfg.stripe.key) return;
+  const j = await stripeCall('GET', `/v1/payment_intents/${encodeURIComponent(o.pi)}?expand[]=latest_charge.balance_transaction`);
+  const bt = j && j.latest_charge && j.latest_charge.balance_transaction; if (!bt || typeof bt !== 'object' || !(Number(bt.fee) >= 0)) return;
+  const pmt = String(((j.latest_charge.payment_method_details || {}).type) || ''); // v393: tarjeta, Bizum…
+  const same = String(bt.currency || '').toUpperCase() === String(o.currency || 'EUR').toUpperCase(), rate = Number(bt.exchange_rate) || 1;
+  const fee = r2(same ? bt.fee / 100 : bt.fee / 100 / rate), net = r2(o.amount - fee);
+  await lock(async () => {
+    o.fee = fee; o.feeReal = true; if (pmt) o.pmType = pmt; if (!same) { o.feeCur = String(bt.currency).toUpperCase(); o.feeOrig = r2(bt.fee / 100); o.netOrig = r2(bt.net / 100); }
+    const x = socOn() && socCfg().entries.find((e) => e.ref === o.id && e.kind === 'cobro');
+    if (x && pmt === 'bizum' && /· tarjeta/.test(x.desc || '')) x.desc = x.desc.replace('· tarjeta', '· Bizum (Stripe)');
+    if (x && Math.abs(x.amount - net) >= 0.01 && net > 0) { x.amount = net; x.desc = String(x.desc || '').replace(/ \(cobrado [^)]*\)$/, '') + ` (cobrado ${o.amount.toFixed(2).replace('.', ',')} € − ${fee.toFixed(2).replace('.', ',')} € de Stripe)`; }
+    if (x) { const sw = socCfg().sw; if (x.sw && sw.on && sw.key) swPush(x).catch(() => {}); }
+    saveDb();
+  });
+}
+const feeLater = (o) => { setTimeout(() => feeReal(o).catch((e) => console.error('Comisión de Stripe:', e.message)), 15000); };
 async function stripeCall(method, p, form, keyOverride) {
   const key = keyOverride || db.payCfg.stripe.key;
   let res;
@@ -9680,7 +9712,8 @@ function markPaid(o, via) {
   addLedger(u, o.credits, `Compra online con ${how}${o.pack ? ' (' + o.pack + ')' : ''}: ${o.amount.toFixed(2)} ${o.currency}`, null, 'credito', { amount: o.amount, currency: o.currency, method: o.method, order: o.id });
   addLog('cobro', null, `${u.name} compró ${o.credits} créditos con ${how} por ${o.amount.toFixed(2)} ${o.currency} (pedido ${o.id}${via ? ', ' + via : ''})`, null);
   db.vpay.unshift({ id: crypto.randomBytes(5).toString('hex'), at: o.paidAt, userId: u.id, user: u.name, credits: o.credits, amount: o.amount, method: o.method === 'stripe' ? 'Tarjeta (online)' : 'Cripto (online)', ref: o.id, status: 'paid', paidAt: o.paidAt, by: 'Compra online', byId: null, online: true });
-  const soc = socOn() && socCfg().auto.credits ? socAdd({ kind: 'cobro', amount: o.amount, who: socCfg().online, desc: `${u.name} · ${o.credits} créditos (${how})`, src: 'creditos', ref: o.id, at: o.paidAt }) : null;
+  const fe = feeSet(o); if (o.method === 'stripe') feeLater(o); // v392: comisión
+  const soc = socOn() && socCfg().auto.credits ? socAdd({ kind: 'cobro', amount: r2(o.amount - fe), who: socCfg().online, desc: `${u.name} · ${o.credits} créditos (${how})${fe ? ` (cobrado ${o.amount.toFixed(2).replace('.', ',')} € − ${fe.toFixed(2).replace('.', ',')} € de comisión)` : ''}`, src: 'creditos', ref: o.id, at: o.paidAt }) : null;
   notifyStaff('payments', `💰 ${u.name} ha comprado ${o.credits} créditos con ${how}.\nImporte: ${o.amount.toFixed(2)} ${o.currency}\nSaldo nuevo: ${u.credits}\n${whenTxt()}${socLine(soc)}`);
   // Recibo bonito (imagen + todos los datos), igual que las recargas a mano. Sin bot, el aviso de siempre
   if (u.tgChat && db.settings.notices.telegram.token) sendRechargeReceipt({ name: 'Compra online', online: true }, u, o.credits, { method: o.method === 'stripe' ? 'Tarjeta' : 'Cripto', amount: o.amount, status: 'paid' }, { id: o.id }, o.pack);
@@ -10025,7 +10058,8 @@ async function cpPaid(o, via) {
   o.expiresBefore = prev; o.expiresAfter = c.expires;
   libCheckLater(c);
   let soc = null;
-  if (!vend && socOn() && socCfg().auto.clients) soc = socAdd({ kind: 'cobro', amount: o.amount, who: o.manual ? socWho(db.users.find((x) => x.id === o.confirmedById), o.confirmedChat) : socCfg().online, desc: `${c.panelName} · ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'}${o.cycle ? ' (renovación automática)' : ''}`, src: 'cliente', ref: o.id, at: o.paidAt });
+  const fe = vend ? 0 : feeSet(o); if (!vend && o.method === 'stripe') feeLater(o); // v392: comisión
+  if (!vend && socOn() && socCfg().auto.clients) soc = socAdd({ kind: 'cobro', amount: r2(o.amount - fe), who: o.manual ? socWho(db.users.find((x) => x.id === o.confirmedById), o.confirmedChat) : socCfg().online, desc: `${c.panelName} · ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'}${o.cycle ? ' (renovación automática)' : ''}${fe ? ` (cobrado ${o.amount.toFixed(2).replace('.', ',')} € − ${fe.toFixed(2).replace('.', ',')} € de comisión)` : ''}`, src: 'cliente', ref: o.id, at: o.paidAt });
   const howPaid = o.usdc ? `🪙 Pagado con ${usdcFmt(o.usdc.got || o.usdc.micro)} USDC (red Polygon) → a tu dirección ${String(o.usdc.addr || '').slice(0, 6)}…${String(o.usdc.addr || '').slice(-4)}` : MANUAL[o.method] ? `${MANUAL[o.method].i || '💶'} Pagado por ${MANUAL[o.method].t}` : o.ppapi ? '🅿️ Pagado con PayPal' : '💳 Pagado con tarjeta (Stripe)'; // v321: dónde te ha llegado el dinero
   if (!vend) notifyStaff('payments', `${o.usdc ? '🪙' : '💳'} ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y ${!wasBuy && o.wasDemo ? '🎉 se ha hecho CLIENTE (venía de su prueba gratis)' : wasBuy ? (c.buyExtraOf ? `🛒 es OTRA CUENTA de un cliente que ya tenías (${(db.clients.find((x) => x.id === c.buyExtraOf) || {}).panelName || 'cliente'}): se ha creado sola desde su bot` : '🛒 es un cliente NUEVO: se ha creado su cuenta sola desde el bot') : 'su cuenta se ha renovado sola'}.\n${howPaid}\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`);
   o.screensAfter = c.screens || 1; o.expiresFrom = base;
@@ -12666,7 +12700,8 @@ function indexFile() {
     // Huella de esta versión de la pantalla: si el navegador tiene una copia vieja guardada, se da cuenta y se recarga solo
     const ver = crypto.createHash('sha1').update(raw0).digest('hex').slice(0, 12);
     const raw = Buffer.from(raw0.toString('utf8').replace("'__UI_VER__'", `'${ver}'`), 'utf8');
-    indexCache = { mtime, raw, gz: zlib.gzipSync(raw, { level: 9 }), ver };
+    const num = Number((/const NEWS = \[\s*\{ v: (\d+)/.exec(raw0.toString('utf8')) || [])[1]) || 0; // v391: versión «v390»
+    indexCache = { mtime, raw, gz: zlib.gzipSync(raw, { level: 9 }), ver, num };
   }
   return indexCache;
 }
@@ -13071,7 +13106,7 @@ function licFields(l, body) {
   if (body.features !== undefined) l.features = body.features === null ? null : licFeatsClean(body.features); // v380
   if (body.until !== undefined) { const d = str(body.until, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new HttpError(400, 'La fecha no es válida.'); l.until = d; }
 }
-route('GET', '/api/licenses', SUPER, () => { licGuard(); return { list: db.licenses.map(licView), contact: db.settings.licContact, grace: LIC_GRACE, today: today() }; });
+route('GET', '/api/licenses', SUPER, () => { licGuard(); return { list: db.licenses.map(licView), contact: db.settings.licContact, grace: LIC_GRACE, today: today(), latest: indexFile().num || 0 }; });
 route('POST', '/api/licenses', SUPER, ({ me, body }) => lock(async () => {
   licGuard();
   const months = Math.round(Number(body.months));
@@ -13133,7 +13168,7 @@ function licStatsOut() {
   return {
     byKind, total: live.filter((c) => !c.demo).length, trash: db.clients.filter((c) => c.status === 'trash').length,
     resellers: vend.filter((u) => u.role === 'reseller').length, subs: vend.filter((u) => u.role === 'sub').length,
-    superLogin: at(sup), lastLogin: last, lastAction: (db.log[0] && db.log[0].ts) || '', ver: String(indexFile().ver || '').slice(0, 20),
+    superLogin: at(sup), lastLogin: last, lastAction: (db.log[0] && db.log[0].ts) || '', ver: String(indexFile().ver || '').slice(0, 20), vnum: indexFile().num || 0,
     renewMonth: db.log.filter((l) => l.type === 'renovacion' && String(l.ts).slice(0, 7) === month).length,
     newVendors: vend.filter((u) => u.createdAt).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 6).map((u) => ({ name: String(u.name || '').slice(0, 40), role: u.role, at: String(u.createdAt).slice(0, 25), parent: u.parentId ? String((db.users.find((x) => x.id === u.parentId) || {}).name || '').slice(0, 40) : '', clients: live.filter((c) => c.ownerId === u.id).length })),
     servers: db.servers.slice(0, 30).map((s) => ({ name: String(s.name || '').slice(0, 40), kind: kind(s), off: !!s.off })),
@@ -13155,6 +13190,7 @@ function licStatsIn(x) {
     ...(x.total !== undefined ? { total: n(x.total), trash: n(x.trash), resellers: n(x.resellers), subs: n(x.subs), renewMonth: n(x.renewMonth) } : {}),
     ...['superLogin', 'lastLogin', 'lastAction'].reduce((o, k) => { const v = String(x[k] || ''); if (/^\d{4}-\d{2}-\d{2}T[\d:.]+Z?$/.test(v)) o[k] = v.slice(0, 30); return o; }, {}),
     ...(x.ver ? { ver: str(String(x.ver), 20) } : {}),
+    ...(x.vnum ? { vnum: n(x.vnum) } : {}), // v391
     ...(Array.isArray(x.newVendors) ? { newVendors: x.newVendors.slice(0, 6).map((v) => ({ name: str(String((v && v.name) || ''), 40), role: v && v.role === 'sub' ? 'sub' : 'reseller', at: /^\d{4}-\d{2}-\d{2}/.test(String(v && v.at)) ? String(v.at).slice(0, 25) : '', parent: str(String((v && v.parent) || ''), 40), clients: n(v && v.clients) })) } : {}),
   };
 }
@@ -13169,7 +13205,7 @@ route('POST', '/api/license/check', null, ({ req, body }) => {
   l.lastCheck = new Date().toISOString(); l.lastIp = ip.slice(0, 45);
   const st = licStatsIn(body && body.stats); if (st) l.stats = st;
   if (first || !l._saved || Date.now() - l._saved > 3600e3) { l._saved = Date.now(); saveDb(); }
-  return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : ['emby', 'jellyfin'], features: Array.isArray(l.features) ? l.features : null, grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
+  return { ok: true, name: l.name, until: l.until, blocked: !!l.blocked, platforms: kindsClean(l.platforms).length ? kindsClean(l.platforms) : ['emby', 'jellyfin'], features: Array.isArray(l.features) ? l.features : null, latest: indexFile().num || 0, grace: LIC_GRACE, contact: db.settings.licContact || '', today: today() };
 });
 /* Avisos diarios en el panel principal: 7, 3 y 1 día antes, el día que vence y cuando se pausa */
 function licDaily() {
@@ -13216,7 +13252,7 @@ async function licCheck() {
     const before = licStatus();
     if (r.ok && j.ok && /^\d{4}-\d{2}-\d{2}$/.test(String(j.until))) {
       if (kindsClean(j.platforms).length) db.licState.platforms = kindsClean(j.platforms);
-      db.licState = { ...db.licState, features: licFeatsClean(j.features), until: j.until, blocked: !!j.blocked, grace: Number(j.grace) || LIC_GRACE, contact: str(j.contact, 120), invalid: false, lastOk: new Date().toISOString(), err: '' };
+      db.licState = { ...db.licState, latest: Number(j.latest) || 0, features: licFeatsClean(j.features), until: j.until, blocked: !!j.blocked, grace: Number(j.grace) || LIC_GRACE, contact: str(j.contact, 120), invalid: false, lastOk: new Date().toISOString(), err: '' };
     } else if (r.status === 404) { // la clave no existe en el panel principal (borrada o mal copiada)
       db.licState = { ...db.licState, invalid: true, lastOk: new Date().toISOString(), err: 'clave' };
     } else db.licState = { ...db.licState, err: 'Respuesta ' + r.status }; // fallo pasajero: se queda con lo último que sabía
