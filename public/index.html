@@ -2802,6 +2802,7 @@ html.look-skel #main .panel > .empty:not(.loading)::before{content:'';display:bl
 .iv-tg{background:#0e1621;border-radius:14px;padding:12px;color:#e9eef3;max-width:380px;margin:0 auto}.iv-tg>img{display:block;width:100%;border-radius:12px 12px 0 0}.iv-bub{background:#182533;border-radius:0 0 12px 12px;padding:10px 13px;font-size:14px;line-height:1.5}.iv-tg>.iv-bub:first-child{border-radius:12px}.iv-bub code{background:#0e1621;padding:1px 5px;border-radius:5px}
 .iv-kb{display:grid;gap:4px;margin-top:4px}.iv-kb span{background:rgba(43,82,120,.75);border-radius:8px;text-align:center;padding:8px;font-size:13.5px}
 .cv-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.cv-k{margin-top:12px}.cv-k h4{margin:0 0 6px;font-size:14px}.cv-l{display:grid;grid-template-columns:1fr auto;gap:5px 10px;align-items:center;padding:9px 11px;border-radius:10px;background:color-mix(in srgb,var(--text) 5%,transparent);margin-bottom:6px}.cv-l>span{font-size:13.5px}.cv-l .gr-bar,.cv-i{grid-column:1/-1}.cv-p{font-size:18px}.cv-i{color:var(--muted);font-size:12px}.cv-l.none small{color:var(--muted);font-size:12px}.cv-big{display:flex;align-items:center;gap:14px;margin:4px 0 6px}.cv-big b{font-size:34px;line-height:1;color:var(--brand,#8b5cf6);white-space:nowrap}.cv-big b small{font-size:16px;font-weight:600}.cv-big span{font-size:14px}.cv-big span small{color:var(--muted);font-size:12px}
+.so-pg{display:grid;gap:6px;margin-bottom:12px}.so-pg div{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;padding:9px 12px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.so-pg span{color:var(--muted);font-size:12.5px}.so-pg em{font-style:normal;font-weight:700}.so-pg i{grid-column:1/-1;font-style:normal;font-size:12px;color:#22c55e}.so-xl{width:100%;justify-content:center;margin-top:4px}
 .iv-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.iv-chip{border:1px solid var(--line,rgba(127,127,127,.25));background:transparent;color:var(--text);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer}.iv-chip.on{background:var(--accent,#3b82f6);border-color:transparent;color:#fff}
 .iv-fr li.iv-li{grid-template-columns:1fr auto;cursor:pointer;gap:6px 10px}.iv-fr li.iv-li:hover{background:color-mix(in srgb,var(--text) 9%,transparent)}.iv-who{display:flex;flex-direction:column;min-width:0}.iv-who small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis}.iv-tag{align-self:start;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}.iv-g{background:#f59e0b22;color:#f59e0b}.iv-p{background:#22c55e22;color:#22c55e}.iv-x{background:#94a3b822;color:var(--muted)}.iv-gifts{grid-column:1/-1;display:flex;flex-direction:column;gap:2px;font-size:12.5px}.iv-gifts span{color:var(--text)}
 .iv-fr{list-style:none;margin:0;padding:0;display:grid;gap:6px}.iv-fr li{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;padding:9px 11px;border-radius:11px;background:color-mix(in srgb,var(--text) 5%,transparent)}.iv-fr li span{color:var(--muted);font-size:13px}.iv-fr li small{grid-column:1/-1;color:var(--muted);font-size:12px}
@@ -8569,6 +8570,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 396, d: '2026-11-25', items: ['🕊️ Socios › Saldos: ves la última vez que estuvisteis en paz, los pagos entre vosotros, y un botón para descargar todo para Excel (cada movimiento con el saldo de cada uno y cuándo quedasteis en paz)'] },
   { v: 395, d: '2026-11-25', items: ['🔒 Invita a un amigo: solo pueden invitar los clientes que ya han pagado alguna vez. Los que tienen el mes gratis (Black Friday) no ven el botón hasta que paguen, y si alguien usa su código no hay regalo. Así nadie puede encadenar meses gratis con cuentas falsas'] },
   { v: 394, d: '2026-11-25', items: ['🤝 Invita a un amigo: la lista de amigos dice qué recibió cada uno, qué recibió quien le invitó y si ya paga, con filtros (con regalo, ya pagan, sin pagar). Tocas un nombre y se abre su ficha', '⏳ Aviso solo para ti cuando a un amigo se le acaba su mes gratis y todavía no ha pagado (al cliente no se le manda nada)', '🔴 Si un servidor se cae, el cliente que abre el bot ve «ya lo sabemos y lo estamos arreglando», y cuando vuelve le llega «✅ Ya funciona» (solo a los que preguntaron)', '📈 Crecer: cuántas pruebas gratis y meses gratis acaban pagando, por plataforma (Emby, Jellyfin, Plex)', '🛠️ Plex: el recordatorio de invitación sin aceptar (24 h) ya sale de verdad'] },
   { v: 393, d: '2026-11-25', items: ['💳 Bizum por Stripe: el panel reconoce cuando el cliente paga con Bizum en la página de Stripe, lo apunta en Socios como «Bizum (Stripe)» y le resta su comisión real, igual que a la tarjeta'] },
@@ -9277,11 +9279,38 @@ async function soExpPay(id) {
 async function loadSo() {
   S.so.busy = true;
   try { S.so.data = await api('GET', '/api/socios?m=' + encodeURIComponent(S.so.m || '')); S.so.at = Date.now(); } catch (e) { S.so.data = { error: e.message }; }
+  S.so.hist = null; /* v396: el historial se vuelve a pedir */
   S.so.busy = false;
   if (S.view === 'socios') render();
 }
 const soName = (id) => (id === '*' ? ((S.so.data && S.so.data.cfg.members.length > 2) ? 'Todos' : 'Los dos') : ((S.so.data && S.so.data.cfg.members.find((m) => m.id === id)) || {}).name || '?');
 const SO_SRC = { cuenta: ['👤', 'Alta o renovación a mano'], cliente: ['💳', 'Pago de cliente'], creditos: ['🪙', 'Créditos online'], recarga: ['🔋', 'Recarga de vendedor'], gasto: ['🧾', 'Gasto'], manual: ['✍️', 'Apuntado a mano'] };
+/* v396: historial con saldos, última vez en paz y descarga para Excel */
+function soHistLoad() { if (S.so.histBusy) return; S.so.histBusy = true; api('GET', '/api/socios/history').then((h) => { S.so.hist = h; }, (e) => { S.so.hist = { error: e.message }; }).finally(() => { S.so.histBusy = false; if (S.view === 'socios') render(); }); }
+const soD = (iso) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+function soHistCard() {
+  const h = S.so.hist; if (!h) { soHistLoad(); return '<div class="tc-big"><span class="tc-bi">🕊️</span><div><b>Mirando cuándo estuvisteis en paz…</b></div></div>'; }
+  if (h.error) return `<p class="err">${esc(h.error)}</p>`;
+  const nm = (id) => (h.members.find((m) => m.id === id) || {}).name || '?';
+  const lp = h.lastPeace, nowPeace = h.rows.length && h.rows[h.rows.length - 1].peace;
+  const top = !h.rows.length ? '' : nowPeace ? `<div class="tc-big ok"><span class="tc-bi">🕊️</span><div><b>Ahora mismo estáis en paz</b><small>Desde el ${esc(soD(lp.at))}${lp.kind === 'pago' ? ` (${esc(nm(lp.who))} le pasó ${eur(lp.amount)} a ${esc(nm(lp.to))})` : ''}</small></div></div>`
+    : lp ? `<div class="tc-big"><span class="tc-bi">🕊️</span><div><b>Última vez en paz: ${esc(soD(lp.at))}</b><small>${lp.kind === 'pago' ? `${esc(nm(lp.who))} le pasó ${eur(lp.amount)} a ${esc(nm(lp.to))}. ` : ''}Desde entonces: ${plural(h.sinceN, 'movimiento', 'movimientos')}</small></div></div>`
+    : `<div class="tc-big"><span class="tc-bi">🕊️</span><div><b>Todavía no habéis estado en paz</b><small>Desde el primer movimiento apuntado (${esc(soD(h.rows[0].at))})</small></div></div>`;
+  const pg = h.pagos.length ? `<h3 class="tc-day">🔁 Pagos entre vosotros</h3><div class="so-pg">${h.pagos.map((r) => `<div><span>${esc(soD(r.at))}</span><b>${esc(nm(r.who))} → ${esc(nm(r.to))}</b><em>${eur(r.amount)}</em>${r.peace ? '<i>🕊️ en paz</i>' : ''}</div>`).join('')}</div>` : '';
+  return `${top}${pg}<button type="button" class="btn so-xl" data-act="so-csv">${ic('download')}Descargar todo para Excel</button><p class="tc-note">Todos los movimientos desde el principio, con el saldo de cada uno después de cada movimiento y las veces que estuvisteis en paz.</p>`;
+}
+function soCsv() {
+  const h = S.so.hist; if (!h || h.error) { soHistLoad(); toast('Preparando el archivo… pulsa otra vez en un segundo'); return; }
+  const nm = (id) => (id === '*' ? 'Los dos' : (h.members.find((m) => m.id === id) || {}).name || '?'), K = { cobro: 'Cobro', gasto: 'Gasto', pago: 'Pago entre socios' };
+  const num = (v) => (Math.round(v * 100) / 100).toFixed(2).replace('.', ',');
+  const rows = [['Fecha', 'Hora', 'Tipo', 'Descripción', 'Quién', 'A quién / para quién', 'Importe', ...h.members.map((m) => `Saldo ${m.name}`), 'En paz']];
+  for (const r of h.rows) { const d = new Date(r.at);
+    rows.push([d.toLocaleDateString('es-ES'), d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }), K[r.kind] || r.kind, r.desc, nm(r.who), r.kind === 'pago' ? nm(r.to) : r.split ? r.split.map(nm).join(' y ') : 'Los dos', (r.kind === 'gasto' ? '-' : '') + num(r.amount), ...h.members.map((m) => num(-(r.saldo[m.id] || 0))), r.peace ? 'SÍ' : '']); }
+  rows.push([], ['', '', '', 'Saldo positivo: le deben dinero · negativo: tiene dinero que no es suyo']);
+  const csv = '﻿' + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `socios-${new Date().toLocaleDateString('sv')}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
 const soMonthTxt = (m) => { if (!m) return 'Todo'; const t = new Date(m + '-15').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(' de ', ' '); return t.charAt(0).toUpperCase() + t.slice(1); };
 function vSocios() {
   const d = S.so.data, sub = 'Lo que entra y sale, quién lo tiene y cuánto le toca a cada uno. Solo lo ves tú.';
@@ -9299,7 +9328,7 @@ function vSocios() {
     <p class="small muted">No toca nada de las cuentas ni de los pagos: solo apunta. Puedes apagarlo cuando quieras.</p>
     <div class="so-start"><button class="btn primary so-on" data-act="so-on">✅ Encender Socios</button><button class="btn" data-act="so-cfg">${ic('users')}Cambiar nombres y ajustes</button></div>
     <p class="small muted" style="margin:10px 0 0">Al encenderlo quedan <b>${esc(cfg.members.some((m) => !/^(Yo|Socio)$/.test(m.name)) ? cfg.members.map((m) => m.name).join(' y ') : 'Xux (tú) y Angus')}</b>${d.chats.length > 1 && cfg.members.every((m) => /^(Yo|Socio)$/.test(m.name)) ? ', con tu Telegram para Xux y el otro para Angus' : ''}. Se puede cambiar en Ajustes.</p></div>`;
-  const acts = `<button class="btn primary" data-act="so-add" data-k="gasto">${ic('plus')}Añadir</button>${cfgBtn}`;
+  const acts = `<button class="btn primary" data-act="so-add" data-k="gasto">${ic('plus')}Añadir</button><button class="btn" data-act="so-csv" title="Descargar todo para Excel">${ic('download')}Excel</button>${cfgBtn}`;
   const chips = `<div class="tools so-months">${d.months.map((m) => `<button type="button" class="chip${d.month === m ? ' on' : ''}" data-act="so-m" data-k="${m}">${esc(soMonthTxt(m))}</button>`).join('')}<button type="button" class="chip${!d.month ? ' on' : ''}" data-act="so-m" data-k="all">Todo</button></div>`;
   // ── Formato Tricount: pestañas Movimientos · Saldos · Fotos ──
   const mine = d.mine && cfg.members.some((m) => m.id === d.mine) ? d.mine : cfg.members[0].id, meName = soName(mine);
@@ -9338,6 +9367,7 @@ function vSocios() {
     <div class="tc-pd"><div><span>Ha cobrado</span><b>${eur(p.cobros)}</b></div>${p.gastos ? `<div><span>Ha pagado gastos</span><b>−${eur(p.gastos)}</b></div>` : ''}${p.enviado ? `<div><span>Ha pasado al otro</span><b>−${eur(p.enviado)}</b></div>` : ''}${p.recibido ? `<div><span>Le han pasado</span><b>+${eur(p.recibido)}</b></div>` : ''}<div><span>Tiene ahora</span><b>${eur(p.tiene)}</b></div><div><span>Le toca</span><b>${eur(p.toca)}</b></div></div></details>`; }).join('');
   const iam = `<div class="tc-iam"><span>Tú eres:</span>${cfg.members.map((m) => `<button type="button" class="${m.id === mine ? 'on' : ''}" data-act="so-iam" data-k="${m.id}">${m.id === mine ? '✓ ' : ''}${esc(m.name)}</button>`).join('')}<small>Así sale «Debes» o «Te debe» desde tu lado.</small></div>`;
   const salTab = `${iam}${peace}<h3 class="tc-day">Saldos</h3><div class="tc-ps">${people}</div>
+    <h3 class="tc-day">🕊️ Historial de cuentas</h3>${soHistCard()}
     <p class="tc-note">➕ en verde: le deben dinero · ➖ en rojo: tiene dinero que no es suyo. Toca un nombre para ver las cuentas.</p>
     ${sw ? `<p class="small muted">🔗 Copiando en Splitwise${cfg.sw.groupName ? ` (grupo «${esc(cfg.sw.groupName)}»)` : ''}.${d.entries.some((x) => !x.sw) ? ` <button class="linkbtn" data-act="so-swretry">Reenviar los que faltan</button>` : ''}</p>` : ''}`;
   // Fotos
@@ -11714,6 +11744,7 @@ document.addEventListener('click', (e) => {
   if (a === 'so-iam') { const k = el.dataset.k, m = S.so.data.cfg.members.find((x) => x.id === k); if (!m || k === S.so.data.mine) return;
     dConfirm(`¿Tú eres ${esc(m.name)}?`, `Desde ahora «Yo» será <b>${esc(m.name)}</b>: verás «Debes» o «Te debe» desde su lado y lo que apuntes tú irá a su nombre. Tu Telegram también pasa a ser el de ${esc(m.name)} (para los pagos que confirmes desde ahí). Las cuentas no cambian.`, `Sí, soy ${m.name}`, async () => { await api('PUT', '/api/socios/me', { member: k, chat: true }); S.so.data = null; await loadSo(); }, `Hecho: eres ${m.name}`); return; }
   if (a === 'so-tab') { S.so.tab = el.dataset.k; render(); return; }
+  if (a === 'so-csv') { soCsv(); return; } /* v396 */
   if (a === 'so-xpay') { soExpPay(+el.dataset.id); return; }
   if (a === 'so-cfg') { soCfgDlg(); return; }
   if (a === 'so-sw') { if (dlg.open) dlg.close(); soSwDlg(); return; }

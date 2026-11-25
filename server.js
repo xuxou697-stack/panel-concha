@@ -12084,6 +12084,28 @@ function socBalance(month) {
   const unassigned = list.filter((x) => x.ask);
   return { month, unassigned: { n: unassigned.length, amount: socR2(unassigned.reduce((n, x) => n + x.amount, 0)) }, cobros: cobros / 100, gastos: gastos / 100, beneficio: (cobros - gastos) / 100, share: socR2((cobros - gastos) / 100 / n), people, moves, count: list.length };
 }
+/* v396: historial completo con el saldo de cada socio después de cada movimiento, y cuándo estuvisteis en paz */
+function socHistory() {
+  const d = socCfg(), ids = d.members.map((m) => m.id), bal = Object.fromEntries(ids.map((id) => [id, 0]));
+  const list = d.entries.filter((x) => !x.ask).slice().sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
+  const rows = []; let lastPeace = null, peaces = 0;
+  for (const x of list) {
+    const c = Math.round(x.amount * 100), add = (id, v) => { if (id in bal) bal[id] += v; };
+    if (x.kind === 'cobro' || x.kind === 'gasto') {
+      const sg = x.kind === 'cobro' ? 1 : -1, parts = socParts(x);
+      if (x.who === '*') { /* entre los dos: cada uno pone (o se queda) su parte: no cambia los saldos */ }
+      else if (x.who in bal) { add(x.who, sg * c); for (const [id, v] of Object.entries(parts)) add(id, -sg * v); }
+      else continue;
+    } else if (x.kind === 'pago') { if (!(x.who in bal) || !(x.to in bal)) continue; add(x.who, -c); add(x.to, c); }
+    else continue;
+    const peace = ids.every((id) => Math.abs(bal[id]) < 1);
+    if (peace) { lastPeace = { at: x.at, desc: x.desc || '', kind: x.kind, who: x.who, to: x.to || '', amount: x.amount }; peaces++; }
+    rows.push({ at: x.at, kind: x.kind, desc: x.desc || '', who: x.who, to: x.to || '', amount: x.amount, split: Array.isArray(x.split) ? x.split : null, saldo: Object.fromEntries(ids.map((id) => [id, bal[id] / 100])), peace });
+  }
+  const since = lastPeace ? rows.filter((r) => String(r.at) > String(lastPeace.at)) : rows;
+  return { members: d.members.map((m) => ({ id: m.id, name: m.name })), rows, lastPeace, peaces, sinceN: since.length,
+    pagos: rows.filter((r) => r.kind === 'pago').slice(-12).reverse(), now: Object.fromEntries(ids.map((id) => [id, bal[id] / 100])) };
+}
 function socSummaryLine() {
   if (!socOn()) return '';
   const b = socBalance(today().slice(0, 7));
@@ -12156,6 +12178,7 @@ route('GET', '/api/socios', SUPER, ({ me, req }) => {
   const due = expList().filter((e) => !e.done && diffDays(e.due, today()) <= 0).map((e) => ({ id: e.id, name: e.name, amount: e.amount, due: e.due, late: diffDays(e.due, today()) < 0 }));
   return { cfg: socOut(), mine: socWho(me), due, month, months, balance: socBalance(month), entries: d.entries.filter((x) => !month || x.month === month).slice(0, 600), staff: db.users.filter((u) => u.role === 'super' || u.role === 'admin').map((u) => ({ id: u.id, name: u.name })), chats };
 });
+route('GET', '/api/socios/history', SUPER, () => socHistory()); /* v396 */
 route('PUT', '/api/socios/cfg', SUPER, ({ me, body }) => lock(async () => {
   const d = socCfg();
   if (Array.isArray(body.members)) {
