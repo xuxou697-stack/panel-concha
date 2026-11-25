@@ -291,7 +291,7 @@ function addLog(type, client, text, actor) {
   db.log.unshift({
     ts, type,
     client: client ? client.panelName : '', emby: client ? client.embyName : '',
-    clientId: client ? client.id : null, ownerId: client ? client.ownerId : null, demo: !!(client && client.demo),
+    clientId: client ? client.id : null, ownerId: client ? client.ownerId : null, demo: !!(client && client.demo), ...(client && client.serverId ? { kind: kindOfClient(client) } : {}), /* v394: plataforma, para las estadísticas */
     actorId: actor ? actor.id : null, actor: actor ? actor.name : '',
     text, auto: !actor,
   });
@@ -891,7 +891,7 @@ Todavía no has aceptado la invitación de Plex${mail ? ` que mandamos a <b>${hE
     await lock(async () => { addLog('aviso', c, '📩 Recordatorio: invitación de Plex sin aceptar (24 h)', null); saveDb(); });
   }
 }
-setInterval(() => { if (live() && db.servers.some((x) => x.kind === 'plex')) pxRemindTick().catch((e) => console.error('Plex (recordatorio):', e.message)); }, 30 * 60000);
+setInterval(() => { if (!licLocked() && db.servers.some((x) => x.kind === 'plex')) pxRemindTick() /* v394: «live» no existía aquí y el recordatorio no salía nunca */.catch((e) => console.error('Plex (recordatorio):', e.message)); }, 30 * 60000);
 /** Plex no limita las pantallas por usuario: el panel corta las reproducciones que sobran */
 const pxOver = new Map();
 async function plexScreens(s, list, byEmby) {
@@ -4539,7 +4539,7 @@ function botMenuKb(list) {
   const pay = c && !c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? { text: '💳 Renovar', url: cpLink(c), style: 'primary' } : { text: '💳 Renovar', callback_data: 'bm:renovar', style: 'primary' }; // v366: en color (Telegram nuevo)
   const b = (t, k) => ({ text: t, callback_data: 'bm:' + k });
   return { inline_keyboard: [[b('📋 Mi cuenta', 'estado'), pay], [list.every(cliTv) ? b('📺 Mi lista de canales (M3U)', 'datos') : b('🔎 Buscar películas y series', 'buscar')], [b('🟢 Estado del servicio', 'servidor')], // v352: nombres más claros
-    [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis dispositivos', 'aparatos'), b('💶 Planes y precios', 'precios')], [(() => { const rc = refNow(); return rc.on && rc.promo && rc.promo.name ? { text: `🔥 ${rc.promo.name.toUpperCase()} · Invita a un amigo`, callback_data: 'bm:invitar', style: 'success' } : b('🎁 Invita a un amigo', 'invitar'); })(), { text: '➕ Otra cuenta', callback_data: 'bx:go' }], // v378: la oferta se ve en el menú ...(list.filter((x) => x.status !== 'trash').length > 1 ? [[{ text: `👥 Mis cuentas (${list.filter((x) => x.status !== 'trash').length})`, callback_data: 'mc:list' }]] : []), // v376 // v373: otra cuenta para un familiar
+    [b('📲 Instalar la app', 'guia'), b('🔑 Mis datos', 'datos')], [b('📺 Mis dispositivos', 'aparatos'), b('💶 Planes y precios', 'precios')], [...(list.some(refCanInvite) ? [(() => { const rc = refNow(); return rc.on && rc.promo && rc.promo.name ? { text: `🔥 ${rc.promo.name.toUpperCase()} · Invita a un amigo`, callback_data: 'bm:invitar', style: 'success' } : b('🎁 Invita a un amigo', 'invitar'); })()] : []), { text: '➕ Otra cuenta', callback_data: 'bx:go' }] /* v395: solo si ya ha pagado alguna vez */, // v378: la oferta se ve en el menú ...(list.filter((x) => x.status !== 'trash').length > 1 ? [[{ text: `👥 Mis cuentas (${list.filter((x) => x.status !== 'trash').length})`, callback_data: 'mc:list' }]] : []), // v376 // v373: otra cuenta para un familiar
     // v353: «Soporte técnico» va dentro de «Ayuda y soporte»
     ...(list.some((x) => sdGiftOk(x)) ? [[b(sdGiftRew() ? `🎟️ Regala una prueba · gana ${sdGiftRew() === 1 ? '1 mes' : sdGiftRew() + ' meses'}` : '🎟️ Regala una prueba gratis', 'regalo')]] : []), // v303: el cliente regala demos a sus amigos
     ...(() => { // v285: «Novedades» siempre a mano (si su servidor tiene pelis y series); avisarme y el canal van dentro
@@ -4551,13 +4551,23 @@ async function sendCard(chat, c, caption, kb, html) {
   try { return await tgPhoto(chat, accountCard(c), caption, kb, html); }
   catch (e) { console.error('Bot (tarjeta):', e.message); return tg('sendMessage', { chat_id: chat, text: caption, disable_web_page_preview: true, ...(html ? { parse_mode: 'HTML' } : {}), ...(kb ? { reply_markup: kb } : {}) }); }
 }
+/* v394: si el servidor del cliente está caído, el bot se lo dice al abrir el menú y le avisa (solo a él) cuando vuelve */
+const outBotOn = () => ((db.settings.grow || {}).outage || {}).bot !== false;
+function outWait(chat, sid) { const h = health.get(sid); if (!h || !h.down || !outBotOn()) return false; (h.wait || (h.wait = new Set())).add(String(chat)); return true; }
+function outDownFor(chat, list) { const seen = new Set(); let n = 0; for (const x of list) { if (!x || x.status === 'trash' || seen.has(x.serverId)) continue; seen.add(x.serverId); if (outWait(chat, x.serverId)) n++; } return n; }
+async function outBackTell(s, h) {
+  const w = [...(h.wait || [])]; h.wait = new Set(); if (!w.length || !outBotOn()) return;
+  for (const ch of w) { await tg('sendMessage', { chat_id: ch, parse_mode: 'HTML', text: '✅ <b>¡Ya funciona!</b>\n\nEl problema del servidor está arreglado. Ya puedes volver a ver todo con normalidad 🍿\n\n🙏 Perdona las molestias.', reply_markup: { inline_keyboard: [[{ text: '🏠 Menú', callback_data: 'bm:menu' }]] } }).catch(() => {}); await new Promise((r) => setTimeout(r, 80)); }
+  notifyStaff('servers', `📣 He avisado a ${w.length === 1 ? '1 cliente que preguntó' : w.length + ' clientes que preguntaron'} por el bot mientras «${s.name}» estaba caído: ya funciona.`);
+}
 async function botMenu(chat, list) {
   const c = bestAcc(list), name = String((list.find((x) => !x.buyExtraOf && x.status !== 'trash') || c).panelName || '').split(/\s+/)[0]; // v373: saluda al titular, no a «Papá»
   const left = c.demo && c.expiresAt ? Date.parse(c.expiresAt) - Date.now() : 0, lh = Math.floor(left / 3600000), lm = Math.floor((left % 3600000) / 60000);
   const cap = c.demo && list.every((x) => x.demo) && left > 0 // v299: en la demo, cuánto le queda y cómo comprar
     ? `👋 ¡Hola${name ? ', ' + name : ''}! Estás probando ${botName()} 🍿\n\n⏳ Te ${lh === 1 && !lm ? 'queda' : 'quedan'} ${lh ? lh + (lh === 1 ? ' hora' : ' horas') + (lm ? ' y ' : '') : ''}${lm ? lm + ' min' : ''} de prueba.\n\n🛒 ¿Te ha gustado la experiencia? Continúa con tu cuenta: toca «Comprar mi cuenta», eliges pantallas y tiempo y sigues viendo sin cortes.`
     : `👋 ¡Hola${name ? ', ' + name : ''}! Bienvenido a ${botName()} 🍿\n\n¿Qué quieres hacer? Toca un botón 👇`;
-  return sendCard(chat, c, cap, botMenuKb(list));
+  const down = outDownFor(chat, list); /* v394 */
+  return sendCard(chat, c, down ? `🔴 Ahora mismo tu servidor tiene un problema.\nNo es cosa tuya: ya lo sabemos y lo estamos arreglando. Te escribo aquí en cuanto vuelva ✅\n\n${cap}` : cap, botMenuKb(list));
 }
 /** Mi cuenta: una tarjeta por cuenta (hasta 3) con su texto debajo */
 async function botAccount(chat, list) {
@@ -4656,7 +4666,7 @@ async function probDiag(c) {
   if (c && c.expires) L.push(`✅ Tu cuenta está activa (hasta el ${new Date(c.expires + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })})`);
   const mt = s && srvMaintOf(s), h = s && health.get(s.id);
   if (mt) { stop = true; L.push(`🚧 <b>Tu servidor está en mantenimiento</b>${mt.cut ? ' y ahora mismo no está disponible' : ''}.${mt.msg ? '\n' + hEsc(mt.msg) : ''}${mt.until ? `\n⏰ Volvemos a las ${new Date(mt.until).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' })}.` : ''}`); }
-  else if (h && h.down) { stop = true; L.push('🔴 <b>Tu servidor tiene un problema ahora mismo.</b>\nNo es cosa tuya: ya lo sabemos y lo estamos arreglando. Vuelve a probar en un rato 🙏'); }
+  else if (h && h.down) { stop = true; if (c && c.tgChat) outWait(c.tgChat, s.id); L.push('🔴 <b>Tu servidor tiene un problema ahora mismo.</b>\nNo es cosa tuya: ya lo sabemos y lo estamos arreglando. Vuelve a probar en un rato 🙏'); }
   else if (s) L.push('✅ Tu servidor funciona bien');
   if (!stop && s && c.embyId && !cliPx(c)) {
     try {
@@ -4887,6 +4897,9 @@ function refCaption(c, rc, code) {
 async function refBot(chat, c) {
   const rc = refNow(), nm = botName(), bot = (db.settings.notices.telegram || {}).bot || '';
   const menu = [{ text: '🏠 Menú', callback_data: 'bm:menu' }];
+  if (c && !refCanInvite(c)) { const link = !c.demo && cpEligible(c) && cpScreens(c, cpCtx(c)).length && siteBase() ? cpLink(c) : null; /* v395: con el mes gratis (o en prueba) todavía no puede invitar */
+    return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `🎁 <b>Invita a un amigo</b>\n\nPodrás invitar a tus amigos <b>cuando hagas tu primer pago</b> 😊\n\nEn cuanto renueves, te aparece aquí tu código para invitar y ganar regalos.`,
+      reply_markup: { inline_keyboard: [...(link ? [[{ text: '💳 Renovar', url: link, style: 'primary' }]] : []), menu] } }); }
   if (!rc.on || !c) {
     const share = `🎬 Te recomiendo ${nm}: pelis y series en 4K en todos tus aparatos.${botContact() ? '\n\n' + botContact() : ''}`;
     return tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: `💛 <b>¿Te gusta ${hEsc(nm)}?</b>\n\nSi conoces a alguien a quien le pueda gustar, pásale nuestro contacto y dile que va de tu parte. ¡Gracias por recomendarnos! 🙌`,
@@ -4903,24 +4916,44 @@ async function refBot(chat, c) {
 function refApply(c, code, me) {
   const rc = refNow(), r = db.clients.find((x) => x.refCode === String(code || '').toUpperCase() && x.id !== c.id);
   if (!r || c.refBy) return null;
+  if (!refCanInvite(r)) { addLog('edicion', r, `${c.panelName} ha usado su código, pero todavía no ha pagado nunca: no cuenta como invitación`, me); return null; } /* v395 */
   {
       const used = refUsed(r, rc);
       c.refBy = r.id;
       if (!rc.on) addLog('edicion', r, `${c.panelName} se ha unido con su código (ahora no hay regalos de invitación)`, me);
-      else if (rc.max && used >= rc.max) addLog('edicion', r, `${c.panelName} se ha unido con su código, pero ya había invitado a ${rc.max === 1 ? '1 amigo' : rc.max + ' amigos'}: esta vez no hay regalo`, me);
+      else if (rc.max && used >= rc.max && (c.refByNo = 'max')) addLog('edicion', r, `${c.panelName} se ha unido con su código, pero ya había invitado a ${rc.max === 1 ? '1 amigo' : rc.max + ' amigos'}: esta vez no hay regalo`, me);
       else {
         if (rc.newDays > 0) { c.expires = addDays(c.expires, rc.newDays); c.refGift = rc.newDays; addLog('edicion', c, `🎁 +${durText(rc.newDays)} de regalo por venir de parte de ${r.panelName}. Vence el ${c.expires}`, me); }
         if (rc.days > 0) {
           if (!r.demo && r.status === 'active' && diffDays(r.expires, today()) >= 0) {
-            r.expires = addDays(r.expires, rc.days);
+            r.expires = addDays(r.expires, rc.days); c.refByGift = rc.days; /* v394: lo que recibió quien invitó */
             addLog('edicion', r, `🎁 +${durText(rc.days)} de regalo: ${c.panelName} se ha unido con su código`, me);
             if (r.tgChat) tg('sendMessage', { chat_id: r.tgChat, parse_mode: 'HTML', text: `🎉 <b>¡Gracias por recomendarnos, ${hEsc(String(r.panelName).split(/\s+/)[0])}!</b>\n\n${c.buyExtraOf ? `Por traernos a <b>${hEsc(c.panelName)}</b> (tu otra cuenta)` : 'Tu amigo ya está dentro y'} te regalamos <b>${durText(rc.days)}</b> 🎁\n📅 Tu cuenta vence ahora el <b>${r.expires.split('-').reverse().join('/')}</b>.` }).catch(() => {});
-          } else addLog('edicion', r, `${c.panelName} se ha unido con su código (no se suman días: su cuenta no está activa)`, me);
+          } else { c.refByNo = 'inactivo'; addLog('edicion', r, `${c.panelName} se ha unido con su código (no se suman días: su cuenta no está activa)`, me); }
         }
       }
   }
   return r;
 }
+/* v394: aviso SOLO para ti (nunca al cliente) cuando a un amigo invitado se le acaba su mes gratis y todavía no ha pagado */
+async function refEndTick() {
+  const rf = db.settings.referral || {}; if (rf.endWarn === false || !licFeat('notifs')) return;
+  const D = [1, 2, 3, 5, 7].includes(Number(rf.endDays)) ? Number(rf.endDays) : 3, t = today();
+  const paid = new Set((db.orders || []).filter((o) => o.status === 'paid').map((o) => o.clientId));
+  const list = db.clients.filter((c) => c.refFree && !c.demo && c.status === 'active' && c.refEndWarn !== c.expires && !paid.has(c.id) && diffDays(c.expires, t) >= 0 && diffDays(c.expires, t) <= D);
+  if (!list.length) return;
+  const bosses = db.users.filter((u) => !u.disabled && u.role === 'super' && (u.secAlerts || {}).payments !== false);
+  for (const c of list) {
+    const r = db.clients.find((x) => x.id === c.refBy), n = diffDays(c.expires, t), when = n === 0 ? '<b>hoy</b>' : n === 1 ? '<b>mañana</b>' : `dentro de <b>${n} días</b>`;
+    const who = c.tgUser ? `<a href="tg://user?id=${Number(c.tgUser) || 0}">${hEsc(c.panelName)}</a>` : `<b>${hEsc(c.panelName)}</b>`;
+    const txt = `⏳ <b>Se acaba un mes gratis</b>\n\n${who}${c.telegram ? ' (' + hEsc(c.telegram) + ')' : ''}\n👤 ${hEsc(c.embyName)}\n🎁 Regalo${r ? ' de parte de <b>' + hEsc(r.panelName) + '</b>' : ''}\n📅 Se le acaba ${when} (${c.expires.split('-').reverse().join('/')})\n💶 Todavía <b>no ha pagado</b>.\n\n<i>Al cliente no le he mandado nada. Si quieres, escríbele tú.</i>`;
+    c.refEndWarn = c.expires;
+    for (const u of bosses) for (const ch of userChats(u)) await tg('sendMessage', { chat_id: ch, text: txt, parse_mode: 'HTML', disable_web_page_preview: true }).catch(() => {});
+    addLog('aviso', c, `⏳ Aviso para ti: se le acaba el mes gratis ${n === 0 ? 'hoy' : n === 1 ? 'mañana' : 'en ' + n + ' días'} y todavía no ha pagado`, null);
+  }
+  saveDb();
+}
+setInterval(() => { if (!licLocked()) lock(async () => refEndTick()).catch((e) => console.error('Aviso mes gratis:', e.message)); }, Number(process.env.REFEND_MS) || 30 * 60000);
 /* v381: el amigo invitado activa su regalo (p. ej. «primer mes gratis» del Black Friday) sin pagar; una vez por persona */
 const refFreeBusy = new Set();
 async function refFree(chat, from) {
@@ -4928,7 +4961,7 @@ async function refFree(chat, from) {
   const used = (db.settings.refFreeUsed || {})[uid], mine = db.clients.filter((c) => c.tgChat === chat && c.status !== 'trash');
   const sorry = (t) => tg('sendMessage', { chat_id: chat, parse_mode: 'HTML', text: t, reply_markup: { inline_keyboard: [...(buyOk() ? [[{ text: '🛒 Comprar mi cuenta', callback_data: 'by:go' }]] : []), ...(sdCfg().on ? [[{ text: '🎁 Probar gratis', callback_data: 'sd:go' }]] : [])] } });
   if (mine.length) return botReply(chat, 'menu', mine);
-  if (!r || !refAuto(r) || !rc.on || !(rc.newDays > 0)) return sorry('😕 Esta invitación ya no está activa. Aun así puedes probar o darte de alta 👇');
+  if (!r || !refAuto(r) || !refCanInvite(r) || !rc.on || !(rc.newDays > 0)) return sorry('😕 Esta invitación ya no está activa. Aun así puedes probar o darte de alta 👇');
   if (used) return sorry('😊 Ya activaste tu regalo de invitación antes. Si quieres seguir, puedes darte de alta 👇');
   if (rc.max && refUsed(r, rc) >= rc.max) return sorry(`😕 ${hEsc(String(r.panelName).split(/\s+/)[0])} ya ha invitado a ${rc.max === 1 ? 'su amigo' : 'todos sus amigos'} de esta promoción. Aun así puedes probar o darte de alta 👇`);
   if (refFreeBusy.has(uid)) return; refFreeBusy.add(uid);
@@ -4969,11 +5002,15 @@ async function refFree(chat, from) {
 }
 /** El amigo abre el enlace de invitación: le damos la bienvenida y avisamos al dueño (y al vendedor de quien le invitó) */
 const refLeadSeen = new Map();
+/* v395: solo invitan los que ya han pagado alguna vez (los del mes gratis, cuando paguen) */
+const refPaidOnce = (c) => (db.orders || []).some((o) => o.clientId === c.id && o.status === 'paid') || db.log.some((l) => l.clientId === c.id && l.type === 'renovacion');
+const refCanInvite = (c) => !!c && !c.demo && (!c.refFree || refPaidOnce(c));
 const refAuto = (r) => { const o = r && db.users.find((u) => u.id === r.ownerId); return !!(o && ['super', 'admin'].includes(o.role)); }; // v374: solo tus clientes directos (los de revendedores, a mano)
 function refPendSet(uid, code) { const m = db.settings.refPend || (db.settings.refPend = {}); const now = Date.now(); for (const k of Object.keys(m)) if (now - Date.parse(m[k].at) > 30 * 86400000) delete m[k]; m[String(uid)] = { code, at: new Date().toISOString() }; }
 const refPendGet = (uid) => { const x = (db.settings.refPend || {})[String(uid)]; return x && Date.now() - Date.parse(x.at) < 30 * 86400000 ? x.code : ''; };
 async function refLead(chat, from, code) {
-  const r = db.clients.find((x) => x.refCode === code), rc = refNow(), nm = botName();
+  let r = db.clients.find((x) => x.refCode === code); const rc = refNow(), nm = botName();
+  if (r && !refCanInvite(r)) r = null; /* v395: su código no vale hasta que pague */
   const free = !!(r && refAuto(r) && rc.on && rc.newDays > 0 && licFeat('bot') && (!rc.max || refUsed(r, rc) < rc.max)); // v381: su regalo (p. ej. primer mes gratis) lo activa él solo
   const auto = refAuto(r) && (free || buyOk() || sdCfg().on); // v374: puede darse de alta él solo y el regalo se aplica al pagar
   if (r && auto) await lock(async () => { refPendSet((from && from.id) || chat, code); saveDb(); });
@@ -5045,7 +5082,7 @@ async function botReply(chat, kind, list) {
     const seen = new Set(), lines = [];
     for (const c of accs) {
       const s = db.servers.find((x) => x.id === c.serverId); if (!s || seen.has(s.id)) continue; seen.add(s.id);
-      const h = health.get(s.id), mt = srvMaintOf(s);
+      const h = health.get(s.id), mt = srvMaintOf(s); if (h && h.down && !mt) outWait(chat, s.id); /* v394 */
       if (mt) { const hm = mt.until ? new Date(mt.until).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: process.env.TZ || 'Europe/Madrid' }) : ''; lines.push(`🚧 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} está en mantenimiento${mt.cut ? ' y ahora mismo no está disponible' : ''}.\n${mt.msg}${hm ? `\n⏰ Volvemos a las ${hm}.` : ''}`); continue; }
       lines.push(!h ? `⚪ Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''}: comprobando…` : h.down ? `🔴 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} tiene un problema ahora mismo.\nYa lo sabemos y lo estamos arreglando. Vuelve a probar en un rato 🙏` : `🟢 Tu servidor${accs.length > 1 ? ' (' + c.panelName + ')' : ''} funciona correctamente.`);
     }
@@ -5106,7 +5143,7 @@ async function botReply(chat, kind, list) {
     const r = pricesSimple(bestAcc(accs), chat); // v299/v383
     return r ? send(r.text, r.kb, true) : send(`💶 Para conocer los precios, escríbenos:${botContact() ? '\n\n' + botContact() : ''}`);
   }
-  if (kind === 'invitar') return refBot(chat, bestAcc(accs));
+  if (kind === 'invitar') return refBot(chat, accs.find(refCanInvite) || bestAcc(accs)); /* v395 */
   if (kind === 'regalo') return sdGiftBot(chat, accs.find((x) => sdGiftOk(x)) || accs[0]); // v303
   if (kind === 'novedades') return botNews(chat, bestAcc(accs));
   return send(botAnswer('ayuda', list).text);
@@ -7623,6 +7660,7 @@ async function watchServers() {
     if (ok) {
       if (h.down) {
         const mins = Math.max(1, Math.round((Date.now() - Date.parse(h.since)) / 60000));
+        if (h.wait && h.wait.size) outBackTell(s, h).catch(() => {}); /* v394 */
         if (h.posted) { h.posted = false; growPost(outageText(s, true, mins)).catch((e) => console.error('Aviso al grupo:', e.message)); }
         h.lastUp = new Date().toISOString(); h.lastMins = mins;
         notifyStaff('servers', `🟢 El servidor «${s.name}» vuelve a funcionar.\nEstuvo caído unos ${mins < 60 ? (mins === 1 ? '1 minuto' : mins + ' minutos') : Math.round(mins / 6) / 10 + ' horas'}.\n${whenTxt()}`);
@@ -8084,18 +8122,26 @@ route('POST', '/api/feed/:id/test', STAFF, async ({ me, params, body }) => {
 route('GET', '/api/referral', SUPER, () => {
   const r = db.settings.referral || {}, rc = refNow();
   const byId = new Map(db.clients.map((c) => [c.id, c]));
-  const friends = db.clients.filter((c) => c.refBy).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0, 30)
-    .map((c) => { const x = byId.get(c.refBy); return { id: c.id, name: c.panelName, by: x ? x.panelName : '—', byId: c.refBy, at: c.createdAt || '', gift: c.refGift || 0 }; });
+  const paidIds = new Set((db.orders || []).filter((o) => o.status === 'paid').map((o) => o.clientId)); /* v394: quién ya paga */
+  const renIds = new Set(db.log.filter((l) => l.type === 'renovacion' && l.clientId != null).map((l) => l.clientId));
+  const gotLog = (x, c) => { const l = db.log.find((y) => y.clientId === x.id && y.type === 'edicion' && /^🎁 \+/.test(y.text) && y.text.includes(`: ${c.panelName} se ha unido`)); const m = l && l.text.match(/^🎁 \+(.+?) de regalo/); return m ? m[1] : ''; };
+  const allFr = db.clients.filter((c) => c.refBy).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  const frState = (c) => (c.status === 'trash' ? 'baja' : paidIds.has(c.id) || renIds.has(c.id) || (!c.refFree && !c.demo) ? 'paga' : c.status === 'active' && diffDays(c.expires, today()) >= 0 ? 'gratis' : 'caducado');
+  const friends = allFr.slice(0, 60)
+    .map((c) => { const x = byId.get(c.refBy), st = frState(c); return { id: c.id, name: c.panelName, emby: c.embyName || '', tg: c.telegram || '', by: x ? x.panelName : '—', byId: c.refBy, at: c.createdAt || '', gift: c.refGift || 0, free: !!c.refFree, extra: !!(c.buyExtraOf || c.refExtra), expires: c.expires || '', st,
+      byGift: c.refByGift ? durText(c.refByGift) : x ? gotLog(x, c) : '', byNo: c.refByNo || '' }; });
+  const sum = { gratis: 0, paga: 0, caducado: 0, baja: 0, given: 0 }; for (const c of allFr) { sum[frState(c)]++; if (c.refByGift || (byId.get(c.refBy) && gotLog(byId.get(c.refBy), c))) sum.given++; }
   const top = {}; for (const c of db.clients) if (c.refBy) top[c.refBy] = (top[c.refBy] || 0) + 1;
-  return { days: Number(r.days) || 0, newDays: Number(r.newDays) || 0, max: Number(r.max) || 0, minMonths: refMin(), promo: { on: !!(r.promo || {}).on, name: (r.promo || {}).name || '', until: (r.promo || {}).until || '', img: !!(r.promo || {}).img && fs.existsSync(REF_IMG) },
+  return { days: Number(r.days) || 0, newDays: Number(r.newDays) || 0, max: Number(r.max) || 0, minMonths: refMin(), endWarn: r.endWarn !== false, endDays: Number(r.endDays) || 3, promo: { on: !!(r.promo || {}).on, name: (r.promo || {}).name || '', until: (r.promo || {}).until || '', img: !!(r.promo || {}).img && fs.existsSync(REF_IMG) },
     live: rc.on, over: rc.over, bot: (db.settings.notices.telegram || {}).bot || '', total: db.clients.filter((c) => c.refBy).length, codes: db.clients.filter((c) => c.refCode).length,
-    friends, top: Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, n]) => ({ name: (byId.get(+id) || {}).panelName || '—', n })),
+    friends, sum, top: Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, n]) => ({ name: (byId.get(+id) || {}).panelName || '—', n })),
     preview: refCaption({ id: -1 }, { ...rc, on: true, promo: (r.promo || {}).on ? { name: (r.promo || {}).name || '', until: (r.promo || {}).until || '', since: '' } : null }, 'A1B2C3').text };
 });
 route('PUT', '/api/referral', SUPER, ({ me, body }) => lock(async () => {
   const r = db.settings.referral, b = body || {};
   const int = (v, min, max, d) => { const n = Number(v); return Number.isInteger(n) && n >= min && n <= max ? n : d; };
   r.days = int(b.days, 0, 365, r.days || 0); r.newDays = int(b.newDays, 0, 365, r.newDays || 0); r.max = int(b.max, 0, 50, r.max || 0); if ([1, 3, 6, 12].includes(Number(b.minMonths))) r.minMonths = Number(b.minMonths); // v377
+  if (b.endWarn !== undefined) r.endWarn = !!b.endWarn; if ([1, 2, 3, 5, 7].includes(Number(b.endDays))) r.endDays = Number(b.endDays); /* v394 */
   const p = r.promo || (r.promo = { on: false, name: '', until: '', since: '', img: false });
   if (b.promo && typeof b.promo === 'object') {
     const was = p.on; p.on = !!b.promo.on; p.name = str(b.promo.name || '', 40).trim();
@@ -8241,6 +8287,31 @@ route('POST', '/api/feed/:id/top', STAFF, async ({ me, params }) => {
   return { ok: true, note: 'Publicado: míralo en el canal.' };
 });
 /* ---------- v263: pantalla «Crecer» ---------- */
+/* v394: ¿cuántas pruebas acaban pagando? Por plataforma, con las demos y los meses gratis de invitación */
+function convStats() {
+  const byId = new Map(db.clients.map((c) => [c.id, c])), kinds = [...new Set(db.servers.map(kindOf))], guess = kinds.length === 1 ? kinds[0] : 'emby';
+  const paid = new Set((db.orders || []).filter((o) => o.status === 'paid').map((o) => o.clientId));
+  const convLog = new Set(), renLog = new Set();
+  for (const l of db.log) { if (l.clientId == null) continue; if (l.type === 'alta' && /Demo convertida/.test(l.text)) convLog.add(l.clientId); if (l.type === 'renovacion') renLog.add(l.clientId); }
+  const items = new Map(); // clientId -> { t, kind, at, what }
+  for (const l of db.log) if (l.type === 'demo' && l.clientId != null && !/reactivada/i.test(l.text) && !items.has(l.clientId)) { const c = byId.get(l.clientId); items.set(l.clientId, { t: 'demo', kind: l.kind || (c ? kindOfClient(c) : guess), at: Date.parse(l.ts) }); }
+  for (const c of db.clients) if (c.refFree) items.set(c.id, { t: 'free', kind: kindOfClient(c), at: Date.parse((c.createdAt || today()) + 'T12:00:00') });
+  const now = Date.now(), out = {};
+  for (const [D, key] of [[30, 'd30'], [90, 'd90'], [0, 'all']]) {
+    const rows = {};
+    for (const [id, it] of items) {
+      if (D && now - it.at > D * 86400000) continue;
+      const c = byId.get(id), r = rows[it.kind] || (rows[it.kind] = { demo: { n: 0, paid: 0, now: 0 }, free: { n: 0, paid: 0, now: 0 } }), b = r[it.t];
+      b.n++;
+      const ok = it.t === 'demo' ? paid.has(id) || convLog.has(id) || (c && !c.demo && c.status !== 'trash') : paid.has(id) || renLog.has(id);
+      if (ok) b.paid++;
+      else if (c && c.status === 'active' && (it.t === 'demo' ? c.demo : diffDays(c.expires, today()) >= 0)) b.now++;
+    }
+    out[key] = rows;
+  }
+  const oldest = db.log.length ? db.log[db.log.length - 1].ts : '';
+  return { ...out, kinds, since: oldest };
+}
 route('GET', '/api/grow', SUPER, () => {
   const g = db.settings.grow, t = today(), now = Date.now();
   const sent = (k) => db.clients.filter((c) => (c.tgSent || []).some((x) => x.endsWith(':' + k))).length;
@@ -8255,7 +8326,7 @@ route('GET', '/api/grow', SUPER, () => {
   const live = db.clients.filter((c) => !c.demo && c.status === 'active');
   const sleepy = live.filter(sleepyC).length;
   const expired = db.clients.filter((c) => !c.demo && (c.status === 'expired' || (c.status === 'trash' && c.trashReason === 'Sin renovar'))).length;
-  return { cfg: g, bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
+  return { cfg: g, conv: convStats(), bot: !!db.settings.notices.telegram.token, winback: { d7: sent('w7'), d30: sent('w30'), back, want, expired }, survey: { dist, total: votes.length, asked, low, avg: votes.length ? votes.reduce((n, c) => n + c.survey.n, 0) / votes.length : 0 },
     df: { f1: db.clients.filter((c) => (c.dfSent || []).includes('f1')).length, f3: db.clients.filter((c) => (c.dfSent || []).includes('f3')).length, back: db.clients.filter((c) => (c.dfSent || []).length && !c.demo).length },
     bye: BYE.map(([k, t]) => [t, db.clients.filter((c) => c.leftWhy && c.leftWhy.k === k).length]), byeList: db.clients.filter((c) => c.leftWhy).sort((a, b) => b.leftWhy.at.localeCompare(a.leftWhy.at)).slice(0, 20).map((c) => ({ id: c.id, name: c.panelName, emby: c.embyName, why: (BYE.find((x) => x[0] === c.leftWhy.k) || [])[1] || '', at: c.leftWhy.at, how: c.leftWhy.how, whatsapp: c.whatsapp || '', telegram: c.telegram || '' })),
     tgLinked, rooms, sleepy, live: live.length, outage: growChat(), ep: botStatSum(['ep'], 30).ep, wrapN: botStatSum(['wrap'], 30).wrap, reviews: db.reviews.slice(0, 60).map((r) => ({ id: r.id, name: r.name, text: r.text, at: r.at, status: r.status })), areqN: botStatSum(['areq'], 30).areq || 0, areqPend: db.requests.filter((r) => r.status === 'pending').length, slN: botStatSum(['sleepy'], 30).sleepy || 0, slBack: botStatSum(['slback'], 30).slback || 0, watching: Object.keys(watchLoad()).length,
@@ -8271,7 +8342,7 @@ route('PUT', '/api/grow', SUPER, ({ me, body }) => lock(async () => {
   if (b.bye) g.bye.on = !!b.bye.on;
   if (b.winback) { const w = b.winback; g.winback.on = !!w.on; g.winback.d7 = w.d7 !== false; g.winback.d30 = w.d30 !== false; if (typeof w.offer === 'string') g.winback.offer = w.offer.trim().slice(0, 300); }
   if (b.weekly) { const w = b.weekly; g.weekly.on = !!w.on; if ([0, 1, 2, 3, 4, 5, 6].includes(Number(w.day))) g.weekly.day = Number(w.day); if (Number(w.hour) >= 8 && Number(w.hour) <= 22) g.weekly.hour = Number(w.hour); }
-  if (b.outage) { const o = b.outage; g.outage.on = !!o.on; if (typeof o.chat === 'string') g.outage.chat = o.chat.trim().slice(0, 200); g.outage.thread = Math.max(0, Math.min(1e9, Number(o.thread) || 0)); if ([1, 2, 3, 5, 10, 15].includes(Number(o.delay))) g.outage.delay = Number(o.delay); g.outage.name = o.name !== false; }
+  if (b.outage) { const o = b.outage; g.outage.on = !!o.on; if (o.bot !== undefined) g.outage.bot = !!o.bot; /* v394 */ if (typeof o.chat === 'string') g.outage.chat = o.chat.trim().slice(0, 200); g.outage.thread = Math.max(0, Math.min(1e9, Number(o.thread) || 0)); if ([1, 2, 3, 5, 10, 15].includes(Number(o.delay))) g.outage.delay = Number(o.delay); g.outage.name = o.name !== false; }
   if (b.survey) { const v = b.survey; const was = g.survey.on; g.survey.on = !!v.on; if ([7, 15, 30, 60].includes(Number(v.days))) g.survey.days = Number(v.days); if (g.survey.on && (!was || !g.survey.since)) g.survey.since = today(); }
   if (b.epAlert) g.epAlert.on = !!b.epAlert.on;
   if (b.biz) { g.biz.on = !!b.biz.on; if (typeof b.biz.group === 'string') { const gl = b.biz.group.trim().slice(0, 200); if (gl && !/^https:\/\/t\.me\/[\w+\-/]+$/.test(gl)) throw new HttpError(400, 'El enlace del grupo tiene que empezar por https://t.me/'); g.biz.group = gl; } if ([1, 3, 6, 12, 24].includes(Number(b.biz.quiet))) g.biz.quiet = Number(b.biz.quiet); if (typeof b.biz.hours === 'string' && /^(|\d{1,2}-\d{1,2})$/.test(b.biz.hours)) g.biz.hours = b.biz.hours; if (b.biz.fix != null) g.biz.fix = !!b.biz.fix; if (b.biz.rsOn != null) g.biz.rsOn = !!b.biz.rsOn; if (typeof b.biz.rs === 'string') g.biz.rs = b.biz.rs.replace(/\r/g, '').trim().slice(0, 3800) || BIZ_RS_DEF; if (b.biz.pnOn != null) g.biz.pnOn = !!b.biz.pnOn; if (typeof b.biz.pn === 'string') g.biz.pn = b.biz.pn.replace(/\r/g, '').trim().slice(0, 3000) || BIZ_PN_DEF; if (Array.isArray(b.biz.pnPrices) && b.biz.pnPrices.length === 4 && b.biz.pnPrices.every((v) => Number(v) > 0 && Number(v) < 10000)) g.biz.pnPrices = b.biz.pnPrices.map((v) => Math.round(Number(v) * 100) / 100); if (typeof b.biz.pnDays === 'string' && b.biz.pnDays.trim()) g.biz.pnDays = b.biz.pnDays.trim().slice(0, 40); if (b.biz.smOn != null) g.biz.smOn = !!b.biz.smOn; if (typeof b.biz.sm === 'string') g.biz.sm = b.biz.sm.replace(/\r/g, '').trim().slice(0, 3000) || BIZ_SM_DEF; if (Number(b.biz.smSetup) > 0 && Number(b.biz.smSetup) < 10000) g.biz.smSetup = Number(b.biz.smSetup); if (Number(b.biz.smMaint) >= 0 && Number(b.biz.smMaint) < 10000 && b.biz.smMaint !== '') g.biz.smMaint = Number(b.biz.smMaint); } // v324 · v331 · v332
