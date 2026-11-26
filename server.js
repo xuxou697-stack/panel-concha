@@ -12060,7 +12060,7 @@ function socSetWho(x, who, by) {
   if (d.sw.on && d.sw.key && d.sw.group) swPush(x).catch((er) => { x.swErr = er.message.slice(0, 140); });
   return was;
 }
-const socAskOut = (x) => (x && x.ask ? { socAsk: { id: x.id, amount: x.amount, desc: x.desc, members: socCfg().members.map((m) => ({ id: m.id, name: m.name })) } } : {});
+const socAskOut = (x) => (x && x.ask ? { socAsk: { id: x.id, amount: x.amount, desc: x.desc, members: socCfg().members.map((m) => ({ id: m.id, name: m.name })), fee: (() => { const f = feeCfg().stripe; return socR2(Math.min(x.amount, x.amount * f.pct / 100 + f.fix)); })() /* v398 */ } } : {});
 function socBalance(month) {
   const d = socCfg(), list = d.entries.filter((x) => !month || x.month === month), n = d.members.length;
   const by = Object.fromEntries(d.members.map((m) => [m.id, { id: m.id, name: m.name, cobros: 0, gastos: 0, enviado: 0, recibido: 0, toca: 0, tiene: 0 }]));
