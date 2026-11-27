@@ -2414,10 +2414,12 @@ function notifyUser(u, text) {
     .then((r) => r.some(Boolean));
 }
 /** Aviso al superadministrador (y a los administradores que lo pidan) */
-function notifyStaff(kind, text) {
+function notifyStaff(kind, text, opt) {
   if (!licFeat('notifs')) return; // v380: panel alquilado sin notificaciones
   for (const u of db.users) {
     if (u.disabled || !u.tgChat) continue;
+    if (opt && (opt.skip || []).includes(u.id)) continue; /* v399 */
+    if (opt && opt.owner != null && u.noticeMine && isStaff(u) && opt.owner !== u.id && !(isOwner(u) && !partnerById(opt.owner))) continue; /* v399: «solo mis clientes» */
     const pref = (u.secAlerts || {})[kind];
     if (u.role === 'super' ? pref !== false : (u.role === 'admin' && pref === true && (kind !== 'servers' || can(u, 'viewServers')) && (kind !== 'quality' || can(u, 'servers')) && (kind !== 'sabotage' || can(u, 'resellers')) && (kind !== 'vendorLogins' || can(u, 'resellers')))) notifyUser(u, text);
   }
@@ -2565,7 +2567,10 @@ const pubUser = (u) => ({
   canCreateSubs: u.canCreateSubs !== false, subCost: u.subCost || 0,
   twoFa: !!(u.totp && u.totp.on), tgLinked: !!u.tgChat, home: u.home || '',
   perms: permsOf(u), owner: isOwner(u), useCredits: u.role === 'admin' && !!u.useCredits, tech: !!u.tech, email: u.email || '', currency: u.currency || 'EUR', xtreme: u.xtreme || null,
+  partner: !!u.partner, partnerPay: u.partner ? ptPayOut(u) : null, noticeMine: !!u.noticeMine, /* v399 */
 });
+/* v399: estado del Stripe del socio (nunca la clave) */
+function ptPayOut(u) { const p = u.partnerPay || {}; return { on: p.on !== false, hasKey: !!p.key, hasWh: !!p.whsec, secret: /^sk_/.test(p.key || ''), hookAuto: !!p.whId, hookErr: p.hookErr || '', testOk: p.testOk || null, testHook: p.testHook || null, testPending: !!p.testSid && !p.testOk, twoFa: !!(u.totp && u.totp.on), live: /_live_/.test(p.key || ''), acct: p.acct || '', checkedAt: p.checkedAt || null, err: p.err || '', webhook: siteBase() ? `${siteBase()}/api/pay/stripe/webhook/p${u.id}` : '', clients: db.clients.filter((c) => c.ownerId === u.id && c.status !== 'trash').length, active: !!partnerOf(u) }; }
 const CURRENCIES = ['EUR', 'USD', 'MXN', 'COP', 'ARS', 'CLP', 'PEN', 'GBP'];
 /** Datos propios de un administrador: permisos, creditos, etiqueta de tecnico, correo, moneda y enlace a otro panel */
 function readAdminOptions(me, body, u) {
@@ -2765,12 +2770,15 @@ function publicData(me) {
       // La app de clientes: mientras el superadministrador no la publique, el resto del equipo no la ve
       app: me.role === 'super' || (db.settings.app || {}).public ? db.settings.app : { ...db.settings.app, file: false, tag: false, inMsg: false },
       clientPay: isStaff(me) ? db.settings.clientPay : { vendors: !!(db.settings.clientPay || {}).vendors } },
+    ptCard: isStaff(me) && db.users.some((u) => u.partner) ? (() => { try { return ptCardData(); } catch (e) { console.error('ptCard', e.message); return null; } })() : null, /* v399 */
     servers: serversFor(me).map((s) => (seeServers
       ? { id: s.id, kind: kindOf(s), name: s.name, usable: !s.off, off: !!s.off, publicUrl: s.publicUrl || '', url: s.url, packages: s.packages || {}, keyLost: !!s.keyLost, ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, maxClients: srvMax(s), used: srvLoad(s), full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) }
       : { id: s.id, kind: kindOf(s), name: s.name, usable: serverAllowed(me, s) && !s.off, publicUrl: s.publicUrl || '', ready: { basico: packageReady(s, 'basico'), k4: packageReady(s, 'k4') }, full: srvMax(s) > 0 && srvLoad(s) >= srvMax(s) })),
     users, stats: seeClients ? stats : { today: Object.fromEntries(Object.keys(stats.today).map((k) => [k, [0, 0]])), month: Object.fromEntries(Object.keys(stats.month).map((k) => [k, [0, 0]])), days: stats.days.map((x) => ({ d: x.d, alta: 0, renovacion: 0 })) },
     clients: db.clients.filter((c) => seeClients && !c.buyPend && (!vis || vis.has(c.ownerId)) && !jfHidden(me, db.servers.find((x) => x.id === c.serverId))).map((c) => ({ ...c, tgChat: undefined, payKey: undefined, payLink: (isStaff(me) || c.ownerId === me.id) && siteBase() && cpEligible(c) ? cpLink(c) : '', tgLinked: !!c.tgChat, tgCode: tgCode(c), ...(pxPendingOf(c) ? { plexPending: true } : {}) })),
     log: db.log.filter((l) => l.type !== 'login' && seeClients && (!vis ? true : (l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)).slice(0, 500),
+    /* v399: altas, demos y renovaciones de hoy y ayer, aparte: el registro de arriba se queda corto si hay muchos avisos y salían a cero */
+    hoyLog: (() => { if (!seeClients) return []; const y0 = addDays(today(), -1), out = []; for (const l of db.log) { const dd = localDate(new Date(l.ts)); if (dd < y0) break; if (!['alta', 'demo', 'renovacion'].includes(l.type)) continue; if (vis && !((l.ownerId != null && vis.has(l.ownerId)) || l.actorId === me.id)) continue; out.push(l); if (out.length >= 600) break; } return out; })(),
     ledger: db.ledger.filter((l) => (adm && !P.reports ? l.userId === me.id : !vis || vis.has(l.userId))).slice(0, 500),
     lastRun: db.lastRun,
     // v264: para el Resumen: quién quiere volver y quién está descontento (lo de «Crecer»)
@@ -2797,6 +2805,9 @@ function resellerSettings() {
 }
 /* ---------- Rutas ---------- */
 const routes = [];
+/* v399: lo que el socio no puede tocar (aunque sea superadministrador): cobros y precios, borrar servidores, copias de seguridad */
+const PT_OWNER_ONLY = [['PUT', /^\/api\/pay\/config$/], ['PUT', /^\/api\/pay\/usdc$/], ['PUT', /^\/api\/pay-fees$/], ['PUT', /^\/api\/client-pay$/], ['DELETE', /^\/api\/servers\/\d+$/],
+  ['POST', /^\/api\/backup\//], ['PUT', /^\/api\/backup\//]];
 /** roles: null = sin sesion; '*' = cualquiera con sesion; o lista de roles */
 function route(method, pattern, roles, handler) {
   routes.push({ method, re: new RegExp('^' + pattern.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), roles, handler });
@@ -2951,6 +2962,10 @@ function finishLogin(req, res, u, via2fa) {
   const al = u.secAlerts || {};
   if (al.login !== false) notifyUser(u, `🔐 Nuevo inicio de sesión en tu cuenta «${u.username}» del panel ${db.settings.brand.name || 'Concha'}.\n${dev}\nIP: ${ip}\n${whenTxt()}\n\nSi no has sido tú, entra en Ajustes › Seguridad, pulsa «Cerrar las demás sesiones» y cambia la contraseña.`);
   if (u.role === 'admin') notifyStaff('staffLogins', `👤 El administrador ${u.name} (${u.username}) ha entrado en el panel.\n${dev} · IP ${ip}\n${whenTxt()}`);
+  if (u.partner && !isOwner(u)) { /* v399: el socio entra desde un aparato nuevo → aviso al dueño */
+    const k = crypto.createHash('sha1').update(String(req.headers['user-agent'] || '')).digest('hex').slice(0, 12), known = u.devKnown || (u.devKnown = []);
+    if (!known.includes(k)) { const first = !known.length; known.push(k); if (known.length > 20) known.shift(); const own = ownerUser(); if (own && !first) notifyUser(own, `🆕 ${u.name} ha entrado en el panel desde un aparato nuevo.\n${dev} · IP ${ip}\n${whenTxt()}\n\nSi no ha sido él, ciérrale las sesiones en Usuarios › ${u.name}.`); }
+  }
   // Entradas de resellers y subresellers: al jefe (y a los admins que lo pidan) y, si es un subreseller, también a su reseller
   if (u.role === 'reseller' || u.role === 'sub') {
     const par = u.parentId ? db.users.find((x) => x.id === u.parentId) : null;
@@ -5310,6 +5325,12 @@ async function botCallback(cq) {
   }
   if (data === 'rv:no') return tg('sendMessage', { chat_id: chat, text: '🙏 ¡Sin problema! Gracias igualmente.\n\n🎁 Si se lo recomiendas a un amigo, tenemos premio para los dos: /invitar' }); // v368
   if (data.startsWith('rv:')) { const c = db.clients.find((x) => x.id === Number(data.slice(3)) && String(x.tgChat) === String(chat)); if (!c) return; revWait.set(chat, { cid: c.id, at: Date.now() }); return tg('sendMessage', { chat_id: chat, text: '✍️ ¡Genial! Escríbeme aquí, en un mensaje, qué te parece (una o dos frases).\n\nSaldrá solo con tu nombre y la inicial del apellido.' }); }
+  if (data.startsWith('ptoff:')) { /* v399: pausar el Stripe del socio desde el aviso (solo el dueño) */
+    const u = db.users.find((x) => isOwner(x) && userChats(x).includes(chat)), p = db.users.find((x) => x.id === Number(data.slice(6)) && x.partner); if (!u || !p) return;
+    await lock(async () => { (p.partnerPay || (p.partnerPay = {})).on = false; addLog('ajustes', null, `⏸️ Stripe de ${p.name} pausado desde Telegram: sus clientes pagan a tu Stripe`, u); saveDb(); });
+    notifyUser(p, `⏸️ ${u.name} ha pausado tu Stripe en el panel. Mientras tanto, tus clientes pagan al Stripe de ${u.name}.`);
+    return tg('sendMessage', { chat_id: chat, text: `⏸️ Hecho. El Stripe de ${p.name} está en pausa: sus clientes pagan a tu Stripe. Lo vuelves a encender en el panel (Resumen o Usuarios › ${p.name}).` });
+  }
   if (data.startsWith('rvok:') || data.startsWith('rvno:')) { // v368: tú decides si se publica
     const u = db.users.find((x) => !x.disabled && x.role === 'super' && userChats(x).includes(chat)), r = db.reviews.find((x) => x.id === data.slice(5)); if (!u || !r) return;
     await lock(async () => { r.status = data.startsWith('rvok:') ? 'ok' : 'no'; saveDb(); });
@@ -6797,6 +6818,7 @@ route('POST', '/api/run', STAFF, async () => { await lock(lifecycle); await lock
 
 /* Usuarios del panel */
 route('POST', '/api/users', ['super', 'admin', 'reseller'], ({ me, body }) => lock(async () => {
+  if (me.partner && !isOwner(me) && ['super', 'admin'].includes(body.role)) throw new HttpError(403, '🔒 Los administradores solo los puede crear el dueño del panel.'); /* v399 */
   const role = me.role === 'reseller' ? 'sub' : body.role;
   const allowed = me.role === 'super' ? [...(isOwner(me) ? ['super'] : []), 'admin', 'reseller', 'sub']
     : me.role === 'admin' ? [...(can(me, 'resellers') ? ['reseller', 'sub'] : []), ...(can(me, 'admins') ? ['admin'] : [])] : ['sub'];
@@ -6877,6 +6899,7 @@ route('POST', '/api/users/import', STAFF, ({ me, body }) => lock(async () => {
 route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, body }) => lock(async () => {
   const u = userById(params.id);
   if (!canManageUser(me, u)) throw new HttpError(403, 'No puedes editar a este usuario.');
+  if (me.partner && !isOwner(me) && isStaff(u) && u.id !== me.id) throw new HttpError(403, '🔒 Los administradores solo los puede cambiar el dueño del panel.'); /* v399 */
   needPerm(me, u.role === 'admin' ? 'admins' : 'resellers');
   const name = str(body.name, 60);
   if (name) u.name = name;
@@ -6894,6 +6917,10 @@ route('PUT', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params, bo
   // v273: el dueño puede subir a un administrador a superadministrador (mismo poder que él) o bajarlo
   if (isOwner(me) && body.role === 'super' && u.role === 'admin') { u.role = 'super'; delete u.perms; delete u.useCredits; dropSessions(u.id); addLog('usuario', null, `${u.name} (${u.username}) ahora es superadministrador`, me); }
   else if (isOwner(me) && body.role === 'admin' && u.role === 'super' && !isOwner(u)) { u.role = 'admin'; u.perms = Object.fromEntries(PERMS.map((k) => [k, true])); dropSessions(u.id); addLog('usuario', null, `${u.name} (${u.username}) vuelve a ser administrador`, me); }
+  if (body.partnerOn !== undefined && isOwner(me) && u.partner) { const pp = u.partnerPay || (u.partnerPay = {}); if (!!body.partnerOn !== (pp.on !== false)) { pp.on = !!body.partnerOn; if (pp.on) ptFails.delete(u.id); addLog('ajustes', null, `${pp.on ? '▶️ Stripe de ' + u.name + ' encendido' : '⏸️ Stripe de ' + u.name + ' pausado: sus clientes pagan a tu Stripe'}`, me); notifyUser(u, pp.on ? `▶️ Tu Stripe vuelve a estar activo en el panel: tus clientes te pagan a ti.` : `⏸️ ${me.name} ha pausado tu Stripe en el panel. Mientras tanto, tus clientes pagan al Stripe de ${me.name}.`); } } /* v399 */
+  if (body.partner !== undefined && isOwner(me) && isStaff(u) && !isOwner(u) && !!body.partner !== !!u.partner) { u.partner = !!body.partner; if (u.partner && socOn()) { const d = socCfg(), own = ownerUser(), nm = (x) => String(x || '').trim().toLowerCase(), has = (uid) => d.members.some((m) => (m.users || []).includes(uid));
+      if (own && !has(own.id)) { const m0 = d.members.find((x) => nm(x.name) === nm(own.name) && !(x.users || []).length) || d.members.find((x) => !(x.users || []).length && nm(x.name) !== nm(u.name)); if (m0) m0.users = [...(m0.users || []), own.id]; }
+      if (!has(u.id)) { const m = d.members.find((x) => nm(x.name) === nm(u.name)) || d.members.find((x) => !(x.users || []).length); if (m) m.users = [...(m.users || []), u.id]; } } /* v399: Socios se une solo */ addLog('usuario', null, `${u.name}: ${u.partner ? '🤝 socio que cobra a sus clientes con su propio Stripe' : 'ya no cobra con su propio Stripe'}`, me); } /* v399 */
   readVendorOptions(me, body, u);
   const before = u.role === 'admin' ? JSON.stringify([permsOf(u), !!u.useCredits]) : '';
   readAdminOptions(me, body, u);
@@ -6936,6 +6963,7 @@ route('POST', '/api/users/:id/power', ['super', 'admin', 'reseller'], ({ me, par
 route('DELETE', '/api/users/:id', ['super', 'admin', 'reseller'], ({ me, params }) => lock(async () => {
   const u = userById(params.id);
   if (!canManageUser(me, u)) throw new HttpError(403, 'No puedes eliminar a este usuario.');
+  if (me.partner && !isOwner(me) && isStaff(u)) throw new HttpError(403, '🔒 Los administradores solo los puede borrar el dueño del panel.'); /* v399 */
   needPerm(me, u.role === 'admin' ? 'admins' : 'resellers');
   if (db.clients.some((c) => c.ownerId === u.id)) throw new HttpError(400, 'Este usuario todavía tiene cuentas (mira también la papelera). Pásalas a otro usuario o elimínalas antes.');
   if (db.users.some((x) => x.parentId === u.id)) throw new HttpError(400, 'Este reseller tiene subresellers. Elimínalos antes.');
@@ -9697,14 +9725,14 @@ route('GET', '/api/income', STAFF, ({ req }) => {
     }
   }
   // v392: lo cobrado online y sus comisiones (tu Stripe/PayPal/cripto; no los de los vendedores)
-  for (const o of db.orders) { if (o.status !== 'paid' || !o.paidAt || o.vendorId) continue; const m = localDate(new Date(o.paidAt)).slice(0, 7), bm = byMonth[m]; if (!bm) continue; bm.online = (bm.online || 0) + (o.amount || 0); bm.fees = (bm.fees || 0) + (o.fee !== undefined ? o.fee : feeEst(o)); }
+  for (const o of db.orders) { if (o.status !== 'paid' || !o.paidAt || o.vendorId) continue; const m = localDate(new Date(o.paidAt)).slice(0, 7), bm = byMonth[m]; if (!bm) continue; bm.online = (bm.online || 0) + (o.amount || 0); bm.fees = (bm.fees || 0) + (o.fee !== undefined ? o.fee : feeEst(o)); if (o.partnerId) { const pn = (db.users.find((u) => u.id === o.partnerId) || {}).name || 'socio'; bm.pt = bm.pt || {}; bm.pt[pn] = r2((bm.pt[pn] || 0) + (o.amount || 0)); } /* v399 */ }
   const pending = db.clients.filter((c) => c.paid === false && c.status !== 'trash');
   const vendors = db.users.map((u) => {
     const r = byUser.get(u.id) || row();
     return { id: u.id, name: u.name, role: u.role, credits: u.credits || 0, price: price(u), ...r, money: Math.round(r.money * 100) / 100, pending: pending.filter((c) => c.ownerId === u.id).length,
       clients: db.clients.filter((c) => c.ownerId === u.id && c.status !== 'trash' && !c.demo).length };
   }).filter((v) => v.sold || v.alta || v.renovacion || v.spent || v.pending || v.clients).sort((a, b) => b.money - a.money || (b.alta + b.renovacion) - (a.alta + a.renovacion));
-  return { months: months.map((m) => ({ m, ...byMonth[m], money: Math.round(byMonth[m].money * 100) / 100, online: r2(byMonth[m].online || 0), fees: r2(byMonth[m].fees || 0) })), fees: feeCfg(), vendors, pending: pending.length, currency: db.settings.currency || 'EUR',
+  return { months: months.map((m) => ({ m, ...byMonth[m], money: Math.round(byMonth[m].money * 100) / 100, online: r2(byMonth[m].online || 0), fees: r2(byMonth[m].fees || 0), pt: byMonth[m].pt || null })), fees: feeCfg(), vendors, pending: pending.length, currency: db.settings.currency || 'EUR',
     keep: { log: db.settings.retention.logDays, ledger: db.settings.retention.ledgerDays } };
 });
 
@@ -9738,8 +9766,9 @@ function feeCfg() { const f = db.settings.payFees || {}; const o = { on: f.on !=
 function feeEst(o) { const f = feeCfg(); if (!f.on || o.manual || !f[o.method]) return 0; return r2(Math.min(o.amount, o.amount * f[o.method].pct / 100 + f[o.method].fix)); }
 function feeSet(o) { if (o.fee === undefined) o.fee = feeEst(o); return o.fee || 0; }
 async function feeReal(o) { // la comisión de verdad, preguntándole a Stripe (solo tu Stripe, no el de los vendedores)
-  if (!feeCfg().on || o.method !== 'stripe' || !o.pi || o.vendorId || o.feeReal || !db.payCfg.stripe.key) return;
-  const j = await stripeCall('GET', `/v1/payment_intents/${encodeURIComponent(o.pi)}?expand[]=latest_charge.balance_transaction`);
+  if (!o.pi && o.extId && o.method === 'stripe' && !o.vendorId && orderKey(o)) { try { const ss = await stripeCall('GET', `/v1/checkout/sessions/${encodeURIComponent(o.extId)}`, null, orderKey(o)); if (ss && ss.payment_intent) o.pi = String(ss.payment_intent); } catch { /* sin pi: se queda la estimación */ } } /* v399: pagos confirmados al volver, sin aviso de Stripe */
+  if (!feeCfg().on || o.method !== 'stripe' || !o.pi || o.vendorId || o.feeReal || !orderKey(o)) return; /* v399: también con el Stripe del socio */
+  const j = await stripeCall('GET', `/v1/payment_intents/${encodeURIComponent(o.pi)}?expand[]=latest_charge.balance_transaction`, null, orderKey(o));
   const bt = j && j.latest_charge && j.latest_charge.balance_transaction; if (!bt || typeof bt !== 'object' || !(Number(bt.fee) >= 0)) return;
   const pmt = String(((j.latest_charge.payment_method_details || {}).type) || ''); // v393: tarjeta, Bizum…
   const same = String(bt.currency || '').toUpperCase() === String(o.currency || 'EUR').toUpperCase(), rate = Number(bt.exchange_rate) || 1;
@@ -9887,6 +9916,25 @@ async function payWebhook(req, res, pathname) {
   const raw = Buffer.concat(chunks).toString('utf8');
   const ok = () => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"received":true}'); };
   const bad = (code, msg) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: msg })); };
+  const pm = /^\/api\/pay\/stripe\/webhook\/p(\d+)$/.exec(pathname); /* v399: el Stripe del socio */
+  if (pm) {
+    const pu = db.users.find((u) => u.id === Number(pm[1]) && u.partner), wh = pu && pu.partnerPay ? pu.partnerPay.whsec : '';
+    if (!pu || !wh) return bad(400, 'webhook sin configurar');
+    const sig = String(req.headers['stripe-signature'] || ''), t = (/t=(\d+)/.exec(sig) || [])[1], v1s = [...sig.matchAll(/v1=([0-9a-f]{64})/g)].map((m) => m[1]);
+    if (!t || !v1s.length || Math.abs(Date.now() / 1000 - Number(t)) > 600) return bad(400, 'firma');
+    const expect = crypto.createHmac('sha256', wh).update(`${t}.${raw}`).digest('hex');
+    if (!v1s.some((v) => v.length === expect.length && crypto.timingSafeEqual(Buffer.from(v), Buffer.from(expect)))) return bad(400, 'firma');
+    let ev; try { ev = JSON.parse(raw); } catch { return bad(400, 'json'); }
+    const ss = ev.data && ev.data.object;
+    if (ev.type === 'checkout.session.completed' && ss && ss.metadata && ss.metadata.ptTest) { await lock(async () => { const pp = pu.partnerPay || {}; pp.testHook = new Date().toISOString(); if (ss.payment_status === 'paid' && !pp.testOk) pp.testOk = pp.testHook; saveDb(); }); return ok(); } /* v399: pago de prueba: el aviso llega */
+    if (ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') {
+      const o = db.orders.find((x) => x.method === 'stripe' && x.extId === (ss && ss.id) && x.partnerId === pu.id);
+      if (o && ss.payment_status === 'paid' && ss.amount_total === Math.round(o.amount * 100) && String(ss.currency).toUpperCase() === o.currency) await lock(async () => { if (ss.payment_intent) o.pi = String(ss.payment_intent); if (await cpPaid(o, 'aviso de Stripe de ' + pu.name)) saveDb(); });
+    }
+    if (ev.type === 'charge.dispute.created') await chargeback(ss, null);
+    if (ev.type === 'checkout.session.expired') { const o = db.orders.find((x) => x.method === 'stripe' && x.extId === (ss && ss.id) && x.partnerId === pu.id); if (o && o.status === 'pending') await lock(async () => { o.status = 'expired'; saveDb(); }); }
+    return ok();
+  }
   const um = /^\/api\/pay\/stripe\/webhook\/u(\d+)$/.exec(pathname);
   if (pathname === '/api/pay/stripe/webhook' || um) {
     const vu = um ? db.users.find((u) => u.id === Number(um[1])) : null;
@@ -10028,12 +10076,24 @@ async function cpRemindTick() {
   }
 }
 setTimeout(() => { setInterval(() => cpRemindTick().then(() => lock(async () => saveDb())).catch(() => {}), Number(process.env.CP_TICK_MS) || 5 * 60000); }, process.env.CP_TICK_MS ? 2000 : 60000);
+/* v399: 🤝 socio con su propio Stripe: los clientes que son SUYOS pagan a SU Stripe (mismos precios, mismo bot, mismo panel) */
+const partnerOf = (u) => (u && !u.disabled && (u.role === 'admin' || u.role === 'super') && !isOwner(u) && u.partner && u.partnerPay && u.partnerPay.on !== false && u.partnerPay.key ? u : null);
+const partnerById = (id) => partnerOf(db.users.find((u) => u.id === id));
+const ptFails = new Map(); /* v399: fallos del Stripe del socio; con 3 en una hora, aviso al dueño con botón para pausar */
+function ptFail(p, err) {
+  const now = Date.now(), f = (ptFails.get(p.id) || []).filter((t) => now - t < 3600000); f.push(now); ptFails.set(p.id, f);
+  (p.partnerPay || {}).err = String(err && err.message || err).slice(0, 160);
+  if (f.length < 3 || (p.ptWarnAt && now - p.ptWarnAt < 3600000)) return; p.ptWarnAt = now;
+  const own = ownerUser(); if (!own) return;
+  for (const ch of userChats(own)) tg('sendMessage', { chat_id: ch, parse_mode: 'HTML', text: `⚠️ <b>El Stripe de ${hEsc(p.name)} está fallando</b>\n${f.length} intentos de pago han dado error en la última hora.\n\n<i>Mientras tanto, el panel cobra esos pagos con tu Stripe para que nadie se quede sin pagar.</i>\n\nError: <code>${hEsc((p.partnerPay || {}).err || '')}</code>`, reply_markup: { inline_keyboard: [[{ text: `⏸️ Pausar el Stripe de ${p.name}`, callback_data: 'ptoff:' + p.id }]] } }).catch(() => {});
+}
 function cpCtx(c) {
   if (!licFeat('pay')) return null; // v380: panel alquilado sin cobro online
   if (!c) return null;
   const o = db.users.find((u) => u.id === c.ownerId);
   if (!o || o.role === 'super' || o.role === 'admin') {
-    const cfg = cpCfg();
+    const cfg = cpCfg(), pt = partnerOf(o);
+    if (pt) return cfg.on ? { cfg: { ...cfg, subs: false, manual: {} }, key: pt.partnerPay.key, pp: null, usdc: null, vendor: null, partner: pt } : null; /* v399: solo tarjeta, a su Stripe */
     return cfg.on && (cpStripeOk() || cpManual(cfg).length || ppOf(null) || usdcOk()) ? { cfg, key: cpStripeOk() ? db.payCfg.stripe.key : null, pp: ppOf(null), usdc: usdcOk(), vendor: null } : null;
   }
   const v = o.clientPay;
@@ -10093,7 +10153,7 @@ function cpScreens(c, ctx) {
 }
 const cpReady = () => true; // cada cuenta lo decide cpCtx
 const subKey = (sub) => { if (!sub || !sub.vendorId) return db.payCfg.stripe.key; const u = db.users.find((x) => x.id === sub.vendorId); return u && u.clientPay && u.clientPay.key; };
-const orderKey = (o) => { if (!o.vendorId) return db.payCfg.stripe.key; const u = db.users.find((x) => x.id === o.vendorId); return u && u.clientPay && u.clientPay.key; };
+const orderKey = (o) => { if (o.partnerId) { const p = db.users.find((x) => x.id === o.partnerId); return p && p.partnerPay ? p.partnerPay.key : ''; } if (!o.vendorId) return db.payCfg.stripe.key; const u = db.users.find((x) => x.id === o.vendorId); return u && u.clientPay && u.clientPay.key; };
 /** Pago de un cliente confirmado: se renueva su cuenta una sola vez */
 async function cpPaid(o, via) {
   if (o.status === 'paid') return false;
@@ -10130,9 +10190,12 @@ async function cpPaid(o, via) {
   libCheckLater(c);
   let soc = null;
   const fe = vend ? 0 : feeSet(o); if (!vend && o.method === 'stripe') feeLater(o); // v392: comisión
-  if (!vend && socOn() && socCfg().auto.clients) soc = socAdd({ kind: 'cobro', amount: r2(o.amount - fe), who: o.manual ? socWho(db.users.find((x) => x.id === o.confirmedById), o.confirmedChat) : socCfg().online, desc: `${c.panelName} · ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'}${o.cycle ? ' (renovación automática)' : ''}${fe ? ` (cobrado ${o.amount.toFixed(2).replace('.', ',')} € − ${fe.toFixed(2).replace('.', ',')} € de comisión)` : ''}`, src: 'cliente', ref: o.id, at: o.paidAt });
+  const ptU = o.partnerId ? db.users.find((x) => x.id === o.partnerId) : null; /* v399: cobrado en el Stripe del socio */
+  if (!vend && socOn() && socCfg().auto.clients) soc = socAdd({ kind: 'cobro', amount: r2(o.amount - fe), who: ptU ? socWhoPt(ptU) : o.manual ? socWho(db.users.find((x) => x.id === o.confirmedById), o.confirmedChat) : socCfg().online, desc: `${c.panelName} · ${MANUAL[o.method] ? MANUAL[o.method].t : 'tarjeta'}${ptU ? ` (Stripe de ${ptU.name})` : ''}${o.cycle ? ' (renovación automática)' : ''}${fe ? ` (cobrado ${o.amount.toFixed(2).replace('.', ',')} € − ${fe.toFixed(2).replace('.', ',')} € de comisión)` : ''}`, src: 'cliente', ref: o.id, at: o.paidAt });
   const howPaid = o.usdc ? `🪙 Pagado con ${usdcFmt(o.usdc.got || o.usdc.micro)} USDC (red Polygon) → a tu dirección ${String(o.usdc.addr || '').slice(0, 6)}…${String(o.usdc.addr || '').slice(-4)}` : MANUAL[o.method] ? `${MANUAL[o.method].i || '💶'} Pagado por ${MANUAL[o.method].t}` : o.ppapi ? '🅿️ Pagado con PayPal' : '💳 Pagado con tarjeta (Stripe)'; // v321: dónde te ha llegado el dinero
-  if (!vend) notifyStaff('payments', `${o.usdc ? '🪙' : '💳'} ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency} y ${!wasBuy && o.wasDemo ? '🎉 se ha hecho CLIENTE (venía de su prueba gratis)' : wasBuy ? (c.buyExtraOf ? `🛒 es OTRA CUENTA de un cliente que ya tenías (${(db.clients.find((x) => x.id === c.buyExtraOf) || {}).panelName || 'cliente'}): se ha creado sola desde su bot` : '🛒 es un cliente NUEVO: se ha creado su cuenta sola desde el bot') : 'su cuenta se ha renovado sola'}.\n${howPaid}\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`);
+  if (!vend) notifyStaff('payments', `${o.usdc ? '🪙' : '💳'} ${c.panelName} (@${c.embyName}) ha pagado ${o.amount.toFixed(2)} ${o.currency}${ptU ? ` (en el Stripe de ${ptU.name})` : ''} y ${!wasBuy && o.wasDemo ? '🎉 se ha hecho CLIENTE (venía de su prueba gratis)' : wasBuy ? (c.buyExtraOf ? `🛒 es OTRA CUENTA de un cliente que ya tenías (${(db.clients.find((x) => x.id === c.buyExtraOf) || {}).panelName || 'cliente'}): se ha creado sola desde su bot` : '🛒 es un cliente NUEVO: se ha creado su cuenta sola desde el bot') : 'su cuenta se ha renovado sola'}.\n${howPaid}\n${what} · vence el ${c.expires.split('-').reverse().join('/')}\n${whenTxt()}${socLine(soc)}`, { owner: c.ownerId, skip: ptU ? [ptU.id] : [] });
+  if (ptU && ptU.partnerPay && ptU.partnerPay.err) { ptU.partnerPay.err = ''; ptFails.delete(ptU.id); } /* v399: vuelve a cobrar: fuera el aviso */
+  if (ptU) notifyUser(ptU, `💳 Tu cliente ${c.panelName} te ha pagado ${o.amount.toFixed(2)} ${o.currency} en tu Stripe. Renovada hasta el ${c.expires.split('-').reverse().join('/')}.`); /* v399 */
   o.screensAfter = c.screens || 1; o.expiresFrom = base;
   if (c.tgChat) { if (o.wasDemo && !c.buyExtraOf && animOn('family') && (o.famAnim = true)) tgAnim(c.tgChat, 'family').catch(() => {}).then(() => receiptTg(c, o)); else receiptTg(c, o); } // v371: animación de bienvenida al nuevo cliente
   if (wasBuy && c.tgChat) setTimeout(() => buyWelcome(c, o).catch((e) => console.error('Alta (datos):', e.message)), 2500); // v358: sus datos, después del recibo
@@ -10484,7 +10547,7 @@ async function cpRoute(req, res, pathname) {
       res.writeHead(303, { Location: go.href, 'Cache-Control': 'no-store' }); return res.end();
     }
     if (!ctx.key) return cpPage(res, 400, 'Elige otra forma', '<h1>Esa forma de pago no está</h1><p class="sub">Vuelve atrás y elige otra.</p>');
-    const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: 'stripe', status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}${auto ? ' · automática' : ''}`, auto };
+    const o = { id: 'C' + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString('hex').toUpperCase(), kind: 'client', clientId: c.id, vendorId: ctx.vendor ? ctx.vendor.id : null, partnerId: ctx.partner ? ctx.partner.id : null, userId: null, user: c.panelName, credits: 0, months, screens: scr, amount: op.price, currency: cur, method: 'stripe', status: 'pending', created: new Date().toISOString(), pack: `${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}${auto ? ' · automática' : ''}`, auto };
     const base = siteBase() || panelBase(req), back = `${base}/pagar/${c.id}-${c.payKey}?o=${o.id}`;
     let ss;
     try {
@@ -10495,7 +10558,11 @@ async function cpRoute(req, res, pathname) {
         'line_items[0][price_data][product_data][name]': `${String(ctx.cfg.desc || 'Suscripción').slice(0, 60)} · ${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}`,
         client_reference_id: o.id, 'metadata[order]': o.id, 'metadata[client]': String(c.id), success_url: back, cancel_url: `${base}/pagar/${c.id}-${c.payKey}?cancelado=1`,
       }, ctx.key);
-    } catch (e) { console.error('Cobro a clientes:', e.message); return cpPage(res, 502, 'Error', '<h1>No se pudo abrir el pago</h1><p class="sub">Inténtalo de nuevo en un momento. Si sigue fallando, avisa a tu proveedor.</p>'); }
+    } catch (e0) { /* v399: si falla el Stripe del socio, se cobra con el tuyo para que el cliente pueda pagar */
+      let e = e0;
+      if (ctx.partner && cpStripeOk() && !auto) { ptFail(ctx.partner, e0); o.partnerId = null; o.ptFallback = ctx.partner.id; try { ss = await stripeCall('POST', '/v1/checkout/sessions', { mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': cur.toLowerCase(), 'line_items[0][price_data][unit_amount]': String(Math.round(op.price * 100)), 'line_items[0][price_data][product_data][name]': `${String(ctx.cfg.desc || 'Suscripción').slice(0, 60)} · ${months} ${months === 1 ? 'mes' : 'meses'} · ${scr} ${scr === 1 ? 'pantalla' : 'pantallas'}`, client_reference_id: o.id, 'metadata[order]': o.id, 'metadata[client]': String(c.id), success_url: back, cancel_url: `${base}/pagar/${c.id}-${c.payKey}?cancelado=1` }, db.payCfg.stripe.key); e = null; } catch (e2) { e = e2; } }
+      if (e) { console.error('Cobro a clientes:', e.message); return cpPage(res, 502, 'Error', '<h1>No se pudo abrir el pago</h1><p class="sub">Inténtalo de nuevo en un momento. Si sigue fallando, avisa a tu proveedor.</p>'); }
+    }
     o.extId = ss.id; o.url = ss.url;
     await lock(async () => { db.orders.unshift(o); if (db.orders.length > 3000) db.orders.length = 3000; saveDb(); });
     res.writeHead(303, { Location: ss.url, 'Cache-Control': 'no-store' }); return res.end();
@@ -10899,7 +10966,7 @@ route('GET', '/api/security', '*', ({ me, req }) => {
   return {
     twoFa: !!(me.totp && me.totp.on), codesLeft: me.totp && me.totp.on ? (me.totp.codes || []).length : 0,
     bot: cfg.token ? cfg.bot || '' : '', tgLinked: !!me.tgChat, tgCount: userChats(me).length, tgLink: cfg.token && cfg.bot ? `https://t.me/${cfg.bot}?start=${userTgCode(me)}` : '',
-    alerts: { login: al.login !== false, exports: me.role === 'super' ? al.exports !== false : al.exports === true, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, vendorLogins: me.role === 'super' || me.role === 'reseller' ? al.vendorLogins !== false : al.vendorLogins === true, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
+    alerts: { noticeMine: !!me.noticeMine, login: al.login !== false, exports: me.role === 'super' ? al.exports !== false : al.exports === true, credits: me.role === 'super' ? al.credits !== false : false, sabotage: me.role === 'super' ? al.sabotage !== false : al.sabotage === true, daily: me.role === 'super' ? al.daily !== false : al.daily === true, quality: me.role === 'super' ? al.quality !== false : al.quality === true, servers: me.role === 'super' ? al.servers !== false : al.servers === true, staffLogins: me.role === 'super' ? al.staffLogins !== false : false, vendorLogins: me.role === 'super' || me.role === 'reseller' ? al.vendorLogins !== false : al.vendorLogins === true, backup: me.role === 'super' ? al.backup !== false : false, payments: me.role === 'super' ? al.payments !== false : false },
     sessions: list, idleMin: db.settings.security.idleMin,
   };
 });
@@ -10963,7 +11030,7 @@ route('POST', '/api/export-notice', '*', ({ me, body }) => {
 route('PUT', '/api/security/alerts', '*', ({ me, body }) => lock(async () => {
   const al = me.secAlerts || {};
   for (const k of ['login', 'servers', 'staffLogins', 'vendorLogins', 'backup', 'payments', 'quality', 'sabotage', 'daily', 'credits', 'exports']) if (typeof body[k] === 'boolean') al[k] = body[k];
-  me.secAlerts = al; saveDb();
+  me.secAlerts = al; if (typeof body.noticeMine === 'boolean' && isStaff(me)) me.noticeMine = body.noticeMine; /* v399 */ saveDb();
   return { ok: true };
 }));
 route('POST', '/api/security/tg/test', '*', async ({ me }) => {
@@ -11985,6 +12052,8 @@ function socCfg() {
 const socOn = () => !!(db.socios && db.socios.on);
 const socMember = (id) => socCfg().members.find((m) => m.id === id) || null;
 /** Socio que corresponde a un usuario del panel o a un chat de Telegram (si no se sabe, el primero) */
+/* v399: el socio que cobra con su Stripe: su ficha de Socios (por su usuario o, si no está unido, por el nombre) */
+function socWhoPt(u) { const d = socCfg(); const m = d.members.find((x) => (x.users || []).includes(u.id)) || d.members.find((x) => String(x.name).trim().toLowerCase() === String(u.name).trim().toLowerCase()); return m ? m.id : socWho(u); }
 function socWho(u, chat) {
   const d = socCfg();
   if (chat) { const m = d.members.find((x) => (x.chats || []).map(String).includes(String(chat))); if (m) return m.id; }
@@ -12083,6 +12152,39 @@ function socBalance(month) {
   for (const a of debt) for (const b of cred) { const v = Math.min(a.left, b.left); if (v > 0) { moves.push({ from: a.id, fromName: a.name, to: b.id, toName: b.name, amount: v / 100 }); a.left -= v; b.left -= v; } }
   const unassigned = list.filter((x) => x.ask);
   return { month, unassigned: { n: unassigned.length, amount: socR2(unassigned.reduce((n, x) => n + x.amount, 0)) }, cobros: cobros / 100, gastos: gastos / 100, beneficio: (cobros - gastos) / 100, share: socR2((cobros - gastos) / 100 / n), people, moves, count: list.length };
+}
+/* v399: 📅 cierre del mes: el día 1, a cada socio, el resumen del mes anterior por Telegram */
+function socCloseTick() {
+  if (!socOn() || licLocked()) return; const now = new Date(), t = today();
+  if (t.slice(8, 10) !== '01' || now.getHours() < 9) return;
+  const pm = (() => { const d = new Date(now.getFullYear(), now.getMonth() - 1, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
+  if (db.settings.socCloseSent === pm) return; db.settings.socCloseSent = pm;
+  const b = socBalance(pm), all = socBalance(''), MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][Number(pm.slice(5)) - 1];
+  const e = (v) => `${(Math.round(v * 100) / 100).toFixed(2).replace('.', ',')} €`;
+  const txt = `📅 <b>Cierre de ${MES}</b>\n\n💶 Cobrado: <b>${e(b.cobros)}</b>\n🧾 Gastos: <b>${e(b.gastos)}</b>\n✨ Beneficio: <b>${e(b.beneficio)}</b>\n\n`
+    + b.people.map((p) => `👤 <b>${hEsc(p.name)}</b>: cobró ${e(p.cobros)} · pagó gastos ${e(p.gastos)}`).join('\n')
+    + `\n\n⚖️ <b>Para quedar en paz ahora</b>:\n${(all.moves || []).length ? all.moves.map((m) => `▫️ ${hEsc(m.fromName)} → ${hEsc(m.toName)}: <b>${e(m.amount)}</b>`).join('\n') : '▫️ Estáis en paz 🕊️'}\n\n<i>Lo tienes en el panel: Socios › Saldos (y para descargar en Excel).</i>`;
+  const d = socCfg(), ids = new Set(d.members.flatMap((m) => m.users || []));
+  for (const u of db.users) if (!u.disabled && isStaff(u) && (isOwner(u) || ids.has(u.id))) for (const ch of userChats(u)) tg('sendMessage', { chat_id: ch, parse_mode: 'HTML', text: txt }).catch(() => {});
+  saveDb();
+}
+setInterval(() => { try { socCloseTick(); } catch (e) { console.error('Cierre del mes:', e.message); } }, 20 * 60000);
+/* v399: 🤝 tarjeta del Resumen: lo que cobra cada socio este mes y hoy, sus clientes, su Stripe y el saldo entre vosotros */
+function ptCardData() {
+  const own = ownerUser(); if (!own) return null;
+  const pts = db.users.filter((u) => u.partner && !u.disabled && isStaff(u) && !isOwner(u)); if (!pts.length) return null;
+  const t = today(), mo = t.slice(0, 7), people = [own, ...pts];
+  const ptIds = new Set(pts.map((u) => u.id));
+  const d = socOn() ? socCfg() : null, memOf = (u) => (d ? (d.members.find((m) => (m.users || []).includes(u.id)) || d.members.find((m) => String(m.name).trim().toLowerCase() === String(u.name).trim().toLowerCase()) || null) : null);
+  const bal = d ? socBalance('') : null;
+  const out = people.map((u) => {
+    const m = memOf(u), row = { id: u.id, name: u.name, owner: isOwner(u), month: 0, today: 0, clients: 0, stripe: isOwner(u) ? (cpStripeOk() ? 'ok' : 'off') : (partnerOf(u) ? ((u.partnerPay || {}).err ? 'err' : 'ok') : (u.partnerPay && u.partnerPay.key ? 'paused' : 'off')), saldo: null, err: isOwner(u) ? '' : (u.partnerPay || {}).err || '' };
+    row.clients = db.clients.filter((c) => c.status !== 'trash' && !c.demo && (isOwner(u) ? !ptIds.has(c.ownerId) && (!db.users.find((x) => x.id === c.ownerId) || isStaff(db.users.find((x) => x.id === c.ownerId))) : c.ownerId === u.id)).length;
+    if (d && m) { for (const x of d.entries) { if (x.ask || x.kind !== 'cobro' || x.who !== m.id) continue; if (x.month === mo) row.month += x.amount; if (String(x.at || '').slice(0, 10) === t) row.today += x.amount; } const pb = bal.people.find((p) => p.id === m.id); row.saldo = pb ? pb.saldo : null; }
+    else for (const o of db.orders) { if (o.status !== 'paid' || o.vendorId || !o.paidAt || o.kind !== 'client') continue; const mine = isOwner(u) ? !o.partnerId : o.partnerId === u.id; if (!mine) continue; const dd = localDate(new Date(o.paidAt)); if (dd.slice(0, 7) === mo) row.month += o.amount; if (dd === t) row.today += o.amount; }
+    row.month = socR2(row.month); row.today = socR2(row.today); row.member = m ? m.name : ''; return row;
+  });
+  return { people: out, moves: bal ? bal.moves || [] : [], soc: !!d, month: mo };
 }
 /* v396: historial completo con el saldo de cada socio después de cada movimiento, y cuándo estuvisteis en paz */
 function socHistory() {
@@ -12257,6 +12359,52 @@ route('PUT', '/api/socios/entries/:id/who', SUPER, ({ me, params, body }) => loc
 /** Quién ha hecho una demo o una cuenta (solo para saberlo; no es dinero) */
 /* v397: un cobro hecho a mano con Stripe (el tuyo o el de tu socio): se le quita la comisión, y se puede deshacer */
 const socFeeTxt = (v) => v.toFixed(2).replace('.', ',');
+/* v399: el socio pone (él mismo) la clave de SU Stripe; el panel la comprueba */
+route('PUT', '/api/me/partner-pay', STAFF, ({ me, body }) => lock(async () => {
+  if (!me.partner) throw new HttpError(403, 'Esto es solo para el socio que cobra con su propio Stripe.');
+  if (body.key && !(me.totp && me.totp.on)) throw new HttpError(400, 'Por seguridad, antes de conectar tu Stripe activa la verificación en dos pasos (Mi cuenta › Seguridad).');
+  const p = me.partnerPay || (me.partnerPay = {});
+  if (body.on !== undefined) p.on = !!body.on;
+  if (body.key !== undefined) { const k = String(body.key || '').trim(); if (k && !/^(sk|rk)_(live|test)_[A-Za-z0-9]{10,}$/.test(k)) throw new HttpError(400, 'Esa clave no parece de Stripe. Tiene que empezar por sk_live_ (la real) o sk_test_ (la de prueba).'); if (k) p.key = k; else { delete p.key; delete p.acct; } }
+  if (body.whsec !== undefined) { const w = String(body.whsec || '').trim(); if (w && !/^whsec_[A-Za-z0-9]{10,}$/.test(w)) throw new HttpError(400, 'El secreto del webhook empieza por whsec_.'); if (w) p.whsec = w; else delete p.whsec; }
+  if (p.key) { try { const a = await stripeCall('GET', '/v1/account', null, p.key); p.acct = (a.settings && a.settings.dashboard && a.settings.dashboard.display_name) || (a.business_profile && a.business_profile.name) || a.email || a.id || ''; p.err = ''; } catch (e) { p.err = String(e.message || e).slice(0, 160); } p.checkedAt = new Date().toISOString(); }
+  if (p.key && !p.err && body.key && /^sk_/.test(p.key) && body.whsec === undefined) await ptHook(me); /* v399: el webhook se crea solo */
+  addLog('ajustes', null, `${me.name} ha cambiado su Stripe de cobro${p.on === false ? ' (apagado)' : ''}`, me);
+  saveDb(); return { ok: true, partnerPay: ptPayOut(me) };
+}));
+/* v399: el panel crea (o vuelve a crear) el webhook en el Stripe del socio, con la clave secreta */
+const PT_EVENTS = ['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.expired', 'charge.dispute.created'];
+async function ptHook(u) {
+  const p = u.partnerPay || {}, base = siteBase();
+  if (!/^https:\/\//.test(base)) { p.hookErr = 'El panel necesita una dirección https para crear el webhook.'; return false; }
+  const url = `${base}/api/pay/stripe/webhook/p${u.id}`;
+  try {
+    const list = await stripeCall('GET', '/v1/webhook_endpoints?limit=100', null, p.key);
+    for (const w of (list.data || [])) if (w.url === url || w.id === p.whId) { try { await stripeCall('DELETE', `/v1/webhook_endpoints/${encodeURIComponent(w.id)}`, null, p.key); } catch { /* sigue */ } }
+    const form = { url, description: `Panel ${String(db.settings.brand.name || 'SERVIPARTE').slice(0, 60)} (no borrar)` }; PT_EVENTS.forEach((e, i) => { form[`enabled_events[${i}]`] = e; });
+    const w = await stripeCall('POST', '/v1/webhook_endpoints', form, p.key);
+    p.whId = w.id; if (w.secret) p.whsec = w.secret; p.hookErr = ''; p.hookAt = new Date().toISOString(); p.hookMode = /_live_/.test(p.key) ? 'live' : 'test'; return true;
+  } catch (e) { p.hookErr = String(e.message || e).slice(0, 160); return false; }
+}
+route('POST', '/api/me/partner-pay/reconnect', STAFF, ({ me }) => lock(async () => {
+  if (!me.partner || !me.partnerPay || !me.partnerPay.key) throw new HttpError(400, 'Primero conecta tu clave de Stripe.');
+  const ok = await ptHook(me); saveDb(); if (!ok) throw new HttpError(400, 'No se pudo crear el aviso de pagos en tu Stripe: ' + (me.partnerPay.hookErr || ''));
+  return { ok: true, partnerPay: ptPayOut(me) };
+}));
+/* v399: pago de prueba de 1 € (solo con clave de prueba): comprueba la clave y que llegan los avisos */
+route('POST', '/api/me/partner-pay/test', STAFF, ({ me }) => lock(async () => {
+  const p = me.partnerPay || {}; if (!me.partner || !p.key) throw new HttpError(400, 'Primero conecta tu clave de Stripe.');
+  if (!/_test_/.test(p.key)) throw new HttpError(400, 'El pago de prueba solo se hace con la clave de prueba (sk_test_…). Con la real ya está todo listo.');
+  const base = siteBase(), cur = String(db.settings.currency || 'EUR').toLowerCase();
+  const ss = await stripeCall('POST', '/v1/checkout/sessions', { mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': cur, 'line_items[0][price_data][unit_amount]': '100', 'line_items[0][price_data][product_data][name]': 'Pago de prueba del panel', 'metadata[ptTest]': '1', success_url: `${base || ''}/#seguridad`, cancel_url: `${base || ''}/#seguridad` }, p.key);
+  p.testSid = ss.id; p.testOk = null; p.testHook = null; saveDb(); return { ok: true, url: ss.url };
+}));
+route('POST', '/api/me/partner-pay/test-check', STAFF, ({ me }) => lock(async () => {
+  const p = me.partnerPay || {}; if (!p.testSid) throw new HttpError(400, 'Primero haz el pago de prueba.');
+  const ss = await stripeCall('GET', `/v1/checkout/sessions/${encodeURIComponent(p.testSid)}`, null, p.key);
+  if (ss.payment_status === 'paid' && !p.testOk) p.testOk = new Date().toISOString();
+  saveDb(); return { ok: true, paid: ss.payment_status === 'paid', partnerPay: ptPayOut(me) };
+}));
 route('PUT', '/api/socios/entries/:id/fee', SUPER, ({ me, params, body }) => lock(async () => {
   const d = socCfg(), x = d.entries.find((e) => e.id === params.id); if (!x) throw new HttpError(404, 'Ese movimiento ya no existe.');
   if (x.kind !== 'cobro') throw new HttpError(400, 'Solo se puede en un cobro.');
@@ -13702,7 +13850,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && pathname === '/api/app-upload') return await appUpload(req, res);
     if ((req.method === 'GET' || req.method === 'HEAD') && /^\/app(\/|\.apk$|$)/.test(pathname) && (pathname === '/app' || pathname === '/app/' || pathname === '/app.apk' || pathname === '/app/version.json' || /^\/app\/[\w.-]+\.apk$/.test(pathname))) return appDownload(req, res, pathname);
     if (!pathname.startsWith('/api/')) return send(res, 404, { error: 'No encontrado.' });
-    if (req.method === 'POST' && (pathname === '/api/pay/stripe/webhook' || /^\/api\/pay\/stripe\/webhook\/u\d+$/.test(pathname) || pathname === '/api/pay/nowpayments/ipn')) return await payWebhook(req, res, pathname);
+    if (req.method === 'POST' && (pathname === '/api/pay/stripe/webhook' || /^\/api\/pay\/stripe\/webhook\/[up]\d+$/.test(pathname) || pathname === '/api/pay/nowpayments/ipn')) return await payWebhook(req, res, pathname);
     // Panel alquilado en pausa: solo se responde lo justo para mostrar el aviso
     if (LIC_CLIENT && licLocked() && !['/api/state', '/api/license/recheck', '/api/logout', '/api/agent/report'].includes(pathname)) return send(res, 423, { error: 'El panel está en pausa: la suscripción ha caducado.', licLocked: true });
     for (const r of routes) {
@@ -13720,6 +13868,7 @@ const server = http.createServer(async (req, res) => {
         if (maintOn(me) && pathname !== '/api/logout') return send(res, 503, { error: maintMsg(), maint: true });
         if (LIC_CLIENT) for (const [k, re] of LIC_BLOCK) if (!licFeat(k) && re.test(pathname)) return send(res, 403, { error: 'Esta opción no está incluida en tu panel. Si la quieres, pídesela a tu proveedor 🙂' }); // v380
         if (me && me.lite && LITE_BLOCK.test(pathname)) return send(res, 403, { error: 'Esta opción no está disponible en tu panel.' }); // v318: modo reducido
+        if (me.partner && !isOwner(me) && PT_OWNER_ONLY.some(([mm, re]) => mm === req.method && re.test(pathname))) return send(res, 403, { error: `🔒 Esto solo lo puede cambiar el dueño del panel (${(ownerUser() || {}).name || 'el dueño'}).` }); /* v399 */
         if (me.mustPw && !['/api/my-password', '/api/data', '/api/logout'].includes(pathname)) return send(res, 403, { error: 'Antes de seguir, cambia la contraseña que te dieron.', mustPw: true });
       }
       if (DEMO && demoBlocked(req.method, pathname)) return send(res, 403, { error: '🧪 Esto es una demo: esta opción está desactivada. En tu panel funciona.' });
