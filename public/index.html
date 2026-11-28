@@ -4209,8 +4209,8 @@ function vResumen() {
   const DS = dashStyle();
   const upd = S.d.licUpdate ? `<div class="simplebar" style="background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.35)">🆕<span><b>Hay una versión nueva del panel (v${S.d.licUpdate.latest})</b> con mejoras y arreglos. La tuya es la v${S.d.licUpdate.mine || '?'}. Pídele a tu proveedor que te lo actualice.</span></div>` : ''; // v391
   const fsp = upd + (simpleOn() && isSuper() ? '<div class="simplebar">🧘<span><b>Modo sencillo:</b> solo ves lo básico (clientes, demos y servidores).</span><button type="button" class="btn sm" data-act="simple-toggle">Ver todo</button></div>' : '') + firstSteps(); // v388: primeros pasos
-  if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip: ptCardHtml() + fsp + secTip, dsearch });
-  return welcome + licBanner() + downBox() + ptCardHtml() + fsp + secTip + dsearch + hero + quick + review + `
+  if (DS !== 'clasico') return dashNew(DS, { welcome, d, cnt, g, urgent, greet, emoji: hr < 14 && hr >= 6 ? '☀️' : hr < 21 && hr >= 14 ? '👋' : '🌙', wName, phrase, quick, review, secTip: fsp + secTip, dsearch }); /* v403: la tarjeta de socios ya no va arriba del Resumen (está en Socios › Saldos) */
+  return welcome + licBanner() + downBox() + fsp + secTip + dsearch + hero + quick + review + `
   <div class="sec-h"><h2>Estado de las cuentas</h2><small>Toca para ver la lista</small></div>
   <div class="sc4">
     ${sc('active', cnt.active, 'Activas', 'con su contenido', 'check')}
@@ -8643,6 +8643,7 @@ document.addEventListener('submit', async (e) => {
 
 /* ---------- Novedades: lo que ha ido cambiando en el panel (lo más nuevo arriba) ---------- */
 const NEWS = [
+  { v: 403, d: '2026-11-28', items: ['🏠 Resumen: la tarjeta «Cobros de cada socio» ya no sale arriba; ahora está en Socios › Saldos (con el botón de pausar el Stripe del socio)'] },
   { v: 402, d: '2026-11-27', items: ['⚠️ Socio con Stripe: si su Stripe da error, ahora os avisa a los dos desde el PRIMER pago (con el error de Stripe), y el aviso del pago dice «en TU Stripe: el de … dio error»'] },
   { v: 401, d: '2026-11-27', items: ['💳 Mi Stripe: botón «🗑️ Quitar mi clave» por si el socio pega una clave equivocada'] },
   { v: 400, d: '2026-11-27', items: ['🛠️ El interruptor «🤝 Socio: cobra a sus clientes con su Stripe» (Administradores › tarjeta del superadministrador) no se veía: ya sale, con «Encendido / Apagado»'] },
@@ -9451,7 +9452,7 @@ function vSocios() {
   const prevM = (() => { const t = new Date(); const x = new Date(t.getFullYear(), t.getMonth() - 1, 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`; })(); /* v399: 📅 cierre del mes anterior */
   const closeCard = d.month === prevM ? `<div class="so-close on">📅 <b>Cierre de ${esc(soMonthTxt(prevM))}</b><span>Esto es lo que cobró y pagó cada uno ese mes. Descárgalo con el botón <b>Excel</b>.</span></div>`
     : (d.months || []).includes(prevM) ? `<button type="button" class="so-close" data-act="so-m" data-k="${prevM}">📅 <b>Ver el cierre de ${esc(soMonthTxt(prevM))}</b><span>Qué cobró y pagó cada uno, y quién debe a quién</span></button>` : '';
-  const salTab = `${closeCard}${iam}${peace}<h3 class="tc-day">Saldos</h3><div class="tc-ps">${people}</div>
+  const salTab = `${ptCardHtml()}${closeCard}${iam}${peace}<h3 class="tc-day">Saldos</h3><div class="tc-ps">${people}</div>
     <h3 class="tc-day">🕊️ Historial de cuentas</h3>${soHistCard()}
     <p class="tc-note">➕ en verde: le deben dinero · ➖ en rojo: tiene dinero que no es suyo. Toca un nombre para ver las cuentas.</p>
     ${sw ? `<p class="small muted">🔗 Copiando en Splitwise${cfg.sw.groupName ? ` (grupo «${esc(cfg.sw.groupName)}»)` : ''}.${d.entries.some((x) => !x.sw) ? ` <button class="linkbtn" data-act="so-swretry">Reenviar los que faltan</button>` : ''}</p>` : ''}`;
